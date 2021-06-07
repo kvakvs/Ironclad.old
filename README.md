@@ -8,11 +8,10 @@ checking following the standard Erlang `-spec()` and `-type()` syntax.
 
 ## Project File `erlproject.toml`
 
+> NOTE: This is an early stage work-in-progress.
+
 To perform the task, the tool needs to know all input files before the work begins. Hence the project file syntax is
 introduced (experimental). The default name for the project file is `erlproject.toml`, and the contents may look like:
-
-An empty `erlproject.toml`, is acceptable, consisting of comments, or no bytes at all. In this case entire current
-directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 
 ```toml
 [compiler_options]
@@ -25,9 +24,12 @@ exclude_files = []          # default []
 exclude_directories = []    # default []
 ```
 
-> NOTE: This is an early stage work-in-progress.
+An empty `erlproject.toml`, is acceptable, consisting of comments, or no bytes at all. In this case entire current
+directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 
 ## Project Progress
+
+> NOTE: This is an early stage work-in-progress.
 
 - [x] Project configuration
 - [ ] Preprocessor 
