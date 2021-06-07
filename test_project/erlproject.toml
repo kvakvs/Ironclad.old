@@ -1,4 +1,4 @@
-[compiler_opts]
+[compiler_options]
 include_paths = []
 
 [inputs]

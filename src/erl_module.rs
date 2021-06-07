@@ -6,14 +6,14 @@ use crate::project::compiler_opts::CompilerOpts;
 // - List of forms: attributes, and Erlang functions
 // - Compiler options used to produce this module
 pub struct ErlModule {
-    compiler_opts: CompilerOpts,
+    compiler_options: CompilerOpts,
     name: String,
 }
 
 impl Default for ErlModule {
     fn default() -> Self {
         Self {
-            compiler_opts: Default::default(),
+            compiler_options: Default::default(),
             name: "".to_string()
         }
     }
