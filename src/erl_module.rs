@@ -1,12 +1,14 @@
+use crate::project::compiler_opts::CompilerOpts;
 use std::fmt::Debug;
 use std::fmt;
-use crate::project::compiler_opts::CompilerOpts;
+use std::sync::Arc;
 
-// Erlang Module consists of
-// - List of forms: attributes, and Erlang functions
-// - Compiler options used to produce this module
+/// Erlang Module consists of
+/// - List of forms: attributes, and Erlang functions
+/// - Compiler options used to produce this module
 pub struct ErlModule {
-    compiler_options: CompilerOpts,
+    /// Options used to build this module. Possibly just a ref to the main project's options
+    compiler_options: Arc<CompilerOpts>,
     name: String,
 }
 

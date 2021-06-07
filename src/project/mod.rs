@@ -4,35 +4,32 @@ use std::fmt::Debug;
 use nom::Parser;
 use serde_derive::Deserialize;
 
-use compiler_opts::CompilerOpts;
-use input_opts::InputOpts;
-
 use crate::erl_error::ErlError;
+use std::sync::Arc;
+use crate::project::compiler_opts::CompilerOpts;
+use crate::project::input_opts::InputOpts;
+use crate::project::conf::ErlProjectConf;
 
-mod input_opts;
-pub mod compiler_opts;
+pub(crate) mod conf;
+pub(crate) mod compiler_opts;
+pub(crate) mod input_opts;
 
-// Erlang Program consists of
-// - Module list
-// - Compiler options (input search paths, output paths, flags)
-#[derive(Deserialize)]
+/// Same as ErlProjectConf but no Option<> fields
+#[derive(Debug)]
 pub struct ErlProject {
-    compiler_opts: CompilerOpts,
+    /// Input search paths, output paths, flags, ... etc. Shared with all modules which use default
+    /// compile options
+    compiler_opts: Arc<CompilerOpts>,
+
+    /// Input files and directories (wildcards are allowed)
     inputs: InputOpts,
 }
 
-impl ErlProject {
-    pub fn from_project_file(file: &str) -> Result<Self, ErlError> {
-        let config_str = fs::read_to_string(file)?;
-
-        // Parse, and convert toml error into ErlError
-        toml::from_str(&config_str).map_err(|e| e.into())
-    }
-}
-
-
-impl Debug for ErlProject {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ErlProject({:?}, {:?})", self.inputs, self.compiler_opts)
+impl From<ErlProjectConf> for ErlProject {
+    fn from(conf: ErlProjectConf) -> Self {
+        Self {
+            compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
+            inputs: InputOpts::from(conf.inputs),
+        }
     }
 }
