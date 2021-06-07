@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::fmt;
-use crate::compiler_opts::CompilerOpts;
+use crate::project::compiler_opts::CompilerOpts;
 
 // Erlang Module consists of
 // - List of forms: attributes, and Erlang functions

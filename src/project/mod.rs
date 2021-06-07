@@ -1,10 +1,16 @@
-use serde_derive::Deserialize;
-use std::fmt::Debug;
 use std::{fmt, fs};
-use crate::compiler_opts::CompilerOpts;
-use crate::source_tree::SourceTree;
-use crate::erl_error::ErlError;
+use std::fmt::Debug;
+
 use nom::Parser;
+use serde_derive::Deserialize;
+
+use compiler_opts::CompilerOpts;
+use input_opts::InputOpts;
+
+use crate::erl_error::ErlError;
+
+mod input_opts;
+pub mod compiler_opts;
 
 // Erlang Program consists of
 // - Module list
@@ -12,7 +18,7 @@ use nom::Parser;
 #[derive(Deserialize)]
 pub struct ErlProject {
     compiler_opts: CompilerOpts,
-    inputs: SourceTree,
+    inputs: InputOpts,
 }
 
 impl ErlProject {

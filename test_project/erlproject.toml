@@ -1,0 +1,8 @@
+[compiler_opts]
+include_paths = []
+
+[inputs]
+files = ["*.erl"]
+directories = ["src"]
+exclude_files = []
+exclude_directories = []

@@ -1,4 +1,4 @@
-use crate::erl_project::ErlProject;
+use crate::project::ErlProject;
 use crate::erl_module::ErlModule;
 use crate::erl_parse::helpers::ws;
 use crate::erl_parse::atom::parse_atom;

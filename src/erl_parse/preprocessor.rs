@@ -1,4 +1,4 @@
-use crate::erl_project::ErlProject;
+use crate::project::ErlProject;
 
 /// Process Erlang source before parsing
 /// -define(Name(...), ...).
