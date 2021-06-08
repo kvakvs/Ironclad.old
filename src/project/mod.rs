@@ -32,7 +32,7 @@ pub struct ErlProject {
 }
 
 impl ErlProject {
-  const DEFAULT_CAPACITY: usize = 1024; // preallocate this many inputs in the file_list
+  pub const DEFAULT_CAPACITY: usize = 1024; // preallocate this many inputs in the file_list
 
   /// Traverse directories starting from each of the inputs.directories;
   /// Add files from inputs if not duplicate.

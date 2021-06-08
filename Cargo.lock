@@ -31,6 +31,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "errloc_macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b2e21150f16f59be06781ca84dc758290e51c8d49a2eab0589817ea6cfbecfc"
+
+[[package]]
 name = "funty"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -177,6 +183,7 @@ dependencies = [
 name = "typed_erlc"
 version = "0.1.0"
 dependencies = [
+ "errloc_macros",
  "glob",
  "nom",
  "serde",

@@ -7,18 +7,15 @@ use std::fmt;
 pub struct CompilerOptsConf {
     /// If not specified, defaults to empty
     pub include_paths: Option<Vec<String>>,
+    /// Defaults to empty list. Preprocessor defs in form of "NAME" or "NAME=VALUE"
+    pub defines: Option<Vec<String>>,
 }
 
 impl Default for CompilerOptsConf {
     fn default() -> Self {
         Self {
             include_paths: None,
+            defines: None
         }
     }
 }
-
-// impl Debug for CompilerOpts {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "CompilerOpts({:?})", self.include_paths)
-//     }
-// }

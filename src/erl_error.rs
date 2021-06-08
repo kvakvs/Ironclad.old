@@ -15,6 +15,9 @@ pub enum ErlError {
   // Project loading error produced when loading TOML
   #[error("Configuration file syntax error: {0:?}")]
   ConfigError(toml::de::Error),
+
+  #[error("Compiler internal data locking error")]
+  LockingPoisonError,
 }
 
 pub type ErlResult<T> = Result<T, ErlError>;
