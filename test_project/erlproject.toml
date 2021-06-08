@@ -3,6 +3,6 @@ include_paths = []
 
 [inputs]
 files = ["*.erl"]
-directories = ["src"]
+directories = ["test_project/src", "."]
 exclude_files = []
 exclude_directories = []

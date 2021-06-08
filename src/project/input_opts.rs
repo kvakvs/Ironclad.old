@@ -15,9 +15,11 @@ pub struct InputOpts {
     pub directories: Vec<String>,
 
     /// If not specified, defaults to empty
+    #[allow(dead_code)]
     pub exclude_files: Vec<String>,
 
     /// If not specified, defaults to empty
+    #[allow(dead_code)]
     pub exclude_directories: Vec<String>,
 }
 

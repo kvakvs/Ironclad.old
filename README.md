@@ -20,9 +20,11 @@ include_paths = []          # default []
 [inputs]
 files = ["*.erl"]           # default ["*.erl"]
 directories = ["src"]       # default ["."]
-exclude_files = []          # default []
-exclude_directories = []    # default []
+exclude_files = []          # TODO: not implemented; default []
+exclude_directories = []    # TODO: not implemented; default []
 ```
+
+You can use `**` to match any portion of the path.
 
 An empty `erlproject.toml`, is acceptable, consisting of comments, or no bytes at all. In this case entire current
 directory will be scanned for `"*.erl"` files, with all nested subdirectories.
