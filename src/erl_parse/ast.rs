@@ -3,7 +3,7 @@ use std::path::Path;
 /// Generic module attribute -"string"(value, ...).
 pub struct ModuleAttr {
     pub name: String,
-    pub values: Vec<AST>,
+    pub values: Vec<ASTNode>,
 }
 
 pub struct Atom {
@@ -29,7 +29,7 @@ pub struct TypeDef {
     pub type_args: Vec<Variable>,
 }
 
-pub enum AST {
+pub enum ASTNode {
     Attr(ModuleAttr),
     ModuleName(Atom),
     Behaviour(Atom),
@@ -39,4 +39,6 @@ pub enum AST {
     // Preprocessor directives are not visible here, eliminated before the parse
     Include(Box<Path>),
     IncludeLib(Box<Path>),
+    // The code
+    FunctionDef(Atom, usize),
 }

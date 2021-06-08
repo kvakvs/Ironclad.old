@@ -9,7 +9,9 @@ use crate::project::ErlProject;
 /// A stage outputs something usable by the following stage.
 
 pub mod file_contents_cache;
+pub mod ast_cache;
 pub mod compile_module;
 
 pub mod preload;
+pub mod parse;
 pub mod preprocess;
