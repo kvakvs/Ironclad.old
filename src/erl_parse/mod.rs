@@ -1,12 +1,21 @@
 use crate::erl_module::ErlModule;
-use crate::erl_parse::helpers::ws;
-use crate::erl_parse::atom::parse_atom;
 use crate::erl_parse::ast::ASTNode;
+use crate::erl_parse::atom::parse_atom;
+use crate::erl_parse::helpers::ws;
 
 mod helpers;
-mod preprocessor;
+pub mod preprocessor;
 mod atom;
 pub mod ast;
+mod pp_ast;
+
+/// Points to source file position and length for a text fragment.
+/// This is like &str but is not pinned to a memory address or the source string lifetime.
+#[derive(Debug)]
+pub struct Span {
+    pub pos: usize,
+    pub len: usize,
+}
 
 // fn parse_module_attribute(i: &str) -> nom::IResult<String, AST> {
 //     nom::sequence::tuple((
