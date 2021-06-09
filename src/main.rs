@@ -33,11 +33,14 @@ fn main() {
     // Load files and store contents in the hashmap
     let file_cache = stage::preload::run(&mut project);
 
-    // Parse all ERL and HRL files
-    let ast_cache = stage::parse::run(&mut project, file_cache.clone());
-
     // Preprocess erl files, and store preprocessed (Text|AST?) in a new hashmap
-    // let preproc_cache = stage::preprocess::run(&mut project, file_cache.clone());
+    let preproc_cache = stage::preprocess::run(&mut project, file_cache.clone())
+        .unwrap();
+
+    // Parse all ERL and HRL files
+    let ast_cache = stage::parse::run(&mut project, file_cache.clone())
+        .unwrap();
+
 
     ()
 }

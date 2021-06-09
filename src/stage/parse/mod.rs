@@ -29,14 +29,14 @@ pub fn run(project: &mut ErlProject,
 
     let file_contents_r = contents_cache.read().unwrap();
 
-    for (path, contents) in &file_contents_r.contents   {
+    for (path, contents) in &file_contents_r.contents {
         let path_s = path.to_string_lossy();
 
         // Take only .erl and .hrl files
         if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
             let ast_tree = parse_file(&path, &contents)?;
-            cache.syntax_trees.insert(file_name.clone(),
-                                      ModuleAST::new(ast_tree));
+            ast_cache.syntax_trees.insert(path.clone(),
+                                          ModuleAST::new(ast_tree));
         }
     }
 
