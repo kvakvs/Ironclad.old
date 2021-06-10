@@ -1,7 +1,4 @@
-use crate::erl_module::ErlModule;
-use crate::erl_parse::ast::ASTNode;
-use crate::erl_parse::atom::parse_atom;
-use crate::erl_parse::helpers::ws;
+use crate::erl_parse::ast::ErlAstNode;
 
 mod helpers;
 pub mod pp_parse;
@@ -31,7 +28,7 @@ impl Span {
 //     ))(i)
 // }
 
-pub fn parse_module(i: &str) -> nom::IResult<&str, Vec<ASTNode>> {
+pub fn parse_module(_input: &str) -> nom::IResult<&str, Vec<ErlAstNode>> {
   // let forms = nom::branch::alt((
   //     // parse_module_attribute,
   //     // parse_function,

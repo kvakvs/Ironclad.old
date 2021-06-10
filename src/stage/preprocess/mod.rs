@@ -1,18 +1,12 @@
-use tap::tap::*;
-use crate::erl_error::{ErlResult, ErlError};
+use crate::erl_error::{ErlResult};
 use crate::erl_parse;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
-use errloc_macros::errloc;
-use std::borrow::{BorrowMut, Borrow};
-use std::collections::HashSet;
 use std::path::{PathBuf, Path};
-use std::sync::{Arc, RwLock};
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache, PpAstTree};
-use crate::stage::ast_cache::AstCache;
 use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
 
-fn load_and_parse_pp_ast(file_name: &PathBuf, contents: &String) -> ErlResult<ArcRw<PpAstTree>> {
+fn load_and_parse_pp_ast(file_name: &Path, contents: &str) -> ErlResult<ArcRw<PpAstTree>> {
   let pp_ast = erl_parse::pp_parse::parse_module(file_name, &contents)?;
   println!("\n\
         filename: {}\n\
@@ -21,7 +15,7 @@ fn load_and_parse_pp_ast(file_name: &PathBuf, contents: &String) -> ErlResult<Ar
 }
 
 /// Returns: True if a file was preprocessed
-fn preprocess_file(file_name: &PathBuf,
+fn preprocess_file(file_name: &Path,
                    ast_cache: ArcRw<PpAstCache>,
                    file_cache: ArcRw<FileContentsCache>) -> ErlResult<bool> {
   // let mut file_cache_r = file_cache.read().unwrap();
@@ -39,23 +33,21 @@ fn preprocess_file(file_name: &PathBuf,
   // drop(ast_cache_rw);
   with_arcrw_write(
     &ast_cache,
-    |ac| ac.syntax_trees.insert(file_name.clone(), ast_tree.clone()),
+    |ac| ac.syntax_trees.insert(file_name.to_path_buf(), ast_tree.clone()),
   );
 
-  let output = interpret_pp_ast(&file_name,
-                                ast_tree,
-                                ast_cache.clone(),
+  let output = interpret_pp_ast(&file_name, ast_tree, ast_cache,
                                 file_cache.clone())?;
 
   // Success: insert new string into preprocessed source cache
   let mut file_cache_rw = file_cache.write().unwrap();
-  file_cache_rw.contents.insert(file_name.clone(), output);
+  file_cache_rw.contents.insert(file_name.to_path_buf(), output);
   drop(file_cache_rw);
 
   Ok(true)
 }
 
-fn interpret_include_directive(source_file_path: &PathBuf,
+fn interpret_include_directive(source_file_path: &Path,
                                node: &PpAstNode,
                                ast_cache: ArcRw<PpAstCache>,
                                file_cache: ArcRw<FileContentsCache>) -> PpAstNode {
@@ -73,7 +65,7 @@ fn interpret_include_directive(source_file_path: &PathBuf,
       let include_path = if path_in_include_directive.is_absolute() {
         PathBuf::from(path_in_quotes)
       } else {
-        source_path.parent().unwrap().join(path_in_quotes).to_path_buf()
+        source_path.parent().unwrap().join(path_in_quotes)
       };
 
       // TODO: Path resolution relative to the file path
@@ -94,7 +86,7 @@ fn interpret_include_directive(source_file_path: &PathBuf,
                            |ac| {
                              ac.syntax_trees.insert(include_path.clone(), ast_tree.clone());
                            });
-          PpAstNode::IncludedFile(ast_tree.clone())
+          PpAstNode::IncludedFile(ast_tree)
         }
         Some(arc_ast) => {
           let result = PpAstNode::IncludedFile(arc_ast.clone());
@@ -113,7 +105,7 @@ fn interpret_include_directive(source_file_path: &PathBuf,
 /// - Substitute macros.
 ///
 /// Return: a new preprocessed string joined together.
-fn interpret_pp_ast(source_file_path: &PathBuf,
+fn interpret_pp_ast(source_file_path: &Path,
                     ast_tree: ArcRw<PpAstTree>,
                     ast_cache: ArcRw<PpAstCache>,
                     file_cache: ArcRw<FileContentsCache>) -> ErlResult<String> {
@@ -126,7 +118,7 @@ fn interpret_pp_ast(source_file_path: &PathBuf,
 
   let a: Vec<PpAstNode> = ast_tree_r.nodes.iter()
       .map(|node| {
-        interpret_include_directive(&source_file_path,
+        interpret_include_directive(source_file_path,
                                     node,
                                     ast_cache.clone(),
                                     file_cache.clone())
@@ -139,7 +131,7 @@ fn interpret_pp_ast(source_file_path: &PathBuf,
 
         match node {
           PpAstNode::Comment(_) => {} // skip
-          PpAstNode::Text(t) => output.push(t.clone()), // TODO: Push spans from input
+          PpAstNode::Text(t) => output.push(t), // TODO: Push spans from input
 
           // An attribute without parens
           PpAstNode::Attr0(_) => {}
@@ -173,13 +165,13 @@ fn interpret_pp_ast(source_file_path: &PathBuf,
 /// * Drop AST branches covered by the conditional compile directives.
 /// Side effects: Updates file contents cache
 /// Returns: preprocessed collection of module sources
-pub fn run(project: &mut ErlProject,
+pub fn run(_project: &mut ErlProject,
            file_cache: ArcRw<FileContentsCache>,
 ) -> ErlResult<()> {
-  let mut ast_cache = create_arcrw(PpAstCache::new());
+  let ast_cache = create_arcrw(PpAstCache::new());
 
   // Take only .erl files
-  let mut file_cache_r = file_cache.read().unwrap();
+  let file_cache_r = file_cache.read().unwrap();
   let all_files: Vec<PathBuf> = file_cache_r.contents.keys().cloned().collect();
   drop(file_cache_r);
 

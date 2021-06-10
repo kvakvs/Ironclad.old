@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use crate::erl_error::ErlResult;
 use crate::project::ErlProject;
@@ -20,17 +20,18 @@ impl FileContentsCache {
   }
 
   /// Load file contents, store entire contents in the hashmap
-  pub(crate) fn preload_file(&mut self, file_name: &PathBuf) -> ErlResult<()> {
+  pub(crate) fn preload_file(&mut self, file_name: &Path) -> ErlResult<()> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
     self.read_bytes_count += contents.len();
-    self.contents.insert(file_name.clone(), contents);
+    self.contents.insert(file_name.to_path_buf(), contents);
     Ok(())
   }
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
-  pub(crate) fn get_or_load(&mut self, file_name: &PathBuf) -> ErlResult<String> {
+  /// TODO: Cloning of strings is bad
+  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> ErlResult<String> {
     match self.contents.get(file_name) {
       None => {
         self.preload_file(file_name)?;

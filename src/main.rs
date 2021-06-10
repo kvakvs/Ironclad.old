@@ -1,4 +1,9 @@
 #![warn(missing_docs)]
+#![allow(dead_code)]
+
+//! Typed Erlang - typed_erlc
+//! A fusion of Erlang compiler erlc (lib/compile in OTP repository) and compile-time type checker,
+//! somewhat like Dialyzer (lib/dialyzer in OTP repository).
 
 mod types;
 mod erl_parse;
@@ -8,13 +13,13 @@ mod erl_error;
 mod stage;
 
 extern crate nom;
-extern crate tap;
+// extern crate tap;
 extern crate toml;
 extern crate serde;
 extern crate serde_derive;
 extern crate thiserror;
 extern crate glob;
-extern crate errloc_macros;
+// extern crate errloc_macros;
 
 use crate::project::ErlProject;
 use crate::project::conf::ErlProjectConf;
@@ -30,7 +35,5 @@ fn main() {
   println!("{:?}", project);
   project.file_set = project.build_file_list().unwrap();
 
-  ErlProject::compile(project);
-
-  ()
+  ErlProject::compile(project).unwrap();
 }

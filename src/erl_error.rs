@@ -1,13 +1,18 @@
 use thiserror::Error;
-use std::io::Error;
 use crate::erl_parse::Span;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 #[derive(Debug)]
 pub enum ErrorLocation {
   None,
   SourceFile(PathBuf),
   SourceFileSpan(PathBuf, Span),
+}
+
+impl ErrorLocation {
+  pub fn from_source_file(p: &Path) -> ErrorLocation {
+    Self::SourceFile(p.to_path_buf())
+  }
 }
 
 #[derive(Error, Debug)]
@@ -25,8 +30,9 @@ pub enum ErlError {
   #[error("Configuration file syntax error: {0:?}")]
   ConfigError(toml::de::Error),
 
-  #[error("Compiler internal data locking error")]
-  LockingPoisonError,
+  // Lock poisoning happens when a Write-lock caught a panic
+  // #[error("Compiler internal data locking error")]
+  // LockingPoisonError,
 
   #[error("Erlang parse error: {1} (at {0:?})")]
   ErlParseError(ErrorLocation, String),

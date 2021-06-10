@@ -1,6 +1,5 @@
 use serde_derive::Deserialize;
 use std::fmt::Debug;
-use std::fmt;
 
 /// Options for building entire project, or a single module
 #[derive(Deserialize, Debug)]

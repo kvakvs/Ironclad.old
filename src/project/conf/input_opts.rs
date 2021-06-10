@@ -1,7 +1,5 @@
 use serde_derive::Deserialize;
-use std::fmt;
 use std::fmt::Debug;
-use std::path::Path;
 
 /// Contains source tree from the project file, or detected from the file system
 #[derive(Deserialize, Debug)]

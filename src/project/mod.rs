@@ -1,19 +1,14 @@
-use std::{fmt, fs};
 use std::fmt::Debug;
 
-use nom::Parser;
-use serde_derive::Deserialize;
-
 use crate::erl_error::{ErlError, ErlResult};
-use std::sync::Arc;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::input_opts::InputOpts;
 use crate::project::conf::ErlProjectConf;
-use glob::{glob, GlobError};
-use std::path::PathBuf;
+use glob::{glob};
+use std::path::{PathBuf, Path};
 use std::collections::HashSet;
 use crate::stage;
-use crate::erl_parse::pp_ast::PpAstCache;
+use crate::types::{ArcRw, create_arcrw};
 
 pub(crate) mod conf;
 pub(crate) mod compiler_opts;
@@ -24,13 +19,21 @@ pub(crate) mod input_opts;
 pub struct ErlProject {
   /// Input search paths, output paths, flags, ... etc. Shared with all modules which use default
   /// compile options
-  compiler_opts: Arc<CompilerOpts>,
+  pub compiler_opts: ArcRw<CompilerOpts>,
 
   /// Input files and directories (wildcards are allowed)
   inputs: InputOpts,
 
   /// Prepared paths, scanned from Self::inputs, and with exclusions filtered out
   pub file_set: HashSet<PathBuf>,
+}
+
+impl ErlProject {
+  /// Get a clone of project compiler options
+  /// TODO: special override options if user specifies extras as a module attribute
+  pub(crate) fn get_compiler_options_for(&self, _path: &Path) -> ArcRw<CompilerOpts> {
+    self.compiler_opts.clone()
+  }
 }
 
 impl ErlProject {
@@ -74,25 +77,27 @@ impl ErlProject {
     Ok(())
   }
 
-  pub  fn compile(mut project: ErlProject) {
+  pub fn compile(mut project: ErlProject) -> ErlResult<()> {
     // Load files and store contents in the hashmap
-    let file_cache = stage::preload::run(&mut project);
+    let file_cache = stage::preload::run(&mut project)?;
 
     // Preprocess erl files, and store preprocessed (Text|AST?) in a new hashmap
-    let preproc_cache = stage::preprocess::run(&mut project, file_cache.clone())
+    let _preproc_cache = stage::preprocess::run(&mut project, file_cache.clone())
         .unwrap();
 
 
     // Parse all ERL and HRL files
-    let ast_cache = stage::parse::run(&mut project, file_cache.clone())
+    let _ast_cache = stage::parse::run(&mut project, file_cache)
         .unwrap();
+
+    Ok(())
   }
 }
 
 impl From<ErlProjectConf> for ErlProject {
   fn from(conf: ErlProjectConf) -> Self {
     Self {
-      compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
+      compiler_opts: create_arcrw(CompilerOpts::from(conf.compiler_opts)),
       inputs: InputOpts::from(conf.inputs),
       file_set: HashSet::new(),
     }

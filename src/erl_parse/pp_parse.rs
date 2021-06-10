@@ -1,17 +1,15 @@
-use crate::project::ErlProject;
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstTree};
 use crate::erl_parse::helpers::ws;
-use nom::combinator::{recognize, map_res, map, opt};
+use nom::combinator::{recognize, map};
 use nom::sequence::{pair, tuple, delimited, terminated};
 use nom::branch::alt;
-use nom::character::complete::{alpha1, alphanumeric1, newline, anychar, line_ending};
-use nom::bytes::complete::{tag, take_till1, take_till, take_until};
-use nom::multi::{many0, many_till, separated_list0};
+use nom::character::complete::{alpha1, alphanumeric1, line_ending};
+use nom::bytes::complete::{tag, take_till1, take_till};
+use nom::multi::{many0, separated_list0};
 use crate::erl_parse::Span;
-use nom::Parser;
 use crate::erl_error::ErlError::ErlParseError;
 use crate::erl_error::{ErlResult, ErrorLocation};
-use std::path::PathBuf;
+use std::path::{Path};
 
 /// Consume a sequence of a-zA-Z and 0-9 and underscore, which must start with not a number
 ///
@@ -99,7 +97,7 @@ fn parse_attr(input: &str) -> nom::IResult<&str, PpAstNode> {
     )),
     |(attr_ident, args, _newline)| -> PpAstNode {
       let args_strings: Vec<String> = args.into_iter()
-          .map(|value| String::from(value))
+          .map(String::from)
           .collect();
       PpAstNode::Attr(String::from(attr_ident), args_strings)
     },
@@ -133,7 +131,7 @@ fn parse_attr_noargs(input: &str) -> nom::IResult<&str, PpAstNode> {
 /// ??MACRO to stringify the tokens in the macro argument
 ///
 /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
-pub fn parse_module(file_name: &PathBuf, input: &str) -> ErlResult<PpAstTree> {
+pub fn parse_module(file_name: &Path, input: &str) -> ErlResult<PpAstTree> {
   let (tail, pp_ast) = many0(
     alt((
       line_comment,
@@ -141,12 +139,12 @@ pub fn parse_module(file_name: &PathBuf, input: &str) -> ErlResult<PpAstTree> {
       parse_attr_noargs,
       parse_line,
     )))(input)?;
-  if tail.len() > 0 {
+  if !tail.is_empty() {
     println!("Parse did not succeed. Remaining input: {}", tail);
     let span = Span::new(input.len() - tail.len(), tail.len());
-    return Err(ErlParseError(ErrorLocation::SourceFileSpan(file_name.clone(), span),
+    return Err(ErlParseError(ErrorLocation::SourceFileSpan(file_name.to_path_buf(), span),
                              String::from("Parse did not succeed, input remaining.")));
   }
-  let pp_tree = PpAstTree::new(file_name.clone(), pp_ast);
+  let pp_tree = PpAstTree::new(file_name.to_path_buf(), pp_ast);
   Ok(pp_tree)
 }

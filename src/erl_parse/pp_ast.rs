@@ -1,9 +1,7 @@
-use crate::erl_parse::Span;
 use std::fmt::Debug;
 use std::fmt;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
 use crate::types::ArcRw;
 use crate::project::ErlProject;
 
@@ -29,11 +27,11 @@ pub enum PpAstNode {
 }
 
 impl PpAstNode {
-  pub fn trim(s: &String) -> String {
+  pub fn trim(s: &str) -> String {
     const CLAMP_LENGTH: usize = 20;
     let trimmed = s.trim();
     if trimmed.len() <= CLAMP_LENGTH { return String::from(trimmed); }
-    return String::from(&trimmed[..CLAMP_LENGTH - 1]) + "…";
+    String::from(&trimmed[..CLAMP_LENGTH - 1]) + "…"
   }
 }
 

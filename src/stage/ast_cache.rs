@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::erl_parse::ast::ASTNode;
+use crate::erl_parse::ast::ErlAstNode;
 
 // pub enum ASTNode {
 //     Attribute,
@@ -8,11 +8,11 @@ use crate::erl_parse::ast::ASTNode;
 // }
 
 pub struct ModuleAST {
-  pub forms: Vec<ASTNode>,
+  pub forms: Vec<ErlAstNode>,
 }
 
 impl ModuleAST {
-  pub fn new(forms: Vec<ASTNode>) -> Self {
+  pub fn new(forms: Vec<ErlAstNode>) -> Self {
     Self { forms }
   }
 }

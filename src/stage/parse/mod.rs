@@ -1,21 +1,27 @@
 use crate::project::ErlProject;
 use std::sync::{Arc, RwLock};
 use crate::stage::file_contents_cache::FileContentsCache;
-use std::path::PathBuf;
-use std::borrow::{BorrowMut, Borrow};
+use std::path::{Path};
 use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
 use crate::stage::ast_cache::{AstCache, ModuleAST};
 use crate::erl_parse;
-use crate::erl_parse::ast::ASTNode;
+use crate::erl_parse::ast::ErlAstNode;
+use crate::stage::compile_module::CompileModule;
+use crate::project::compiler_opts::CompilerOpts;
+use crate::types::ArcRw;
 
 /// Run syntax parser on an ERL or HRL source file
-fn parse_file(file_name: &PathBuf, file_contents: &String) -> ErlResult<Vec<ASTNode>> {
+fn parse_file(file_name: &Path,
+              file_contents: &str,
+              compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
+  let _module = CompileModule::new(file_name, compile_options);
+
   let (remaining, ast_tree) = erl_parse::parse_module(&file_contents)?;
   if remaining.is_empty() {
     Ok(ast_tree)
   } else {
     let msg = String::from("Source file still contains unconsumed data after parse");
-    Err(ErlError::ErlParseError(ErrorLocation::SourceFile(file_name.clone()), msg))
+    Err(ErlError::ErlParseError(ErrorLocation::from_source_file(file_name), msg))
   }
 }
 
@@ -33,7 +39,8 @@ pub fn run(project: &mut ErlProject,
 
     // Take only .erl and .hrl files
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
-      let ast_tree = parse_file(&path, &contents)?;
+      let compile_options = project.get_compiler_options_for(path);
+      let ast_tree = parse_file(&path, &contents, compile_options)?;
       ast_cache.syntax_trees.insert(path.clone(),
                                     ModuleAST::new(ast_tree));
     }

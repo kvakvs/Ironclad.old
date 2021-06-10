@@ -1,8 +1,5 @@
-use std::fmt;
 use std::fmt::Debug;
-use std::path::Path;
 use crate::project::conf::input_opts::InputOptsConf;
-use std::ffi::OsStr;
 
 /// Same as InputOptsConf but no Option<> fields
 /// Contains source tree from the project file, or detected from the file system
