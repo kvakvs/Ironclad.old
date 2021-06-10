@@ -7,27 +7,29 @@ use std::borrow::{BorrowMut, Borrow};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use crate::erl_parse::pp_ast::PpAstNode;
+use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache};
+use crate::stage::ast_cache::AstCache;
+use crate::types::ArcRw;
 
 /// Returns: True if a file was preprocessed
 fn preprocess_file(file_name: &PathBuf,
-                   hrl_cache: &mut FileContentsCache,
+                   hrl_cache: &mut PpAstCache,
                    erl_cache: &mut FileContentsCache) -> ErlResult<bool> {
-    let contents = erl_cache.contents.get(file_name).unwrap(); // trust that file exists
-    let (tail, pp_ast) = erl_parse::preprocessor::parse_module(&contents)?;
-    println!("\n\
+  let contents = erl_cache.contents.get(file_name).unwrap(); // trust that file exists
+  let (tail, pp_ast) = erl_parse::pp_parse::parse_module(&contents)?;
+  println!("\n\
         filename: {}\n\
         PP AST {:?}", file_name.display(), pp_ast);
-    if tail.len() > 0 {
-        println!("Parse did not succeed. Remaining input: {}", tail);
-        return Ok(false)
-    }
+  if tail.len() > 0 {
+    println!("Parse did not succeed. Remaining input: {}", tail);
+    return Ok(false);
+  }
 
-    let output = handle_pp_ast(pp_ast);
+  let output = handle_pp_ast(pp_ast, hrl_cache);
 
-    // Success: insert new string into preprocessed source cache
-    erl_cache.contents.insert(file_name.clone(), output);
-    Ok(true)
+  // Success: insert new string into preprocessed source cache
+  erl_cache.contents.insert(file_name.clone(), output);
+  Ok(true)
 }
 
 /// Interpret parsed attributes/preprocessor directives from top to bottom
@@ -35,28 +37,28 @@ fn preprocess_file(file_name: &PathBuf,
 /// - Load include files and paste them where include directive was found. Continue interpretation.
 /// - Substitute macros.
 /// In the end, return a new preprocessed string.
-fn handle_pp_ast(ast: Vec<PpAstNode>) -> String {
-    let mut output: Vec<String> = Vec::with_capacity(ast.len());
+fn handle_pp_ast(ast: Vec<PpAstNode>, hrl_cache: &mut PpAstCache) -> String {
+  let mut output: Vec<String> = Vec::with_capacity(ast.len());
 
-    // From top to down interpret the preprocessed AST. Includes will restart the intepretation
-    // from the pasted included AST.
-    let mut pos = 0usize;
+  // From top to down interpret the preprocessed AST. Includes will restart the intepretation
+  // from the pasted included AST.
+  let mut pos = 0usize;
 
-    while pos < ast.len() {
-        match ast[pos] {
-            PpAstNode::Comment(_) => {}
-            PpAstNode::Text(_) => {}
-            // An attribute without parens
-            PpAstNode::Attr0(_) => {}
-            PpAstNode::Attr(_, _) => {}
-            PpAstNode::PasteMacro(_, _) => {}
-            PpAstNode::PasteMacroAsString(_, _) => {}
-        }
-
-        pos += 1;
+  while pos < ast.len() {
+    match ast[pos] {
+      PpAstNode::Comment(_) => {}
+      PpAstNode::Text(_) => {}
+      // An attribute without parens
+      PpAstNode::Attr0(_) => {}
+      PpAstNode::Attr(_, _) => {}
+      PpAstNode::PasteMacro(_, _) => {}
+      PpAstNode::PasteMacroAsString(_, _) => {}
     }
 
-    output.join("")
+    pos += 1;
+  }
+
+  output.join("")
 }
 
 /// Preprocessor stage
@@ -66,32 +68,33 @@ fn handle_pp_ast(ast: Vec<PpAstNode>) -> String {
 /// Side effects: Updates file contents cache
 /// Returns: preprocessed collection of module sources
 pub fn run(project: &mut ErlProject,
-           file_contents: Arc<RwLock<FileContentsCache>>,
+           file_contents: ArcRw<FileContentsCache>,
 ) -> ErlResult<()> {
-    let mut hrl_cache = FileContentsCache::new();
+  let mut hrl_cache = PpAstCache::new();
 
-    // Take only .erl files
-    let mut erl_cache_rw = file_contents.write().unwrap();
+  // Take only .erl files
+  let mut erl_cache_rw = file_contents.write().unwrap();
 
-    let all_erl_files: HashSet<PathBuf> = erl_cache_rw.contents.keys()
-        .into_iter()
-        .filter(|path| path.to_string_lossy().ends_with(".erl"))
-        .cloned()
-        .collect();
-    let mut preprocessed_count = 0;
+  let all_erl_files: HashSet<PathBuf> = erl_cache_rw.contents.keys()
+      .into_iter()
+      .filter(|path| path.to_string_lossy().ends_with(".erl"))
+      .cloned()
+      .collect();
+  let mut preprocessed_count = 0;
 
-    all_erl_files.into_iter().for_each(
-        |path| {
-            if preprocess_file(&path,
-                               hrl_cache.borrow_mut(),
-                               erl_cache_rw.borrow_mut()).unwrap() {
-                preprocessed_count += 1;
-            }
-        });
+  // For all input files, run preprocess parse and interpred the preprocessor directives
+  // Loaded and parsed HRL files are cached to be inserted into every include location
+  all_erl_files.into_iter().for_each(
+    |path| {
+      if preprocess_file(&path,
+                         &mut hrl_cache,
+                         erl_cache_rw.borrow_mut()).unwrap() {
+        preprocessed_count += 1;
+      }
+    });
 
-    println!("Preprocessed {} sources", preprocessed_count);
-
-    // Drop .hrl file contents after preprocess stage
-    // let arc_hrl_cache = Arc::new(RwLock::new(hrl_cache));
-    Ok(())
+  println!("Preprocessed {} sources, {} includes",
+           preprocessed_count,
+           hrl_cache.syntax_trees.len());
+  Ok(())
 }

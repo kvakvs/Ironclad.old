@@ -7,23 +7,23 @@ use std::sync::Arc;
 /// - List of forms: attributes, and Erlang functions
 /// - Compiler options used to produce this module
 pub struct ErlModule {
-    /// Options used to build this module. Possibly just a ref to the main project's options
-    compiler_options: Arc<CompilerOpts>,
-    name: String,
+  /// Options used to build this module. Possibly just a ref to the main project's options
+  compiler_options: Arc<CompilerOpts>,
+  name: String,
 }
 
 impl Default for ErlModule {
-    fn default() -> Self {
-        Self {
-            compiler_options: Default::default(),
-            name: "".to_string()
-        }
+  fn default() -> Self {
+    Self {
+      compiler_options: Default::default(),
+      name: "".to_string(),
     }
+  }
 }
 
 
 impl Debug for ErlModule {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ErlModule({})", self.name)
-    }
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "ErlModule({})", self.name)
+  }
 }

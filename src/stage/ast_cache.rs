@@ -8,21 +8,21 @@ use crate::erl_parse::ast::ASTNode;
 // }
 
 pub struct ModuleAST {
-    pub forms: Vec<ASTNode>,
+  pub forms: Vec<ASTNode>,
 }
 
 impl ModuleAST {
-    pub fn new(forms: Vec<ASTNode>) -> Self {
-        Self { forms }
-    }
+  pub fn new(forms: Vec<ASTNode>) -> Self {
+    Self { forms }
+  }
 }
 
-pub struct ASTCache {
-    pub syntax_trees: HashMap<PathBuf, ModuleAST>,
+pub struct AstCache {
+  pub syntax_trees: HashMap<PathBuf, ModuleAST>,
 }
 
-impl ASTCache {
-    pub fn new() -> Self {
-        Self { syntax_trees: Default::default() }
-    }
+impl AstCache {
+  pub fn new() -> Self {
+    Self { syntax_trees: Default::default() }
+  }
 }

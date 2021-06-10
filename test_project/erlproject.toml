@@ -2,7 +2,7 @@
 include_paths = []
 
 [inputs]
-files = ["*.erl"]
+files = ["beam_asm.erl"]
 directories = ["test_project/src"]
 #directories = ["test_project/src_small"]
 exclude_files = []

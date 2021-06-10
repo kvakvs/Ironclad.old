@@ -12,6 +12,8 @@ use crate::project::conf::ErlProjectConf;
 use glob::{glob, GlobError};
 use std::path::PathBuf;
 use std::collections::HashSet;
+use crate::stage;
+use crate::erl_parse::pp_ast::PpAstCache;
 
 pub(crate) mod conf;
 pub(crate) mod compiler_opts;
@@ -70,6 +72,20 @@ impl ErlProject {
     file_set.insert(abs_path);
 
     Ok(())
+  }
+
+  pub  fn compile(mut project: ErlProject) {
+    // Load files and store contents in the hashmap
+    let file_cache = stage::preload::run(&mut project);
+
+    // Preprocess erl files, and store preprocessed (Text|AST?) in a new hashmap
+    let preproc_cache = stage::preprocess::run(&mut project, file_cache.clone())
+        .unwrap();
+
+
+    // Parse all ERL and HRL files
+    let ast_cache = stage::parse::run(&mut project, file_cache.clone())
+        .unwrap();
   }
 }
 
