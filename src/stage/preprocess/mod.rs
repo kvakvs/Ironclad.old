@@ -15,10 +15,14 @@ fn preprocess_file(file_name: &PathBuf,
     let output = String::new();
 
     let contents = erl_cache.contents.get(file_name).unwrap(); // trust that file exists
-    let (_tail, pp_forms) = erl_parse::preprocessor::parse_module(&contents)?;
+    let (tail, pp_forms) = erl_parse::preprocessor::parse_module(&contents)?;
     println!("\n\
         filename: {}\n\
         PP AST {:?}", file_name.display(), pp_forms);
+    if tail.len() > 0 {
+        println!("Parse did not succeed. Remaining input: {}", tail);
+        return Ok(false)
+    }
 
     // Success: insert new string into preprocessed source cache
     erl_cache.contents.insert(file_name.clone(), output);

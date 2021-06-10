@@ -41,6 +41,5 @@ fn main() {
     let ast_cache = stage::parse::run(&mut project, file_cache.clone())
         .unwrap();
 
-
     ()
 }
