@@ -17,6 +17,12 @@ pub struct Span {
   pub len: usize,
 }
 
+impl Span {
+  pub fn new(pos: usize, len: usize) -> Self {
+    Self { pos, len }
+  }
+}
+
 // fn parse_module_attribute(i: &str) -> nom::IResult<String, AST> {
 //     nom::sequence::tuple((
 //         ws(nom::bytes::complete::tag("-module")),

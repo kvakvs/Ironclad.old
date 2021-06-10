@@ -15,8 +15,7 @@ fn parse_file(file_name: &PathBuf, file_contents: &String) -> ErlResult<Vec<ASTN
     Ok(ast_tree)
   } else {
     let msg = String::from("Source file still contains unconsumed data after parse");
-    let src_file_str = file_name.to_string_lossy().to_string();
-    Err(ErlError::ErlParseError(ErrorLocation::SourceFile(src_file_str), msg))
+    Err(ErlError::ErlParseError(ErrorLocation::SourceFile(file_name.clone()), msg))
   }
 }
 

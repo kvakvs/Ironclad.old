@@ -10,6 +10,7 @@ use crate::project::ErlProject;
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
+#[derive(Clone)]
 pub enum PpAstNode {
   /// A % line comment
   Comment(String),
@@ -24,7 +25,7 @@ pub enum PpAstNode {
   /// Paste macro arguments as is, use as: ??PARAM
   PasteMacroAsString(String, Vec<String>),
   /// Included file from HRL cache
-  IncludedFile(ArcRw<Vec<PpAstNode>>),
+  IncludedFile(ArcRw<PpAstTree>),
 }
 
 impl PpAstNode {
@@ -44,14 +45,33 @@ impl Debug for PpAstNode {
       Self::Attr0(a) => write!(f, "Attr0({})", a),
       Self::Attr(a, args) => write!(f, "Attr({}, {:?})", a, args),
       Self::PasteMacro(_, _) => write!(f, "?M"),
-      Self::PasteMacroAsString(_, _) => write!(f, "??M")
+      Self::PasteMacroAsString(_, _) => write!(f, "??M"),
+      Self::IncludedFile(include_rwlock) => {
+        let ast_r = include_rwlock.read().unwrap();
+        let result = write!(f, "include<{}>", ast_r.file_name.display());
+        drop(ast_r);
+        result
+      }
     }
+  }
+}
+
+pub struct PpAstTree {
+  /// Clone of filename where this was loaded from
+  pub file_name: PathBuf,
+  /// The parsed preprocessor syntax tree ready for inclusion
+  pub nodes: Vec<PpAstNode>,
+}
+
+impl PpAstTree {
+  pub fn new(file_name: PathBuf, nodes: Vec<PpAstNode>) -> Self {
+    PpAstTree { file_name, nodes }
   }
 }
 
 /// Stores HRL files parsed into PpAst tokens ready to be included into other files.
 pub struct PpAstCache {
-  pub syntax_trees: HashMap<PathBuf, ArcRw<Vec<PpAstNode>>>,
+  pub syntax_trees: HashMap<PathBuf, ArcRw<PpAstTree>>,
 }
 
 impl PpAstCache {

@@ -188,6 +188,7 @@ dependencies = [
  "nom",
  "serde",
  "serde_derive",
+ "tap",
  "thiserror",
  "toml",
 ]

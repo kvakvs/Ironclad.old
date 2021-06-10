@@ -8,6 +8,7 @@ mod erl_error;
 mod stage;
 
 extern crate nom;
+extern crate tap;
 extern crate toml;
 extern crate serde;
 extern crate serde_derive;

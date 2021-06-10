@@ -20,11 +20,23 @@ impl FileContentsCache {
   }
 
   /// Load file contents, store entire contents in the hashmap
-  pub(crate) fn preload_file(&mut self, filename: &PathBuf) -> ErlResult<()> {
-    let contents = std::fs::read_to_string(filename)?;
-    // println!("Loaded {} - {} bytes", filename.display(), contents.len());
+  pub(crate) fn preload_file(&mut self, file_name: &PathBuf) -> ErlResult<()> {
+    println!("Attempt to load file: {:?}", file_name);
+
+    let contents = std::fs::read_to_string(file_name)?;
     self.read_bytes_count += contents.len();
-    self.contents.insert(filename.clone(), contents);
+    self.contents.insert(file_name.clone(), contents);
     Ok(())
+  }
+
+  /// Retrieve cached file contents or attempt to load (and update the cache)
+  pub(crate) fn get_or_load(&mut self, file_name: &PathBuf) -> ErlResult<String> {
+    match self.contents.get(file_name) {
+      None => {
+        self.preload_file(file_name)?;
+        self.get_or_load(file_name)
+      }
+      Some(contents) => Ok(contents.clone())
+    }
   }
 }

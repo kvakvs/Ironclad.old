@@ -1,5 +1,5 @@
 use crate::project::ErlProject;
-use crate::erl_parse::pp_ast::PpAstNode;
+use crate::erl_parse::pp_ast::{PpAstNode, PpAstTree};
 use crate::erl_parse::helpers::ws;
 use nom::combinator::{recognize, map_res, map, opt};
 use nom::sequence::{pair, tuple, delimited, terminated};
@@ -9,6 +9,9 @@ use nom::bytes::complete::{tag, take_till1, take_till, take_until};
 use nom::multi::{many0, many_till, separated_list0};
 use crate::erl_parse::Span;
 use nom::Parser;
+use crate::erl_error::ErlError::ErlParseError;
+use crate::erl_error::{ErlResult, ErrorLocation};
+use std::path::PathBuf;
 
 /// Consume a sequence of a-zA-Z and 0-9 and underscore, which must start with not a number
 ///
@@ -130,12 +133,20 @@ fn parse_attr_noargs(input: &str) -> nom::IResult<&str, PpAstNode> {
 /// ??MACRO to stringify the tokens in the macro argument
 ///
 /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
-pub fn parse_module(input: &str) -> nom::IResult<&str, Vec<PpAstNode>> {
-  many0(
+pub fn parse_module(file_name: &PathBuf, input: &str) -> ErlResult<PpAstTree> {
+  let (tail, pp_ast) = many0(
     alt((
       line_comment,
       parse_attr,
       parse_attr_noargs,
       parse_line,
-    )))(input)
+    )))(input)?;
+  if tail.len() > 0 {
+    println!("Parse did not succeed. Remaining input: {}", tail);
+    let span = Span::new(input.len() - tail.len(), tail.len());
+    return Err(ErlParseError(ErrorLocation::SourceFileSpan(file_name.clone(), span),
+                             String::from("Parse did not succeed, input remaining.")));
+  }
+  let pp_tree = PpAstTree::new(file_name.clone(), pp_ast);
+  Ok(pp_tree)
 }
