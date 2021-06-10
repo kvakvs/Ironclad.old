@@ -7,7 +7,7 @@ mod helpers;
 pub mod preprocessor;
 mod atom;
 pub mod ast;
-mod pp_ast;
+pub mod pp_ast;
 
 /// Points to source file position and length for a text fragment.
 /// This is like &str but is not pinned to a memory address or the source string lifetime.

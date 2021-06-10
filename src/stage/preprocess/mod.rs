@@ -1,32 +1,62 @@
-use errloc_macros::errloc;
-use crate::project::ErlProject;
-use std::sync::{Arc, RwLock};
-use crate::stage::file_contents_cache::FileContentsCache;
-use std::path::PathBuf;
-use std::borrow::{BorrowMut, Borrow};
 use crate::erl_error::{ErlResult, ErlError};
-use std::collections::HashSet;
 use crate::erl_parse;
+use crate::project::ErlProject;
+use crate::stage::file_contents_cache::FileContentsCache;
+use errloc_macros::errloc;
+use std::borrow::{BorrowMut, Borrow};
+use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
+use crate::erl_parse::pp_ast::PpAstNode;
 
 /// Returns: True if a file was preprocessed
 fn preprocess_file(file_name: &PathBuf,
                    hrl_cache: &mut FileContentsCache,
                    erl_cache: &mut FileContentsCache) -> ErlResult<bool> {
-    let output = String::new();
-
     let contents = erl_cache.contents.get(file_name).unwrap(); // trust that file exists
-    let (tail, pp_forms) = erl_parse::preprocessor::parse_module(&contents)?;
+    let (tail, pp_ast) = erl_parse::preprocessor::parse_module(&contents)?;
     println!("\n\
         filename: {}\n\
-        PP AST {:?}", file_name.display(), pp_forms);
+        PP AST {:?}", file_name.display(), pp_ast);
     if tail.len() > 0 {
         println!("Parse did not succeed. Remaining input: {}", tail);
         return Ok(false)
     }
 
+    let output = handle_pp_ast(pp_ast);
+
     // Success: insert new string into preprocessed source cache
     erl_cache.contents.insert(file_name.clone(), output);
     Ok(true)
+}
+
+/// Interpret parsed attributes/preprocessor directives from top to bottom
+/// - Exclude ifdef/if/ifndef sections where the condition check fails
+/// - Load include files and paste them where include directive was found. Continue interpretation.
+/// - Substitute macros.
+/// In the end, return a new preprocessed string.
+fn handle_pp_ast(ast: Vec<PpAstNode>) -> String {
+    let mut output: Vec<String> = Vec::with_capacity(ast.len());
+
+    // From top to down interpret the preprocessed AST. Includes will restart the intepretation
+    // from the pasted included AST.
+    let mut pos = 0usize;
+
+    while pos < ast.len() {
+        match ast[pos] {
+            PpAstNode::Comment(_) => {}
+            PpAstNode::Text(_) => {}
+            // An attribute without parens
+            PpAstNode::Attr0(_) => {}
+            PpAstNode::Attr(_, _) => {}
+            PpAstNode::PasteMacro(_, _) => {}
+            PpAstNode::PasteMacroAsString(_, _) => {}
+        }
+
+        pos += 1;
+    }
+
+    output.join("")
 }
 
 /// Preprocessor stage
