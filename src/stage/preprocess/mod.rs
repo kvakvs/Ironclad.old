@@ -5,6 +5,7 @@ use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{PathBuf, Path};
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache, PpAstTree};
 use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
+use crate::erl_parse::pp_directive::pp_include::PpInclude;
 
 fn load_and_parse_pp_ast(file_name: &Path, contents: &str) -> ErlResult<ArcRw<PpAstTree>> {
   let pp_ast = erl_parse::pp_parse::parse_module(file_name, &contents)?;
@@ -50,22 +51,21 @@ fn preprocess_file(file_name: &Path,
 fn interpret_include_directive(source_file_path: &Path,
                                node: &PpAstNode,
                                ast_cache: ArcRw<PpAstCache>,
-                               file_cache: ArcRw<FileContentsCache>) -> PpAstNode {
+                               file_cache: ArcRw<FileContentsCache>) -> ErlResult<PpAstNode> {
   match node {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
     // TODO: -include_lib()
-    PpAstNode::Attr(name, args) if name == "include" => {
-      let path_in_quotes = args[0].trim_matches(|c| c == '\"');
+    PpAstNode::Attr { name, body } if name == "include" => {
+      let directive = PpInclude::parse_from(source_file_path, body)?;
 
       // Take source file's parent dir and append to it the include path (unless it was absolute?)
-      let path_in_include_directive = Path::new(path_in_quotes);
       let source_path = Path::new(source_file_path);
 
-      let include_path = if path_in_include_directive.is_absolute() {
-        PathBuf::from(path_in_quotes)
+      let include_path = if directive.file_name.is_absolute() {
+        directive.file_name.clone()
       } else {
-        source_path.parent().unwrap().join(path_in_quotes)
+        source_path.parent().unwrap().join(directive.file_name)
       };
 
       // TODO: Path resolution relative to the file path
@@ -86,16 +86,16 @@ fn interpret_include_directive(source_file_path: &Path,
                            |ac| {
                              ac.syntax_trees.insert(include_path.clone(), ast_tree.clone());
                            });
-          PpAstNode::IncludedFile(ast_tree)
+          Ok(PpAstNode::IncludedFile(ast_tree))
         }
         Some(arc_ast) => {
           let result = PpAstNode::IncludedFile(arc_ast.clone());
           drop(ast_r);
-          result
+          Ok(result)
         }
       }
     }
-    _ => node.clone()
+    _ => Ok(node.clone())
   }
 }
 
@@ -121,7 +121,7 @@ fn interpret_pp_ast(source_file_path: &Path,
         interpret_include_directive(source_file_path,
                                     node,
                                     ast_cache.clone(),
-                                    file_cache.clone())
+                                    file_cache.clone()).unwrap()
       })
       .collect();
 
@@ -129,22 +129,21 @@ fn interpret_pp_ast(source_file_path: &Path,
       .for_each(|node| {
         println!("Interpret: {:?}", node);
 
-        match node {
+        match &node {
           PpAstNode::Comment(_) => {} // skip
-          PpAstNode::Text(t) => output.push(t), // TODO: Push spans from input
+          PpAstNode::Text(t) => output.push(t.clone()), // TODO: Push spans from input
 
           // An attribute without parens
-          PpAstNode::Attr0(_) => {}
-          PpAstNode::Attr(_, _) => {}
+          PpAstNode::Attr { name, body } => println!("{:?}", node),
 
-          PpAstNode::PasteMacro(name, _) => println!("paste macro ?{}", name),
-          PpAstNode::PasteMacroAsString(name, _) => println!("paste macro param ??{}", name),
+          PpAstNode::PasteMacro { name, body } => println!("{:?}", node),
+          PpAstNode::StringifyMacroParam { name } => println!("{:?}", node),
 
           PpAstNode::IncludedFile(include_ast_tree) => {
             // TODO: Return ErlResult
             let include_interpret_output = interpret_pp_ast(
               source_file_path,
-              include_ast_tree,
+              include_ast_tree.clone(),
               ast_cache.clone(),
               file_cache.clone(),
             ).unwrap();

@@ -14,14 +14,12 @@ pub enum PpAstNode {
   Comment(String),
   /// Any text
   Text(String),
-  /// Any attribute without parentheses, -else. or -endif.
-  Attr0(String),
   /// Any attribute even with 0 args, -if(), -define(NAME, xxxxx)
-  Attr(String, Vec<String>),
+  Attr { name: String, body: Option<String> },
   /// Paste macro tokens/text as is, use as: ?NAME
-  PasteMacro(String, Vec<String>),
+  PasteMacro { name: String, body: Option<String> },
   /// Paste macro arguments as is, use as: ??PARAM
-  PasteMacroAsString(String, Vec<String>),
+  StringifyMacroParam { name: String },
   /// Included file from HRL cache
   IncludedFile(ArcRw<PpAstTree>),
 }
@@ -40,10 +38,9 @@ impl Debug for PpAstNode {
     match self {
       Self::Comment(s) => write!(f, "%({})", Self::trim(s)),
       Self::Text(s) => write!(f, "T({})", Self::trim(s)),
-      Self::Attr0(a) => write!(f, "Attr0({})", a),
-      Self::Attr(a, args) => write!(f, "Attr({}, {:?})", a, args),
-      Self::PasteMacro(_, _) => write!(f, "?M"),
-      Self::PasteMacroAsString(_, _) => write!(f, "??M"),
+      Self::Attr { name, body } => write!(f, "Attr({}, {:?})", name, body),
+      Self::PasteMacro { name, body } => write!(f, "?{}({:?})", name, body),
+      Self::StringifyMacroParam { name } => write!(f, "??{}", name),
       Self::IncludedFile(include_rwlock) => {
         let ast_r = include_rwlock.read().unwrap();
         let result = write!(f, "include<{}>", ast_r.file_name.display());
