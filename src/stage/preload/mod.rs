@@ -12,7 +12,7 @@ pub fn run(project: &mut ErlProject) -> ErlResult<ArcRw<FileContentsCache>> {
     state.preload_file(filename)?
   }
   println!("Read {} files, {} bytes (without include files)",
-           state.contents.len(),
+           state.all_files.len(),
            state.read_bytes_count);
 
   Ok(create_arcrw(state))

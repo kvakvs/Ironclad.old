@@ -9,14 +9,16 @@ use crate::erl_parse::ast::ErlAstNode;
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::types::ArcRw;
+use crate::project::source_file::SourceFile;
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
-              file_contents: &str,
+              file_contents: Arc<SourceFile>,
               compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
 
-  let (remaining, ast_tree) = erl_parse::parse_module(&file_contents)?;
+  let (remaining, ast_tree) = erl_parse::parse_module(file_contents)?;
+
   if remaining.is_empty() {
     Ok(ast_tree)
   } else {
@@ -34,13 +36,17 @@ pub fn run(project: &mut ErlProject,
 
   let file_contents_r = contents_cache.read().unwrap();
 
-  for (path, contents) in &file_contents_r.contents {
+  for (path, source_file) in &file_contents_r.all_files {
     let path_s = path.to_string_lossy();
 
     // Take only .erl and .hrl files
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
       let compile_options = project.get_compiler_options_for(path);
-      let ast_tree = parse_file(&path, &contents, compile_options)?;
+      let ast_tree = parse_file(
+        &path,
+        source_file.clone(),
+        compile_options
+      )?;
       ast_cache.syntax_trees.insert(path.clone(),
                                     ModuleAST::new(ast_tree));
     }

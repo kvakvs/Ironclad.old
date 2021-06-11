@@ -4,75 +4,71 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::types::ArcRw;
 use crate::project::ErlProject;
+use std::sync::Arc;
+use crate::project::source_file::SourceFile;
+use crate::erl_parse::Span;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Clone)]
-pub enum PpAstNode<'a> {
+pub enum PpAstNode {
   /// A % line comment
-  Comment(&'a str),
+  Comment(Span),
   /// Any text
-  Text(&'a str),
+  Text(Span),
   /// Any attribute even with 0 args, -if(), -define(NAME, xxxxx)
-  Attr { name: &'a str, body: Option<&'a str> },
+  Attr { name: String, body: Option<Span> },
   /// Paste macro tokens/text as is, use as: ?NAME
-  PasteMacro { name: &'a str, body: Option<&'a str> },
+  PasteMacro { name: String, body: Option<Span> },
   /// Paste macro arguments as is, use as: ??PARAM
-  StringifyMacroParam { name: &'a str },
+  StringifyMacroParam { name: String },
   /// Included file from HRL cache
-  IncludedFile(ArcRw<PpAstTree<'a>>),
+  IncludedFile(Arc<PpAstTree>),
 }
 
-impl<'a> PpAstNode<'a> {
-  pub fn trim(s: &'a str) -> &'a str {
+impl PpAstNode {
+  pub fn trim(s: &str) -> &str {
     const CLAMP_LENGTH: usize = 40;
     let trimmed = s.trim();
     if trimmed.len() <= CLAMP_LENGTH { return trimmed; }
     &trimmed[..CLAMP_LENGTH - 1]
   }
-}
 
-impl<'a> Debug for PpAstNode<'a> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  pub fn fmt(&self, source_file: &SourceFile) -> String {
     match self {
-      Self::Comment(s) => write!(f, "%({})", Self::trim(s)),
-      Self::Text(s) => write!(f, "T({})", Self::trim(s)),
-      Self::Attr { name, body } => write!(f, "Attr({}, {:?})", name, body),
-      Self::PasteMacro { name, body } => write!(f, "?{}({:?})", name, body),
-      Self::StringifyMacroParam { name } => write!(f, "??{}", name),
-      Self::IncludedFile(include_rwlock) => {
-        let ast_r = include_rwlock.read().unwrap();
-        let result = write!(f, "include<{}>", ast_r.file_name.display());
-        drop(ast_r);
-        result
-      }
+      Self::Comment(s) => format!("%({})", Self::trim(s.text(source_file))),
+      Self::Text(s) => format!("T({})", Self::trim(s.text(source_file))),
+      Self::Attr { name, body } => format!("Attr({}, {:?})", name, body),
+      Self::PasteMacro { name, body } => format!("?{}({:?})", name, body),
+      Self::StringifyMacroParam { name } => format!("??{}", name),
+      Self::IncludedFile(include_rc) => format!("include<{}>", include_rc.source.file_name.display()),
     }
   }
 }
 
 /// Lifetime note: Parse input string must live at least as long as this is alive
-pub struct PpAstTree<'a> {
-  /// Clone of filename where this was loaded from
-  pub file_name: PathBuf,
+pub struct PpAstTree {
+  pub source: Arc<SourceFile>,
   /// The parsed preprocessor syntax tree ready for inclusion
-  pub nodes: Vec<PpAstNode<'a>>,
+  pub nodes: Vec<PpAstNode>,
 }
 
-impl<'a> PpAstTree<'a> {
-  pub fn new(file_name: PathBuf, nodes: Vec<PpAstNode<'a>>) -> Self {
-    PpAstTree { file_name, nodes }
+impl PpAstTree {
+  /// Take ownership on source text
+  pub fn new(source_file: Arc<SourceFile>, nodes: Vec<PpAstNode>) -> Self {
+    PpAstTree { nodes, source: source_file }
   }
 }
 
 /// Stores HRL files parsed into PpAst tokens ready to be included into other files.
 /// Lifetime note: Cache must live at least as long as parse trees are alive
-pub struct PpAstCache<'a> {
-  pub syntax_trees: HashMap<PathBuf, ArcRw<PpAstTree<'a>>>,
+pub struct PpAstCache {
+  pub syntax_trees: HashMap<PathBuf, Arc<PpAstTree>>,
 }
 
-impl<'a> PpAstCache<'a> {
+impl PpAstCache {
   pub fn new() -> Self {
     Self { syntax_trees: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4) }
   }

@@ -3,19 +3,22 @@ use std::path::{PathBuf, Path};
 
 use crate::erl_error::ErlResult;
 use crate::project::ErlProject;
+use crate::project::source_file::SourceFile;
+use std::ops::DerefMut;
+use std::sync::Arc;
 
 /// Contains loaded files ready for parse by the preprocessor.
 /// More files will be added in preprocess stage, as include directives are parsed
 pub struct FileContentsCache {
   pub read_bytes_count: usize,
-  pub contents: HashMap<PathBuf, String>,
+  pub all_files: HashMap<PathBuf, Arc<SourceFile>>,
 }
 
-impl FileContentsCache {
+impl<'a> FileContentsCache {
   pub fn new() -> Self {
     Self {
       read_bytes_count: 0,
-      contents: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY),
+      all_files: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY),
     }
   }
 
@@ -25,19 +28,28 @@ impl FileContentsCache {
 
     let contents = std::fs::read_to_string(file_name)?;
     self.read_bytes_count += contents.len();
-    self.contents.insert(file_name.to_path_buf(), contents);
+
+    let src_file_definition = Arc::new(SourceFile::new(file_name, contents));
+    self.all_files.insert(file_name.to_path_buf(), src_file_definition);
     Ok(())
   }
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
-  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> ErlResult<String> {
-    match self.contents.get(file_name) {
+  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> ErlResult<Arc<SourceFile>> {
+    match self.all_files.get(file_name) {
       None => {
         self.preload_file(file_name)?;
         self.get_or_load(file_name)
       }
       Some(contents) => Ok(contents.clone())
     }
+  }
+
+  /// As source file text is read only, we replace.
+  /// The parse trees referring the the old source file will retain their Arc<> to the old version
+  pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
+    let new_source_file = Arc::new(SourceFile::new(file_name, new_text));
+    self.all_files.insert(file_name.to_path_buf(), new_source_file);
   }
 }

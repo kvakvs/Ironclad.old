@@ -13,6 +13,7 @@ use crate::types::{ArcRw, create_arcrw};
 pub(crate) mod conf;
 pub(crate) mod compiler_opts;
 pub(crate) mod input_opts;
+pub(crate) mod source_file;
 
 /// Same as ErlProjectConf but no Option<> fields
 #[derive(Debug)]
