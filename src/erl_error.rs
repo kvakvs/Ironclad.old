@@ -18,54 +18,65 @@ impl ErrorLocation {
 #[derive(Error, Debug)]
 pub enum ErlError {
   #[error("File IO error: {0:?}")]
-  IoError(std::io::Error),
+  Io(std::io::Error),
 
   // Project errors produced when glob() scanning input files and directories
   #[error("Glob directory scan error: {0:?}")]
-  GlobError(glob::GlobError),
+  Glob(glob::GlobError),
+
   #[error("Glob pattern error: {0:?}")]
-  GlobPatternError(glob::PatternError),
+  GlobPattern(glob::PatternError),
 
   // Project loading error produced when loading TOML
   #[error("Configuration file syntax error: {0:?}")]
-  ConfigError(toml::de::Error),
+  Config(toml::de::Error),
 
   // Lock poisoning happens when a Write-lock caught a panic
   // #[error("Compiler internal data locking error")]
   // LockingPoisonError,
 
+  #[error("Preprocessor parse error: {1} (at {0:?})")]
+  PpParse(ErrorLocation, String),
+
   #[error("Erlang parse error: {1} (at {0:?})")]
-  ErlParseError(ErrorLocation, String),
+  ErlParse(ErrorLocation, String),
+}
+
+impl ErlError {
+  pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
+    Err(ErlError::PpParse(ErrorLocation::from_source_file(file_name),
+                          String::from(message)))
+  }
 }
 
 pub type ErlResult<T> = Result<T, ErlError>;
 
 impl From<std::io::Error> for ErlError {
   fn from(value: std::io::Error) -> Self {
-    ErlError::IoError(value)
+    ErlError::Io(value)
   }
 }
 
 impl From<toml::de::Error> for ErlError {
   fn from(value: toml::de::Error) -> Self {
-    ErlError::ConfigError(value)
+    ErlError::Config(value)
   }
 }
 
 impl From<glob::GlobError> for ErlError {
   fn from(value: glob::GlobError) -> Self {
-    ErlError::GlobError(value)
+    ErlError::Glob(value)
   }
 }
 
 impl From<glob::PatternError> for ErlError {
   fn from(value: glob::PatternError) -> Self {
-    ErlError::GlobPatternError(value)
+    ErlError::GlobPattern(value)
   }
 }
 
 impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
   fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
-    ErlError::ErlParseError(ErrorLocation::None, value.to_string())
+    ErlError::ErlParse(ErrorLocation::None, value.to_string())
   }
 }

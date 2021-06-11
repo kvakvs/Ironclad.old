@@ -63,7 +63,7 @@ fn interpret_include_directive(source_file_path: &Path,
       let source_path = Path::new(source_file_path);
 
       let include_path = if directive.file_name.is_absolute() {
-        directive.file_name.clone()
+        directive.file_name
       } else {
         source_path.parent().unwrap().join(directive.file_name)
       };
@@ -134,10 +134,10 @@ fn interpret_pp_ast(source_file_path: &Path,
           PpAstNode::Text(t) => output.push(t.clone()), // TODO: Push spans from input
 
           // An attribute without parens
-          PpAstNode::Attr { name, body } => println!("{:?}", node),
+          PpAstNode::Attr { name: _, body: _ } => println!("{:?}", node),
 
-          PpAstNode::PasteMacro { name, body } => println!("{:?}", node),
-          PpAstNode::StringifyMacroParam { name } => println!("{:?}", node),
+          PpAstNode::PasteMacro { name: _, body:_ } => println!("{:?}", node),
+          PpAstNode::StringifyMacroParam { name :_} => println!("{:?}", node),
 
           PpAstNode::IncludedFile(include_ast_tree) => {
             // TODO: Return ErlResult

@@ -21,7 +21,7 @@ fn parse_file(file_name: &Path,
     Ok(ast_tree)
   } else {
     let msg = String::from("Source file still contains unconsumed data after parse");
-    Err(ErlError::ErlParseError(ErrorLocation::from_source_file(file_name), msg))
+    Err(ErlError::ErlParse(ErrorLocation::from_source_file(file_name), msg))
   }
 }
 

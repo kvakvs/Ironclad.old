@@ -7,7 +7,7 @@ use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
 
 use crate::erl_error::{ErlResult, ErrorLocation};
-use crate::erl_error::ErlError::ErlParseError;
+use crate::erl_error::ErlError::ErlParse;
 use crate::erl_parse::Span;
 use nom::branch::alt;
 use nom::combinator::{map, value, verify, map_res, map_opt};
@@ -83,7 +83,7 @@ fn parse_unicode<'a, E>(input: &'a str) -> IResult<&'a str, char, E>
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
   // convert to char with from_u32.
-  map_opt(parse_u32, |value| std::char::from_u32(value))(input)
+  map_opt(parse_u32, std::char::from_u32)(input)
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
@@ -171,6 +171,6 @@ pub fn parse_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
 pub fn incomplete_parse_error<T>(file_name: &Path, input: &str, remaining: &str) -> ErlResult<T> {
   println!("Parse did not succeed. Remaining input: {}", remaining);
   let span = Span::new(input.len() - remaining.len(), remaining.len());
-  Err(ErlParseError(ErrorLocation::SourceFileSpan(file_name.to_path_buf(), span),
-                    String::from("Parse did not succeed, input remaining.")))
+  Err(ErlParse(ErrorLocation::SourceFileSpan(file_name.to_path_buf(), span),
+               String::from("Parse did not succeed, input remaining.")))
 }

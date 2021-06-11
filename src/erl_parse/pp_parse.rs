@@ -2,14 +2,13 @@ use std::path::Path;
 
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_till1};
-use nom::character::complete::{alpha1, alphanumeric1, line_ending, newline};
+use nom::character::complete::{alpha1, alphanumeric1, line_ending};
 use nom::combinator::{map, recognize};
-use nom::multi::{many0, separated_list0};
+use nom::multi::{many0};
 use nom::sequence::{delimited, pair, terminated, tuple};
 
-use crate::erl_error::{ErlResult, ErrorLocation};
-use crate::erl_error::ErlError::ErlParseError;
-use crate::erl_parse::{helpers, Span};
+use crate::erl_error::{ErlResult};
+use crate::erl_parse::{helpers};
 use crate::erl_parse::helpers::ws;
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstTree};
 
@@ -111,7 +110,7 @@ fn parse_attr_noargs(input: &str) -> nom::IResult<&str, PpAstNode> {
       line_ending
     )),
     |(_, attr_ident, _tail, _newline)| -> PpAstNode {
-      PpAstNode::Attr {name: String::from(attr_ident), body: None }
+      PpAstNode::Attr { name: String::from(attr_ident), body: None }
     },
   )(input)
 }
