@@ -7,7 +7,7 @@ use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache, PpAstTree};
 use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
 use crate::erl_parse::pp_directive::pp_include::PpInclude;
 
-fn load_and_parse_pp_ast(file_name: &Path, contents: &str) -> ErlResult<ArcRw<PpAstTree>> {
+fn load_and_parse_pp_ast<'a>(file_name: &Path, contents: &'a str) -> ErlResult<ArcRw<PpAstTree<'a>>> {
   let pp_ast = erl_parse::pp_parse::parse_module(file_name, &contents)?;
   println!("\n\
         filename: {}\n\
@@ -48,15 +48,15 @@ fn preprocess_file(file_name: &Path,
   Ok(true)
 }
 
-fn interpret_include_directive(source_file_path: &Path,
-                               node: &PpAstNode,
-                               ast_cache: ArcRw<PpAstCache>,
-                               file_cache: ArcRw<FileContentsCache>) -> ErlResult<PpAstNode> {
+fn interpret_include_directive<'a>(source_file_path: &Path,
+                                   node: &PpAstNode<'a>,
+                                   ast_cache: ArcRw<PpAstCache<'a>>,
+                                   file_cache: ArcRw<FileContentsCache>) -> ErlResult<PpAstNode<'a>> {
   match node {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
     // TODO: -include_lib()
-    PpAstNode::Attr { name, body } if name == "include" => {
+    PpAstNode::Attr { name, body } if *name == "include" => {
       let directive = PpInclude::parse_from(source_file_path, body)?;
 
       // Take source file's parent dir and append to it the include path (unless it was absolute?)
@@ -105,10 +105,10 @@ fn interpret_include_directive(source_file_path: &Path,
 /// - Substitute macros.
 ///
 /// Return: a new preprocessed string joined together.
-fn interpret_pp_ast(source_file_path: &Path,
-                    ast_tree: ArcRw<PpAstTree>,
-                    ast_cache: ArcRw<PpAstCache>,
-                    file_cache: ArcRw<FileContentsCache>) -> ErlResult<String> {
+fn interpret_pp_ast<'a>(source_file_path: &Path,
+                        ast_tree: ArcRw<PpAstTree<'a>>,
+                        ast_cache: ArcRw<PpAstCache<'a>>,
+                        file_cache: ArcRw<FileContentsCache>) -> ErlResult<String> {
   let ast_tree_r = ast_tree.read().unwrap();
   let mut output: Vec<String> = Vec::with_capacity(ast_tree_r.nodes.len());
 
@@ -131,13 +131,13 @@ fn interpret_pp_ast(source_file_path: &Path,
 
         match &node {
           PpAstNode::Comment(_) => {} // skip
-          PpAstNode::Text(t) => output.push(t.clone()), // TODO: Push spans from input
+          PpAstNode::Text(t) => output.push(String::from(*t)),
 
           // An attribute without parens
           PpAstNode::Attr { name: _, body: _ } => println!("{:?}", node),
 
-          PpAstNode::PasteMacro { name: _, body:_ } => println!("{:?}", node),
-          PpAstNode::StringifyMacroParam { name :_} => println!("{:?}", node),
+          PpAstNode::PasteMacro { name: _, body: _ } => println!("{:?}", node),
+          PpAstNode::StringifyMacroParam { name: _ } => println!("{:?}", node),
 
           PpAstNode::IncludedFile(include_ast_tree) => {
             // TODO: Return ErlResult

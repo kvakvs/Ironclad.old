@@ -8,32 +8,33 @@ use crate::project::ErlProject;
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
+/// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Clone)]
-pub enum PpAstNode {
+pub enum PpAstNode<'a> {
   /// A % line comment
-  Comment(String),
+  Comment(&'a str),
   /// Any text
-  Text(String),
+  Text(&'a str),
   /// Any attribute even with 0 args, -if(), -define(NAME, xxxxx)
-  Attr { name: String, body: Option<String> },
+  Attr { name: &'a str, body: Option<&'a str> },
   /// Paste macro tokens/text as is, use as: ?NAME
-  PasteMacro { name: String, body: Option<String> },
+  PasteMacro { name: &'a str, body: Option<&'a str> },
   /// Paste macro arguments as is, use as: ??PARAM
-  StringifyMacroParam { name: String },
+  StringifyMacroParam { name: &'a str },
   /// Included file from HRL cache
-  IncludedFile(ArcRw<PpAstTree>),
+  IncludedFile(ArcRw<PpAstTree<'a>>),
 }
 
-impl PpAstNode {
-  pub fn trim(s: &str) -> String {
-    const CLAMP_LENGTH: usize = 20;
+impl<'a> PpAstNode<'a> {
+  pub fn trim(s: &'a str) -> &'a str {
+    const CLAMP_LENGTH: usize = 40;
     let trimmed = s.trim();
-    if trimmed.len() <= CLAMP_LENGTH { return String::from(trimmed); }
-    String::from(&trimmed[..CLAMP_LENGTH - 1]) + "…"
+    if trimmed.len() <= CLAMP_LENGTH { return trimmed; }
+    &trimmed[..CLAMP_LENGTH - 1]
   }
 }
 
-impl Debug for PpAstNode {
+impl<'a> Debug for PpAstNode<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Self::Comment(s) => write!(f, "%({})", Self::trim(s)),
@@ -51,25 +52,27 @@ impl Debug for PpAstNode {
   }
 }
 
-pub struct PpAstTree {
+/// Lifetime note: Parse input string must live at least as long as this is alive
+pub struct PpAstTree<'a> {
   /// Clone of filename where this was loaded from
   pub file_name: PathBuf,
   /// The parsed preprocessor syntax tree ready for inclusion
-  pub nodes: Vec<PpAstNode>,
+  pub nodes: Vec<PpAstNode<'a>>,
 }
 
-impl PpAstTree {
-  pub fn new(file_name: PathBuf, nodes: Vec<PpAstNode>) -> Self {
+impl<'a> PpAstTree<'a> {
+  pub fn new(file_name: PathBuf, nodes: Vec<PpAstNode<'a>>) -> Self {
     PpAstTree { file_name, nodes }
   }
 }
 
 /// Stores HRL files parsed into PpAst tokens ready to be included into other files.
-pub struct PpAstCache {
-  pub syntax_trees: HashMap<PathBuf, ArcRw<PpAstTree>>,
+/// Lifetime note: Cache must live at least as long as parse trees are alive
+pub struct PpAstCache<'a> {
+  pub syntax_trees: HashMap<PathBuf, ArcRw<PpAstTree<'a>>>,
 }
 
-impl PpAstCache {
+impl<'a> PpAstCache<'a> {
   pub fn new() -> Self {
     Self { syntax_trees: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4) }
   }

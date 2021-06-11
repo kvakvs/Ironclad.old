@@ -8,7 +8,7 @@ pub struct PpInclude {
 }
 
 impl PpInclude {
-  pub fn parse_from(file_name: &Path, input_opt: &Option<String>) -> ErlResult<Self> {
+  pub fn parse_from(file_name: &Path, input_opt: &Option<&str>) -> ErlResult<Self> {
     if input_opt.is_none() {
       return ErlError::pp_parse(file_name, "-include() directive takes 1 string argument");
     }

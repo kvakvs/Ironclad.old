@@ -50,7 +50,7 @@ fn rest_of_the_line(input: &str) -> nom::IResult<&str, &str> {
 fn parse_line(input: &str) -> nom::IResult<&str, PpAstNode> {
   map(
     rest_of_the_line,
-    |s| PpAstNode::Text(String::from(s)),
+    |s| PpAstNode::Text(s),
   )(input)
 }
 
@@ -61,7 +61,7 @@ fn line_comment(input: &str) -> nom::IResult<&str, PpAstNode> {
       tag("%"),
       rest_of_the_line,
     )),
-    |(_, s)| PpAstNode::Comment(String::from(s)),
+    |(_, s)| PpAstNode::Comment(s),
   )(input)
 }
 
@@ -93,7 +93,7 @@ fn parse_attr(input: &str) -> nom::IResult<&str, PpAstNode> {
       ),
     )),
     |(attr_ident, body)| -> PpAstNode {
-      PpAstNode::Attr { name: String::from(attr_ident), body: Some(String::from(body)) }
+      PpAstNode::Attr { name: attr_ident, body: Some(body) }
     },
   )(input)
 }
@@ -110,7 +110,7 @@ fn parse_attr_noargs(input: &str) -> nom::IResult<&str, PpAstNode> {
       line_ending
     )),
     |(_, attr_ident, _tail, _newline)| -> PpAstNode {
-      PpAstNode::Attr { name: String::from(attr_ident), body: None }
+      PpAstNode::Attr { name: attr_ident, body: None }
     },
   )(input)
 }
@@ -125,7 +125,8 @@ fn parse_attr_noargs(input: &str) -> nom::IResult<&str, PpAstNode> {
 /// ??MACRO to stringify the tokens in the macro argument
 ///
 /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
-pub fn parse_module(file_name: &Path, input: &str) -> ErlResult<PpAstTree> {
+/// Lifetime note: Parse input string must live at least as long as parse tree is alive
+pub fn parse_module<'a>(file_name: &Path, input: &'a str) -> ErlResult<PpAstTree<'a>> {
   let (tail, pp_ast) = many0(
     alt((
       line_comment,
