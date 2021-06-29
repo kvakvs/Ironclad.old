@@ -9,6 +9,8 @@ use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::types::ArcRw;
 use crate::project::source_file::SourceFile;
+use crate::erl_parse::erl_pp::{ErlPreprocessorParser, Rule};
+use pest::Parser;
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
@@ -16,14 +18,9 @@ fn parse_file(file_name: &Path,
               compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
 
-  // let (remaining, ast_tree) = erl_parse::parse_module(file_contents)?;
+  let successful_parse = ErlPreprocessorParser::parse(Rule::file, "-273.15");
+  println!("{:?}", successful_parse);
 
-  // if remaining.is_empty() {
-  //   Ok(ast_tree)
-  // } else {
-  //   let msg = String::from("Source file still contains unconsumed data after parse");
-  //   Err(ErlError::ErlParse(ErrorLocation::from_source_file(file_name), msg))
-  // }
   ErlError::not_impl("parse module")
 }
 
@@ -45,7 +42,7 @@ pub fn run(project: &mut ErlProject,
       let ast_tree = parse_file(
         &path,
         source_file.clone(),
-        compile_options
+        compile_options,
       )?;
       ast_cache.syntax_trees.insert(path.clone(),
                                     ModuleAST::new(ast_tree));

@@ -1,3 +1,12 @@
 // Split an ERL source into macro definitions, conditional compile directives and everything else
 
-erl_preprocess = { "Hello World!" }
+file = { file_item* }
+file_item = { pp_directive | text }
+
+pp_directive = { "-" ~ ident ~ pp_directive_args? ~ "." }
+pp_directive_args = { "(" ~ pp_directive_arg? ~ ("," ~ pp_directive_arg)* ~ ")" }
+pp_directive_arg = { ( !( "," | ")" ) ~ ANY )* }
+
+ident = { (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+text = { ANY+ }
