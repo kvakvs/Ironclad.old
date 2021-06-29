@@ -18,10 +18,11 @@ fn parse_file(file_name: &Path,
               compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
 
-  let successful_parse = ErlPreprocessorParser::parse(Rule::file, "-273.15");
-  println!("{:?}", successful_parse);
+  let successful_parse = ErlPreprocessorParser::parse(Rule::file, &file_contents.text);
+  println!("OK => {:?}", successful_parse);
 
-  ErlError::not_impl("parse module")
+  // ErlError::not_impl("parse module")
+  Ok(vec![])
 }
 
 /// Parse stage

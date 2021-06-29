@@ -1,12 +1,23 @@
 // Split an ERL source into macro definitions, conditional compile directives and everything else
 
 file = { file_item* }
-file_item = { pp_directive | text }
+file_item = _{ pp_directive | text | string }
 
 pp_directive = { "-" ~ ident ~ pp_directive_args? ~ "." }
 pp_directive_args = { "(" ~ pp_directive_arg? ~ ("," ~ pp_directive_arg)* ~ ")" }
-pp_directive_arg = { ( !( "," | ")" ) ~ ANY )* }
+pp_directive_arg = { ( !( "," | ")" ) ~ ANY )+ }
 
-ident = { (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+string = ${ "\"" ~ string_inner ~ "\"" }
+string_inner = @{ string_char }
+string_char = {
+    !("\"" | "\\") ~ ANY
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+ident = { (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
 
 text = { ANY+ }
+
+WHITESPACE = _{ " " | "\t" | LINE_SEPARATOR }
+COMMENT = _{ "%" ~ (!LINE_SEPARATOR ~ ANY)* ~ LINE_SEPARATOR }
