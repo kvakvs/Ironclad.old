@@ -1,0 +1,3 @@
+// Split an ERL source into macro definitions, conditional compile directives and everything else
+
+erl_preprocess = { "Hello World!" }

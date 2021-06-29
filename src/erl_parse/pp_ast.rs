@@ -7,6 +7,7 @@ use crate::project::ErlProject;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 use crate::erl_parse::Span;
+// use crate::erl_parse::Span;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and

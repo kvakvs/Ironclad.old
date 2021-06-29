@@ -17,6 +17,9 @@ impl ErrorLocation {
 
 #[derive(Error, Debug)]
 pub enum ErlError {
+  #[error("Not implemented: {0}")]
+  NotImpl(String),
+
   #[error("File IO error: {0:?}")]
   Io(std::io::Error),
 
@@ -43,6 +46,10 @@ pub enum ErlError {
 }
 
 impl ErlError {
+  pub(crate) fn not_impl<T>(what: &str) -> ErlResult<T> {
+    Err(ErlError::NotImpl(what.to_string()))
+  }
+
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
     Err(ErlError::PpParse(ErrorLocation::from_source_file(file_name),
                           String::from(message)))
@@ -75,8 +82,8 @@ impl From<glob::PatternError> for ErlError {
   }
 }
 
-impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
-  fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
-    ErlError::ErlParse(ErrorLocation::None, value.to_string())
-  }
-}
+// impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
+//   fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
+//     ErlError::ErlParse(ErrorLocation::None, value.to_string())
+//   }
+// }

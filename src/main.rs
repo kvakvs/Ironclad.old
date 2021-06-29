@@ -12,14 +12,14 @@ mod erl_module;
 mod erl_error;
 mod stage;
 
-extern crate nom;
-// extern crate tap;
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
 extern crate toml;
 extern crate serde;
 extern crate serde_derive;
 extern crate thiserror;
 extern crate glob;
-// extern crate errloc_macros;
 
 use crate::project::ErlProject;
 use crate::project::conf::ErlProjectConf;

@@ -4,7 +4,6 @@ use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{Path};
 use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
 use crate::stage::ast_cache::{AstCache, ModuleAST};
-use crate::erl_parse;
 use crate::erl_parse::ast::ErlAstNode;
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
@@ -17,14 +16,15 @@ fn parse_file(file_name: &Path,
               compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
 
-  let (remaining, ast_tree) = erl_parse::parse_module(file_contents)?;
+  // let (remaining, ast_tree) = erl_parse::parse_module(file_contents)?;
 
-  if remaining.is_empty() {
-    Ok(ast_tree)
-  } else {
-    let msg = String::from("Source file still contains unconsumed data after parse");
-    Err(ErlError::ErlParse(ErrorLocation::from_source_file(file_name), msg))
-  }
+  // if remaining.is_empty() {
+  //   Ok(ast_tree)
+  // } else {
+  //   let msg = String::from("Source file still contains unconsumed data after parse");
+  //   Err(ErlError::ErlParse(ErrorLocation::from_source_file(file_name), msg))
+  // }
+  ErlError::not_impl("parse module")
 }
 
 /// Parse stage
