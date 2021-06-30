@@ -1,12 +1,12 @@
-use std::fmt::Debug;
-use std::fmt;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use crate::types::ArcRw;
-use crate::project::ErlProject;
-use std::sync::Arc;
-use crate::project::source_file::SourceFile;
 use crate::erl_parse::Span;
+use crate::project::source_file::SourceFile;
+use crate::project::ErlProject;
+use crate::types::ArcRw;
+use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Debug;
+use std::path::PathBuf;
+use std::sync::Arc;
 // use crate::erl_parse::Span;
 
 /// While preprocessing source, the text is parsed into these segments
@@ -18,7 +18,7 @@ pub enum PpAstNode {
   /// A % line comment
   Comment(Span),
   /// Any text
-  Text(Span),
+  Text(String),
   /// Any attribute even with 0 args, -if(), -define(NAME, xxxxx)
   Attr { name: String, body: Option<Span> },
   /// Paste macro tokens/text as is, use as: ?NAME
@@ -33,18 +33,22 @@ impl PpAstNode {
   pub fn trim(s: &str) -> &str {
     const CLAMP_LENGTH: usize = 40;
     let trimmed = s.trim();
-    if trimmed.len() <= CLAMP_LENGTH { return trimmed; }
+    if trimmed.len() <= CLAMP_LENGTH {
+      return trimmed;
+    }
     &trimmed[..CLAMP_LENGTH - 1]
   }
 
   pub fn fmt(&self, source_file: &SourceFile) -> String {
     match self {
       Self::Comment(s) => format!("%({})", Self::trim(s.text(source_file))),
-      Self::Text(s) => format!("T({})", Self::trim(s.text(source_file))),
+      Self::Text(s) => format!("T({})", Self::trim(s)),
       Self::Attr { name, body } => format!("Attr({}, {:?})", name, body),
       Self::PasteMacro { name, body } => format!("?{}({:?})", name, body),
       Self::StringifyMacroParam { name } => format!("??{}", name),
-      Self::IncludedFile(include_rc) => format!("include<{}>", include_rc.source.file_name.display()),
+      Self::IncludedFile(include_rc) => {
+        format!("include<{}>", include_rc.source.file_name.display())
+      }
     }
   }
 }
@@ -59,7 +63,10 @@ pub struct PpAstTree {
 impl PpAstTree {
   /// Take ownership on source text
   pub fn new(source_file: Arc<SourceFile>, nodes: Vec<PpAstNode>) -> Self {
-    PpAstTree { nodes, source: source_file }
+    PpAstTree {
+      nodes,
+      source: source_file,
+    }
   }
 }
 
@@ -71,6 +78,8 @@ pub struct PpAstCache {
 
 impl PpAstCache {
   pub fn new() -> Self {
-    Self { syntax_trees: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4) }
+    Self {
+      syntax_trees: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),
+    }
   }
 }

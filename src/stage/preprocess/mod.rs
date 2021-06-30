@@ -127,7 +127,7 @@ fn interpret_pp_ast(source_file: &SourceFile,
 
         match &node {
           PpAstNode::Comment(_) => {} // skip
-          PpAstNode::Text(t) => output.push(String::from(t.text(source_file))),
+          PpAstNode::Text(t) => output.push(t.clone()),
 
           // An attribute without parens
           PpAstNode::Attr { name: _, body: _ } => println!("{:?}", node.fmt(source_file)),

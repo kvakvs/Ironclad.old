@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::erl_error::{ErlResult, ErrorLocation};
-use crate::erl_error::ErlError::ErlParse;
+use crate::erl_error::ErlError::PreprocessorParse;
 use crate::erl_parse::Span;
 
 // /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and

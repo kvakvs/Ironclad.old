@@ -1,6 +1,7 @@
 use thiserror::Error;
 use crate::erl_parse::Span;
 use std::path::{PathBuf, Path};
+use crate::erl_parse::{erl_pp};
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -41,8 +42,8 @@ pub enum ErlError {
   #[error("Preprocessor parse error: {1} (at {0:?})")]
   PpParse(ErrorLocation, String),
 
-  #[error("Erlang parse error: {1} (at {0:?})")]
-  ErlParse(ErrorLocation, String),
+  #[error("Preprocessor parse error: {0:?}")]
+  PreprocessorParse(pest::error::Error<erl_pp::Rule>),
 }
 
 impl ErlError {
@@ -79,6 +80,12 @@ impl From<glob::GlobError> for ErlError {
 impl From<glob::PatternError> for ErlError {
   fn from(value: glob::PatternError) -> Self {
     ErlError::GlobPattern(value)
+  }
+}
+
+impl From<pest::error::Error<erl_pp::Rule>> for ErlError {
+  fn from(value: pest::error::Error<erl_pp::Rule>) -> Self {
+    ErlError::PreprocessorParse(value)
   }
 }
 

@@ -9,17 +9,12 @@ use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::types::ArcRw;
 use crate::project::source_file::SourceFile;
-use crate::erl_parse::erl_pp::{ErlPreprocessorParser, Rule};
-use pest::Parser;
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
               file_contents: Arc<SourceFile>,
               compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
-
-  let successful_parse = ErlPreprocessorParser::parse(Rule::file, &file_contents.text);
-  println!("OK => {:?}", successful_parse);
 
   // ErlError::not_impl("parse module")
   Ok(vec![])
