@@ -13,19 +13,22 @@ use std::sync::Arc;
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
 /// Lifetime note: Parse input string must live at least as long as this is alive
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum PpAstNode {
   /// A % line comment
   Comment(Span),
   /// Any text
   Text(String),
-  /// Any attribute even with 0 args, -if(), -define(NAME, xxxxx)
-  Attr { name: String, body: Option<Span> },
-  /// Paste macro tokens/text as is, use as: ?NAME
-  PasteMacro { name: String, body: Option<Span> },
-  /// Paste macro arguments as is, use as: ??PARAM
-  StringifyMacroParam { name: String },
-  /// Included file from HRL cache
+
+  /// Generic attribute -name(args, ...).
+  Attr { name: String, args: Vec<PpAstNode> },
+
+  /// Specific attribute: -include("path").
+  Include(String),
+
+  /// Specific attribute: -include_lib("path").
+  IncludeLib(String),
+
   IncludedFile(Arc<PpAstTree>),
 }
 
@@ -43,17 +46,28 @@ impl PpAstNode {
     match self {
       Self::Comment(s) => format!("%({})", Self::trim(s.text(source_file))),
       Self::Text(s) => format!("T({})", Self::trim(s)),
-      Self::Attr { name, body } => format!("Attr({}, {:?})", name, body),
-      Self::PasteMacro { name, body } => format!("?{}({:?})", name, body),
-      Self::StringifyMacroParam { name } => format!("??{}", name),
+      Self::Attr { name, args } => {
+        let args_str = args.iter()
+            .map(|arg| format!("{:?}", arg))
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("Attr({}, {})", name, args_str)
+      },
+
+      // Self::Attr { name, body } => format!("Attr({}, {:?})", name, body),
+      // Self::PasteMacro { name, body } => format!("?{}({:?})", name, body),
+      // Self::StringifyMacroParam { name } => format!("??{}", name),
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
       }
+      PpAstNode::Include(p) => format!("Include({})", p),
+      PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p)
     }
   }
 }
 
 /// Lifetime note: Parse input string must live at least as long as this is alive
+#[derive(Debug)]
 pub struct PpAstTree {
   pub source: Arc<SourceFile>,
   /// The parsed preprocessor syntax tree ready for inclusion

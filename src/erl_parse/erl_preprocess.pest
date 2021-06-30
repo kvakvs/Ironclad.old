@@ -3,6 +3,13 @@
 file = { file_item* }
 file_item = _{ pp_directive | text | string }
 
+// Particular case: Include directive -include("path").
+pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
+
+// Particular case: Include directive -include_lib("path").
+pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
+
+// Generic case: Any directive with 'ident' as a name and some comma separated args
 pp_directive = { "-" ~ ident ~ pp_directive_args? ~ "." }
 pp_directive_args = { "(" ~ pp_directive_arg? ~ ("," ~ pp_directive_arg)* ~ ")" }
 pp_directive_arg = { ( !( "," | ")" ) ~ ANY )+ }

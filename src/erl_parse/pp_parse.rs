@@ -22,12 +22,12 @@ impl PpAstTree {
   /// Lifetime note: Parse input string must live at least as long as parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
     let successful_parse = ErlPreprocessorParser::parse(Rule::file, &source_file.text)?;
-    println!("OK => {:?}", successful_parse);
 
     let pp_tree = PpAstTree {
       source: source_file.clone(),
       nodes: Self::parse_pp_ast_tree(successful_parse),
     };
+    pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
     Ok(pp_tree)
   }
 
@@ -50,26 +50,17 @@ impl PpAstTree {
       Rule::text => {
         PpAstNode::Text(String::from(pair.as_str()))
       }
-      // Rule::file =>
-      //   pair.into_inner()
-      //       .map(|pair| {
-      //         let mut inner_rules = pair.into_inner();
-      //         let name = inner_rules
-      //             .next()
-      //             .unwrap()
-      //             .into_inner()
-      //             .next()
-      //             .unwrap()
-      //             .as_str();
-      //         let value = Self::parse_pp_ast(inner_rules.next().unwrap());
-      //         (name, value)
-      //       })
-      //       .collect(),
-      // Rule::array => JSONValue::Array(pair.into_inner().map(parse_value).collect()),
-      // Rule::string => JSONValue::String(pair.into_inner().next().unwrap().as_str()),
-      // Rule::number => JSONValue::Number(pair.as_str().parse().unwrap()),
-      // Rule::boolean => JSONValue::Boolean(pair.as_str().parse().unwrap()),
-      // Rule::null => JSONValue::Null,
+      Rule::pp_directive_include => PpAstNode::Include(pair.into_inner().to_string()),
+      Rule::pp_directive_include_lib => PpAstNode::IncludeLib(pair.into_inner().to_string()),
+      Rule::pp_directive => {
+        let mut inner_rules = pair.into_inner();
+        let ident = inner_rules.next().unwrap();
+        let args = inner_rules.map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
+        PpAstNode::Attr {
+          name: String::from(ident.as_str()),
+          args
+        }
+      }
       other => unreachable!("value: {:?}", other),
     }
   }

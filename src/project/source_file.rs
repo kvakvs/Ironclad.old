@@ -1,6 +1,7 @@
 use std::path::{PathBuf, Path};
 
 /// Owns a source file text and possibly line numbers map
+#[derive(Debug)]
 pub struct SourceFile {
   pub file_name: PathBuf,
   pub text: String,

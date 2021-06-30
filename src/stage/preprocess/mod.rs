@@ -11,10 +11,10 @@ use crate::project::source_file::SourceFile;
 
 fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
   let pp_ast = PpAstTree::from_source_file(&source_file)?;
-  println!("\n\
-        filename: {}\n\
-        PP AST ", source_file.file_name.display());
-  pp_ast.nodes.iter().for_each(|n| print!("{}", n.fmt(&source_file)));
+  // println!("\n\
+  //       filename: {}\n\
+  //       PP AST ", source_file.file_name.display());
+  // pp_ast.nodes.iter().for_each(|n| print!("{}", n.fmt(&source_file)));
   Ok(Arc::new(pp_ast))
 }
 
@@ -53,18 +53,14 @@ fn interpret_include_directive(source_file: &SourceFile,
   match node {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
-    // TODO: -include_lib()
-    PpAstNode::Attr { name, body } if *name == "include" => {
-      let directive = PpInclude::parse_from(source_file, body)?;
-
+    PpAstNode::IncludeLib(path)
+    | PpAstNode::Include(path) => {
       // Take source file's parent dir and append to it the include path (unless it was absolute?)
       let source_path = &source_file.file_name;
 
-      let include_path = if directive.file_name.is_absolute() {
-        directive.file_name
-      } else {
-        source_path.parent().unwrap().join(directive.file_name)
-      };
+      let include_path0 = PathBuf::from(path);
+      let include_path = if include_path0.is_absolute()
+      { include_path0 } else { source_path.parent().unwrap().join(include_path0) };
 
       // TODO: Path resolution relative to the file path
       let ast_r = ast_cache.read().unwrap();
@@ -130,10 +126,10 @@ fn interpret_pp_ast(source_file: &SourceFile,
           PpAstNode::Text(t) => output.push(t.clone()),
 
           // An attribute without parens
-          PpAstNode::Attr { name: _, body: _ } => println!("{:?}", node.fmt(source_file)),
+          PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
 
-          PpAstNode::PasteMacro { name: _, body: _ } => println!("{:?}", node.fmt(source_file)),
-          PpAstNode::StringifyMacroParam { name: _ } => println!("{:?}", node.fmt(source_file)),
+          // PpAstNode::PasteMacro { name: _, body: _ } => println!("{:?}", node.fmt(source_file)),
+          // PpAstNode::StringifyMacroParam { name: _ } => println!("{:?}", node.fmt(source_file)),
           PpAstNode::IncludedFile(include_ast_tree) => {
             // TODO: Return ErlResult
             let include_interpret_output = interpret_pp_ast(
@@ -144,6 +140,8 @@ fn interpret_pp_ast(source_file: &SourceFile,
             ).unwrap();
             output.push(include_interpret_output);
           }
+          PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
+          PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
         }
 
         pos += 1;
