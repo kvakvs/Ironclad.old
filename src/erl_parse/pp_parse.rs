@@ -34,24 +34,24 @@ impl PpAstTree {
   fn parse_pp_ast_tree(pairs: Pairs<Rule>) -> Vec<PpAstNode> {
     pairs.map(|pair| {
       let mut inner_rules = pair.into_inner();
-      // let name = inner_rules
-      //     .next()
-      //     .unwrap()
-      //     .into_inner()
-      //     .next()
-      //     .unwrap()
-      //     .as_str();
       Self::parse_pp_ast(inner_rules.next().unwrap())
     }).collect::<Vec<PpAstNode>>()
   }
 
+  /// Convert a node produced by the Pest PEG parser into AST node
   fn parse_pp_ast(pair: Pair<Rule>) -> PpAstNode {
     match pair.as_rule() {
-      Rule::text => {
-        PpAstNode::Text(String::from(pair.as_str()))
+      Rule::file => {
+        // Parse all nested file elements, comments and text fragments
+        let ast_nodes = pair.into_inner().map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
+        PpAstNode::File(ast_nodes)
       }
+      Rule::text => PpAstNode::Text(String::from(pair.as_str())),
+
       Rule::pp_directive_include => PpAstNode::Include(pair.into_inner().to_string()),
+
       Rule::pp_directive_include_lib => PpAstNode::IncludeLib(pair.into_inner().to_string()),
+
       Rule::pp_directive => {
         let mut inner_rules = pair.into_inner();
         let ident = inner_rules.next().unwrap();
@@ -61,6 +61,9 @@ impl PpAstTree {
           args
         }
       }
+
+      Rule::pp_directive_arg => PpAstNode::Text(String::from(pair.as_str())),
+
       other => unreachable!("value: {:?}", other),
     }
   }

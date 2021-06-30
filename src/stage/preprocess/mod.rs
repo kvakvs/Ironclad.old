@@ -142,6 +142,7 @@ fn interpret_pp_ast(source_file: &SourceFile,
           }
           PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
           PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
+          PpAstNode::File(_) => unreachable!("file root AST node must not be processed"),
         }
 
         pos += 1;

@@ -15,6 +15,8 @@ use std::sync::Arc;
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Debug, Clone)]
 pub enum PpAstNode {
+  File(Vec<PpAstNode>),
+
   /// A % line comment
   Comment(Span),
   /// Any text
@@ -61,7 +63,8 @@ impl PpAstNode {
         format!("include<{}>", include_rc.source.file_name.display())
       }
       PpAstNode::Include(p) => format!("Include({})", p),
-      PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p)
+      PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
+      PpAstNode::File(nodes) => format!("File({:?})", nodes),
     }
   }
 }
