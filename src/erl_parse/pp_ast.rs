@@ -25,6 +25,9 @@ pub enum PpAstNode {
   /// Generic attribute -name(args, ...).
   Attr { name: String, args: Vec<PpAstNode> },
 
+  /// Specific attribute: -module('atom').
+  Module(String),
+
   /// Specific attribute: -include("path").
   Include(String),
 
@@ -56,15 +59,13 @@ impl PpAstNode {
         format!("Attr({}, {})", name, args_str)
       },
 
-      // Self::Attr { name, body } => format!("Attr({}, {:?})", name, body),
-      // Self::PasteMacro { name, body } => format!("?{}({:?})", name, body),
-      // Self::StringifyMacroParam { name } => format!("??{}", name),
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
       }
-      PpAstNode::Include(p) => format!("Include({})", p),
-      PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
-      PpAstNode::File(nodes) => format!("File({:?})", nodes),
+      PpAstNode::Module(p) => format!("-module({}).", p),
+      PpAstNode::Include(p) => format!("-include({}).", p),
+      PpAstNode::IncludeLib(p) => format!("-include_lib({}).", p),
+      PpAstNode::File(nodes) => format!("File{{{:?}}}", nodes),
     }
   }
 }

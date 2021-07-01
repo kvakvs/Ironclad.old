@@ -1,20 +1,23 @@
 // Split an ERL source into macro definitions, conditional compile directives and everything else
 
 file = { file_item* }
-file_item = _{ pp_directive | text | string }
+file_item = _{ (pp_directive | text | string) ~ NEWLINE }
+
+pp_directive = _{ pp_directive_include | pp_directive_module | pp_directive_include_lib | pp_generic }
+directive_ending = _{ ")" ~ "." }
 
 // Particular case: Include directive -include("path").
-pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
+pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ directive_ending }
 
-pp_directive_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+pp_directive_module = { "-" ~ "module" ~ "(" ~ atom ~ directive_ending }
 
 // Particular case: Include directive -include_lib("path").
-pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
+pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ directive_ending }
 
 // Generic case: Any directive with 'ident' as a name and some comma separated args
-pp_directive = { "-" ~ ident ~ pp_directive_args? ~ "." }
-pp_directive_args = _{ "(" ~ pp_directive_arg? ~ ("," ~ pp_directive_arg)* ~ ")" }
-pp_directive_arg = { ( !( "," | ")" ) ~ ANY )+ }
+pp_generic = { "-" ~ ident ~ pp_generic_args? ~ "." }
+pp_generic_args = _{ "(" ~ pp_generic_arg? ~ ("," ~ pp_generic_arg)* ~ ")" }
+pp_generic_arg = { ( !( "," | ")" ) ~ ANY )+ }
 
 string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char }
@@ -38,5 +41,5 @@ ident = { (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
 
 text = { ANY+ }
 
-WHITESPACE = _{ " " | "\t" | LINE_SEPARATOR }
-COMMENT = _{ "%" ~ (!LINE_SEPARATOR ~ ANY)* ~ LINE_SEPARATOR }
+WHITESPACE = _{ " " | "\t" }
+COMMENT = _{ "%" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }

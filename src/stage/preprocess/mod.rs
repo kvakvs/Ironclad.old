@@ -117,7 +117,7 @@ fn interpret_pp_ast(source_file: &SourceFile,
       })
       .collect();
 
-  a.into_iter()
+  a.iter()
       .for_each(|node| {
         println!("Interpret: {:?}", node.fmt(source_file));
 
@@ -128,8 +128,6 @@ fn interpret_pp_ast(source_file: &SourceFile,
           // An attribute without parens
           PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
 
-          // PpAstNode::PasteMacro { name: _, body: _ } => println!("{:?}", node.fmt(source_file)),
-          // PpAstNode::StringifyMacroParam { name: _ } => println!("{:?}", node.fmt(source_file)),
           PpAstNode::IncludedFile(include_ast_tree) => {
             // TODO: Return ErlResult
             let include_interpret_output = interpret_pp_ast(
@@ -140,9 +138,10 @@ fn interpret_pp_ast(source_file: &SourceFile,
             ).unwrap();
             output.push(include_interpret_output);
           }
+          PpAstNode::Module(_) => {} // skip
           PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
           PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
-          PpAstNode::File(_) => unreachable!("file root AST node must not be processed"),
+          PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
         }
 
         pos += 1;

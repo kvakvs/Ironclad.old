@@ -21,22 +21,24 @@ impl PpAstTree {
   /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
   /// Lifetime note: Parse input string must live at least as long as parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
-    let successful_parse = ErlPreprocessorParser::parse(Rule::file, &source_file.text)?;
+    let successful_parse = ErlPreprocessorParser::parse(Rule::file, &source_file.text)?.next().unwrap();
+    match Self::parse_pp_ast(successful_parse) {
+      PpAstNode::File(nodes) => {
+        let pp_tree = PpAstTree {
+          source: source_file.clone(),
+          nodes,
+        };
 
-    let pp_tree = PpAstTree {
-      source: source_file.clone(),
-      nodes: Self::parse_pp_ast_tree(successful_parse),
-    };
-    pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
-    Ok(pp_tree)
+        pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
+        Ok(pp_tree)
+      }
+      _ => panic!("Only File() AST node is expected as parse result root")
+    }
   }
 
-  fn parse_pp_ast_tree(pairs: Pairs<Rule>) -> Vec<PpAstNode> {
-    pairs.map(|pair| {
-      let mut inner_rules = pair.into_inner();
-      Self::parse_pp_ast(inner_rules.next().unwrap())
-    }).collect::<Vec<PpAstNode>>()
-  }
+  // fn parse_pp_ast_list(pairs: Pairs<Rule>) -> Vec<PpAstNode> {
+  //   pairs.into_iter().map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>()
+  // }
 
   /// Convert a node produced by the Pest PEG parser into AST node
   fn parse_pp_ast(pair: Pair<Rule>) -> PpAstNode {
@@ -48,11 +50,13 @@ impl PpAstTree {
       }
       Rule::text => PpAstNode::Text(String::from(pair.as_str())),
 
-      Rule::pp_directive_include => PpAstNode::Include(pair.into_inner().to_string()),
+      Rule::pp_directive_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_directive_include_lib => PpAstNode::IncludeLib(pair.into_inner().to_string()),
+      Rule::pp_directive_include => PpAstNode::Include(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_directive => {
+      Rule::pp_directive_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
+
+      Rule::pp_generic => {
         let mut inner_rules = pair.into_inner();
         let ident = inner_rules.next().unwrap();
         let args = inner_rules.map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
@@ -62,7 +66,7 @@ impl PpAstTree {
         }
       }
 
-      Rule::pp_directive_arg => PpAstNode::Text(String::from(pair.as_str())),
+      Rule::pp_generic_arg => PpAstNode::Text(String::from(pair.as_str())),
 
       other => unreachable!("value: {:?}", other),
     }
