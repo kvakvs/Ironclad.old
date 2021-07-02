@@ -23,12 +23,6 @@ pub enum PpAstNode {
   /// Any text
   Text(String),
 
-  // /// Generic attribute -name(args, ...).
-  // Attr { name: String, args: Vec<PpAstNode> },
-
-  /// Specific directive: -module('atom').
-  Module(String),
-
   /// Specific directive: -include("path").
   Include(String),
 
@@ -37,6 +31,10 @@ pub enum PpAstNode {
 
   /// Specific directive: -define(NAME, any text...).
   Define(String, String),
+
+  /// Specific directive: -undef(NAME).
+  Undef(String),
+
   Ifdef(String),
   Ifndef(String),
   If(String),
@@ -73,7 +71,6 @@ impl PpAstNode {
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
       }
-      PpAstNode::Module(p) => format!("Module({})", p),
       PpAstNode::Include(p) => format!("Include({})", p),
       PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAstNode::File(nodes) => format!("File{{{:?}}}", nodes),
@@ -84,6 +81,7 @@ impl PpAstNode {
       PpAstNode::Endif => format!("Endif"),
       PpAstNode::If(name) => format!("If({})", name),
       PpAstNode::Elif(name) => format!("Else If({})", name),
+      PpAstNode::Undef(name) => format!("Undef({})", name),
     }
   }
 }

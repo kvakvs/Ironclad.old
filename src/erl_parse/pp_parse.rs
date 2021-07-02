@@ -51,10 +51,10 @@ impl PpAstTree {
 
       Rule::pp_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_ifdef => PpAstNode::Ifdef(String::from(pair.as_str())),
-      Rule::pp_ifndef => PpAstNode::Ifndef(String::from(pair.as_str())),
-      Rule::pp_if => PpAstNode::If(String::from(pair.as_str())),
-      Rule::pp_elif => PpAstNode::Elif(String::from(pair.as_str())),
+      Rule::pp_ifdef => PpAstNode::Ifdef(String::from(pair.into_inner().as_str())),
+      Rule::pp_ifndef => PpAstNode::Ifndef(String::from(pair.into_inner().as_str())),
+      Rule::pp_if => PpAstNode::If(String::from(pair.into_inner().as_str())),
+      Rule::pp_elif => PpAstNode::Elif(String::from(pair.into_inner().as_str())),
       Rule::pp_else => PpAstNode::Else,
       Rule::pp_endif => PpAstNode::Endif,
 

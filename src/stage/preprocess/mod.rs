@@ -133,13 +133,8 @@ impl PpState {
   /// This is called for each Preprocessor AST node to make the final decision whether the node
   /// is passed into the output or replaced with a SKIP.
   fn interpret_pp_rule_map(&mut self, node: &PpAstNode, source_file: &SourceFile) -> Option<PpAstNode> {
-    // First process define/ifdef/if!def/else/endif
+    // First process ifdef/if!def/else/endif
     match node {
-      PpAstNode::Define(symbol, value) => {
-        self.pp_symbols.insert(symbol.clone(), value.clone());
-        return None;
-      }
-
       PpAstNode::Ifdef(symbol) => {
         self.condition_stack.push(PpCondition::Ifdef(symbol.clone()));
         return None;
@@ -174,6 +169,17 @@ impl PpState {
 
     // Then copy or modify remaining AST nodes
     match node {
+      PpAstNode::Define(symbol, value) => {
+        println!("define {} = {}", symbol, value);
+        self.pp_symbols.insert(symbol.clone(), value.clone());
+        return None;
+      }
+
+      PpAstNode::Undef(symbol) => {
+        self.pp_symbols.remove(symbol);
+        return None;
+      }
+
       PpAstNode::Comment(_)
       | PpAstNode::Text(_) => {} // default behaviour: clone into output
 

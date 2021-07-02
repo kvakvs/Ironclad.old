@@ -10,7 +10,8 @@ pp_directive = _{
     ( pp_include | pp_include_lib
     | pp_define | pp_undef
     | pp_if | pp_elif
-    | pp_ifdef | pp_ifndef | pp_else | pp_endif )
+    | pp_ifdef | pp_ifndef | pp_else | pp_endif
+    )
 }
 
 // Particular case: Include directive -include("path").
@@ -44,12 +45,9 @@ pp_endif = { "-" ~ "endif" ~ ( "(" ~ ")" )? ~ "." }
 
 // Consumes everything till ").<CRLF>" or till a comment
 pp_directive_remaining_text = ${ (! pp_directive_tail ~ ANY)+ }
-pp_directive_tail = _{ ")" ~ "." ~ (NEWLINE | "%") }
-
-// Generic case: Any directive with 'ident' as a name and some comma separated args
-// pp_generic = { "-" ~ ident ~ pp_generic_args? ~ "." }
-// pp_generic_args = _{ "(" ~ pp_generic_arg? ~ ("," ~ pp_generic_arg)* ~ ")" }
-// pp_generic_arg = { ( !( "," | ")" ) ~ ANY )+ }
+// Tail is ")." that is not inside a string or quoted string
+pp_directive_tail = _{ ")" ~ "." }
+// pp_directive_tail = _{ !( string | quoted_atom ) ~ ")." ~ (NEWLINE | "%") }
 
 string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char }
