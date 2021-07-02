@@ -6,6 +6,41 @@ use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache, PpAstTree};
 use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
+use std::collections::HashMap;
+
+enum PpCondition {
+  Ifdef(String),
+  Ifndef(String),
+}
+
+impl PpCondition {
+  /// Produces inverse of ifdef/indef, for -else. directive
+  pub fn invert(&self) -> Self {
+    match self {
+      PpCondition::Ifdef(n) => PpCondition::Ifndef(n.clone()),
+      PpCondition::Ifndef(n) => PpCondition::Ifdef(n.clone()),
+    }
+  }
+
+  pub fn get_condition_value(&self, symbols: &HashMap<String, String>) -> bool {
+    match self {
+      PpCondition::Ifdef(n) => symbols.contains_key(n),
+      PpCondition::Ifndef(n) => !symbols.contains_key(n),
+    }
+  }
+}
+
+/// Preprocessor state with AST cache, macro definitions, etc
+struct PpState {
+  ast_cache: ArcRw<PpAstCache>,
+  file_cache: ArcRw<FileContentsCache>,
+
+  condition_stack: Vec<PpCondition>,
+
+  /// Contains unparsed symbol definitions. For preprocessor its either direct copy & paste into the
+  /// code output, or use symbol existence for ifdef/ifndef conditions.
+  pp_symbols: HashMap<String, String>,
+}
 
 fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
   let pp_ast = PpAstTree::from_source_file(&source_file)?;
@@ -16,36 +51,36 @@ fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTr
   Ok(Arc::new(pp_ast))
 }
 
-/// Returns: True if a file was preprocessed
-fn preprocess_file(file_name: &Path,
-                   ast_cache: ArcRw<PpAstCache>,
-                   file_cache: ArcRw<FileContentsCache>) -> ErlResult<bool> {
-  let contents = with_arcrw_read(
-    &file_cache,
-    |fc| fc.all_files.get(file_name).unwrap().clone(),
-  ); // trust that file exists
+impl PpState {
+  /// Returns: True if a file was preprocessed
+  fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<bool> {
+    let contents = with_arcrw_read(
+      &self.file_cache,
+      |fc| fc.all_files.get(file_name).unwrap().clone(),
+    ); // trust that file exists
 
-  let ast_tree = load_and_parse_pp_ast(&contents)?;
+    let ast_tree = load_and_parse_pp_ast(&contents)?;
 
-  with_arcrw_write(
-    &ast_cache,
-    |ac| ac.syntax_trees.insert(file_name.to_path_buf(), ast_tree.clone()),
-  );
+    with_arcrw_write(
+      &self.ast_cache,
+      |ac| ac.syntax_trees.insert(file_name.to_path_buf(), ast_tree.clone()),
+    );
 
-  let output = interpret_pp_ast(
-    &contents,
-    ast_tree.clone(),
-    ast_cache.clone(),
-    file_cache.clone()
-  )?;
+    let pp_ast = self.interpret_pp_ast(&contents, ast_tree.clone())?;
+    let output: String = pp_ast
+        .into_iter()
+        .map(|node| node.fmt())
+        .collect::<Vec<String>>()
+        .join("\n");
 
-  // Success: insert new string into preprocessed source cache
-  let mut file_cache_rw = file_cache.write().unwrap();
-  file_cache_rw.update_source_text(file_name, output);
-  drop(file_cache_rw);
+    // Success: insert new string into preprocessed source cache
+    let mut file_cache_rw = self.file_cache.write().unwrap();
+    file_cache_rw.update_source_text(file_name, output);
+    drop(file_cache_rw);
 
-  // Cleanup
-  Ok(true)
+    // Cleanup
+    Ok(true)
+  }
 }
 
 fn interpret_include_directive(source_file: &SourceFile,
@@ -94,66 +129,107 @@ fn interpret_include_directive(source_file: &SourceFile,
   }
 }
 
-/// Interpret parsed attributes/preprocessor directives from top to bottom
-/// - Exclude ifdef/if/ifndef sections where the condition check fails
-/// - Load include files and paste them where include directive was found. Continue interpretation.
-/// - Substitute macros.
-///
-/// Return: a new preprocessed string joined together.
-fn interpret_pp_ast(source_file: &SourceFile,
-                    ast_tree: Arc<PpAstTree>,
-                    ast_cache: ArcRw<PpAstCache>,
-                    file_cache: ArcRw<FileContentsCache>) -> ErlResult<String> {
-  let mut output: Vec<String> = Vec::with_capacity(ast_tree.nodes.len());
+impl PpState {
+  /// This is called for each Preprocessor AST node to make the final decision whether the node
+  /// is passed into the output or replaced with a SKIP.
+  fn interpret_pp_rule_map(&mut self, node: &PpAstNode, source_file: &SourceFile) -> Option<PpAstNode> {
+    // First process define/ifdef/if!def/else/endif
+    match node {
+      PpAstNode::Define(symbol, value) => {
+        self.pp_symbols.insert(symbol.clone(), value.clone());
+        return None;
+      }
 
-  // From top to down interpret the preprocessed AST. Includes will restart the intepretation
-  // from the pasted included AST.
-  let mut pos = 0usize;
+      PpAstNode::Ifdef(symbol) => {
+        self.condition_stack.push(PpCondition::Ifdef(symbol.clone()));
+        return None;
+      }
 
-  let a: Vec<PpAstNode> = ast_tree.nodes.iter()
-      .map(|node| {
-        interpret_include_directive(source_file,
-                                    node,
-                                    ast_cache.clone(),
-                                    file_cache.clone()).unwrap()
-      })
-      .collect();
+      PpAstNode::Ifndef(symbol) => {
+        self.condition_stack.push(PpCondition::Ifndef(symbol.clone()));
+        return None;
+      }
 
-  a.into_iter()
-      .for_each(|node| {
-        println!("Interpret: {}", node.fmt(source_file));
+      PpAstNode::Else => {
+        // TODO: If condition stack is empty, produce an error
+        let last_condition = self.condition_stack.pop().unwrap();
+        self.condition_stack.push(last_condition.invert());
+        return None;
+      }
 
-        match &node {
-          PpAstNode::Comment(_) => {} // skip
-          PpAstNode::Text(t) => output.push(t.clone()),
+      PpAstNode::Endif => {
+        // TODO: If condition stack is empty, produce an error
+        self.condition_stack.pop();
+        return None;
+      }
+      _ => {}
+    }
 
-          // An attribute without parens
-          PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
+    // Then check if condition stack is not empty and last condition is valid
+    if !self.condition_stack.is_empty() {
+      if !self.condition_stack.last().unwrap().get_condition_value(&self.pp_symbols) {
+        return None;
+      }
+    }
 
-          PpAstNode::IncludedFile(include_ast_tree) => {
-            // TODO: Return ErlResult
-            let include_interpret_output = interpret_pp_ast(
-              source_file,
-              include_ast_tree.clone(),
-              ast_cache.clone(),
-              file_cache.clone(),
-            ).unwrap();
-            output.push(include_interpret_output);
+    // Then copy or modify remaining AST nodes
+    match node {
+      PpAstNode::Comment(_)
+      | PpAstNode::Text(_) => {} // default behaviour: clone into output
+
+      // An attribute without parens
+      // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
+
+      PpAstNode::IncludedFile(include_ast_tree) => {
+        // TODO: Return ErlResult
+        self.interpret_pp_ast(source_file, include_ast_tree.clone()).unwrap();
+      }
+
+      PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
+      PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
+      PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
+      _ => {}
+    }
+
+    Some(node.clone())
+  }
+
+  /// Preallocate so many slots for ifdef/ifndef stack
+  const DEFAULT_CONDITION_STACK_SIZE: usize = 16;
+
+  pub fn new(ast_cache: &ArcRw<PpAstCache>,
+             file_cache: &ArcRw<FileContentsCache>) -> Self {
+    Self {
+      ast_cache: ast_cache.clone(),
+      file_cache: file_cache.clone(),
+      condition_stack: Vec::with_capacity(Self::DEFAULT_CONDITION_STACK_SIZE),
+      pp_symbols: Default::default(),
+    }
+  }
+
+  /// Interpret parsed attributes/preprocessor directives from top to bottom
+  /// - Exclude ifdef/if/ifndef sections where the condition check fails
+  /// - Load include files and paste them where include directive was found. Continue interpretation.
+  /// - Substitute macros.
+  ///
+  /// Return: a new preprocessed string joined together.
+  fn interpret_pp_ast(&mut self,
+                      source_file: &SourceFile,
+                      ast_tree: Arc<PpAstTree>) -> ErlResult<Vec<PpAstNode>> {
+    // From top to down interpret the preprocessed AST. Includes will restart the intepretation
+    // from the pasted included AST.
+    let interpreted = ast_tree.nodes.iter()
+        .filter_map(|node| {
+          let result = self.interpret_pp_rule_map(node, &source_file);
+          match &result {
+            Some(r) => println!("Interpret: {:30} → {}", node.fmt(), r.fmt()),
+            None => println!("Interpret: {:30} → ×", node.fmt() ),
           }
-          PpAstNode::Module(_) => {} // skip
-          PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
-          PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
-          PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
-          PpAstNode::Define(_, _) => {} // TODO: add new macro definition
-          PpAstNode::Ifdef(_) => {}
-          PpAstNode::Else => {}
-          PpAstNode::Endif => {}
-        }
-
-        pos += 1;
-      });
-
-  Ok(output.join(""))
+          result
+        })
+        .collect();
+    Ok(interpreted)
+  }
 }
 
 /// Preprocessor stage
@@ -180,9 +256,8 @@ pub fn run(_project: &mut ErlProject,
       // Loaded and parsed HRL files are cached to be inserted into every include location
       .for_each(
         |path| {
-          if preprocess_file(&path,
-                             ast_cache.clone(),
-                             file_cache.clone()).unwrap() {
+          let mut pp_state = PpState::new(&ast_cache, &file_cache);
+          if pp_state.preprocess_file(&path).unwrap() {
             preprocessed_count += 1;
           }
         });

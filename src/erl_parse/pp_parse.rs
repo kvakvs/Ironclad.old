@@ -34,11 +34,7 @@ impl PpAstTree {
     }
   }
 
-  // fn parse_pp_ast_list(pairs: Pairs<Rule>) -> Vec<PpAstNode> {
-  //   pairs.into_iter().map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>()
-  // }
-
-  /// Convert a node produced by the Pest PEG parser into AST node
+  /// Convert a parse node produced by the Pest PEG parser into Preprocessor AST node
   fn parse_pp_ast(pair: Pair<Rule>) -> PpAstNode {
     match pair.as_rule() {
       Rule::file => {
@@ -49,13 +45,16 @@ impl PpAstTree {
 
       Rule::text => PpAstNode::Text(String::from(pair.as_str())),
 
-      Rule::pp_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
+      // Rule::pp_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
 
       Rule::pp_include => PpAstNode::Include(String::from(pair.into_inner().as_str())),
 
       Rule::pp_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
 
       Rule::pp_ifdef => PpAstNode::Ifdef(String::from(pair.as_str())),
+      Rule::pp_ifndef => PpAstNode::Ifndef(String::from(pair.as_str())),
+      Rule::pp_if => PpAstNode::If(String::from(pair.as_str())),
+      Rule::pp_elif => PpAstNode::Elif(String::from(pair.as_str())),
       Rule::pp_else => PpAstNode::Else,
       Rule::pp_endif => PpAstNode::Endif,
 

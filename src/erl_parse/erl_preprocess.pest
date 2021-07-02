@@ -7,22 +7,34 @@ file = {
 file_item = _{ pp_directive | text | string }
 
 pp_directive = _{
-    ( pp_include | pp_module | pp_include_lib
-    | pp_define | pp_ifdef | pp_else | pp_endif )
+    ( pp_include | pp_include_lib
+    | pp_define | pp_undef
+    | pp_if | pp_elif
+    | pp_ifdef | pp_ifndef | pp_else | pp_endif )
 }
 
 // Particular case: Include directive -include("path").
 pp_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
 
-pp_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+// pp_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 
 // Particular case: Include directive -include_lib("path").
 pp_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
 
 pp_define = { "-" ~ "define" ~ "(" ~ anycase_ident ~ "," ~ pp_directive_remaining_text ~ pp_directive_tail }
+pp_undef = { "-" ~ "undef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
 
-// Conditional directive
+// Conditional directive, if symbol is defined
 pp_ifdef = { "-" ~ "ifdef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
+
+// Conditional directive, if symbol is not defined
+pp_ifndef = { "-" ~ "ifndef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
+
+// Conditional directive, if symbolic expression evaluates true
+pp_if = { "-" ~ "if" ~ "(" ~ pp_directive_remaining_text ~ ")" ~ "." }
+
+// Conditional directive, replaces last condition on the condition stack
+pp_elif = { "-" ~ "elif" ~ "(" ~ pp_directive_remaining_text ~ ")" ~ "." }
 
 // Allows both -else(). and -else.
 pp_else = { "-" ~ "else" ~ ( "(" ~ ")" )? ~ "." }

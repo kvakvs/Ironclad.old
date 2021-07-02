@@ -12,6 +12,9 @@ use std::sync::Arc;
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Debug, Clone)]
 pub enum PpAstNode {
+  // /// Do nothing node, deleted code
+  // Skip,
+
   File(Vec<PpAstNode>),
 
   /// A % line comment
@@ -20,8 +23,8 @@ pub enum PpAstNode {
   /// Any text
   Text(String),
 
-  /// Generic attribute -name(args, ...).
-  Attr { name: String, args: Vec<PpAstNode> },
+  // /// Generic attribute -name(args, ...).
+  // Attr { name: String, args: Vec<PpAstNode> },
 
   /// Specific directive: -module('atom').
   Module(String),
@@ -35,6 +38,9 @@ pub enum PpAstNode {
   /// Specific directive: -define(NAME, any text...).
   Define(String, String),
   Ifdef(String),
+  Ifndef(String),
+  If(String),
+  Elif(String),
   Else,
   Endif,
 
@@ -51,17 +57,18 @@ impl PpAstNode {
     &trimmed[..CLAMP_LENGTH - 1]
   }
 
-  pub fn fmt(&self, source_file: &SourceFile) -> String {
+  pub fn fmt(&self) -> String {
     match self {
       Self::Comment(s) => format!("Comment({})", Self::trim(s)),
       Self::Text(s) => format!("T({})", Self::trim(s)),
-      Self::Attr { name, args } => {
-        let args_str = args.iter()
-            .map(|arg| format!("{:?}", arg))
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("Attr({}, {})", name, args_str)
-      },
+
+      // Self::Attr { name, args } => {
+      //   let args_str = args.iter()
+      //       .map(|arg| format!("{:?}", arg))
+      //       .collect::<Vec<String>>()
+      //       .join(", ");
+      //   format!("Attr({}, {})", name, args_str)
+      // },
 
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
@@ -71,9 +78,12 @@ impl PpAstNode {
       PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAstNode::File(nodes) => format!("File{{{:?}}}", nodes),
       PpAstNode::Define(name, body) => format!("Define({}, {})", name, body),
-      PpAstNode::Ifdef(name) => format!("Ifdef({})", name),
+      PpAstNode::Ifdef(name) => format!("If Def({})", name),
+      PpAstNode::Ifndef(name) => format!("If !Def({})", name),
       PpAstNode::Else => format!("Else"),
       PpAstNode::Endif => format!("Endif"),
+      PpAstNode::If(name) => format!("If({})", name),
+      PpAstNode::Elif(name) => format!("Else If({})", name),
     }
   }
 }

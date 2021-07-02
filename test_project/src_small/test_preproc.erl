@@ -1,11 +1,15 @@
 -module(fgsfds).
+
 % test comment
+-define(AAA, 1).
+-ifdef(AAA).
+THIS IS GOOD
 -else.
--author("Dmytro").
-%% API
--export([]).
--define(HELLO
-).
--ifdef(HELLO).
--error("ERROR").
+THIS IS BAD 1
+-endif.
+
+-ifndef(AAA).
+THIS IS BAD 2
 -endif().
+
+fn() -> ok.
