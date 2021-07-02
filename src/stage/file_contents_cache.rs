@@ -4,7 +4,6 @@ use std::path::{PathBuf, Path};
 use crate::erl_error::ErlResult;
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
-use std::ops::DerefMut;
 use std::sync::Arc;
 
 /// Contains loaded files ready for parse by the preprocessor.

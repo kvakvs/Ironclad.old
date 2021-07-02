@@ -1,11 +1,9 @@
 use crate::erl_error::{ErlResult};
-use crate::erl_parse;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{PathBuf, Path};
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstCache, PpAstTree};
 use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
-use crate::erl_parse::pp_directive::pp_include::PpInclude;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 
@@ -34,8 +32,12 @@ fn preprocess_file(file_name: &Path,
     |ac| ac.syntax_trees.insert(file_name.to_path_buf(), ast_tree.clone()),
   );
 
-  let output = interpret_pp_ast(&contents, ast_tree.clone(),
-                                ast_cache.clone(), file_cache.clone())?;
+  let output = interpret_pp_ast(
+    &contents,
+    ast_tree.clone(),
+    ast_cache.clone(),
+    file_cache.clone()
+  )?;
 
   // Success: insert new string into preprocessed source cache
   let mut file_cache_rw = file_cache.write().unwrap();
@@ -117,9 +119,9 @@ fn interpret_pp_ast(source_file: &SourceFile,
       })
       .collect();
 
-  a.iter()
+  a.into_iter()
       .for_each(|node| {
-        println!("Interpret: {:?}", node.fmt(source_file));
+        println!("Interpret: {}", node.fmt(source_file));
 
         match &node {
           PpAstNode::Comment(_) => {} // skip
@@ -142,6 +144,7 @@ fn interpret_pp_ast(source_file: &SourceFile,
           PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
           PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
           PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
+          PpAstNode::Define(_, _) => {} // TODO: add new macro definition
         }
 
         pos += 1;

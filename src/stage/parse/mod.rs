@@ -2,7 +2,7 @@ use crate::project::ErlProject;
 use std::sync::{Arc, RwLock};
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{Path};
-use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
+use crate::erl_error::{ErlResult};
 use crate::stage::ast_cache::{AstCache, ModuleAST};
 use crate::erl_parse::ast::ErlAstNode;
 use crate::stage::compile_module::CompileModule;

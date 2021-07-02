@@ -1,11 +1,9 @@
 use crate::erl_error::{ErlResult};
 use crate::erl_parse::erl_pp::{ErlPreprocessorParser, Rule};
 use crate::erl_parse::pp_ast::{PpAstNode, PpAstTree};
-use crate::erl_parse::{helpers, Span};
 use crate::project::source_file::SourceFile;
-use pest::iterators::{Pair, Pairs};
+use pest::iterators::{Pair};
 use pest::Parser;
-use std::path::Path;
 use std::sync::Arc;
 
 impl PpAstTree {
@@ -29,7 +27,7 @@ impl PpAstTree {
           nodes,
         };
 
-        pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
+        // pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
         Ok(pp_tree)
       }
       _ => panic!("Only File() AST node is expected as parse result root")
@@ -56,17 +54,24 @@ impl PpAstTree {
 
       Rule::pp_directive_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_generic => {
-        let mut inner_rules = pair.into_inner();
-        let ident = inner_rules.next().unwrap();
-        let args = inner_rules.map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
-        PpAstNode::Attr {
-          name: String::from(ident.as_str()),
-          args
-        }
-      }
+      Rule::pp_directive_define => {
+        let mut inner = pair.into_inner();
+        let name = String::from(inner.next().unwrap().as_str());
+        let body = String::from(inner.next().unwrap().as_str());
+        PpAstNode::Define(name, body)
+      },
 
-      Rule::pp_generic_arg => PpAstNode::Text(String::from(pair.as_str())),
+      // Rule::pp_generic => {
+      //   let mut inner_rules = pair.into_inner();
+      //   let ident = inner_rules.next().unwrap();
+      //   let args = inner_rules.map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
+      //   PpAstNode::Attr {
+      //     name: String::from(ident.as_str()),
+      //     args,
+      //   }
+      // }
+
+      // Rule::pp_generic_arg => PpAstNode::Text(String::from(pair.as_str())),
 
       other => unreachable!("value: {:?}", other),
     }

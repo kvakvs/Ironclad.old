@@ -1,29 +1,39 @@
 // Split an ERL source into macro definitions, conditional compile directives and everything else
 
-file = { file_item* }
-file_item = _{ (pp_directive | text | string) ~ NEWLINE }
+file = {
+    // optional because empty lines should match something too, like just a newline
+    ( file_item? ~ NEWLINE )*
+}
+file_item = _{ pp_directive | text | string }
 
-pp_directive = _{ pp_directive_include | pp_directive_module | pp_directive_include_lib | pp_generic }
-directive_ending = _{ ")" ~ "." }
+pp_directive = _{
+    pp_directive_include | pp_directive_module | pp_directive_include_lib | pp_directive_define
+}
 
 // Particular case: Include directive -include("path").
-pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ directive_ending }
+pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
 
-pp_directive_module = { "-" ~ "module" ~ "(" ~ atom ~ directive_ending }
+pp_directive_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 
 // Particular case: Include directive -include_lib("path").
-pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ directive_ending }
+pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
+
+// Takes everything after comma till ").<CRLF>"
+pp_directive_define = { "-" ~ "define" ~ "(" ~ anycase_ident ~ "," ~ pp_directive_remaining_text ~ pp_directive_tail }
+pp_directive_remaining_text = ${ (! pp_directive_tail ~ ANY)+ }
+pp_directive_tail = _{ ")" ~ "." }
 
 // Generic case: Any directive with 'ident' as a name and some comma separated args
-pp_generic = { "-" ~ ident ~ pp_generic_args? ~ "." }
-pp_generic_args = _{ "(" ~ pp_generic_arg? ~ ("," ~ pp_generic_arg)* ~ ")" }
-pp_generic_arg = { ( !( "," | ")" ) ~ ANY )+ }
+// pp_generic = { "-" ~ ident ~ pp_generic_args? ~ "." }
+// pp_generic_args = _{ "(" ~ pp_generic_arg? ~ ("," ~ pp_generic_arg)* ~ ")" }
+// pp_generic_arg = { ( !( "," | ")" ) ~ ANY )+ }
 
 string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char }
 string_char = {
     !("\"" | "\\") ~ ANY
-    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("\"" | "\\" | "/")
+    // | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
@@ -37,9 +47,11 @@ quoted_atom_char = {
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
-ident = { (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
+ident = ${ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
+anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 
-text = { ANY+ }
+// Take all characters which are not newline, even with whitespaces
+text = ${ (!NEWLINE ~ ANY)+ }
 
 WHITESPACE = _{ " " | "\t" }
-COMMENT = _{ "%" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+// COMMENT = _{ "%" ~ (!NEWLINE ~ ANY)* }

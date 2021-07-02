@@ -1,13 +1,10 @@
 use crate::erl_parse::Span;
 use crate::project::source_file::SourceFile;
 use crate::project::ErlProject;
-use crate::types::ArcRw;
 use std::collections::HashMap;
-use std::fmt;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
-// use crate::erl_parse::Span;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -25,14 +22,17 @@ pub enum PpAstNode {
   /// Generic attribute -name(args, ...).
   Attr { name: String, args: Vec<PpAstNode> },
 
-  /// Specific attribute: -module('atom').
+  /// Specific directive: -module('atom').
   Module(String),
 
-  /// Specific attribute: -include("path").
+  /// Specific directive: -include("path").
   Include(String),
 
-  /// Specific attribute: -include_lib("path").
+  /// Specific directive: -include_lib("path").
   IncludeLib(String),
+
+  /// Specific directive: -define(NAME, any text...).
+  Define(String, String),
 
   IncludedFile(Arc<PpAstTree>),
 }
@@ -62,10 +62,11 @@ impl PpAstNode {
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
       }
-      PpAstNode::Module(p) => format!("-module({}).", p),
-      PpAstNode::Include(p) => format!("-include({}).", p),
-      PpAstNode::IncludeLib(p) => format!("-include_lib({}).", p),
+      PpAstNode::Module(p) => format!("Module({})", p),
+      PpAstNode::Include(p) => format!("Include({})", p),
+      PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAstNode::File(nodes) => format!("File{{{:?}}}", nodes),
+      PpAstNode::Define(name, body) => format!("Define({}, {})", name, body)
     }
   }
 }

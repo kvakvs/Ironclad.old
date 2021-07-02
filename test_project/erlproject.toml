@@ -2,11 +2,11 @@
 include_paths = []
 
 [inputs]
-#files = ["beam_types.erl"]
-#directories = ["test_project/src"]
+files = ["beam_types.erl"]
+directories = ["test_project/src"]
 
-files = ["test_preproc.erl"]
-directories = ["test_project/src_small"]
+#files = ["test_preproc.erl"]
+#directories = ["test_project/src_small"]
 
 exclude_files = []
 exclude_directories = []
