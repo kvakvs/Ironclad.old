@@ -46,15 +46,20 @@ impl PpAstTree {
         let ast_nodes = pair.into_inner().map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
         PpAstNode::File(ast_nodes)
       }
+
       Rule::text => PpAstNode::Text(String::from(pair.as_str())),
 
-      Rule::pp_directive_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
+      Rule::pp_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_directive_include => PpAstNode::Include(String::from(pair.into_inner().as_str())),
+      Rule::pp_include => PpAstNode::Include(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_directive_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
+      Rule::pp_include_lib => PpAstNode::IncludeLib(String::from(pair.into_inner().as_str())),
 
-      Rule::pp_directive_define => {
+      Rule::pp_ifdef => PpAstNode::Ifdef(String::from(pair.as_str())),
+      Rule::pp_else => PpAstNode::Else,
+      Rule::pp_endif => PpAstNode::Endif,
+
+      Rule::pp_define => {
         let mut inner = pair.into_inner();
         let name = String::from(inner.next().unwrap().as_str());
         let body = String::from(inner.next().unwrap().as_str());
@@ -72,6 +77,7 @@ impl PpAstTree {
       // }
 
       // Rule::pp_generic_arg => PpAstNode::Text(String::from(pair.as_str())),
+      Rule::COMMENT => PpAstNode::Comment(String::from(pair.as_str())),
 
       other => unreachable!("value: {:?}", other),
     }

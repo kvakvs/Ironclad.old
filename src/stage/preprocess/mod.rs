@@ -145,6 +145,9 @@ fn interpret_pp_ast(source_file: &SourceFile,
           PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
           PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
           PpAstNode::Define(_, _) => {} // TODO: add new macro definition
+          PpAstNode::Ifdef(_) => {}
+          PpAstNode::Else => {}
+          PpAstNode::Endif => {}
         }
 
         pos += 1;

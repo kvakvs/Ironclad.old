@@ -15,7 +15,8 @@ pub enum PpAstNode {
   File(Vec<PpAstNode>),
 
   /// A % line comment
-  Comment(Span),
+  Comment(String),
+
   /// Any text
   Text(String),
 
@@ -33,6 +34,9 @@ pub enum PpAstNode {
 
   /// Specific directive: -define(NAME, any text...).
   Define(String, String),
+  Ifdef(String),
+  Else,
+  Endif,
 
   IncludedFile(Arc<PpAstTree>),
 }
@@ -49,7 +53,7 @@ impl PpAstNode {
 
   pub fn fmt(&self, source_file: &SourceFile) -> String {
     match self {
-      Self::Comment(s) => format!("%({})", Self::trim(s.text(source_file))),
+      Self::Comment(s) => format!("Comment({})", Self::trim(s)),
       Self::Text(s) => format!("T({})", Self::trim(s)),
       Self::Attr { name, args } => {
         let args_str = args.iter()
@@ -66,7 +70,10 @@ impl PpAstNode {
       PpAstNode::Include(p) => format!("Include({})", p),
       PpAstNode::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAstNode::File(nodes) => format!("File{{{:?}}}", nodes),
-      PpAstNode::Define(name, body) => format!("Define({}, {})", name, body)
+      PpAstNode::Define(name, body) => format!("Define({}, {})", name, body),
+      PpAstNode::Ifdef(name) => format!("Ifdef({})", name),
+      PpAstNode::Else => format!("Else"),
+      PpAstNode::Endif => format!("Endif"),
     }
   }
 }

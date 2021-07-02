@@ -2,7 +2,7 @@
 include_paths = []
 
 [inputs]
-files = ["beam_types.erl"]
+files = ["rec_env.erl"]
 directories = ["test_project/src"]
 
 #files = ["test_preproc.erl"]

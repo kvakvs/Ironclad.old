@@ -2,26 +2,37 @@
 
 file = {
     // optional because empty lines should match something too, like just a newline
-    ( file_item? ~ NEWLINE )*
+    file_item*
 }
 file_item = _{ pp_directive | text | string }
 
 pp_directive = _{
-    pp_directive_include | pp_directive_module | pp_directive_include_lib | pp_directive_define
+    ( pp_include | pp_module | pp_include_lib
+    | pp_define | pp_ifdef | pp_else | pp_endif )
 }
 
 // Particular case: Include directive -include("path").
-pp_directive_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
+pp_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
 
-pp_directive_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+pp_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 
 // Particular case: Include directive -include_lib("path").
-pp_directive_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
+pp_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
 
-// Takes everything after comma till ").<CRLF>"
-pp_directive_define = { "-" ~ "define" ~ "(" ~ anycase_ident ~ "," ~ pp_directive_remaining_text ~ pp_directive_tail }
+pp_define = { "-" ~ "define" ~ "(" ~ anycase_ident ~ "," ~ pp_directive_remaining_text ~ pp_directive_tail }
+
+// Conditional directive
+pp_ifdef = { "-" ~ "ifdef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
+
+// Allows both -else(). and -else.
+pp_else = { "-" ~ "else" ~ ( "(" ~ ")" )? ~ "." }
+
+// Allows both -endif(). and -endif.
+pp_endif = { "-" ~ "endif" ~ ( "(" ~ ")" )? ~ "." }
+
+// Consumes everything till ").<CRLF>" or till a comment
 pp_directive_remaining_text = ${ (! pp_directive_tail ~ ANY)+ }
-pp_directive_tail = _{ ")" ~ "." }
+pp_directive_tail = _{ ")" ~ "." ~ (NEWLINE | "%") }
 
 // Generic case: Any directive with 'ident' as a name and some comma separated args
 // pp_generic = { "-" ~ ident ~ pp_generic_args? ~ "." }
@@ -32,8 +43,8 @@ string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char }
 string_char = {
     !("\"" | "\\") ~ ANY
-    | "\\" ~ ("\"" | "\\" | "/")
-    // | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    // | "\\" ~ ("\"" | "\\" | "/")
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
@@ -51,7 +62,9 @@ ident = ${ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* 
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 
 // Take all characters which are not newline, even with whitespaces
-text = ${ (!NEWLINE ~ ANY)+ }
+text = ${ (!NEWLINE ~ ANY)+ ~ NEWLINE }
 
-WHITESPACE = _{ " " | "\t" }
-// COMMENT = _{ "%" ~ (!NEWLINE ~ ANY)* }
+// erl_comment = ${ "%" ~ (!NEWLINE ~ ANY)*  }
+
+WHITESPACE = _{ WHITE_SPACE }
+COMMENT = ${ "%" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
