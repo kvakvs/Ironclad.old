@@ -186,6 +186,14 @@ impl PpState {
 
       // An attribute without parens
       // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
+      PpAstNode::Include(path) => {
+        println!("TODO: interpret Include directive");
+        return None
+      },
+      PpAstNode::IncludeLib(path) => {
+        println!("TODO: interpret IncludeLib directive");
+        return None
+      },
 
       PpAstNode::IncludedFile(include_ast_tree) => {
         // TODO: Return ErlResult

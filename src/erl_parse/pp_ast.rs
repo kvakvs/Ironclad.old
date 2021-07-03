@@ -41,6 +41,9 @@ pub enum PpAstNode {
   Else,
   Endif,
 
+  Error(String),
+  Warning(String),
+
   IncludedFile(Arc<PpAstTree>),
 }
 
@@ -81,6 +84,8 @@ impl PpAstNode {
       PpAstNode::If(name) => format!("If({})", name),
       PpAstNode::Elif(name) => format!("Else If({})", name),
       PpAstNode::Undef(name) => format!("Undef({})", name),
+      PpAstNode::Error(t) => format!("Error({})", t),
+      PpAstNode::Warning(t) => format!("Warning({})", t),
     }
   }
 }

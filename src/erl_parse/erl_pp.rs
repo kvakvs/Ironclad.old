@@ -7,11 +7,21 @@ mod tests {
   use crate::erl_parse::erl_pp::{ErlPreprocessorParser, Rule};
   use pest::Parser;
 
+  fn check_if_parses(rule: Rule, input: &str, inner_output: &str) {
+    match ErlPreprocessorParser::parse(rule, input) {
+      Ok(mut result) => {
+        assert_eq!(result.next().unwrap().into_inner().as_str(),
+                   inner_output,
+                   "Parsing a rule {:?} from {} did not work", rule, input);
+      }
+      Err(e) =>
+        assert!(false, "Parse error at{}", e)
+    }
+  }
+
   #[test]
   /// Try parse string
   fn parse_string_test() {
-    let sample = "\"test\"";
-    let mut result = ErlPreprocessorParser::parse(Rule::string, sample).unwrap();
-    assert_eq!(result.next().unwrap().into_inner().as_str(), sample);
+    check_if_parses(Rule::string, "\"test\"", "test");
   }
 }

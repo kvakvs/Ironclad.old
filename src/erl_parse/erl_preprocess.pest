@@ -64,7 +64,7 @@ pp_directive_tail = _{ ")" ~ "." }
 // pp_directive_tail = _{ !( string | quoted_atom ) ~ ")." ~ (NEWLINE | "%") }
 
 string = ${ "\"" ~ string_inner ~ "\"" }
-string_inner = @{ string_char }
+string_inner = @{ string_char* }
 string_char = {
     !("\"" | "\\") ~ ANY
     // | "\\" ~ ("\"" | "\\" | "/")
@@ -86,9 +86,11 @@ ident = ${ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* 
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 
 // Take all characters which are not newline, even with whitespaces
-text = ${ (!NEWLINE ~ ANY)+ ~ NEWLINE }
+text = ${ (!NEWLINE ~ ANY)+ ~ end_line }
 
 // erl_comment = ${ "%" ~ (!NEWLINE ~ ANY)*  }
 
 WHITESPACE = _{ WHITE_SPACE }
-COMMENT = ${ "%" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+COMMENT = ${ "%" ~ (!NEWLINE ~ ANY)* ~ end_line }
+
+end_line = _{ NEWLINE | EOI }

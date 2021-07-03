@@ -58,6 +58,9 @@ impl PpAstTree {
       Rule::pp_else => PpAstNode::Else,
       Rule::pp_endif => PpAstNode::Endif,
 
+      Rule::pp_error => PpAstNode::Error(String::from(pair.into_inner().as_str())),
+      Rule::pp_warning => PpAstNode::Warning(String::from(pair.into_inner().as_str())),
+
       Rule::pp_define => {
         let mut inner = pair.into_inner();
         let name = String::from(inner.next().unwrap().as_str());
