@@ -1,5 +1,10 @@
 [compiler_options]
 include_paths = []
+defines = [
+    'MY_TRUE=true',
+    'MY_DEBUG',
+    'MY_FALSE=0'
+]
 
 [inputs]
 #files = ["rec_env.erl"]

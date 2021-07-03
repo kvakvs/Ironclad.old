@@ -1,4 +1,3 @@
-use crate::erl_parse::Span;
 use crate::project::source_file::SourceFile;
 use crate::project::ErlProject;
 use std::collections::HashMap;

@@ -7,13 +7,12 @@ use crate::stage::ast_cache::{AstCache, ModuleAST};
 use crate::erl_parse::ast::ErlAstNode;
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
-use crate::types::ArcRw;
 use crate::project::source_file::SourceFile;
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
-              file_contents: Arc<SourceFile>,
-              compile_options: ArcRw<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
+              _file_contents: Arc<SourceFile>,
+              compile_options: Arc<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
   let _module = CompileModule::new(file_name, compile_options);
 
   // ErlError::not_impl("parse module")

@@ -8,21 +8,35 @@ file_item = _{ pp_directive | text | string }
 
 pp_directive = _{
     ( pp_include | pp_include_lib
-    | pp_define | pp_undef
+    | pp_define | pp_define_fun | pp_undef
     | pp_if | pp_elif
     | pp_ifdef | pp_ifndef | pp_else | pp_endif
+    | pp_error | pp_warning
     )
 }
 
 // Particular case: Include directive -include("path").
 pp_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
 
+// Create a compiler error or a compiler warning
+pp_error = { "-" ~ "error" ~ "(" ~ string ~ ")" ~ "." }
+pp_warning = { "-" ~ "warning" ~ "(" ~ string ~ ")" ~ "." }
+
 // pp_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 
 // Particular case: Include directive -include_lib("path").
 pp_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
 
+// Defines a NAME to be equal to SOME TEXT
 pp_define = { "-" ~ "define" ~ "(" ~ anycase_ident ~ "," ~ pp_directive_remaining_text ~ pp_directive_tail }
+
+// Like the one before, but with args: -define(NAME(A, B, ...), Value).
+pp_define_fun = {
+    "-" ~ "define" ~ "(" ~ anycase_ident ~ pp_args ~ ","
+    ~ pp_directive_remaining_text ~ pp_directive_tail
+}
+pp_args = { "(" ~ anycase_ident? ~ ("," ~ anycase_ident)*  ~ ")" }
+
 pp_undef = { "-" ~ "undef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
 
 // Conditional directive, if symbol is defined

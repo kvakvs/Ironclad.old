@@ -6,9 +6,9 @@ use crate::project::input_opts::InputOpts;
 use crate::project::conf::ErlProjectConf;
 use glob::{glob};
 use std::path::{PathBuf, Path};
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use crate::stage;
-use crate::types::{ArcRw, create_arcrw};
+use std::sync::Arc;
 
 pub(crate) mod conf;
 pub(crate) mod compiler_opts;
@@ -20,7 +20,7 @@ pub(crate) mod source_file;
 pub struct ErlProject {
   /// Input search paths, output paths, flags, ... etc. Shared with all modules which use default
   /// compile options
-  pub compiler_opts: ArcRw<CompilerOpts>,
+  pub compiler_opts: Arc<CompilerOpts>,
 
   /// Input files and directories (wildcards are allowed)
   inputs: InputOpts,
@@ -30,14 +30,30 @@ pub struct ErlProject {
 }
 
 impl ErlProject {
+  /// Return preprocessor symbols defined for a given file
+  pub(crate) fn get_preprocessor_symbols(&self, _path: &PathBuf) -> HashMap<String, String> {
+    let mut result: HashMap<String, String> = Default::default();
+
+    self.compiler_opts.defines.iter()
+        .for_each(|def| {
+          Self::parse_preprocessor_define(def, &mut result);
+        });
+
+    return result;
+  }
+
+  /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition
+  /// symbols table. This will be passed then to preprocessor parser.
+  fn parse_preprocessor_define(key_value: &str, _symbols: &mut HashMap<String, String>) {
+    println!("Config preproc opt: {}", key_value);
+  }
+
   /// Get a clone of project compiler options
   /// TODO: special override options if user specifies extras as a module attribute
-  pub(crate) fn get_compiler_options_for(&self, _path: &Path) -> ArcRw<CompilerOpts> {
+  pub(crate) fn get_compiler_options_for(&self, _path: &Path) -> Arc<CompilerOpts> {
     self.compiler_opts.clone()
   }
-}
 
-impl ErlProject {
   pub const DEFAULT_CAPACITY: usize = 1024; // preallocate this many inputs in the file_list
 
   /// Traverse directories starting from each of the inputs.directories;
@@ -98,7 +114,7 @@ impl ErlProject {
 impl From<ErlProjectConf> for ErlProject {
   fn from(conf: ErlProjectConf) -> Self {
     Self {
-      compiler_opts: create_arcrw(CompilerOpts::from(conf.compiler_opts)),
+      compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
       inputs: InputOpts::from(conf.inputs),
       file_set: HashSet::new(),
     }

@@ -2,6 +2,8 @@ use serde_derive::Deserialize;
 use std::fmt::Debug;
 
 /// Options for building entire project, or a single module
+/// This version of struct is parsed from TOML and all optional fields are Option<>
+/// The real config is in the module above this.
 #[derive(Deserialize, Debug)]
 pub struct CompilerOptsConf {
   /// If not specified, defaults to empty

@@ -1,6 +1,6 @@
 use std::path::{PathBuf, Path};
 use crate::project::compiler_opts::CompilerOpts;
-use crate::types::ArcRw;
+use std::sync::Arc;
 
 pub struct CompileModule {
   pub in_file: PathBuf,
@@ -13,7 +13,7 @@ pub struct CompileModule {
 
   pub encoding: String, // TODO: use crate encoding
 
-  pub options: ArcRw<CompilerOpts>,
+  pub options: Arc<CompilerOpts>,
   // pub mod_options: Arc<CompilerOpts> // for compile_info()
 
   // pub ast... forms from the parser
@@ -22,7 +22,7 @@ pub struct CompileModule {
 }
 
 impl CompileModule {
-  pub fn new(in_file: &Path, options: ArcRw<CompilerOpts>)  -> Self {
+  pub fn new(in_file: &Path, options: Arc<CompilerOpts>)  -> Self {
     Self {
       in_file: in_file.to_path_buf(),
       out_file: Default::default(), // will be set later

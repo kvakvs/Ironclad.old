@@ -67,6 +67,7 @@ impl PpState {
     );
 
     let pp_ast = self.interpret_pp_ast(&contents, ast_tree.clone())?;
+
     let output: String = pp_ast
         .into_iter()
         .map(|node| node.fmt())
@@ -203,13 +204,16 @@ impl PpState {
   /// Preallocate so many slots for ifdef/ifndef stack
   const DEFAULT_CONDITION_STACK_SIZE: usize = 16;
 
+  /// Create a preprocessor state struct for processing a file.
+  /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub fn new(ast_cache: &ArcRw<PpAstCache>,
-             file_cache: &ArcRw<FileContentsCache>) -> Self {
+             file_cache: &ArcRw<FileContentsCache>,
+             init_symbols: HashMap<String, String>) -> Self {
     Self {
       ast_cache: ast_cache.clone(),
       file_cache: file_cache.clone(),
       condition_stack: Vec::with_capacity(Self::DEFAULT_CONDITION_STACK_SIZE),
-      pp_symbols: Default::default(),
+      pp_symbols: init_symbols,
     }
   }
 
@@ -228,8 +232,8 @@ impl PpState {
         .filter_map(|node| {
           let result = self.interpret_pp_rule_map(node, &source_file);
           match &result {
-            Some(r) => println!("Interpret: {:30} → {}", node.fmt(), r.fmt()),
-            None => println!("Interpret: {:30} → ×", node.fmt() ),
+            Some(r) => println!("Interpret: {:40} → {}", node.fmt(), r.fmt()),
+            None => println!("Interpret: {:40} → ×", node.fmt()),
           }
           result
         })
@@ -243,8 +247,8 @@ impl PpState {
 /// * Pre-parse include files AST and paste into include locations.
 /// * Drop AST branches covered by the conditional compile directives.
 /// Side effects: Updates file contents cache
-/// Returns: preprocessed collection of module sources
-pub fn run(_project: &mut ErlProject,
+/// Returns preprocessed collection of module sources
+pub fn run(project: &mut ErlProject,
            file_cache: ArcRw<FileContentsCache>,
 ) -> ErlResult<()> {
   let ast_cache = create_arcrw(PpAstCache::new());
@@ -262,7 +266,8 @@ pub fn run(_project: &mut ErlProject,
       // Loaded and parsed HRL files are cached to be inserted into every include location
       .for_each(
         |path| {
-          let mut pp_state = PpState::new(&ast_cache, &file_cache);
+          let init_symbols = project.get_preprocessor_symbols(&path);
+          let mut pp_state = PpState::new(&ast_cache, &file_cache, init_symbols);
           if pp_state.preprocess_file(&path).unwrap() {
             preprocessed_count += 1;
           }
