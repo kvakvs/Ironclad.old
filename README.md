@@ -35,6 +35,14 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 
 - [x] Project configuration
 - [ ] Preprocessor 
+  - [x] Parse `-define/-if*/-else/-endif` directives
+  - [x] Interpret `-define/-if*/-else/-endif` directives by removing chunks of guarded code
+  - [x] Parse `-include/include_lib` directives
+  - [ ] Perform inclusion 
+  - [ ] Parse `-if(COND)`
+  - [ ] Interpret `-if(COND)`
+  - [ ] Substitute `?MACRO`
+  - [ ] Parse, interpret macros with arguments `-define(MACRO(X, Y), ...)`
 - [ ] Erlang syntax parser
 - [ ] ???
 - [ ] Code generator
