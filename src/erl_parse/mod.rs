@@ -1,7 +1,6 @@
 use crate::project::source_file::SourceFile;
 
 pub mod pp_parse;
-mod atom;
 pub mod ast;
 pub mod pp_ast;
 pub mod pp_directive;

@@ -20,8 +20,8 @@ impl PpAstTree {
   /// Lifetime note: Parse input string must live at least as long as parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
     let successful_parse = ErlPreprocessorParser::parse(Rule::file, &source_file.text)?.next().unwrap();
-    match Self::parse_pp_ast(successful_parse) {
-      PpAstNode::File(nodes) => {
+    match Self::pp_parse_tokens_to_ast(successful_parse) {
+      Ok(PpAstNode::File(nodes)) => {
         let pp_tree = PpAstTree {
           source: source_file.clone(),
           nodes,
@@ -35,11 +35,14 @@ impl PpAstTree {
   }
 
   /// Convert a parse node produced by the Pest PEG parser into Preprocessor AST node
-  fn parse_pp_ast(pair: Pair<Rule>) -> PpAstNode {
-    match pair.as_rule() {
+  pub fn pp_parse_tokens_to_ast(pair: Pair<Rule>) -> ErlResult<PpAstNode> {
+    let result = match pair.as_rule() {
       Rule::file => {
         // Parse all nested file elements, comments and text fragments
-        let ast_nodes = pair.into_inner().map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
+        let ast_nodes = pair.into_inner()
+            .map(Self::pp_parse_tokens_to_ast)
+            .map(|r| r.unwrap())
+            .collect::<Vec<PpAstNode>>();
         PpAstNode::File(ast_nodes)
       }
 
@@ -82,6 +85,27 @@ impl PpAstTree {
       Rule::COMMENT => PpAstNode::Comment(String::from(pair.as_str())),
 
       other => unreachable!("value: {:?}", other),
-    }
+    };
+    Ok(result)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::erl_parse::erl_pp::{ErlPreprocessorParser, Rule};
+  use pest::Parser;
+  use crate::erl_parse::pp_ast::{PpAstNode, PpAstTree};
+  use crate::erl_error::ErlResult;
+
+  fn parse(rule: Rule, input: &str) -> ErlResult<PpAstNode> {
+    let parse_output = ErlPreprocessorParser::parse(rule, input)?.next().unwrap();
+    PpAstTree::pp_parse_tokens_to_ast(parse_output)
+  }
+
+  #[test]
+  /// Try parse string
+  fn parse_define0_test() {
+    let define0 = parse(Rule::pp_define, "-define(AAA, true).\n").unwrap();
+    assert!(matches!(define0, PpAstNode::Define(_name, _value)));
   }
 }
