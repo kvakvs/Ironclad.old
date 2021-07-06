@@ -1,3 +1,4 @@
+#![allow(clippy::upper_case_acronyms)]
 #[derive(Parser)]
 #[grammar = "erl_parse/erl_preprocess.pest"]
 pub struct ErlPreprocessorParser;
@@ -23,5 +24,10 @@ mod tests {
   /// Try parse string
   fn parse_string_test() {
     check_if_parses(Rule::string, "\"test\"", "test");
+  }
+  fn parse_include_test() {
+    check_if_parses(Rule::pp_include, "\n-include(\"test\").\n", "test");
+    check_if_parses(Rule::pp_include, "\n-include(\"test\"\n).\n", "test");
+    check_if_parses(Rule::pp_include, "-include\n(\"test\"\n).\n", "test");
   }
 }

@@ -31,7 +31,7 @@ pub struct ErlProject {
 
 impl ErlProject {
   /// Return preprocessor symbols defined for a given file
-  pub(crate) fn get_preprocessor_symbols(&self, _path: &PathBuf) -> HashMap<String, String> {
+  pub(crate) fn get_preprocessor_symbols(&self, _path: &Path) -> HashMap<String, String> {
     let mut result: HashMap<String, String> = Default::default();
 
     self.compiler_opts.defines.iter()
@@ -39,7 +39,7 @@ impl ErlProject {
           Self::parse_preprocessor_define(def, &mut result);
         });
 
-    return result;
+    result
   }
 
   /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition

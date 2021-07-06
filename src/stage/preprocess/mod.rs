@@ -66,7 +66,7 @@ impl PpState {
       |ac| ac.syntax_trees.insert(file_name.to_path_buf(), ast_tree.clone()),
     );
 
-    let pp_ast = self.interpret_pp_ast(&contents, ast_tree.clone())?;
+    let pp_ast = self.interpret_pp_ast(&contents, ast_tree)?;
 
     let output: String = pp_ast
         .into_iter()
@@ -162,10 +162,9 @@ impl PpState {
     }
 
     // Then check if condition stack is not empty and last condition is valid
-    if !self.condition_stack.is_empty() {
-      if !self.condition_stack.last().unwrap().get_condition_value(&self.pp_symbols) {
-        return None;
-      }
+    if !self.condition_stack.is_empty() &&
+        !self.condition_stack.last().unwrap().get_condition_value(&self.pp_symbols) {
+      return None;
     }
 
     // Then copy or modify remaining AST nodes
@@ -186,23 +185,29 @@ impl PpState {
 
       // An attribute without parens
       // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
-      PpAstNode::Include(path) => {
+      PpAstNode::Include(_path) => {
         println!("TODO: interpret Include directive");
-        return None
-      },
-      PpAstNode::IncludeLib(path) => {
+        return None;
+      }
+      PpAstNode::IncludeLib(_path) => {
         println!("TODO: interpret IncludeLib directive");
-        return None
-      },
+        return None;
+      }
 
       PpAstNode::IncludedFile(include_ast_tree) => {
         // TODO: Return ErlResult
         self.interpret_pp_ast(source_file, include_ast_tree.clone()).unwrap();
       }
 
+      #[allow(unreachable_patterns)]
       PpAstNode::Include(_) => unreachable!("-include() must be eliminated at this stage"),
+
+      #[allow(unreachable_patterns)]
       PpAstNode::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
+
+      #[allow(unreachable_patterns)]
       PpAstNode::File(_) => unreachable!("File() root AST node must be eliminated on load"),
+
       _ => {}
     }
 
