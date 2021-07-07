@@ -67,14 +67,6 @@ impl PpAst {
       Self::Comment(s) => format!("Comment({})", Self::trim(s)),
       Self::Text(s) => format!("T({})", Self::trim(s)),
 
-      // Self::Attr { name, args } => {
-      //   let args_str = args.iter()
-      //       .map(|arg| format!("{:?}", arg))
-      //       .collect::<Vec<String>>()
-      //       .join(", ");
-      //   format!("Attr({}, {})", name, args_str)
-      // },
-
       Self::IncludedFile(include_rc) => {
         format!("include<{}>", include_rc.source.file_name.display())
       }
@@ -96,7 +88,10 @@ impl PpAst {
   }
 }
 
+/// A tree of Preprocessor syntax nodes with attached file name, and root element removed
 pub(crate) type PpAstTree = AstTree<PpAst>;
+
+/// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
 pub(crate) type PpAstCache = AstCache<PpAst>;
 
 impl PpAstCache {

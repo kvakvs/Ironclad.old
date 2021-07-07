@@ -16,5 +16,8 @@ pub enum ErlAst {
   String(String),
 }
 
+/// A tree of Erlang nodes with attached file name, and root element removed
 pub(crate) type ErlAstTree = AstTree<ErlAst>;
+
+/// A cache of trees of Erlang nodes, keyed by filename or module name
 pub(crate) type ErlAstCache = AstCache<ErlAst>;
