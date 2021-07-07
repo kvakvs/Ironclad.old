@@ -1,8 +1,10 @@
-use crate::project::ErlProject;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::syntaxtree::ast_cache::{AstTree, AstCache};
+
+use crate::project::ErlProject;
+use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use crate::syntaxtree::pp_expr::PpExpr;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -36,10 +38,14 @@ pub enum PpAst {
 
   Ifdef(String),
   Ifndef(String),
-  If(String),
-  Elif(String),
+
+  If(PpExpr),
+  Elif(PpExpr),
+
   Else,
   Endif,
+
+  Expr(PpExpr),
 
   Error(String),
   Warning(String),
@@ -82,11 +88,12 @@ impl PpAst {
       PpAst::Ifndef(name) => format!("If !Def({})", name),
       PpAst::Else => "Else".to_string(),
       PpAst::Endif => "Endif".to_string(),
-      PpAst::If(name) => format!("If({})", name),
-      PpAst::Elif(name) => format!("Else If({})", name),
+      PpAst::If(expr) => format!("If({:?})", expr),
+      PpAst::Elif(expr) => format!("Else If({:?})", expr),
       PpAst::Undef(name) => format!("Undef({})", name),
       PpAst::Error(t) => format!("Error({})", t),
       PpAst::Warning(t) => format!("Warning({})", t),
+      PpAst::Expr(e) => format!("Expr({:?})", e),
     }
   }
 }

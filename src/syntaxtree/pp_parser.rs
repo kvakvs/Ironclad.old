@@ -10,10 +10,17 @@ mod tests {
   use pest::Parser;
   use crate::syntaxtree::pp_ast::{PpAstTree, PpAst};
   use crate::erl_error::ErlResult;
+  use crate::project::source_file::SourceFile;
+  use std::path::PathBuf;
+  use std::sync::Arc;
 
   fn parse(rule: Rule, input: &str) -> ErlResult<PpAst> {
     let parse_output = PpParser::parse(rule, input)?.next().unwrap();
-    PpAstTree::pp_parse_tokens_to_ast(parse_output)
+
+    let sf = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
+    let tree = PpAstTree::new(Arc::new(sf), vec![]);
+
+    tree.pp_parse_tokens_to_ast(parse_output)
   }
 
   #[test]
@@ -42,7 +49,7 @@ mod tests {
       PpAst::Define(name, val) => {
         assert_eq!(name, "AAA");
         assert_eq!(val, "\"aaa\"");
-      },
+      }
       _ => assert!(false, "Parsing define(AAA, \"aaa\"). failed"),
     }
 
@@ -51,7 +58,7 @@ mod tests {
       PpAst::Define(name, val) => {
         assert_eq!(name, "BBB");
         assert_eq!(val, "666");
-      },
+      }
       _ => assert!(false, "Parsing define(BBB, 666). failed"),
     }
   }

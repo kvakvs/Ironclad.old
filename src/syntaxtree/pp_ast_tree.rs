@@ -1,10 +1,11 @@
-use crate::erl_error::{ErlResult};
+use crate::erl_error::{ErlResult, ErlError};
 use crate::syntaxtree::pp_parser::{PpParser, Rule};
 use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
+use crate::syntaxtree::pp_expr::PpExpr;
 
 impl PpAstTree {
   /// Does rough preparse of ERL files, only being interested in -include, -ifdef, macros, ... etc
@@ -20,14 +21,16 @@ impl PpAstTree {
   /// Lifetime note: Parse input string must live at least as long as s2_parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
     let successful_parse = PpParser::parse(Rule::file, &source_file.text)?.next().unwrap();
-    match Self::pp_parse_tokens_to_ast(successful_parse) {
-      Ok(PpAst::File(nodes)) => {
-        let pp_tree = PpAstTree {
-          source: source_file.clone(),
-          nodes,
-        };
 
+    let mut pp_tree = PpAstTree {
+      source: source_file.clone(),
+      nodes: vec![],
+    };
+
+    match pp_tree.pp_parse_tokens_to_ast(successful_parse) {
+      Ok(PpAst::File(nodes)) => {
         // pp_tree.nodes.iter().for_each(|n| println!("Node: {:?}", n));
+        pp_tree.nodes = nodes;
         Ok(pp_tree)
       }
       _ => panic!("Only File() AST node is expected as s2_parse result root")
@@ -38,13 +41,25 @@ impl PpAstTree {
     Ok(String::from(pair.into_inner().as_str()))
   }
 
+  fn string_from_quoted_string(pair: Pair<Rule>) -> ErlResult<String> {
+    Self::string_from(pair.into_inner().next().unwrap())
+  }
+
+  fn parse_expr(&self, pair: Pair<Rule>) -> ErlResult<PpExpr> {
+    // String::from(pair.into_inner().as_str())
+    match self.pp_parse_tokens_to_ast(pair) {
+      Ok(PpAst::Expr(out)) => Ok(out),
+      _ => ErlError::pp_parse(&self.source.file_name,"Expression expected")
+    }
+  }
+
   /// Convert a s2_parse node produced by the Pest PEG parser into Preprocessor AST node
-  pub fn pp_parse_tokens_to_ast(pair: Pair<Rule>) -> ErlResult<PpAst> {
+  pub fn pp_parse_tokens_to_ast(&self, pair: Pair<Rule>) -> ErlResult<PpAst> {
     let result = match pair.as_rule() {
       Rule::file => {
         // Parse all nested file elements, comments and text fragments
         let ast_nodes = pair.into_inner()
-            .map(Self::pp_parse_tokens_to_ast)
+            .map(|p| self.pp_parse_tokens_to_ast(p))
             .map(|r| r.unwrap())
             .collect::<Vec<PpAst>>();
         PpAst::File(ast_nodes)
@@ -52,17 +67,17 @@ impl PpAstTree {
 
       Rule::text => PpAst::Text(String::from(pair.as_str())),
 
-      Rule::pp_include => {
-        let s = Self::string_from(pair.into_inner().next().unwrap())?;
-        PpAst::Include(s)
-      },
+      Rule::pp_include => PpAst::Include(Self::string_from_quoted_string(pair)?),
 
-      Rule::pp_include_lib => PpAst::IncludeLib(String::from(pair.into_inner().as_str())),
+      Rule::pp_include_lib => PpAst::IncludeLib(Self::string_from_quoted_string(pair)?),
 
-      Rule::pp_ifdef => PpAst::Ifdef(String::from(pair.into_inner().as_str())),
-      Rule::pp_ifndef => PpAst::Ifndef(String::from(pair.into_inner().as_str())),
-      Rule::pp_if => PpAst::If(String::from(pair.into_inner().as_str())),
-      Rule::pp_elif => PpAst::Elif(String::from(pair.into_inner().as_str())),
+      Rule::pp_ifdef => PpAst::Ifdef(Self::string_from(pair)?),
+      Rule::pp_ifndef => PpAst::Ifndef(Self::string_from(pair)?),
+
+      // -if and -elif can have boolean expressions in them
+      Rule::pp_if => PpAst::If(self.parse_expr(pair)?),
+      Rule::pp_elif => PpAst::Elif(self.parse_expr(pair)?),
+
       Rule::pp_else => PpAst::Else,
       Rule::pp_endif => PpAst::Endif,
 
