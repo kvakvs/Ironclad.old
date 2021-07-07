@@ -1,14 +1,14 @@
 #![allow(clippy::upper_case_acronyms)]
 
 #[derive(Parser)]
-#[grammar = "syntaxtree/pp_grammar.pest"]
+#[grammar = "syntaxtree/pp/pp_grammar.pest"]
 pub struct PpParser;
 
 #[cfg(test)]
 mod tests {
-  use crate::syntaxtree::pp_parser::{PpParser, Rule};
+  use crate::syntaxtree::pp::pp_parser::{PpParser, Rule};
   use pest::Parser;
-  use crate::syntaxtree::pp_ast::{PpAstTree, PpAst};
+  use crate::syntaxtree::pp::pp_ast::{PpAstTree, PpAst};
   use crate::erl_error::ErlResult;
   use crate::project::source_file::SourceFile;
   use std::path::PathBuf;
@@ -72,6 +72,15 @@ mod tests {
         assert_eq!(args, vec!["X", "Y"]);
         assert_eq!(body, "\"aaa\"");
       }
+      _ => assert!(false, "Parsing -define() with args must return PpAst::DefineFun")
+    }
+  }
+
+  #[test]
+  fn parse_if_test() {
+    let if0 = parse(Rule::pp_if, "if(10>20).").unwrap();
+    match if0 {
+      PpAst::If(s) => { assert_eq!(s, "10>20"); },
       _ => assert!(false, "Parsing -define() with args must return PpAst::DefineFun")
     }
   }

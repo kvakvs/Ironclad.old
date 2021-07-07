@@ -1,4 +1,5 @@
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use crate::syntaxtree::erl::erl_expr::ErlExpr;
 
 pub enum ErlAst {
   /// Generic module attribute -"string"(value, ...).
@@ -8,6 +9,7 @@ pub enum ErlAst {
   TypeArity(String, usize),
   Variable(String),
   TypeDef(String),
+  Expr(ErlExpr),
 }
 
 pub(crate) type ErlAstTree = AstTree<ErlAst>;

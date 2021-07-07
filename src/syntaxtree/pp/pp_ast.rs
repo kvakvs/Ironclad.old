@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use crate::project::ErlProject;
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::pp_expr::PpExpr;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -39,13 +38,13 @@ pub enum PpAst {
   Ifdef(String),
   Ifndef(String),
 
-  If(PpExpr),
-  Elif(PpExpr),
+  /// If and Elif store Erlang syntax parsable by Erlang grammar, which must resolve to a constant
+  /// expression otherwise compile error will be triggered.
+  If(String),
+  Elif(String),
 
   Else,
   Endif,
-
-  Expr(PpExpr),
 
   Error(String),
   Warning(String),
@@ -88,12 +87,11 @@ impl PpAst {
       PpAst::Ifndef(name) => format!("If !Def({})", name),
       PpAst::Else => "Else".to_string(),
       PpAst::Endif => "Endif".to_string(),
-      PpAst::If(expr) => format!("If({:?})", expr),
-      PpAst::Elif(expr) => format!("Else If({:?})", expr),
+      PpAst::If(expr) => format!("If({})", expr),
+      PpAst::Elif(expr) => format!("Elif({})", expr),
       PpAst::Undef(name) => format!("Undef({})", name),
       PpAst::Error(t) => format!("Error({})", t),
       PpAst::Warning(t) => format!("Warning({})", t),
-      PpAst::Expr(e) => format!("Expr({:?})", e),
     }
   }
 }

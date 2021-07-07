@@ -1,6 +1,8 @@
+use std::path::{Path, PathBuf};
+
 use thiserror::Error;
-use std::path::{PathBuf, Path};
-use crate::syntaxtree::{pp_parser};
+
+use crate::syntaxtree::pp::pp_parser;
 
 #[derive(Debug)]
 pub enum ErrorLocation {

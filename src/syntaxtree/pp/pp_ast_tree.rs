@@ -1,11 +1,10 @@
-use crate::erl_error::{ErlResult, ErlError};
-use crate::syntaxtree::pp_parser::{PpParser, Rule};
-use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
+use crate::erl_error::{ErlResult};
+use crate::syntaxtree::pp::pp_parser::{PpParser, Rule};
+use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
-use crate::syntaxtree::pp_expr::PpExpr;
 
 impl PpAstTree {
   /// Does rough preparse of ERL files, only being interested in -include, -ifdef, macros, ... etc
@@ -45,13 +44,13 @@ impl PpAstTree {
     Self::string_from(pair.into_inner().next().unwrap())
   }
 
-  fn parse_expr(&self, pair: Pair<Rule>) -> ErlResult<PpExpr> {
-    // String::from(pair.into_inner().as_str())
-    match self.pp_parse_tokens_to_ast(pair) {
-      Ok(PpAst::Expr(out)) => Ok(out),
-      _ => ErlError::pp_parse(&self.source.file_name,"Expression expected")
-    }
-  }
+  // fn parse_expr(&self, pair: Pair<Rule>) -> ErlResult<PpExpr> {
+  //   // String::from(pair.into_inner().as_str())
+  //   match self.pp_parse_tokens_to_ast(pair) {
+  //     Ok(PpAst::Expr(out)) => Ok(out),
+  //     _ => ErlError::pp_parse(&self.source.file_name,"Expression expected")
+  //   }
+  // }
 
   /// Convert a s2_parse node produced by the Pest PEG parser into Preprocessor AST node
   pub fn pp_parse_tokens_to_ast(&self, pair: Pair<Rule>) -> ErlResult<PpAst> {
@@ -75,8 +74,8 @@ impl PpAstTree {
       Rule::pp_ifndef => PpAst::Ifndef(Self::string_from(pair)?),
 
       // -if and -elif can have boolean expressions in them
-      Rule::pp_if => PpAst::If(self.parse_expr(pair)?),
-      Rule::pp_elif => PpAst::Elif(self.parse_expr(pair)?),
+      Rule::pp_if => PpAst::If(Self::string_from(pair)?),
+      Rule::pp_elif => PpAst::Elif(Self::string_from(pair)?),
 
       Rule::pp_else => PpAst::Else,
       Rule::pp_endif => PpAst::Endif,
@@ -89,7 +88,7 @@ impl PpAstTree {
         let name = String::from(inner.next().unwrap().as_str());
         let body = String::from(inner.next().unwrap().as_str());
         PpAst::Define(name, body)
-      },
+      }
 
       Rule::pp_define_fun => {
         let mut inner = pair.into_inner();
@@ -99,8 +98,8 @@ impl PpAstTree {
             .map(|n| String::from(n.as_str()))
             .collect();
         let body = String::from(inner.next().unwrap().as_str());
-        PpAst::DefineFun{name, args, body}
-      },
+        PpAst::DefineFun { name, args, body }
+      }
 
       Rule::COMMENT => PpAst::Comment(String::from(pair.as_str())),
 

@@ -2,7 +2,7 @@ use crate::erl_error::{ErlResult};
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{PathBuf, Path};
-use crate::syntaxtree::pp_ast::{PpAst, PpAstCache, PpAstTree};
+use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstCache, PpAstTree};
 use std::sync::{Arc, Mutex};
 use crate::project::source_file::SourceFile;
 use std::collections::HashMap;

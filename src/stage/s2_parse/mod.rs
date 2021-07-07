@@ -6,7 +6,7 @@ use crate::erl_error::{ErlResult};
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
-use crate::syntaxtree::erl_ast::{ErlAstTree, ErlAstCache};
+use crate::syntaxtree::erl::erl_ast::{ErlAstTree, ErlAstCache};
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
