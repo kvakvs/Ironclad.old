@@ -2,8 +2,7 @@ use crate::erl_error::{ErlResult};
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{PathBuf, Path};
-use crate::erl_parse::pp_ast::{PpAst, PpAstCache, PpAstTree};
-// use crate::types::{ArcRw, create_arcrw, with_arcrw_write, with_arcrw_read};
+use crate::syntaxtree::pp_ast::{PpAst, PpAstCache, PpAstTree};
 use std::sync::{Arc, Mutex};
 use crate::project::source_file::SourceFile;
 use std::collections::HashMap;
@@ -253,15 +252,17 @@ impl PpState {
   }
 }
 
-/// Preprocessor stage
-/// * Rough pre-s2_parse loaded ERL files, being only interested in preprocessor tokens.
-/// * Pre-s2_parse include files AST and paste into include locations.
+/// Stage 1 - Preprocessor stage
+/// ----------------------------
+/// * Preparse loaded ERL files ignoring the syntax only paying attention to preprocessor tokens.
+/// * Preparse include files AST and paste preprocessor AST into include locations.
 /// * Drop AST branches covered by the conditional compile directives.
+///
 /// Side effects: Updates file contents cache
 /// Returns preprocessed collection of module sources
 pub fn run(project: &mut ErlProject,
            file_cache: Arc<Mutex<FileContentsCache>>,
-) -> ErlResult<()> {
+) -> ErlResult<Arc<Mutex<PpAstCache>>> {
   let ast_cache = Arc::new(Mutex::new(PpAstCache::new()));
 
   // Take only .erl files
@@ -293,5 +294,5 @@ pub fn run(project: &mut ErlProject,
   println!("Preprocessed {} sources, {} includes",
            preprocessed_count,
            cached_ast_trees_count);
-  Ok(())
+  Ok(ast_cache)
 }

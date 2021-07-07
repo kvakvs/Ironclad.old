@@ -1,4 +1,4 @@
-use crate::stage::ast_cache::{AstCache, AstTree};
+use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 
 pub enum ErlAst {
   /// Generic module attribute -"string"(value, ...).

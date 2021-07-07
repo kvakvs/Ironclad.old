@@ -2,7 +2,7 @@ use crate::project::ErlProject;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::stage::ast_cache::{AstTree, AstCache};
+use crate::syntaxtree::ast_cache::{AstTree, AstCache};
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and

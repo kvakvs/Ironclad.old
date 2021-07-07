@@ -1,13 +1,11 @@
 use thiserror::Error;
-use crate::erl_parse::Span;
 use std::path::{PathBuf, Path};
-use crate::erl_parse::{pp_parser};
+use crate::syntaxtree::{pp_parser};
 
 #[derive(Debug)]
 pub enum ErrorLocation {
   None,
   SourceFile(PathBuf),
-  SourceFileSpan(PathBuf, Span),
 }
 
 impl ErrorLocation {

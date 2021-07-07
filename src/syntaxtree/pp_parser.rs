@@ -1,11 +1,11 @@
 #![allow(clippy::upper_case_acronyms)]
 #[derive(Parser)]
-#[grammar = "erl_parse/pp_grammar.pest"]
+#[grammar = "syntaxtree/pp_grammar.pest"]
 pub struct ErlPreprocessorParser;
 
 #[cfg(test)]
 mod tests {
-  use crate::erl_parse::pp_parser::{ErlPreprocessorParser, Rule};
+  use crate::syntaxtree::pp_parser::{ErlPreprocessorParser, Rule};
   use pest::Parser;
 
   fn check_if_parses(rule: Rule, input: &str, inner_output: &str) {

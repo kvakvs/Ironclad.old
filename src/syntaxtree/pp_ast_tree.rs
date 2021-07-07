@@ -1,6 +1,6 @@
 use crate::erl_error::{ErlResult};
-use crate::erl_parse::pp_parser::{ErlPreprocessorParser, Rule};
-use crate::erl_parse::pp_ast::{PpAst, PpAstTree};
+use crate::syntaxtree::pp_parser::{ErlPreprocessorParser, Rule};
+use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
 use pest::Parser;
@@ -92,9 +92,9 @@ impl PpAstTree {
 
 #[cfg(test)]
 mod tests {
-  use crate::erl_parse::pp_parser::{ErlPreprocessorParser, Rule};
+  use crate::syntaxtree::pp_parser::{ErlPreprocessorParser, Rule};
   use pest::Parser;
-  use crate::erl_parse::pp_ast::{PpAst, PpAstTree};
+  use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
   use crate::erl_error::ErlResult;
 
   fn parse(rule: Rule, input: &str) -> ErlResult<PpAst> {

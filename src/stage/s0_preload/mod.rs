@@ -3,6 +3,8 @@ use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::sync::{Arc, Mutex};
 
+/// Stage 0 - Preloading sources
+/// ----------------------------
 /// Preload stage will visit all input files and load them in memory.
 /// Future improvement: Lazy loading as required, timestamp checks
 pub fn run(project: &mut ErlProject) -> ErlResult<Arc<Mutex<FileContentsCache>>> {

@@ -98,7 +98,7 @@ impl ErlProject {
     // Load files and store contents in the hashmap
     let file_cache = stage::s0_preload::run(&mut project)?;
 
-    // Preprocess erl files, and store preprocessed (Text|AST?) in a new hashmap
+    // Preprocess erl files, and store preprocessed PpAst in a new hashmap
     let _pp_ast_cache = stage::s1_preprocess::run(&mut project, file_cache.clone())
         .unwrap();
 
