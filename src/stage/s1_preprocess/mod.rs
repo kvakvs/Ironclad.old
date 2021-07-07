@@ -56,7 +56,7 @@ impl PpState {
   fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<bool> {
     // trust that file exists
     let contents = {
-      let mut file_cache1 = self.file_cache.lock().unwrap();
+      let file_cache1 = self.file_cache.lock().unwrap();
       file_cache1.all_files.get(file_name).unwrap().clone()
     };
 
@@ -75,9 +75,10 @@ impl PpState {
         .collect::<Vec<String>>()
         .join("\n");
 
-    // Success: insert new string into preprocessed source cache
-    let mut file_cache2 = self.file_cache.lock().unwrap();
-    file_cache2.update_source_text(file_name, output);
+    { // Success: insert new string into preprocessed source cache
+      let mut file_cache2 = self.file_cache.lock().unwrap();
+      file_cache2.update_source_text(file_name, output);
+    }
 
     // Cleanup
     Ok(true)
@@ -106,8 +107,10 @@ fn interpret_include_directive(source_file: &SourceFile,
 
       match find_result {
         None => {
-          let mut file_cache1 = file_cache.lock().unwrap();
-          let include_source_file = file_cache1.get_or_load(&include_path).unwrap();
+          let include_source_file = {
+            let mut file_cache1 = file_cache.lock().unwrap();
+            file_cache1.get_or_load(&include_path).unwrap()
+          };
           let ast_tree = load_and_parse_pp_ast(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
@@ -260,10 +263,12 @@ pub fn run(project: &mut ErlProject,
            file_cache: Arc<Mutex<FileContentsCache>>,
 ) -> ErlResult<()> {
   let ast_cache = Arc::new(Mutex::new(PpAstCache::new()));
-  let file_cache_r = file_cache.lock().unwrap();
 
   // Take only .erl files
-  let all_files: Vec<PathBuf> = file_cache_r.all_files.keys().cloned().collect();
+  let all_files: Vec<PathBuf> = {
+    let file_cache_r = file_cache.lock().unwrap();
+    file_cache_r.all_files.keys().cloned().collect()
+  };
 
   let mut preprocessed_count = 0;
 
@@ -280,8 +285,11 @@ pub fn run(project: &mut ErlProject,
           }
         });
 
-  let ast_cache_r = ast_cache.lock().unwrap();
-  let cached_ast_trees_count = ast_cache_r.items.len();
+  let cached_ast_trees_count = {
+    let ast_cache_r = ast_cache.lock().unwrap();
+    ast_cache_r.items.len()
+  };
+
   println!("Preprocessed {} sources, {} includes",
            preprocessed_count,
            cached_ast_trees_count);

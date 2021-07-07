@@ -1,8 +1,6 @@
-use crate::project::source_file::SourceFile;
 use crate::project::ErlProject;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::path::PathBuf;
 use std::sync::Arc;
 use crate::stage::ast_cache::{AstTree, AstCache};
 

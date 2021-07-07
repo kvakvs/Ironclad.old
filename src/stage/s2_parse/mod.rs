@@ -1,9 +1,8 @@
 use crate::project::ErlProject;
-use std::sync::{Arc, RwLock, Mutex};
+use std::sync::{Arc, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{Path};
 use crate::erl_error::{ErlResult};
-use crate::stage::ast_cache::{AstCache, AstTree};
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
