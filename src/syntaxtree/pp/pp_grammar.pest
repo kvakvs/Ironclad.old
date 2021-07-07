@@ -59,7 +59,6 @@ pp_endif = { "-" ~ "endif" ~ ( "(" ~ ")" )? ~ "." }
 pp_directive_remaining_text = ${ (! pp_directive_tail ~ ANY)+ }
 // Tail is ")." that is not inside a string or quoted string
 pp_directive_tail = _{ ")" ~ "." }
-// pp_directive_tail = _{ !( string | quoted_atom ) ~ ")." ~ (NEWLINE | "%") }
 
 string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char* }
@@ -71,14 +70,14 @@ string_char = {
 }
 
 // Parse atom which is either an identifier-like structure or a single 'quoted' string
-atom = { ident | quoted_atom }
-quoted_atom = _{ "'" ~ quoted_atom_inner ~ "'" }
-quoted_atom_inner = @{ quoted_atom_char }
-quoted_atom_char = {
-    !("'" | "\\") ~ ANY
-    | "\\" ~ ("'" | "\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
-    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
-}
+// atom = { ident | quoted_atom }
+// quoted_atom = _{ "'" ~ quoted_atom_inner ~ "'" }
+// quoted_atom_inner = @{ quoted_atom_char }
+// quoted_atom_char = {
+//     !("'" | "\\") ~ ANY
+//     | "\\" ~ ("'" | "\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+//     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+// }
 
 ident = ${ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }

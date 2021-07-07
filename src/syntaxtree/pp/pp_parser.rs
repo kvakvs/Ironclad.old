@@ -81,7 +81,7 @@ mod tests {
     let if0 = parse(Rule::pp_if, "if(10>20).").unwrap();
     match if0 {
       PpAst::If(s) => { assert_eq!(s, "10>20"); },
-      _ => assert!(false, "Parsing -define() with args must return PpAst::DefineFun")
+      _ => assert!(false, "Parsing -if(10>20) failed")
     }
   }
 }
