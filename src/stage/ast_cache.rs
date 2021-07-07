@@ -1,28 +1,31 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::erl_parse::ast::ErlAstNode;
+use std::sync::Arc;
+use crate::project::source_file::SourceFile;
 
-// pub enum ASTNode {
-//     Attribute,
-//     Function,
-// }
-
-pub struct ModuleAST {
-  pub forms: Vec<ErlAstNode>,
+/// Defines a root contents of a module containing generic AST elements.
+/// It could be preprocessor Ast tree, or Erlang Ast tree or something else.
+#[derive(Debug)]
+pub struct AstTree<TNode> {
+  pub source: Arc<SourceFile>,
+  pub nodes: Vec<TNode>,
 }
 
-impl ModuleAST {
-  pub fn new(forms: Vec<ErlAstNode>) -> Self {
-    Self { forms }
+impl<TNode> AstTree<TNode> {
+  pub fn new(source_file: Arc<SourceFile>, forms: Vec<TNode>) -> Self {
+    Self {
+      source: source_file,
+      nodes: forms,
+    }
   }
 }
 
-pub struct AstCache {
-  pub syntax_trees: HashMap<PathBuf, ModuleAST>,
+pub struct AstCache<TNode> {
+  pub items: HashMap<PathBuf, Arc<AstTree<TNode>>>,
 }
 
-impl AstCache {
-  pub fn new() -> Self {
-    Self { syntax_trees: Default::default() }
+impl<TNode> AstCache<TNode> {
+  pub fn new_empty() -> Self {
+    Self { items: Default::default() }
   }
 }

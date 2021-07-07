@@ -1,34 +1,33 @@
 use crate::project::ErlProject;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{Path};
 use crate::erl_error::{ErlResult};
-use crate::stage::ast_cache::{AstCache, ModuleAST};
-use crate::erl_parse::ast::ErlAstNode;
+use crate::stage::ast_cache::{AstCache, AstTree};
 use crate::stage::compile_module::CompileModule;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
+use crate::erl_parse::erl_ast::{ErlAstTree, ErlAstCache};
 
 /// Run syntax parser on an ERL or HRL source file
 fn parse_file(file_name: &Path,
-              _file_contents: Arc<SourceFile>,
-              compile_options: Arc<CompilerOpts>) -> ErlResult<Vec<ErlAstNode>> {
+              source_file: Arc<SourceFile>,
+              compile_options: Arc<CompilerOpts>) -> ErlResult<ErlAstTree> {
   let _module = CompileModule::new(file_name, compile_options);
 
-  // ErlError::not_impl("parse module")
-  Ok(vec![])
+  // Dummy result
+  Ok(ErlAstTree::new(source_file, vec![]))
 }
 
 /// Parse stage
-/// * Parse loaded ERL files.
+/// * Parse loaded ERL files as Erlang.
 /// Returns: Collection of AST trees for all affected ERL modules
 pub fn run(project: &mut ErlProject,
-           contents_cache: Arc<RwLock<FileContentsCache>>) -> ErlResult<Arc<RwLock<AstCache>>> {
-  let mut ast_cache = AstCache::new();
+           contents_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<ErlAstCache>> {
+  let mut ast_cache = ErlAstCache::new_empty();
+  let contents_cache_r = contents_cache.lock().unwrap();
 
-  let file_contents_r = contents_cache.read().unwrap();
-
-  for (path, source_file) in &file_contents_r.all_files {
+  for (path, source_file) in &contents_cache_r.all_files {
     let path_s = path.to_string_lossy();
 
     // Take only .erl and .hrl files
@@ -39,13 +38,12 @@ pub fn run(project: &mut ErlProject,
         source_file.clone(),
         compile_options,
       )?;
-      ast_cache.syntax_trees.insert(path.clone(),
-                                    ModuleAST::new(ast_tree));
+      ast_cache.items.insert(path.clone(), Arc::new(ast_tree));
     }
   }
 
-  println!("Parsed {} sources (.erl and .hrl)", ast_cache.syntax_trees.len());
+  println!("Preprocessor parsed {} sources (.erl and .hrl)", ast_cache.items.len());
 
-  let arc = Arc::new(RwLock::new(ast_cache));
+  let arc = Arc::new(ast_cache);
   Ok(arc)
 }

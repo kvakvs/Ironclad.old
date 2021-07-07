@@ -5,7 +5,6 @@
 //! A fusion of Erlang compiler erlc (lib/compile in OTP repository) and compile-time type checker,
 //! somewhat like Dialyzer (lib/dialyzer in OTP repository).
 
-mod types;
 mod erl_parse;
 mod project;
 mod erl_module;

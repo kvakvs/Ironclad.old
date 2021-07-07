@@ -1,7 +1,7 @@
 use thiserror::Error;
 use crate::erl_parse::Span;
 use std::path::{PathBuf, Path};
-use crate::erl_parse::{erl_pp};
+use crate::erl_parse::{pp_parser};
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -39,11 +39,11 @@ pub enum ErlError {
   // #[error("Compiler internal data locking error")]
   // LockingPoisonError,
 
-  #[error("Preprocessor parse error: {1} (at {0:?})")]
+  #[error("Preprocessor s2_parse error: {1} (at {0:?})")]
   PpParse(ErrorLocation, String),
 
-  #[error("Preprocessor parse error: {0:?}")]
-  PreprocessorParse(pest::error::Error<erl_pp::Rule>),
+  #[error("Preprocessor s2_parse error: {0:?}")]
+  PreprocessorParse(pest::error::Error<pp_parser::Rule>),
 }
 
 impl ErlError {
@@ -83,8 +83,8 @@ impl From<glob::PatternError> for ErlError {
   }
 }
 
-impl From<pest::error::Error<erl_pp::Rule>> for ErlError {
-  fn from(value: pest::error::Error<erl_pp::Rule>) -> Self {
+impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
+  fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
     ErlError::PreprocessorParse(value)
   }
 }

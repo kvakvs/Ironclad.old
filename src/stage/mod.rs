@@ -6,6 +6,6 @@ pub mod file_contents_cache;
 pub mod ast_cache;
 pub mod compile_module;
 
-pub mod preload;
-pub mod parse;
-pub mod preprocess;
+pub mod s0_preload;
+pub mod s2_parse;
+pub mod s1_preprocess;

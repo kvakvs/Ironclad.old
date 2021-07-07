@@ -1,10 +1,9 @@
 use crate::project::source_file::SourceFile;
 
-pub mod pp_parse;
-pub mod ast;
+pub mod pp_ast_tree;
+pub mod erl_ast;
 pub mod pp_ast;
-pub mod pp_directive;
-pub mod erl_pp;
+pub mod pp_parser;
 
 // /// Points to source file position and length for a text fragment.
 // /// This is like &str but is not pinned to a memory address or the source string lifetime.

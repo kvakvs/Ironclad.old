@@ -96,15 +96,14 @@ impl ErlProject {
 
   pub fn compile(mut project: ErlProject) -> ErlResult<()> {
     // Load files and store contents in the hashmap
-    let file_cache = stage::preload::run(&mut project)?;
+    let file_cache = stage::s0_preload::run(&mut project)?;
 
     // Preprocess erl files, and store preprocessed (Text|AST?) in a new hashmap
-    let _preproc_cache = stage::preprocess::run(&mut project, file_cache.clone())
+    let _pp_ast_cache = stage::s1_preprocess::run(&mut project, file_cache.clone())
         .unwrap();
 
-
     // Parse all ERL and HRL files
-    let _ast_cache = stage::parse::run(&mut project, file_cache)
+    let _erl_ast_cache = stage::s2_parse::run(&mut project, file_cache)
         .unwrap();
 
     Ok(())

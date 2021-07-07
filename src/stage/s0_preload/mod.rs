@@ -1,11 +1,11 @@
 use crate::erl_error::ErlResult;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
-use crate::types::{ArcRw, create_arcrw};
+use std::sync::{Arc, Mutex};
 
 /// Preload stage will visit all input files and load them in memory.
 /// Future improvement: Lazy loading as required, timestamp checks
-pub fn run(project: &mut ErlProject) -> ErlResult<ArcRw<FileContentsCache>> {
+pub fn run(project: &mut ErlProject) -> ErlResult<Arc<Mutex<FileContentsCache>>> {
   let mut state = FileContentsCache::new();
 
   for filename in &project.file_set {
@@ -15,5 +15,5 @@ pub fn run(project: &mut ErlProject) -> ErlResult<ArcRw<FileContentsCache>> {
            state.all_files.len(),
            state.read_bytes_count);
 
-  Ok(create_arcrw(state))
+  Ok(Arc::new(Mutex::new(state)))
 }
