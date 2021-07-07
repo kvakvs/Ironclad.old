@@ -34,6 +34,10 @@ impl PpAstTree {
     }
   }
 
+  fn string_from(pair: Pair<Rule>) -> ErlResult<String> {
+    Ok(String::from(pair.into_inner().as_str()))
+  }
+
   /// Convert a s2_parse node produced by the Pest PEG parser into Preprocessor AST node
   pub fn pp_parse_tokens_to_ast(pair: Pair<Rule>) -> ErlResult<PpAst> {
     let result = match pair.as_rule() {
@@ -48,9 +52,10 @@ impl PpAstTree {
 
       Rule::text => PpAst::Text(String::from(pair.as_str())),
 
-      // Rule::pp_module => PpAstNode::Module(String::from(pair.into_inner().as_str())),
-
-      Rule::pp_include => PpAst::Include(String::from(pair.into_inner().as_str())),
+      Rule::pp_include => {
+        let s = Self::string_from(pair.into_inner().next().unwrap())?;
+        PpAst::Include(s)
+      },
 
       Rule::pp_include_lib => PpAst::IncludeLib(String::from(pair.into_inner().as_str())),
 
@@ -76,7 +81,7 @@ impl PpAstTree {
         let name = String::from(inner.next().unwrap().as_str());
         let args = inner.next().unwrap().into_inner()
             .into_iter()
-            .map(|n| n.to_string())
+            .map(|n| String::from(n.as_str()))
             .collect();
         let body = String::from(inner.next().unwrap().as_str());
         PpAst::DefineFun{name, args, body}

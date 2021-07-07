@@ -37,16 +37,35 @@ mod tests {
 
   #[test]
   fn parse_define_test() {
-    let d0 = parse(Rule::pp_define, "- define(AAA, \"aaa\").\n").unwrap();
-    assert!(matches!(d0, PpAst::Define(_name, _value)), "Parsing define(AAA) failed");
+    let d0 = parse(Rule::pp_define, "- define(AAA, \"aaa\").").unwrap();
+    match d0 {
+      PpAst::Define(name, val) => {
+        assert_eq!(name, "AAA");
+        assert_eq!(val, "\"aaa\"");
+      },
+      _ => assert!(false, "Parsing define(AAA, \"aaa\"). failed"),
+    }
 
-    let d1 = parse(Rule::pp_define, "-define(BBB, 666)\n.\n").unwrap();
-    assert!(matches!(d1, PpAst::Define(_name, _value)), "Parsing define(BBB) failed");
+    let d1 = parse(Rule::pp_define, "-define(BBB, 666).").unwrap();
+    match d1 {
+      PpAst::Define(name, val) => {
+        assert_eq!(name, "BBB");
+        assert_eq!(val, "666");
+      },
+      _ => assert!(false, "Parsing define(BBB, 666). failed"),
+    }
   }
 
   #[test]
   fn parse_define_fun_test() {
     let d0 = parse(Rule::pp_define_fun, "-define(AAA(X,Y), \"aaa\").\n").unwrap();
-    assert!(matches!(d0, PpAst::DefineFun{ name: _name, args: _args, body: _b}));
+    match d0 {
+      PpAst::DefineFun { name, args, body } => {
+        assert_eq!(name, "AAA");
+        assert_eq!(args, vec!["X", "Y"]);
+        assert_eq!(body, "\"aaa\"");
+      }
+      _ => assert!(false, "Parsing -define() with args must return PpAst::DefineFun")
+    }
   }
 }
