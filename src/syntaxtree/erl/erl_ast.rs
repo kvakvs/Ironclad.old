@@ -2,6 +2,9 @@ use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::erl_expr::ErlExpr;
 
 pub enum ErlAst {
+  /// Forms list
+  File(Vec<ErlAst>),
+
   /// Generic module attribute -"string"(value, ...).
   ModuleAttr(String, Vec<String>),
   Atom(String),

@@ -1,10 +1,10 @@
-use crate::erl_error::{ErlResult};
 use crate::syntaxtree::pp::pp_parser::{PpParser, Rule};
 use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
+use crate::erl_error::ErlResult;
 
 impl PpAstTree {
   /// Does rough preparse of ERL files, only being interested in -include, -ifdef, macros, ... etc
@@ -32,7 +32,7 @@ impl PpAstTree {
         pp_tree.nodes = nodes;
         Ok(pp_tree)
       }
-      _ => panic!("Only File() AST node is expected as s2_parse result root")
+      _ => panic!("Only 'file' AST node is expected as pp_ast_tree parse result root")
     }
   }
 
@@ -103,7 +103,7 @@ impl PpAstTree {
 
       Rule::COMMENT => PpAst::Comment(String::from(pair.as_str())),
 
-      other => unreachable!("value: {:?}", other),
+      other => unreachable!("PpAst value: {:?}", other),
     };
     Ok(result)
   }

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 use crate::syntaxtree::pp::pp_parser;
+use crate::syntaxtree::erl::erl_parser;
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -39,11 +40,14 @@ pub enum ErlError {
   // #[error("Compiler internal data locking error")]
   // LockingPoisonError,
 
-  #[error("Preprocessor s2_parse error: {1} (at {0:?})")]
+  #[error("Preprocessor parse error: {1} (at {0:?})")]
   PpParse(ErrorLocation, String),
 
-  #[error("Preprocessor s2_parse error: {0:?}")]
-  PreprocessorParse(pest::error::Error<pp_parser::Rule>),
+  #[error("Preprocessor syntax parse error: {0:?}")]
+  PreprocessorSyntax(pest::error::Error<pp_parser::Rule>),
+
+  #[error("Erlang syntax parse error: {0:?}")]
+  ErlangSyntax(pest::error::Error<erl_parser::Rule>),
 }
 
 impl ErlError {
@@ -85,12 +89,12 @@ impl From<glob::PatternError> for ErlError {
 
 impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
   fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
-    ErlError::PreprocessorParse(value)
+    ErlError::PreprocessorSyntax(value)
   }
 }
 
-// impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
-//   fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
-//     ErlError::ErlParse(ErrorLocation::None, value.to_string())
-//   }
-// }
+impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
+  fn from(value: pest::error::Error<erl_parser::Rule>) -> Self {
+    ErlError::ErlangSyntax(value)
+  }
+}
