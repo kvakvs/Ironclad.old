@@ -13,6 +13,7 @@ pub enum ErlAst {
   Variable(String),
   TypeDef(String),
   Expr(ErlExpr),
+  String(String),
 }
 
 pub(crate) type ErlAstTree = AstTree<ErlAst>;
