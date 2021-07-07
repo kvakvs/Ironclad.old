@@ -5,7 +5,7 @@ use crate::project::source_file::SourceFile;
 
 /// Defines a root contents of a module containing generic AST elements.
 /// It could be preprocessor Ast tree, or Erlang Ast tree or something else.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct AstTree<TNode> {
   pub source: Arc<SourceFile>,
   pub nodes: Vec<TNode>,

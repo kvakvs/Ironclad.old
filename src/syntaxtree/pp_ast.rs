@@ -8,7 +8,7 @@ use crate::syntaxtree::ast_cache::{AstTree, AstCache};
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
 /// Lifetime note: Parse input string must live at least as long as this is alive
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PpAst {
   // /// Do nothing node, deleted code
   // Skip,
@@ -29,6 +29,7 @@ pub enum PpAst {
 
   /// Specific directive: -define(NAME, any text...).
   Define(String, String),
+  DefineFun { name: String, args: Vec<String>, body: String },
 
   /// Specific directive: -undef(NAME).
   Undef(String),
@@ -76,6 +77,7 @@ impl PpAst {
       PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAst::File(nodes) => format!("File{{{:?}}}", nodes),
       PpAst::Define(name, body) => format!("Define({}, {})", name, body),
+      PpAst::DefineFun{ name, args, body } => format!("Define({}({:?}), {})", name, args, body),
       PpAst::Ifdef(name) => format!("If Def({})", name),
       PpAst::Ifndef(name) => format!("If !Def({})", name),
       PpAst::Else => "Else".to_string(),

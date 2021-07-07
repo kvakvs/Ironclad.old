@@ -1,5 +1,5 @@
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::pp_parser::{ErlPreprocessorParser, Rule};
+use crate::syntaxtree::pp_parser::{PpParser, Rule};
 use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
@@ -19,7 +19,7 @@ impl PpAstTree {
   /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
   /// Lifetime note: Parse input string must live at least as long as s2_parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
-    let successful_parse = ErlPreprocessorParser::parse(Rule::file, &source_file.text)?.next().unwrap();
+    let successful_parse = PpParser::parse(Rule::file, &source_file.text)?.next().unwrap();
     match Self::pp_parse_tokens_to_ast(successful_parse) {
       Ok(PpAst::File(nodes)) => {
         let pp_tree = PpAstTree {
@@ -71,17 +71,17 @@ impl PpAstTree {
         PpAst::Define(name, body)
       },
 
-      // Rule::pp_generic => {
-      //   let mut inner_rules = pair.into_inner();
-      //   let ident = inner_rules.next().unwrap();
-      //   let args = inner_rules.map(Self::parse_pp_ast).collect::<Vec<PpAstNode>>();
-      //   PpAstNode::Attr {
-      //     name: String::from(ident.as_str()),
-      //     args,
-      //   }
-      // }
+      Rule::pp_define_fun => {
+        let mut inner = pair.into_inner();
+        let name = String::from(inner.next().unwrap().as_str());
+        let args = inner.next().unwrap().into_inner()
+            .into_iter()
+            .map(|n| n.to_string())
+            .collect();
+        let body = String::from(inner.next().unwrap().as_str());
+        PpAst::DefineFun{name, args, body}
+      },
 
-      // Rule::pp_generic_arg => PpAstNode::Text(String::from(pair.as_str())),
       Rule::COMMENT => PpAst::Comment(String::from(pair.as_str())),
 
       other => unreachable!("value: {:?}", other),
@@ -92,20 +92,8 @@ impl PpAstTree {
 
 #[cfg(test)]
 mod tests {
-  use crate::syntaxtree::pp_parser::{ErlPreprocessorParser, Rule};
-  use pest::Parser;
-  use crate::syntaxtree::pp_ast::{PpAst, PpAstTree};
-  use crate::erl_error::ErlResult;
-
-  fn parse(rule: Rule, input: &str) -> ErlResult<PpAst> {
-    let parse_output = ErlPreprocessorParser::parse(rule, input)?.next().unwrap();
-    PpAstTree::pp_parse_tokens_to_ast(parse_output)
-  }
-
-  #[test]
-  /// Try s2_parse string
-  fn parse_define0_test() {
-    let define0 = parse(Rule::pp_define, "-define(AAA, true).\n").unwrap();
-    assert!(matches!(define0, PpAst::Define(_name, _value)));
-  }
+  // fn parse(rule: Rule, input: &str) -> ErlResult<PpAst> {
+  //   let parse_output = ErlPreprocessorParser::parse(rule, input)?.next().unwrap();
+  //   PpAstTree::pp_parse_tokens_to_ast(parse_output)
+  // }
 }

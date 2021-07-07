@@ -22,8 +22,6 @@ pp_include = { "-" ~ "include" ~ "(" ~ string ~ ")" ~ "." }
 pp_error = { "-" ~ "error" ~ "(" ~ string ~ ")" ~ "." }
 pp_warning = { "-" ~ "warning" ~ "(" ~ string ~ ")" ~ "." }
 
-// pp_module = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
-
 // Particular case: Include directive -include_lib("path").
 pp_include_lib = { "-" ~ "include_lib" ~ "(" ~ string ~ ")" ~ "." }
 
