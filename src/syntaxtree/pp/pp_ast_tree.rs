@@ -52,7 +52,7 @@ impl PpAstTree {
   //   }
   // }
 
-  /// Convert a s2_parse node produced by the Pest PEG parser into Preprocessor AST node
+  /// Convert Pest syntax token tree produced by the Pest PEG parser into Preprocessor AST tree
   pub fn pp_parse_tokens_to_ast(&self, pair: Pair<Rule>) -> ErlResult<PpAst> {
     let result = match pair.as_rule() {
       Rule::file => {

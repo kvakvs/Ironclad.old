@@ -3,7 +3,7 @@ use crate::syntaxtree::erl::erl_expr::ErlExpr;
 
 pub enum ErlAst {
   /// Forms list
-  File(Vec<ErlAst>),
+  Forms(Vec<ErlAst>),
 
   /// Generic module attribute -"string"(value, ...).
   ModuleAttr(String, Vec<String>),
