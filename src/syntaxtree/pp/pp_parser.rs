@@ -78,7 +78,7 @@ mod tests {
 
   #[test]
   fn parse_if_test() {
-    let if0 = parse(Rule::pp_if, "if(10>20).").unwrap();
+    let if0 = parse(Rule::pp_if, "-if(10>20).").unwrap();
     match if0 {
       PpAst::If(s) => { assert_eq!(s, "10>20"); },
       _ => assert!(false, "Parsing -if(10>20) failed")

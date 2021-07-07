@@ -1,6 +1,8 @@
-use std::path::{PathBuf, Path};
+use std::path::{PathBuf, };
 use crate::project::compiler_opts::CompilerOpts;
 use std::sync::Arc;
+use crate::syntaxtree::erl::erl_ast::ErlAstTree;
+use crate::project::source_file::SourceFile;
 
 pub struct CompileModule {
   pub in_file: PathBuf,
@@ -22,13 +24,18 @@ pub struct CompileModule {
 }
 
 impl CompileModule {
-  pub fn new(in_file: &Path, options: Arc<CompilerOpts>)  -> Self {
+  pub fn new(in_file: &Arc<SourceFile>,
+             options: Arc<CompilerOpts>)  -> Self {
     Self {
-      in_file: in_file.to_path_buf(),
+      in_file: in_file.file_name.to_path_buf(),
       out_file: Default::default(), // will be set later
       module_name: "".to_string(),
       encoding: "".to_string(),
       options
     }
+  }
+
+  pub fn compile(&mut self, _ast: Arc<ErlAstTree>) {
+    unimplemented!("compile module")
   }
 }

@@ -44,10 +44,10 @@ pp_ifdef = { "-" ~ "ifdef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
 pp_ifndef = { "-" ~ "ifndef" ~ "(" ~ anycase_ident ~ ")" ~ "." }
 
 // Conditional directive, if symbolic expression evaluates true
-pp_if = { "-" ~ "if" ~ "(" ~ pp_directive_remaining_text ~ ")" ~ "." }
+pp_if = { "-" ~ "if" ~ "(" ~ pp_directive_remaining_text ~ pp_directive_tail }
 
 // Conditional directive, replaces last condition on the condition stack
-pp_elif = { "-" ~ "elif" ~ "(" ~ pp_directive_remaining_text ~ ")" ~ "." }
+pp_elif = { "-" ~ "elif" ~ "(" ~ pp_directive_remaining_text ~ pp_directive_tail }
 
 // Allows both -else(). and -else.
 pp_else = { "-" ~ "else" ~ ( "(" ~ ")" )? ~ "." }
