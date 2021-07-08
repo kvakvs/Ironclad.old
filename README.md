@@ -61,5 +61,12 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
     - [ ] Substitute `?MACRO`
     - [ ] Parse and interpret macros with arguments `-define(MACRO(X, Y), ...)`
 - [ ] Erlang syntax parser
+    - [ ] Common keywords and constructs
+    - [ ] Module attributes
+    - [ ] Binary syntax
+    - [ ] Scientific float syntax
+    - [ ] Maps syntax
+    - [ ] Records syntax
+    - [ ] Typespec syntax
 - [ ] ???
 - [ ] Code generator
