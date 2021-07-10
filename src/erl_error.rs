@@ -4,6 +4,7 @@ use thiserror::Error;
 
 use crate::syntaxtree::pp::pp_parser;
 use crate::syntaxtree::erl::erl_parser;
+use crate::typesystem::erltype::TypeError;
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -48,6 +49,9 @@ pub enum ErlError {
 
   #[error("Erlang syntax parse error: {0:?}")]
   ErlangSyntax(pest::error::Error<erl_parser::Rule>),
+
+  #[error("Type error: {0:?}")]
+  TypeError(TypeError),
 }
 
 impl ErlError {

@@ -10,6 +10,7 @@ mod project;
 mod erl_module;
 mod erl_error;
 mod stage;
+mod typesystem;
 
 extern crate pest;
 #[macro_use]
