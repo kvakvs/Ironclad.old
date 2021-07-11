@@ -1,14 +1,14 @@
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use crate::typesystem::erltype::{TVar, Type};
-use crate::typesystem::subst::Subst;
+use crate::typing::erltype::{TVar, Type};
+use crate::typing::subst::Subst;
 use std::collections::hash_map::Entry;
 use std::borrow::BorrowMut;
 use crate::erl_error::ErlResult;
 use crate::erl_error::ErlError::{TypeError, PpParse};
-use crate::typesystem::erltype;
-use crate::typesystem::polymorphic::Scheme;
+use crate::typing::erltype;
+use crate::typing::polymorphic::Scheme;
 
 pub trait Substitutable {
   /// Apply given substitution over the structure of the type, replacing variables

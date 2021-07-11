@@ -40,8 +40,9 @@ pub enum ErlExpr {
   App(Box<ErlExpr>, Box<ErlExpr>),
   /// A lambda definition
   Lambda(String, Box<ErlExpr>),
-  /// A new variable introduction
-  Let(String, Box<ErlExpr>, Box<ErlExpr>),
+  /// A new haskell-style variable and scope introduction:
+  /// let x = expr1 in expr2
+  Let { var: String, value: Box<ErlExpr>, in_expr: Box<ErlExpr> },
   /// A literal value, constant
   Lit(ErlLiteral),
   BinaryOp { left: Box<ErlExpr>, right: Box<ErlExpr>, op: ErlBinOp },

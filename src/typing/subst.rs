@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use crate::typesystem::erltype::{TVar, Type};
+use crate::typing::erltype::{TVar, Type};
 
 /// A map defines substitution of types by their names
 #[derive(Debug)]

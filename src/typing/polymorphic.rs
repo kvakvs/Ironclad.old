@@ -1,4 +1,4 @@
-use crate::typesystem::erltype::{TVar, Type};
+use crate::typing::erltype::{TVar, Type};
 use std::rc::Rc;
 use std::collections::HashSet;
 

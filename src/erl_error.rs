@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::syntaxtree::pp::pp_parser;
 use crate::syntaxtree::erl::erl_parser;
-use crate::typesystem::erltype::TypeError;
+use crate::typing::erltype::TypeError;
 
 #[derive(Debug)]
 pub enum ErrorLocation {
