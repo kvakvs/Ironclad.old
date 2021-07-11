@@ -1,5 +1,5 @@
 use alphabet::*;
-use crate::typing::erltype::{Type, TypeError, TVar};
+use crate::typing::erltype::{Type, TVar};
 use crate::typing::polymorphic::Scheme;
 use crate::typing::type_env::TypeEnv;
 use crate::typing::subst::Subst;
@@ -25,7 +25,7 @@ impl Infer {
   //   Left err  -> Left err
   //   Right res -> Right $ closeOver res
   /// Running the eval code results either in a type scheme or a type error.
-  fn run_infer<TLogic>(&mut self, eval: TLogic, sub: Rc<Subst>) -> ErlResult<Scheme>
+  fn run_infer<TLogic>(&mut self, eval: TLogic, sub: &mut Subst) -> ErlResult<Scheme>
     where TLogic: Fn(Unique) -> Type {
     let eval_result = eval(Unique(0));
     Ok(self.close_over(sub, eval_result))
@@ -34,10 +34,10 @@ impl Infer {
   // closeOver :: (Map.Map TVar Type, Type) -> Scheme
   // closeOver (sub, ty) = normalize sc
   //   where sc = generalize emptyTyenv (apply sub ty)
-  fn close_over(&self, subst: Rc<Subst>, ty: Type) -> Scheme {
+  fn close_over(&self, subst: &mut Subst, ty: Type) -> Scheme {
     let scheme = self.generalize(
       &TypeEnv::new(),
-      ty.apply(subst.clone()),
+      ty.apply(subst),
     );
     self.normalize(&scheme)
   }
@@ -107,7 +107,7 @@ impl Infer {
 
   // inferExpr :: TypeEnv -> Expr -> Either TypeError Scheme
   // inferExpr env = runInfer . infer env
-  fn infer_expr(&mut self, type_env: &Rc<TypeEnv>, expr: &ErlExpr) -> ErlResult<Scheme> {
+  fn infer_expr(&mut self, _type_env: &Rc<TypeEnv>, _expr: &ErlExpr) -> ErlResult<Scheme> {
     // self.run_infer(self.infer(type_env), ())
     todo!()
   }
@@ -137,8 +137,8 @@ impl Infer {
             .collect();
 
     Scheme {
-      type_vars: ord.into_iter()
-          .map(|ord_item| ord_item.0)
+      type_vars: ord.iter()
+          .map(|ord_item| ord_item.0.clone())
           .collect(),
       ty: scheme.ty.normtype(&ord),
     }

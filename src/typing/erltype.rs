@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 use std::rc::Rc;
 
 /// Defines a name of a type
@@ -10,7 +10,7 @@ pub struct TVar(String);
 // }
 
 /// Defines a type
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Type {
   /// Refers to a type name
   TVar(TVar),
@@ -46,7 +46,7 @@ impl Type {
           left: Box::from(left.normtype(ord)),
           right: Box::from(right.normtype(ord)),
         }
-      },
+      }
     }
   }
 
@@ -55,7 +55,7 @@ impl Type {
   // fv (TCon _)   = []
   fn free_vars(&self) -> Vec<String> {
     match self {
-      Type::TVar(a) => vec![a.0],
+      Type::TVar(a) => vec![a.0.clone()],
       Type::TArr { left, right } => {
         let mut left_vars = left.free_vars();
         left_vars.append(&mut right.free_vars());

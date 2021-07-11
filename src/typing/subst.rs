@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::rc::Rc;
 
 use crate::typing::erltype::{TVar, Type};
@@ -16,7 +16,7 @@ impl Subst {
 
   pub fn compose(&mut self, other: &Subst) {
     other.types.iter().for_each(|(k, v)| {
-      self.types[k] = v.clone()
+      self.types.insert(k.clone(), v.clone());
     })
   }
 }
