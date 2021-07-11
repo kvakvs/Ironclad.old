@@ -1,4 +1,5 @@
-use crate::typing::erltype::{Type, TypeError};
+use alphabet::*;
+use crate::typing::erltype::{Type, TypeError, TVar};
 use crate::typing::polymorphic::Scheme;
 use crate::typing::type_env::TypeEnv;
 use crate::typing::subst::Subst;
@@ -6,6 +7,7 @@ use crate::typing::substitutable::Substitutable;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_expr::ErlExpr;
 use crate::erl_error::ErlResult;
+use std::collections::HashSet;
 
 pub struct Unique(usize);
 
@@ -23,23 +25,34 @@ impl Infer {
   //   Left err  -> Left err
   //   Right res -> Right $ closeOver res
   /// Running the eval code results either in a type scheme or a type error.
-  fn run_infer<TLogic>(&mut self, eval: TLogic) -> ErlResult<Scheme>
-    where TLogic: Fn(Unique) {
-    Ok(Self::close_over(
-      subst,
-      eval(Unique(0))?,
-    ))
+  fn run_infer<TLogic>(&mut self, eval: TLogic, sub: Rc<Subst>) -> ErlResult<Scheme>
+    where TLogic: Fn(Unique) -> Type {
+    let eval_result = eval(Unique(0));
+    Ok(self.close_over(sub, eval_result))
   }
 
   // closeOver :: (Map.Map TVar Type, Type) -> Scheme
   // closeOver (sub, ty) = normalize sc
   //   where sc = generalize emptyTyenv (apply sub ty)
-  fn close_over(subst: &Rc<Subst>, ty: &Type) -> Scheme {
-    let sc = Self::generalize(
-      TypeEnv::new(),
+  fn close_over(&self, subst: Rc<Subst>, ty: Type) -> Scheme {
+    let scheme = self.generalize(
+      &TypeEnv::new(),
       ty.apply(subst.clone()),
     );
-    Self::normalize(sc)
+    self.normalize(&scheme)
+  }
+
+  // generalize :: TypeEnv -> Type -> Scheme
+  // generalize env t  = Forall as t
+  // where as = Set.toList $ ftv t `Set.difference` ftv env
+  fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
+    let mut ftv_t = ty.find_typevars();
+    let ftv_env = env.find_typevars();
+    ftv_t.retain(|x| !ftv_env.contains(x));
+    Scheme {
+      type_vars: ftv_t,
+      ty,
+    }
   }
 
   // infer :: TypeEnv -> Expr -> Infer (Subst, Type)
@@ -95,7 +108,8 @@ impl Infer {
   // inferExpr :: TypeEnv -> Expr -> Either TypeError Scheme
   // inferExpr env = runInfer . infer env
   fn infer_expr(&mut self, type_env: &Rc<TypeEnv>, expr: &ErlExpr) -> ErlResult<Scheme> {
-    self.run_infer(self.infer(type_env))
+    // self.run_infer(self.infer(type_env), ())
+    todo!()
   }
 
   // inferTop :: TypeEnv -> [(String, Expr)] -> Either TypeError TypeEnv
@@ -113,10 +127,20 @@ impl Infer {
   //     fv (TArr a b) = fv a ++ fv b
   //     fv (TCon _)   = []
   //
-  //     normtype (TArr a b) = TArr (normtype a) (normtype b)
-  //     normtype (TCon a)   = TCon a
-  //     normtype (TVar a)   =
-  //       case lookup a ord of
-  //         Just x -> TVar x
-  //         Nothing -> error "type variable not in signature"
+  fn normalize(&self, scheme: &Scheme) -> Scheme {
+    let list1 = scheme.ty.find_typevars();
+    alphabet!(LATIN_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+    let ord: HashSet<(TVar, String)> =
+        list1.into_iter()
+            .zip(LATIN_UPPERCASE.iter_words())
+            .collect();
+
+    Scheme {
+      type_vars: ord.into_iter()
+          .map(|ord_item| ord_item.0)
+          .collect(),
+      ty: scheme.ty.normtype(&ord),
+    }
+  }
 }

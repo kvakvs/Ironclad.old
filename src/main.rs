@@ -20,6 +20,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate thiserror;
 extern crate glob;
+extern crate alphabet;
 
 use crate::project::ErlProject;
 use crate::project::conf::ErlProjectConf;

@@ -20,6 +20,7 @@ pub enum ErlUnaryExprOp {
   Negate,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ErlLiteral {
   /// Small enough to fit into a machine word
   IntM(isize),
@@ -32,7 +33,7 @@ pub enum ErlLiteral {
 }
 
 /// An Erlang expression
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ErlExpr {
   /// A named variable
   Var(String),
