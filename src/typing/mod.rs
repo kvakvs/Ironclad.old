@@ -9,7 +9,7 @@ mod substitutable;
 mod tests {
   use crate::typing::infer::Infer;
   use crate::typing::type_env::TypeEnv;
-  use crate::typing::erltype::{Type, TVar};
+  use crate::typing::erltype::{Type, TypeVar};
   use crate::typing::polymorphic::Scheme;
 
   #[test]
@@ -34,8 +34,8 @@ mod tests {
       result: Box::from(Type::Const("const1".to_string())),
     };
     let scheme = Scheme {
-      type_vars: vec![TVar("tv1".to_string()),
-                      TVar("tv2".to_string())],
+      type_vars: vec![TypeVar("tv1".to_string()),
+                      TypeVar("tv2".to_string())],
       ty,
     };
     println!("instantiate {:?}", infr.instantiate(&scheme).unwrap());

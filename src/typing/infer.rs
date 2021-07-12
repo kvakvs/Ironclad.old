@@ -1,5 +1,5 @@
 use alphabet::*;
-use crate::typing::erltype::{Type, TVar};
+use crate::typing::erltype::{Type, TypeVar};
 use crate::typing::polymorphic::Scheme;
 use crate::typing::type_env::TypeEnv;
 use crate::typing::subst::SubstitutionMap;
@@ -8,7 +8,8 @@ use std::rc::Rc;
 use crate::syntaxtree::erl::erl_expr::ErlExpr;
 use crate::erl_error::{ErlResult, ErlError};
 use std::collections::HashSet;
-use crate::typing::erltype::TypeError::{UnificationFail, InfiniteType};
+use crate::typing::erltype::TypeError::{UnificationFail, InfiniteType, UnboundVariable};
+use std::collections::hash_map::Entry;
 
 pub struct Unique(usize);
 
@@ -19,6 +20,12 @@ pub struct Infer {
   // state: Unique,
   // ty: Type,
   count: usize,
+}
+
+/// Returned from Infer::infer()
+pub struct InferResult {
+  pub s: SubstitutionMap,
+  pub t: Type,
 }
 
 impl Infer {
@@ -62,7 +69,7 @@ impl Infer {
   pub(crate) fn instantiate(&mut self, scheme: &Scheme) -> ErlResult<Type> {
     // Build same length type_vars2 as in the scheme but replace all names with new
     let renamed_type_vars: Vec<Type> = scheme.type_vars.iter()
-        .map(|_v| Type::Var(TVar(self.fresh_name())))
+        .map(|_v| Type::Var(self.fresh_name()))
         .collect();
     let mut sub = SubstitutionMap::from_two_lists(&scheme.type_vars, &renamed_type_vars);
     let applied_type = Substitutable::RefType(&scheme.ty)
@@ -86,24 +93,103 @@ impl Infer {
     }
   }
 
+  // lookupEnv :: TypeEnv -> Var -> Infer (Subst, Type)
+  // lookupEnv (TypeEnv env) x =
+  //   case Map.lookup x env of
+  //     Nothing -> throwError $ UnboundVariable (show x)
+  //     Just s  -> do t <- instantiate s
+  //                   return (nullSubst, t)
+  fn lookup_env(&mut self, type_env: &mut TypeEnv, var: &str) -> ErlResult<InferResult> {
+    match type_env.env.entry(TypeVar(var.to_string())) {
+      Entry::Occupied(scheme_entry) => {
+        let scheme = scheme_entry.get();
+        let result = InferResult {
+          s: SubstitutionMap::new(),
+          t: self.instantiate(scheme)?,
+        };
+        Ok(result)
+      }
+      Entry::Vacant(_) => Err(ErlError::TypeError(UnboundVariable(var.to_string())))
+    }
+  }
+
   // infer :: TypeEnv -> Expr -> Infer (Subst, Type)
   // infer env ex = case ex of
-  //
-  //   Var x -> lookupEnv env x
-  //
+  fn infer(&mut self, env: &mut TypeEnv, ex: &ErlExpr) -> ErlResult<InferResult> {
+    match ex {
+      // case: Var x -> lookupEnv env x
+      ErlExpr::Var(x) => self.lookup_env(env, x),
+      ErlExpr::Lambda { ty: x, expr: e } => self.infer_for_lambda(env,  x, e),
+      ErlExpr::App { arg, target } => self.infer_for_app(env,  arg, target),
+      // ErlExpr::Let { .. } => {}
+      // ErlExpr::Lit(_) => {}
+      // ErlExpr::BinaryOp { .. } => {}
+      // ErlExpr::UnaryOp { .. } => {}
+      _ => todo!("Unfinished")
+    }
+  }
+
   //   Lam x e -> do
   //     tv <- fresh
   //     let env' = env `extend` (x, Forall [] tv)
   //     (s1, t1) <- infer env' e
   //     return (s1, apply s1 tv `TArr` t1)
-  //
+  /// Handle infer() for an ErlExpr::Lam
+  /// arguments: ty and expr - components of ErlExpr::Lam
+  fn infer_for_lambda(&mut self, env: &mut TypeEnv, x: &TypeVar, e: &ErlExpr) -> ErlResult<InferResult> {
+    let tv = self.fresh_name();
+
+    let mut type_env2 = env.clone();
+    type_env2.env.insert(x.clone(),
+                         Scheme::new_single_empty(Type::Var(tv.clone())));
+
+    let mut s1_t1 = self.infer(&mut type_env2, e)?;
+    let lam_result = {
+      let t = Type::Arrow {
+        in_arg: Box::new(Type::Var(tv.clone())),
+        result: Box::new(s1_t1.t.clone()),
+      };
+      Substitutable::RefType(&t).apply(&mut s1_t1.s).into_type()
+    };
+    let result = InferResult {
+      s: s1_t1.s,
+      t: Type::Arrow {
+        in_arg: Box::new(s1_t1.t.clone()),
+        result: Box::new(lam_result),
+      },
+    };
+    Ok(result)
+  }
+
   //   App e1 e2 -> do
   //     tv <- fresh
   //     (s1, t1) <- infer env e1
   //     (s2, t2) <- infer (apply s1 env) e2
   //     s3       <- unify (apply s2 t1) (TArr t2 tv)
   //     return (s3 `compose` s2 `compose` s1, apply s3 tv)
-  //
+  /// Handle infer() for an ErlExpr::App
+  /// arguments: e1: arg and e2: target - components of ErlExpr::App
+  fn infer_for_app(&mut self, env: &mut TypeEnv, e1: &ErlExpr, e2: &ErlExpr) -> ErlResult<InferResult> {
+    let tv = self.fresh_name();
+    let mut s1_t1 = self.infer(env, e1)?;
+
+    let mut env2 = Substitutable::RefTypeEnv(&env).apply(&mut s1_t1.s).into_typeenv();
+    let mut s2_t2 = self.infer(&mut env2, e2)?;
+
+    let s3_a = Substitutable::RefType(&s1_t1.t).apply(&mut s2_t2.s).into_type();
+    let s3_b = Type::Arrow {
+      in_arg: Box::new(s2_t2.t),
+      result: Box::new(Type::Var(tv.clone())),
+    };
+    let mut s3 = self.unify(&s3_a, &s3_b)?;
+
+    let result = InferResult {
+      s: s3.compose(&s2_t2.s).compose(&s1_t1.s),
+      t: Substitutable::RefType(&Type::Var(tv)).apply(&mut s3).into_type(),
+    };
+    Ok(result)
+  }
+
   //   Let x e1 e2 -> do
   //     (s1, t1) <- infer env e1
   //     let env' = apply s1 env
@@ -162,7 +248,7 @@ impl Infer {
     let list1 = Substitutable::RefType(&scheme.ty).find_typevars();
     alphabet!(LATIN_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
-    let ord: HashSet<(TVar, String)> =
+    let ord: HashSet<(TypeVar, String)> =
         list1.into_iter()
             .zip(LATIN_UPPERCASE.iter_words())
             .collect();
@@ -181,14 +267,14 @@ impl Infer {
   //   put s{count = count s + 1}
   //   return $ TVar $ TV (letters !! count s)
   /// Produce a new name, by increasing count in the state. TODO: Can use alphabet! macro
-  fn fresh_name(&mut self) -> String {
+  fn fresh_name(&mut self) -> TypeVar {
     self.count += 1;
-    format!("TVar{}", self.count)
+    TypeVar(format!("TVar{}", self.count))
   }
 
   // occursCheck ::  Substitutable a => TVar -> a -> Bool
   // occursCheck a t = a `Set.member` ftv t
-  fn occurs_check(&self, a: &TVar, t: Substitutable) -> bool {
+  fn occurs_check(&self, a: &TypeVar, t: Substitutable) -> bool {
     t.find_typevars().contains(a)
   }
 
@@ -211,7 +297,7 @@ impl Infer {
       (Type::Arrow { in_arg: l1, result: r1 },
         Type::Arrow { in_arg: l2, result: r2 }) => {
         let mut s1 = self.unify(l1, l2)?;
-        let mut s2 = self.unify(
+        let s2 = self.unify(
           &Substitutable::RefType(&r1)
               .apply(&mut s1)
               .into_type(),
@@ -228,7 +314,7 @@ impl Infer {
 
       (Type::Const(a), Type::Const(b)) if a == b => {
         Ok(SubstitutionMap::new()) // null subst
-      },
+      }
 
       (_, _) => Err(ErlError::TypeError(
         UnificationFail(Box::new(l.clone()),
@@ -240,7 +326,7 @@ impl Infer {
   // bind a t | t == TVar a     = return nullSubst
   //          | occursCheck a t = throwError $ InfiniteType a t
   //          | otherwise       = return $ Map.singleton a t
-  fn bind(&self, a: &TVar, t: &Type) -> ErlResult<SubstitutionMap> {
+  fn bind(&self, a: &TypeVar, t: &Type) -> ErlResult<SubstitutionMap> {
     if *t == Type::Var(a.clone()) {
       Ok(SubstitutionMap::new()) // null subst
     } else if self.occurs_check(a, Substitutable::RefType(t)) {

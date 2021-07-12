@@ -2,13 +2,13 @@ use std::collections::{HashSet};
 
 /// Defines a name of a type
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TVar(pub String);
+pub struct TypeVar(pub String);
 
 /// Defines a type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Type {
   /// Refers to a type name
-  Var(TVar),
+  Var(TypeVar),
   /// Refers to a const value in the type
   Const(String),
   /// A lambda-calculus arrow operation `left -> right`, taking one type and outputting one type
@@ -20,7 +20,7 @@ pub enum Type {
 
 impl Type {
   pub fn new_var(s: &str) -> Self {
-    Type::Var(TVar(s.to_string()))
+    Type::Var(TypeVar(s.to_string()))
   }
 
   //     normtype (TArr a b) = TArr (normtype a) (normtype b)
@@ -29,7 +29,7 @@ impl Type {
   //       case lookup a ord of
   //         Just x -> TVar x
   //         Nothing -> error "type variable not in signature"
-  pub fn normtype(&self, ord: &HashSet<(TVar, String)>) -> Type {
+  pub fn normtype(&self, ord: &HashSet<(TypeVar, String)>) -> Type {
     match self {
       Type::Var(a) => {
         match ord.into_iter().find(|ord_item| a.0 == ord_item.1) {
@@ -68,7 +68,7 @@ impl Type {
 #[derive(Debug)]
 pub enum TypeError {
   UnificationFail(Box<Type>, Box<Type>),
-  InfiniteType(TVar, Box<Type>),
+  InfiniteType(TypeVar, Box<Type>),
   UnboundVariable(String),
   Msg(String), // some unsupported type error reported as string
 }

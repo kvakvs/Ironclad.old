@@ -1,13 +1,13 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-use crate::typing::erltype::TVar;
+use crate::typing::erltype::TypeVar;
 use crate::typing::polymorphic::Scheme;
 
 /// A type scope, all types known in a scope
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeEnv {
-  pub(crate) env: HashMap<TVar, Scheme>
+  pub(crate) env: HashMap<TypeVar, Scheme>
 }
 
 impl TypeEnv {
@@ -17,7 +17,7 @@ impl TypeEnv {
   }
 
   /// Retrieve a polymorphic type scheme by name
-  pub fn get<'a>(&mut self, tvar: TVar) -> Option<Scheme> {
+  pub fn get<'a>(&mut self, tvar: TypeVar) -> Option<Scheme> {
     match self.env.entry(tvar) {
       Entry::Occupied(e) => Some(e.get().clone()),
       Entry::Vacant(_) => None

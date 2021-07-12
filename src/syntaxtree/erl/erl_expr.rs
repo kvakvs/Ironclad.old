@@ -1,3 +1,5 @@
+use crate::typing::erltype::TypeVar;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlBinOp {
   Add,
@@ -37,10 +39,10 @@ pub enum ErlLiteral {
 pub enum ErlExpr {
   /// A named variable
   Var(String),
-  /// A function call (Haskell/Lambda-calculus style with 1 argument)
-  App(Box<ErlExpr>, Box<ErlExpr>),
+  /// A function call (Haskell/Lambda-calculus style with 1 argument), applying arg to target
+  App { target: Box<ErlExpr>, arg: Box<ErlExpr> },
   /// A lambda definition
-  Lambda(String, Box<ErlExpr>),
+  Lambda { ty: TypeVar, expr: Box<ErlExpr> },
   /// A new haskell-style variable and scope introduction:
   /// let x = expr1 in expr2
   Let { var: String, value: Box<ErlExpr>, in_expr: Box<ErlExpr> },

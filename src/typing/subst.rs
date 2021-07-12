@@ -1,18 +1,18 @@
 use std::collections::{HashMap};
 
-use crate::typing::erltype::{TVar, Type};
+use crate::typing::erltype::{TypeVar, Type};
 
 /// A map defines substitution of types by their names
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubstitutionMap {
-  pub types: HashMap<TVar, Type>,
+  pub types: HashMap<TypeVar, Type>,
 }
 
 impl SubstitutionMap {
   pub fn new() -> Self {
     Self { types: Default::default() }
   }
-  pub fn from_two_lists(a: &Vec<TVar>, b: &Vec<Type>) -> Self {
+  pub fn from_two_lists(a: &Vec<TypeVar>, b: &Vec<Type>) -> Self {
     let types = a.iter()
         .zip(b.iter())
         .fold(HashMap::new(),
@@ -23,16 +23,18 @@ impl SubstitutionMap {
     Self { types }
   }
 
-  pub fn new_single(key: &TVar, value: &Type) -> Self {
+  pub fn new_single(key: &TypeVar, value: &Type) -> Self {
     let mut types = HashMap::new();
     types.insert(key.clone(), value.clone());
     Self { types }
   }
 
-  /// Composes this subst map with other map in place. Result is stored in this map.
-  pub fn compose(&mut self, other: &SubstitutionMap) {
+  /// Composes this subst map with other map
+  pub fn compose(&self, other: &SubstitutionMap) -> SubstitutionMap {
+    let mut out = self.clone();
     other.types.iter().for_each(|(k, v)| {
-      self.types.insert(k.clone(), v.clone());
-    })
+      out.types.insert(k.clone(), v.clone());
+    });
+    return out
   }
 }

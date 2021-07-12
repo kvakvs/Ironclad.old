@@ -1,7 +1,7 @@
 use std::collections::{HashSet, HashMap};
 use std::iter::{Iterator};
 
-use crate::typing::erltype::{TVar, Type};
+use crate::typing::erltype::{TypeVar, Type};
 use crate::typing::subst::SubstitutionMap;
 use std::collections::hash_map::Entry;
 use crate::typing::polymorphic::Scheme;
@@ -21,8 +21,6 @@ pub enum Substitutable<'a> {
   RefScheme(&'a Scheme),
   /// New scheme, cloned or created
   Scheme(Scheme),
-  // /// Hashset of Substitutables
-  // HashSet(HashSet<Substitutable<'a>>),
   /// Vector of Substitutables
   Vector(Vec<Substitutable<'a>>),
   /// Borrowed TypeEnv
@@ -53,6 +51,14 @@ impl<'a> Substitutable<'a> {
       Substitutable::RefScheme(s) => s.clone(),
       Substitutable::Scheme(s) => s,
       _ => unreachable!("{:?} is expected to be a Scheme", self),
+    }
+  }
+
+  pub fn into_typeenv(self) -> TypeEnv {
+    match self {
+      Substitutable::RefTypeEnv(te) => te.clone(),
+      Substitutable::TypeEnv(te) => te,
+      _ => unreachable!("{:?} is expected to be a TypeEnv", self),
     }
   }
 
@@ -134,7 +140,7 @@ impl<'a> Substitutable<'a> {
 
   // apply s: Subst (TypeEnv env) =  TypeEnv $ Map.map (apply s) env
   fn apply_to_typeenv(te: &TypeEnv, sub: &mut SubstitutionMap) -> Substitutable<'a> {
-    let out_env: HashMap<TVar, Scheme> = te.env.iter()
+    let out_env: HashMap<TypeVar, Scheme> = te.env.iter()
         .map(|(k, scheme)| {
           let new_scheme = Substitutable::RefScheme(&scheme).apply(sub).into_scheme();
           return (k.clone(), new_scheme);
@@ -143,7 +149,7 @@ impl<'a> Substitutable<'a> {
     Substitutable::TypeEnv(TypeEnv { env: out_env })
   }
 
-  pub fn find_typevars(self) -> HashSet<TVar> {
+  pub fn find_typevars(self) -> HashSet<TypeVar> {
     match self {
       Substitutable::RefType(as_type) => Self::find_typevars_in_type(as_type),
       Substitutable::Type(_) => unreachable!("Must never accept NewType"),
@@ -159,7 +165,7 @@ impl<'a> Substitutable<'a> {
   // ftv TCon{}         = Set.empty
   // ftv (TVar a)       = Set.singleton a
   // ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
-  fn find_typevars_in_type(t: &Type) -> HashSet<TVar> {
+  fn find_typevars_in_type(t: &Type) -> HashSet<TypeVar> {
     match t {
       Type::Const(_) => HashSet::default(), // const contains no typevars in it
       Type::Var(a) => {
@@ -182,7 +188,7 @@ impl<'a> Substitutable<'a> {
   }
 
   // ftv (Forall as: [TVar] t: Type) = ftv t `Set.difference` Set.fromList as
-  fn find_typevars_in_scheme(s: &Scheme) -> HashSet<TVar> {
+  fn find_typevars_in_scheme(s: &Scheme) -> HashSet<TypeVar> {
     let result = Substitutable::RefType(&s.ty).find_typevars();
     result.into_iter()
         .filter(|item| !s.type_vars.contains(item))
@@ -203,7 +209,7 @@ impl<'a> Substitutable<'a> {
   // }
 
   // ftv   = foldr (Set.union . ftv) Set.empty
-  fn find_typevars_in_vec(vec: Vec<Substitutable>) -> HashSet<TVar> {
+  fn find_typevars_in_vec(vec: Vec<Substitutable>) -> HashSet<TypeVar> {
     // Union find_typevars() of all set items
     vec.into_iter()
         .fold(HashSet::new(),
@@ -216,7 +222,7 @@ impl<'a> Substitutable<'a> {
   }
 
   // ftv (TypeEnv env) = ftv $ Map.elems env
-  fn find_typevars_in_typeenv(te: &TypeEnv) -> HashSet<TVar> {
+  fn find_typevars_in_typeenv(te: &TypeEnv) -> HashSet<TypeVar> {
     let env_elems: Vec<Substitutable> = te.env.values()
         .map(|scheme| Substitutable::RefScheme(scheme))
         .collect();
