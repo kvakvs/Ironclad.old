@@ -59,7 +59,7 @@ impl Infer {
   //   return $ apply s t
   /// Converting a σ type into a τ type by creating fresh names for each type variable that does
   /// not appear in the current typing environment.
-  fn instantiate(&mut self, scheme: &Scheme) -> ErlResult<Type> {
+  pub(crate) fn instantiate(&mut self, scheme: &Scheme) -> ErlResult<Type> {
     // Build same length type_vars2 as in the scheme but replace all names with new
     let renamed_type_vars: Vec<Type> = scheme.type_vars.iter()
         .map(|_v| Type::Var(TVar(self.fresh_name())))
@@ -76,7 +76,7 @@ impl Infer {
   // where as = Set.toList $ ftv t `Set.difference` ftv env
   /// Generalization:
   /// Converting a τ type into a σ type by closing over all free type variables in a type scheme.
-  fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
+  pub fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
     let mut ftv_t = Substitutable::RefType(&ty).find_typevars();
     let ftv_env = Substitutable::RefTypeEnv(env).find_typevars();
     ftv_t.retain(|x| !ftv_env.contains(x));
@@ -206,10 +206,10 @@ impl Infer {
   /// A substitution set is said to be confluent if the application of substitutions is independent
   /// of the order applied, i.e. if we always arrive at the same normal form regardless of the
   /// order of substitution chosen.
-  fn unify(&self, l: &Type, r: &Type) -> ErlResult<SubstitutionMap> {
+  pub fn unify(&self, l: &Type, r: &Type) -> ErlResult<SubstitutionMap> {
     match (l, r) {
-      (Type::Arrow { left: l1, right: r1 },
-        Type::Arrow { left: l2, right: r2 }) => {
+      (Type::Arrow { in_arg: l1, result: r1 },
+        Type::Arrow { in_arg: l2, result: r2 }) => {
         let mut s1 = self.unify(l1, l2)?;
         let mut s2 = self.unify(
           &Substitutable::RefType(&r1)

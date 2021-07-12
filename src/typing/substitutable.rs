@@ -91,14 +91,14 @@ impl<'a> Substitutable<'a> {
         }
       }
 
-      Type::Arrow { left, right } => {
+      Type::Arrow { in_arg: left, result: right } => {
         // Return new arrow where left and right have substitution applied to them
         let l_result = Substitutable::RefType(&left).apply(sub);
         let r_result = Substitutable::RefType(&right).apply(sub);
 
         Substitutable::Type(Type::Arrow {
-          left: Box::from(l_result.into_type()),
-          right: Box::from(r_result.into_type()),
+          in_arg: Box::from(l_result.into_type()),
+          result: Box::from(r_result.into_type()),
         })
       }
     }
@@ -168,7 +168,7 @@ impl<'a> Substitutable<'a> {
         result.insert(a.clone());
         result
       }
-      Type::Arrow { left, right } => {
+      Type::Arrow { in_arg: left, result: right } => {
         // Merge typevars found in left and right sides of the arrow
         let mut l_set = Substitutable::RefType(&left).find_typevars();
         Substitutable::RefType(&right).find_typevars()

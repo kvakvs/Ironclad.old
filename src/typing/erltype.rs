@@ -13,12 +13,16 @@ pub enum Type {
   Const(String),
   /// A lambda-calculus arrow operation `left -> right`, taking one type and outputting one type
   Arrow {
-    left: Box<Type>,
-    right: Box<Type>,
+    in_arg: Box<Type>,
+    result: Box<Type>,
   },
 }
 
 impl Type {
+  pub fn new_var(s: &str) -> Self {
+    Type::Var(TVar(s.to_string()))
+  }
+
   //     normtype (TArr a b) = TArr (normtype a) (normtype b)
   //     normtype (TCon a)   = TCon a
   //     normtype (TVar a)   =
@@ -36,10 +40,10 @@ impl Type {
 
       Type::Const(_) => self.clone(),
 
-      Type::Arrow { left, right } => {
+      Type::Arrow { in_arg: left, result: right } => {
         Type::Arrow {
-          left: Box::from(left.normtype(ord)),
-          right: Box::from(right.normtype(ord)),
+          in_arg: Box::from(left.normtype(ord)),
+          result: Box::from(right.normtype(ord)),
         }
       }
     }
@@ -51,7 +55,7 @@ impl Type {
   fn free_vars(&self) -> Vec<String> {
     match self {
       Type::Var(a) => vec![a.0.clone()],
-      Type::Arrow { left, right } => {
+      Type::Arrow { in_arg: left, result: right } => {
         let mut left_vars = left.free_vars();
         left_vars.append(&mut right.free_vars());
         left_vars

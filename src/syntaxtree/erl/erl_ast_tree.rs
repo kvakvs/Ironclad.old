@@ -37,6 +37,9 @@ impl ErlAstTree {
             .collect::<Vec<ErlAst>>();
         ErlAst::Forms(ast_nodes)
       },
+      Rule::string => {
+        ErlAst::String(String::from(pair.as_str()))
+      }
 
       other => unreachable!("ErlAst value: {:?}", other),
     };
