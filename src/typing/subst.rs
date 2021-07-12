@@ -12,6 +12,16 @@ impl SubstitutionMap {
   pub fn new() -> Self {
     Self { types: Default::default() }
   }
+  pub fn from_two_lists(a: &Vec<TVar>, b: &Vec<Type>) -> Self {
+    let types = a.iter()
+        .zip(b.iter())
+        .fold(HashMap::new(),
+        |mut acc, (k, v)| {
+          acc.insert(k.clone(), v.clone());
+          acc
+        });
+    Self { types }
+  }
 
   pub fn new_single(key: &TVar, value: &Type) -> Self {
     let mut types = HashMap::new();

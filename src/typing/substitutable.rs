@@ -184,8 +184,8 @@ impl<'a> Substitutable<'a> {
   // ftv (Forall as: [TVar] t: Type) = ftv t `Set.difference` Set.fromList as
   fn find_typevars_in_scheme(s: &Scheme) -> HashSet<TVar> {
     let result = Substitutable::RefType(&s.ty).find_typevars();
-    result.difference(&s.type_vars)
-        .cloned()
+    result.into_iter()
+        .filter(|item| !s.type_vars.contains(item))
         .collect()
   }
 

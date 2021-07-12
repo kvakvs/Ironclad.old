@@ -2,11 +2,7 @@ use std::collections::{HashSet};
 
 /// Defines a name of a type
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TVar(String);
-
-// impl Eq for TVar {
-//
-// }
+pub struct TVar(pub String);
 
 /// Defines a type
 #[derive(Debug, Clone, Eq, PartialEq)]

@@ -52,15 +52,36 @@ impl Infer {
     self.normalize(&scheme)
   }
 
+  // instantiate ::  Scheme -> Infer Type
+  // instantiate (Forall as t) = do
+  //   as' <- mapM (const fresh) as
+  //   let s = Map.fromList $ zip as as'
+  //   return $ apply s t
+  /// Converting a σ type into a τ type by creating fresh names for each type variable that does
+  /// not appear in the current typing environment.
+  fn instantiate(&mut self, scheme: &Scheme) -> ErlResult<Type> {
+    // Build same length type_vars2 as in the scheme but replace all names with new
+    let renamed_type_vars: Vec<Type> = scheme.type_vars.iter()
+        .map(|_v| Type::Var(TVar(self.fresh_name())))
+        .collect();
+    let mut sub = SubstitutionMap::from_two_lists(&scheme.type_vars, &renamed_type_vars);
+    let applied_type = Substitutable::RefType(&scheme.ty)
+        .apply(&mut sub)
+        .into_type();
+    Ok(applied_type)
+  }
+
   // generalize :: TypeEnv -> Type -> Scheme
   // generalize env t  = Forall as t
   // where as = Set.toList $ ftv t `Set.difference` ftv env
+  /// Generalization:
+  /// Converting a τ type into a σ type by closing over all free type variables in a type scheme.
   fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
     let mut ftv_t = Substitutable::RefType(&ty).find_typevars();
     let ftv_env = Substitutable::RefTypeEnv(env).find_typevars();
     ftv_t.retain(|x| !ftv_env.contains(x));
     Scheme {
-      type_vars: ftv_t,
+      type_vars: ftv_t.into_iter().collect(),
       ty,
     }
   }
@@ -176,18 +197,39 @@ impl Infer {
   //     s1 <- unify l l'
   //     s2 <- unify (apply s1 r) (apply s1 r')
   //     return (s2 `compose` s1)
+  // unify (TVar a) t = bind a t
+  // unify t (TVar a) = bind a t
+  // unify (TCon a) (TCon b) | a == b = return nullSubst
+  // unify t1 t2 = throwError $ UnificationFail t1 t2
+  /// From the book:
+  /// Two terms are said to be unifiable if there exists a unifying substitution set between them.
+  /// A substitution set is said to be confluent if the application of substitutions is independent
+  /// of the order applied, i.e. if we always arrive at the same normal form regardless of the
+  /// order of substitution chosen.
   fn unify(&self, l: &Type, r: &Type) -> ErlResult<SubstitutionMap> {
     match (l, r) {
       (Type::Arrow { left: l1, right: r1 },
         Type::Arrow { left: l2, right: r2 }) => {
         let mut s1 = self.unify(l1, l2)?;
         let mut s2 = self.unify(
-          &Substitutable::RefType(&r1).apply(&mut s1).into_type(),
-          &Substitutable::RefType(&r2).apply(&mut s1).into_type(),
+          &Substitutable::RefType(&r1)
+              .apply(&mut s1)
+              .into_type(),
+          &Substitutable::RefType(&r2)
+              .apply(&mut s1)
+              .into_type(),
         )?;
         s2.compose(&s1);
         Ok(s2)
       }
+
+      (Type::Var(a), t) => self.bind(a, t),
+      (t, Type::Var(a)) => self.bind(a, t),
+
+      (Type::Const(a), Type::Const(b)) if a == b => {
+        Ok(SubstitutionMap::new()) // null subst
+      },
+
       (_, _) => Err(ErlError::TypeError(
         UnificationFail(Box::new(l.clone()),
                         Box::new(r.clone()))))
@@ -200,7 +242,7 @@ impl Infer {
   //          | otherwise       = return $ Map.singleton a t
   fn bind(&self, a: &TVar, t: &Type) -> ErlResult<SubstitutionMap> {
     if *t == Type::Var(a.clone()) {
-      Ok(SubstitutionMap::new())
+      Ok(SubstitutionMap::new()) // null subst
     } else if self.occurs_check(a, Substitutable::RefType(t)) {
       Err(ErlError::TypeError(InfiniteType(a.clone(), Box::new(t.clone()))))
     } else {
