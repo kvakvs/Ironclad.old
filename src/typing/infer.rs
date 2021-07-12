@@ -52,10 +52,7 @@ impl Infer {
     let applied = Substitutable::RefType(&ty)
         .apply(subst)
         .into_type();
-    let scheme = self.generalize(
-      &TypeEnv::new(),
-      applied,
-    );
+    let scheme = self.generalize(&TypeEnv::new(), &applied);
     self.normalize(&scheme)
   }
 
@@ -83,13 +80,13 @@ impl Infer {
   // where as = Set.toList $ ftv t `Set.difference` ftv env
   /// Generalization:
   /// Converting a τ type into a σ type by closing over all free type variables in a type scheme.
-  pub fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
-    let mut ftv_t = Substitutable::RefType(&ty).find_typevars();
+  pub fn generalize(&self, env: &TypeEnv, ty: &Type) -> Scheme {
+    let mut ftv_t = Substitutable::RefType(ty).find_typevars();
     let ftv_env = Substitutable::RefTypeEnv(env).find_typevars();
     ftv_t.retain(|x| !ftv_env.contains(x));
     Scheme {
       type_vars: ftv_t.into_iter().collect(),
-      ty,
+      ty: ty.clone(),
     }
   }
 
@@ -119,9 +116,17 @@ impl Infer {
     match ex {
       // case: Var x -> lookupEnv env x
       ErlExpr::Var(x) => self.lookup_env(env, x),
+
       ErlExpr::Lambda { ty: x, expr: e } => self.infer_for_lambda(env,  x, e),
-      ErlExpr::App { arg, target } => self.infer_for_app(env,  arg, target),
-      // ErlExpr::Let { .. } => {}
+
+      ErlExpr::App { arg, target } => {
+        self.infer_for_app(env,  arg, target)
+      },
+
+      ErlExpr::Let { var, value, in_expr } => {
+        self.infer_for_let(env, var, value, in_expr)
+      },
+
       // ErlExpr::Lit(_) => {}
       // ErlExpr::BinaryOp { .. } => {}
       // ErlExpr::UnaryOp { .. } => {}
@@ -173,8 +178,8 @@ impl Infer {
     let tv = self.fresh_name();
     let mut s1_t1 = self.infer(env, e1)?;
 
-    let mut env2 = Substitutable::RefTypeEnv(&env).apply(&mut s1_t1.s).into_typeenv();
-    let mut s2_t2 = self.infer(&mut env2, e2)?;
+    let mut env_ = Substitutable::RefTypeEnv(&env).apply(&mut s1_t1.s).into_typeenv();
+    let mut s2_t2 = self.infer(&mut env_, e2)?;
 
     let s3_a = Substitutable::RefType(&s1_t1.t).apply(&mut s2_t2.s).into_type();
     let s3_b = Type::Arrow {
@@ -186,6 +191,29 @@ impl Infer {
     let result = InferResult {
       s: s3.compose(&s2_t2.s).compose(&s1_t1.s),
       t: Substitutable::RefType(&Type::Var(tv)).apply(&mut s3).into_type(),
+    };
+    Ok(result)
+  }
+
+  // Let x e1 e2 -> do
+  //     (s1, t1) <- infer env e1
+  //     let env' = apply s1 env
+  //         t'   = generalize env' t1
+  //     (s2, t2) <- infer (env' `extend` (x, t')) e2
+  //     return (s1 `compose` s2, t2)
+  fn infer_for_let(&mut self, env: &mut TypeEnv, x: &String,
+                   e1: &ErlExpr, e2: &ErlExpr) -> ErlResult<InferResult> {
+    let mut s1_t1 = self.infer(env, e1)?;
+
+    let env_ = Substitutable::RefTypeEnv(env).apply(&mut s1_t1.s).into_typeenv();
+    let t_ = self.generalize(&env_, &s1_t1.t);
+
+    let mut env2_ = env_.extend(TypeVar(x.clone()), t_.clone());
+    let s2_t2 = self.infer(&mut env2_, e2)?;
+
+    let result = InferResult {
+      s: s1_t1.s.compose(&s2_t2.s),
+      t: s2_t2.t
     };
     Ok(result)
   }

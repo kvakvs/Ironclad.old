@@ -22,7 +22,7 @@ mod tests {
     };
     println!("env {:?}", type_env);
     println!("ty {:?}", ty);
-    println!("generalize {:?}", infr.generalize(&type_env, ty));
+    println!("generalize {:?}", infr.generalize(&type_env, &ty));
   }
 
   #[test]

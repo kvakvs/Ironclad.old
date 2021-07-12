@@ -23,4 +23,10 @@ impl TypeEnv {
       Entry::Vacant(_) => None
     }
   }
+
+  pub fn extend(&self, key: TypeVar, scheme: Scheme) -> Self {
+    let mut env = self.env.clone();
+    env.insert(key, scheme);
+    Self { env }
+  }
 }

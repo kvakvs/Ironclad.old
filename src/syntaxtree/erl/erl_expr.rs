@@ -43,7 +43,7 @@ pub enum ErlExpr {
   App { target: Box<ErlExpr>, arg: Box<ErlExpr> },
   /// A lambda definition
   Lambda { ty: TypeVar, expr: Box<ErlExpr> },
-  /// A new haskell-style variable and scope introduction:
+  /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
   Let { var: String, value: Box<ErlExpr>, in_expr: Box<ErlExpr> },
   /// A literal value, constant
