@@ -5,6 +5,7 @@ use crate::typing::erltype::TVar;
 use crate::typing::polymorphic::Scheme;
 
 /// A type scope, all types known in a scope
+#[derive(Debug, Eq, PartialEq)]
 pub struct TypeEnv {
   pub(crate) env: HashMap<TVar, Scheme>
 }

@@ -2,7 +2,7 @@ use alphabet::*;
 use crate::typing::erltype::{Type, TVar};
 use crate::typing::polymorphic::Scheme;
 use crate::typing::type_env::TypeEnv;
-use crate::typing::subst::Subst;
+use crate::typing::subst::SubstitutionMap;
 use crate::typing::substitutable::Substitutable;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_expr::ErlExpr;
@@ -11,21 +11,27 @@ use std::collections::HashSet;
 
 pub struct Unique(usize);
 
-// Haskell: type Infer a = ExceptT TypeError (State Unique) a
+/// Haskell monad: type Infer a = ExceptT TypeError (State Unique) a
+/// We implement this as a struct and store monad state as count
 pub struct Infer {
   // err: TypeError,
   // state: Unique,
   // ty: Type,
+  count: usize,
 }
 
 impl Infer {
+  pub fn new() -> Self {
+    Self { count: 0 }
+  }
+
   // Haskell:
   // runInfer :: Infer (Subst, Type) -> Either TypeError Scheme
   // runInfer m = case evalState (runExceptT m) initUnique of
   //   Left err  -> Left err
   //   Right res -> Right $ closeOver res
   /// Running the eval code results either in a type scheme or a type error.
-  fn run_infer<TLogic>(&mut self, eval: TLogic, sub: &mut Subst) -> ErlResult<Scheme>
+  fn run_infer<TLogic>(&mut self, eval: TLogic, sub: &mut SubstitutionMap) -> ErlResult<Scheme>
     where TLogic: Fn(Unique) -> Type {
     let eval_result = eval(Unique(0));
     Ok(self.close_over(sub, eval_result))
@@ -34,10 +40,13 @@ impl Infer {
   // closeOver :: (Map.Map TVar Type, Type) -> Scheme
   // closeOver (sub, ty) = normalize sc
   //   where sc = generalize emptyTyenv (apply sub ty)
-  fn close_over(&self, subst: &mut Subst, ty: Type) -> Scheme {
+  fn close_over(&self, subst: &mut SubstitutionMap, ty: Type) -> Scheme {
+    let applied = Substitutable::RefType(&ty)
+        .apply(subst)
+        .into_type();
     let scheme = self.generalize(
       &TypeEnv::new(),
-      ty.apply(subst),
+      applied,
     );
     self.normalize(&scheme)
   }
@@ -46,8 +55,8 @@ impl Infer {
   // generalize env t  = Forall as t
   // where as = Set.toList $ ftv t `Set.difference` ftv env
   fn generalize(&self, env: &TypeEnv, ty: Type) -> Scheme {
-    let mut ftv_t = ty.find_typevars();
-    let ftv_env = env.find_typevars();
+    let mut ftv_t = Substitutable::RefType(&ty).find_typevars();
+    let ftv_env = Substitutable::RefTypeEnv(env).find_typevars();
     ftv_t.retain(|x| !ftv_env.contains(x));
     Scheme {
       type_vars: ftv_t,
@@ -128,7 +137,7 @@ impl Infer {
   //     fv (TCon _)   = []
   //
   fn normalize(&self, scheme: &Scheme) -> Scheme {
-    let list1 = scheme.ty.find_typevars();
+    let list1 = Substitutable::RefType(&scheme.ty).find_typevars();
     alphabet!(LATIN_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
     let ord: HashSet<(TVar, String)> =
@@ -142,5 +151,22 @@ impl Infer {
           .collect(),
       ty: scheme.ty.normtype(&ord),
     }
+  }
+
+  // fresh :: Infer Type
+  // fresh = do
+  //   s <- get
+  //   put s{count = count s + 1}
+  //   return $ TVar $ TV (letters !! count s)
+  /// Produce a new name, by increasing count in the state. TODO: Can use alphabet! macro
+  fn fresh_name(&mut self) -> String {
+    self.count += 1;
+    format!("TVar{}", self.count)
+  }
+
+  // occursCheck ::  Substitutable a => TVar -> a -> Bool
+  // occursCheck a t = a `Set.member` ftv t
+  fn occurs_check(&self, a: &TVar, t: Substitutable) -> bool {
+    t.find_typevars().contains(a)
   }
 }
