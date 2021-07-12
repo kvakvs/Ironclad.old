@@ -1,15 +1,18 @@
+use std::collections::hash_map::Entry;
+use std::collections::HashSet;
+use std::rc::Rc;
+
 use alphabet::*;
+
+use crate::erl_error::{ErlError, ErlResult};
+use crate::syntaxtree::erl::erl_expr::{ErlExpr, ErlLiteral};
 use crate::typing::erltype::{Type, TypeVar};
+use crate::typing::erltype::TypeError::{InfiniteType, UnboundVariable, UnificationFail};
 use crate::typing::polymorphic::Scheme;
-use crate::typing::type_env::TypeEnv;
 use crate::typing::subst::SubstitutionMap;
 use crate::typing::substitutable::Substitutable;
-use std::rc::Rc;
-use crate::syntaxtree::erl::erl_expr::ErlExpr;
-use crate::erl_error::{ErlResult, ErlError};
-use std::collections::HashSet;
-use crate::typing::erltype::TypeError::{UnificationFail, InfiniteType, UnboundVariable};
-use std::collections::hash_map::Entry;
+use crate::typing::type_env::TypeEnv;
+use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 
 pub struct Unique(usize);
 
@@ -26,6 +29,12 @@ pub struct Infer {
 pub struct InferResult {
   pub s: SubstitutionMap,
   pub t: Type,
+}
+
+impl InferResult {
+  pub fn empty_with(t: &Type) -> Self {
+    Self { s: SubstitutionMap::new(), t: t.clone() }
+  }
 }
 
 impl Infer {
@@ -117,20 +126,35 @@ impl Infer {
       // case: Var x -> lookupEnv env x
       ErlExpr::Var(x) => self.lookup_env(env, x),
 
-      ErlExpr::Lambda { ty: x, expr: e } => self.infer_for_lambda(env,  x, e),
+      ErlExpr::Lambda { ty: x, expr: e } => self.infer_for_lambda(env, x, e),
 
       ErlExpr::App { arg, target } => {
-        self.infer_for_app(env,  arg, target)
-      },
+        self.infer_for_app(env, arg, target)
+      }
 
       ErlExpr::Let { var, value, in_expr } => {
         self.infer_for_let(env, var, value, in_expr)
-      },
+      }
 
+      ErlExpr::If { cond, on_true, on_false } => {
+        self.infer_for_if(env, cond, on_true, on_false)
+      }
       // ErlExpr::Lit(_) => {}
-      // ErlExpr::BinaryOp { .. } => {}
+      ErlExpr::BinaryOp { left, right, op } => {
+        self.infer_for_binaryop(env, op, left, right)
+      }
       // ErlExpr::UnaryOp { .. } => {}
-      _ => todo!("Unfinished")
+
+      ErlExpr::Lit(ErlLiteral::Integer(_)) => Ok(InferResult::empty_with(Type::integer())),
+      ErlExpr::Lit(ErlLiteral::Bool(_)) => Ok(InferResult::empty_with(Type::bool())),
+      ErlExpr::Lit(ErlLiteral::Atom(_)) => Ok(InferResult::empty_with(Type::atom())),
+      ErlExpr::Lit(ErlLiteral::Pid) => Ok(InferResult::empty_with(Type::pid())),
+      ErlExpr::Lit(ErlLiteral::Reference) => Ok(InferResult::empty_with(Type::reference())),
+
+      _ => {
+        println!("Unfinished handling for inference {:?}, {:?}", env, ex);
+        todo!()
+      }
     }
   }
 
@@ -175,9 +199,11 @@ impl Infer {
   /// Handle infer() for an ErlExpr::App
   /// arguments: e1: arg and e2: target - components of ErlExpr::App
   fn infer_for_app(&mut self, env: &mut TypeEnv, e1: &ErlExpr, e2: &ErlExpr) -> ErlResult<InferResult> {
+    // Infer type for application arg
     let tv = self.fresh_name();
     let mut s1_t1 = self.infer(env, e1)?;
 
+    // infer type for application target
     let mut env_ = Substitutable::RefTypeEnv(&env).apply(&mut s1_t1.s).into_typeenv();
     let mut s2_t2 = self.infer(&mut env_, e2)?;
 
@@ -203,38 +229,92 @@ impl Infer {
   //     return (s1 `compose` s2, t2)
   fn infer_for_let(&mut self, env: &mut TypeEnv, x: &String,
                    e1: &ErlExpr, e2: &ErlExpr) -> ErlResult<InferResult> {
+    // Infer initializer value type of let expression
     let mut s1_t1 = self.infer(env, e1)?;
 
     let env_ = Substitutable::RefTypeEnv(env).apply(&mut s1_t1.s).into_typeenv();
     let t_ = self.generalize(&env_, &s1_t1.t);
 
+    // Joining old and new environment, infer type of <let x in...> body
     let mut env2_ = env_.extend(TypeVar(x.clone()), t_.clone());
     let s2_t2 = self.infer(&mut env2_, e2)?;
 
     let result = InferResult {
       s: s1_t1.s.compose(&s2_t2.s),
-      t: s2_t2.t
+      t: s2_t2.t,
     };
     Ok(result)
   }
 
-  //   Let x e1 e2 -> do
-  //     (s1, t1) <- infer env e1
-  //     let env' = apply s1 env
-  //         t'   = generalize env' t1
-  //     (s2, t2) <- infer (env' `extend` (x, t')) e2
-  //     return (s2 `compose` s1, t2)
-  //
-  //   If cond tr fl -> do
-  //     tv <- fresh
-  //     inferPrim env [cond, tr, fl] (typeBool `TArr` tv `TArr` tv `TArr` tv)
-  //
-  //   Fix e1 -> do
-  //     tv <- fresh
-  //     inferPrim env [e1] ((tv `TArr` tv) `TArr` tv)
-  //
+  // If cond tr fl -> do
+  //   (s1, t1) <- infer env cond
+  //   (s2, t2) <- infer env tr
+  //   (s3, t3) <- infer env fl
+  //   s4 <- unify t1 typeBool
+  //   s5 <- unify t2 t3
+  //   return (s5 `compose` s4 `compose` s3 `compose` s2 `compose` s1, apply s5 t2)
+  fn infer_for_if(&mut self, env: &mut TypeEnv,
+                  cond: &ErlExpr, on_true: &ErlExpr, on_false: &ErlExpr) -> ErlResult<InferResult> {
+    let s1_t1 = self.infer(env, cond)?;
+    let s2_t2 = self.infer(env, on_true)?;
+    let s3_t3 = self.infer(env, on_false)?;
+
+    // The condition must resolve to a value of bool() type
+    let cond_sub = self.unify(&s1_t1.t, Type::bool())?;
+
+    // The both branch types must unify
+    let mut branch_sub = self.unify(&s2_t2.t, &s3_t3.t)?;
+
+    let result = InferResult {
+      s: branch_sub.compose(&cond_sub)
+          .compose(&s3_t3.s)
+          .compose(&s2_t2.s)
+          .compose(&s1_t1.s),
+      t: Substitutable::RefType(&s2_t2.t).apply(&mut branch_sub).into_type(),
+    };
+    Ok(result)
+  }
+
   //   Op op e1 e2 -> do
-  //     inferPrim env [e1, e2] (ops op)
+  //     (s1, t1) <- infer env e1
+  //     (s2, t2) <- infer env e2
+  //     tv <- fresh
+  //     s3 <- unify (TArr t1 (TArr t2 tv)) (ops Map.! op)
+  //     return (s1 `compose` s2 `compose` s3, apply s3 tv)
+  fn infer_for_binaryop(&mut self, env: &mut TypeEnv,
+                        op: &ErlBinaryOp, e1: &ErlExpr, e2: &ErlExpr) -> ErlResult<InferResult> {
+    let s1_t1 = self.infer(env, e1)?;
+    let s2_t2 = self.infer(env, e2)?;
+
+    let tv = self.fresh_name();
+
+    // Unify (typeof(e1) -> typeof(e2) -> tv) and op's return type
+    let e1_e2_tv = Type::Arrow {
+      in_arg: s1_t1.t.clone().into_box(),
+      result: Type::Arrow {
+        in_arg: s2_t2.t.clone().into_box(),
+        result: Type::Var(tv.clone()).into_box(),
+      }.into_box(),
+    };
+
+    // Get full type for the binary op in form of (arg1_type -> arg2_type -> result_type)
+    let op_type = ErlBinaryOp::op_type(*op, &s1_t1.t, &s2_t2.t)?;
+    let mut s3 = self.unify(&e1_e2_tv, &op_type)?;
+
+    let result = InferResult {
+      s: s1_t1.s.compose(&s2_t2.s).compose(&s3),
+      t: Substitutable::RefType(&Type::Var(tv))
+          .apply(&mut s3)
+          .into_type(),
+    };
+    Ok(result)
+  }
+
+  //   Fix e1 -> do
+  //     (s1, t) <- infer env e1
+  //     tv <- fresh
+  //     s2 <- unify (TArr tv tv) t
+  //     return (s2, apply s1 tv)
   //
   //   Lit (LInt _)  -> return (nullSubst, typeInt)
   //   Lit (LBool _) -> return (nullSubst, typeBool)

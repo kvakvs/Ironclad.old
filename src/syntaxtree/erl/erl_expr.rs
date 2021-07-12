@@ -1,37 +1,22 @@
-use crate::typing::erltype::TypeVar;
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ErlBinOp {
-  Add,
-  Sub,
-  Mul,
-  Div,
-  IntDiv,
-  Modulo,
-  Less,
-  Greater,
-  LessEq,
-  GreaterEq,
-  Eq,
-  NotEq,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ErlUnaryExprOp {
-  Not,
-  Negate,
-}
+use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::typing::erltype::{TypeVar};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErlLiteral {
+  // TODO: Big integer
   /// Small enough to fit into a machine word
-  IntM(isize),
+  Integer(isize),
+
   /// A 8-byte wide float
   Float(f64),
-  // TODO: Big integer
+
   /// Atom literal, also includes atoms 'true' and 'false'
   Atom(String),
   // TODO: String/list lit, tuple lit, map lit, binary lit, etc
+
+  Bool(bool),
+  Pid,
+  Reference,
 }
 
 /// An Erlang expression
@@ -48,6 +33,7 @@ pub enum ErlExpr {
   Let { var: String, value: Box<ErlExpr>, in_expr: Box<ErlExpr> },
   /// A literal value, constant
   Lit(ErlLiteral),
-  BinaryOp { left: Box<ErlExpr>, right: Box<ErlExpr>, op: ErlBinOp },
-  UnaryOp { expr: Box<ErlExpr>, op: ErlUnaryExprOp },
+  BinaryOp { left: Box<ErlExpr>, right: Box<ErlExpr>, op: ErlBinaryOp },
+  UnaryOp { expr: Box<ErlExpr>, op: ErlUnaryOp },
+  If { cond: Box<ErlExpr>, on_true: Box<ErlExpr>, on_false: Box<ErlExpr> },
 }

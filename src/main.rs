@@ -21,6 +21,8 @@ extern crate serde_derive;
 extern crate thiserror;
 extern crate glob;
 extern crate alphabet;
+#[macro_use]
+extern crate lazy_static;
 
 use crate::project::ErlProject;
 use crate::project::conf::ErlProjectConf;
