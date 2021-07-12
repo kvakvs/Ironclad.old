@@ -1,5 +1,4 @@
 use std::collections::{HashSet};
-use std::rc::Rc;
 
 /// Defines a name of a type
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -13,11 +12,11 @@ pub struct TVar(String);
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Type {
   /// Refers to a type name
-  TVar(TVar),
+  Var(TVar),
   /// Refers to a const value in the type
-  TConst(String),
+  Const(String),
   /// A lambda-calculus arrow operation `left -> right`, taking one type and outputting one type
-  TArr {
+  Arrow {
     left: Box<Type>,
     right: Box<Type>,
   },
@@ -32,17 +31,17 @@ impl Type {
   //         Nothing -> error "type variable not in signature"
   pub fn normtype(&self, ord: &HashSet<(TVar, String)>) -> Type {
     match self {
-      Type::TVar(a) => {
+      Type::Var(a) => {
         match ord.into_iter().find(|ord_item| a.0 == ord_item.1) {
           Some(_) => self.clone(),
           None => panic!("TODO: ErlError, type variable is not in signature"),
         }
       }
 
-      Type::TConst(_) => self.clone(),
+      Type::Const(_) => self.clone(),
 
-      Type::TArr { left, right } => {
-        Type::TArr {
+      Type::Arrow { left, right } => {
+        Type::Arrow {
           left: Box::from(left.normtype(ord)),
           right: Box::from(right.normtype(ord)),
         }
@@ -55,21 +54,21 @@ impl Type {
   // fv (TCon _)   = []
   fn free_vars(&self) -> Vec<String> {
     match self {
-      Type::TVar(a) => vec![a.0.clone()],
-      Type::TArr { left, right } => {
+      Type::Var(a) => vec![a.0.clone()],
+      Type::Arrow { left, right } => {
         let mut left_vars = left.free_vars();
         left_vars.append(&mut right.free_vars());
         left_vars
       }
-      Type::TConst(_) => Vec::new(),
+      Type::Const(_) => Vec::new(),
     }
   }
 }
 
 #[derive(Debug)]
 pub enum TypeError {
-  UnificationFail(Rc<Type>, Rc<Type>),
-  InfiniteType(TVar, Rc<Type>),
+  UnificationFail(Box<Type>, Box<Type>),
+  InfiniteType(TVar, Box<Type>),
   UnboundVariable(String),
   Msg(String), // some unsupported type error reported as string
 }

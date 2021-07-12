@@ -9,6 +9,8 @@ use crate::typing::type_env::TypeEnv;
 use std::ops::{Deref};
 
 /// Temporary wrapper for types which can be substituted
+/// Only lives as long as the input lives.
+/// Extract the results using Self::into_*() helpers.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Substitutable<'a> {
   /// Borrowed type
@@ -74,9 +76,9 @@ impl<'a> Substitutable<'a> {
   /// Apply substitution to Type t
   fn apply_to_type(t: &'a Type, sub: &mut SubstitutionMap) -> Substitutable<'a> {
     match t {
-      Type::TConst(_) => Substitutable::RefType(t), // no change, const is not a typevar
+      Type::Const(_) => Substitutable::RefType(t), // no change, const is not a typevar
 
-      Type::TVar(t_var) => {
+      Type::Var(t_var) => {
         // Substitute one typevar from the sub hashmap, and return it
         match sub.types.entry(t_var.clone()) {
           Entry::Occupied(found) => {
@@ -89,12 +91,12 @@ impl<'a> Substitutable<'a> {
         }
       }
 
-      Type::TArr { left, right } => {
+      Type::Arrow { left, right } => {
         // Return new arrow where left and right have substitution applied to them
         let l_result = Substitutable::RefType(&left).apply(sub);
         let r_result = Substitutable::RefType(&right).apply(sub);
 
-        Substitutable::Type(Type::TArr {
+        Substitutable::Type(Type::Arrow {
           left: Box::from(l_result.into_type()),
           right: Box::from(r_result.into_type()),
         })
@@ -159,14 +161,14 @@ impl<'a> Substitutable<'a> {
   // ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
   fn find_typevars_in_type(t: &Type) -> HashSet<TVar> {
     match t {
-      Type::TConst(_) => HashSet::default(), // const contains no typevars in it
-      Type::TVar(a) => {
+      Type::Const(_) => HashSet::default(), // const contains no typevars in it
+      Type::Var(a) => {
         // Return set of 1 element
         let mut result = HashSet::with_capacity(1);
         result.insert(a.clone());
         result
       }
-      Type::TArr { left, right } => {
+      Type::Arrow { left, right } => {
         // Merge typevars found in left and right sides of the arrow
         let mut l_set = Substitutable::RefType(&left).find_typevars();
         Substitutable::RefType(&right).find_typevars()

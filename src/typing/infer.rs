@@ -6,8 +6,9 @@ use crate::typing::subst::SubstitutionMap;
 use crate::typing::substitutable::Substitutable;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_expr::ErlExpr;
-use crate::erl_error::ErlResult;
+use crate::erl_error::{ErlResult, ErlError};
 use std::collections::HashSet;
+use crate::typing::erltype::TypeError::{UnificationFail, InfiniteType};
 
 pub struct Unique(usize);
 
@@ -168,5 +169,42 @@ impl Infer {
   // occursCheck a t = a `Set.member` ftv t
   fn occurs_check(&self, a: &TVar, t: Substitutable) -> bool {
     t.find_typevars().contains(a)
+  }
+
+  // unify ::  Type -> Type -> Infer Subst
+  // unify (l `TArr` r) (l' `TArr` r')  = do
+  //     s1 <- unify l l'
+  //     s2 <- unify (apply s1 r) (apply s1 r')
+  //     return (s2 `compose` s1)
+  fn unify(&self, l: &Type, r: &Type) -> ErlResult<SubstitutionMap> {
+    match (l, r) {
+      (Type::Arrow { left: l1, right: r1 },
+        Type::Arrow { left: l2, right: r2 }) => {
+        let mut s1 = self.unify(l1, l2)?;
+        let mut s2 = self.unify(
+          &Substitutable::RefType(&r1).apply(&mut s1).into_type(),
+          &Substitutable::RefType(&r2).apply(&mut s1).into_type(),
+        )?;
+        s2.compose(&s1);
+        Ok(s2)
+      }
+      (_, _) => Err(ErlError::TypeError(
+        UnificationFail(Box::new(l.clone()),
+                        Box::new(r.clone()))))
+    }
+  }
+
+  // bind ::  TVar -> Type -> Infer Subst
+  // bind a t | t == TVar a     = return nullSubst
+  //          | occursCheck a t = throwError $ InfiniteType a t
+  //          | otherwise       = return $ Map.singleton a t
+  fn bind(&self, a: &TVar, t: &Type) -> ErlResult<SubstitutionMap> {
+    if *t == Type::Var(a.clone()) {
+      Ok(SubstitutionMap::new())
+    } else if self.occurs_check(a, Substitutable::RefType(t)) {
+      Err(ErlError::TypeError(InfiniteType(a.clone(), Box::new(t.clone()))))
+    } else {
+      Ok(SubstitutionMap::new_single(a, t))
+    }
   }
 }
