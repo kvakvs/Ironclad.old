@@ -28,6 +28,8 @@ pub enum Type {
     in_arg: Box<Type>,
     result: Box<Type>,
   },
+  /// Helper type for error reporting with lists of types (example: in infer::unify_many)
+  VecOfTypes(Vec<Type>),
 }
 
 impl Type {
@@ -90,6 +92,7 @@ impl Type {
           result: Box::from(right.normtype(ord)),
         }
       }
+      Type::VecOfTypes(_) => unreachable!("Type::normtype should not be called on VecOfTypes variant")
     }
   }
 
@@ -105,6 +108,7 @@ impl Type {
         left_vars
       }
       Type::Const(_) => Vec::new(),
+      Type::VecOfTypes(_) => unreachable!("Type::free_vars should not be called on VecOfTypes variant"),
     }
   }
 }

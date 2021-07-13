@@ -4,6 +4,7 @@ mod type_env;
 mod polymorphic;
 mod subst;
 mod substitutable;
+mod constraint;
 
 #[cfg(test)]
 mod tests {

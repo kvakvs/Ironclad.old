@@ -3,7 +3,7 @@ use std::collections::{HashMap};
 use crate::typing::erltype::{TypeVar, Type};
 
 /// A map defines substitution of types by their names
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct SubstitutionMap {
   pub types: HashMap<TypeVar, Type>,
 }

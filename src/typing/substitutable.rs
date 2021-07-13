@@ -7,6 +7,7 @@ use std::collections::hash_map::Entry;
 use crate::typing::polymorphic::Scheme;
 use crate::typing::type_env::TypeEnv;
 use std::ops::{Deref};
+use crate::typing::constraint::Constraint;
 
 /// Temporary wrapper for types which can be substituted
 /// Only lives as long as the input lives.
@@ -27,6 +28,8 @@ pub enum Substitutable<'a> {
   RefTypeEnv(&'a TypeEnv),
   /// Newly created or cloned TypeEnv
   TypeEnv(TypeEnv),
+  RefConstraint(&'a Constraint),
+  NewConstraint(Constraint),
 }
 
 // pub trait Substitutable {
@@ -62,6 +65,14 @@ impl<'a> Substitutable<'a> {
     }
   }
 
+  pub fn into_constraint(self) -> Constraint {
+    match self {
+      Substitutable::RefConstraint(cs) => cs.clone(),
+      Substitutable::NewConstraint(cs) => cs,
+      _ => unreachable!("{:?} is expected to be a Constraint", self),
+    }
+  }
+
   /// Apply given substitution over the structure of the type, replacing variables
   pub fn apply(self, sub: &mut SubstitutionMap) -> Substitutable<'a> {
     match self {
@@ -73,6 +84,8 @@ impl<'a> Substitutable<'a> {
       Substitutable::Vector(as_vec) => Self::apply_to_vec(as_vec, sub),
       Substitutable::RefTypeEnv(as_te) => Self::apply_to_typeenv(as_te, sub),
       Substitutable::TypeEnv(_) => unreachable!("Must never accept NewTypeEnv"),
+      Substitutable::RefConstraint(as_constraint) => Self::apply_to_cs(as_constraint, sub),
+      Substitutable::NewConstraint(_) => unreachable!("Must never accept NewConstraint"),
     }
   }
 
@@ -107,6 +120,7 @@ impl<'a> Substitutable<'a> {
           result: Box::from(r_result.into_type()),
         })
       }
+      Type::VecOfTypes(_) => unreachable!("Substitutable::apply_to_type should not be called on VecOfTypes variant"),
     }
   }
 
@@ -138,6 +152,15 @@ impl<'a> Substitutable<'a> {
     Substitutable::Vector(result)
   }
 
+  // apply s (t1, t2) = (apply s t1, apply s t2)
+  fn apply_to_cs(cs: &Constraint, sub: &mut SubstitutionMap) -> Substitutable<'a> {
+    let result = Constraint {
+      t1: Substitutable::RefType(&cs.t1).apply(sub).into_type(),
+      t2: Substitutable::RefType(&cs.t2).apply(sub).into_type(),
+    };
+    Substitutable::NewConstraint(result)
+  }
+
   // apply s: Subst (TypeEnv env) =  TypeEnv $ Map.map (apply s) env
   fn apply_to_typeenv(te: &TypeEnv, sub: &mut SubstitutionMap) -> Substitutable<'a> {
     let out_env: HashMap<TypeVar, Scheme> = te.env.iter()
@@ -159,6 +182,8 @@ impl<'a> Substitutable<'a> {
       Substitutable::Vector(as_vec) => Self::find_typevars_in_vec(as_vec),
       Substitutable::RefTypeEnv(as_te) => Self::find_typevars_in_typeenv(as_te),
       Substitutable::TypeEnv(_) => unreachable!("Must never accept NewTypeEnv"),
+      Substitutable::RefConstraint(as_constraint) => Self::find_typevars_in_cs(as_constraint),
+      Substitutable::NewConstraint(_) => unreachable!("Must never accept NewConstraint"),
     }
   }
 
@@ -184,6 +209,7 @@ impl<'a> Substitutable<'a> {
             });
         l_set
       }
+      Type::VecOfTypes(_) => unreachable!("Substitutable::find_free_vars_in_type should not be called on VecOfTypes variant")
     }
   }
 
@@ -227,5 +253,14 @@ impl<'a> Substitutable<'a> {
         .map(|scheme| Substitutable::RefScheme(scheme))
         .collect();
     Substitutable::Vector(env_elems).find_typevars()
+  }
+
+  // ftv (t1, t2) = ftv t1 `Set.union` ftv t2
+  fn find_typevars_in_cs(cs: &Constraint) -> HashSet<TypeVar> {
+    let mut tv1 = Substitutable::RefType(&cs.t1).find_typevars();
+    let tv2 = Substitutable::RefType(&cs.t2).find_typevars();
+
+    tv1.extend(tv2.into_iter());
+    tv1
   }
 }

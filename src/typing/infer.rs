@@ -1,5 +1,5 @@
 use std::collections::hash_map::Entry;
-use std::collections::HashSet;
+use std::collections::{HashSet};
 use std::rc::Rc;
 
 use alphabet::*;
@@ -13,6 +13,8 @@ use crate::typing::subst::SubstitutionMap;
 use crate::typing::substitutable::Substitutable;
 use crate::typing::type_env::TypeEnv;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
+use crate::erl_error::ErlError::TypeError;
+use crate::typing::constraint::{Constraint, Unifier};
 
 pub struct Unique(usize);
 
@@ -35,6 +37,11 @@ impl InferResult {
   pub fn empty_with(t: &Type) -> Self {
     Self { s: SubstitutionMap::new(), t: t.clone() }
   }
+}
+
+struct SolverInputItem {
+  su: SubstitutionMap,
+  cs: Constraint,
 }
 
 impl Infer {
@@ -165,15 +172,18 @@ impl Infer {
   //     return (s1, apply s1 tv `TArr` t1)
   /// Handle infer() for an ErlExpr::Lam
   /// arguments: ty and expr - components of ErlExpr::Lam
-  fn infer_for_lambda(&mut self, env: &mut TypeEnv, x: &TypeVar, e: &ErlExpr) -> ErlResult<InferResult> {
+  fn infer_for_lambda(&mut self, env: &mut TypeEnv,
+                      x: &TypeVar, expr: &ErlExpr) -> ErlResult<InferResult> {
     let tv = self.fresh_name();
 
     let mut type_env2 = env.clone();
     type_env2.env.insert(x.clone(),
                          Scheme::new_single_empty(Type::Var(tv.clone())));
 
-    let mut s1_t1 = self.infer(&mut type_env2, e)?;
-    let lam_result = {
+    // Infer lambda body type
+    let mut s1_t1 = self.infer(&mut type_env2, expr)?;
+
+    let lambda_type = {
       let t = Type::Arrow {
         in_arg: Box::new(Type::Var(tv.clone())),
         result: Box::new(s1_t1.t.clone()),
@@ -184,7 +194,7 @@ impl Infer {
       s: s1_t1.s,
       t: Type::Arrow {
         in_arg: Box::new(s1_t1.t.clone()),
-        result: Box::new(lam_result),
+        result: Box::new(lambda_type),
       },
     };
     Ok(result)
@@ -315,9 +325,6 @@ impl Infer {
   //     tv <- fresh
   //     s2 <- unify (TArr tv tv) t
   //     return (s2, apply s1 tv)
-  //
-  //   Lit (LInt _)  -> return (nullSubst, typeInt)
-  //   Lit (LBool _) -> return (nullSubst, typeBool)
 
   // inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   // inferPrim env l t = do
@@ -438,9 +445,76 @@ impl Infer {
     if *t == Type::Var(a.clone()) {
       Ok(SubstitutionMap::new()) // null subst
     } else if self.occurs_check(a, Substitutable::RefType(t)) {
-      Err(ErlError::TypeError(InfiniteType(a.clone(), Box::new(t.clone()))))
+      Err(TypeError(InfiniteType(a.clone(), Box::new(t.clone()))))
     } else {
       Ok(SubstitutionMap::new_single(a, t))
     }
+  }
+
+  // unify_many :: [Type] -> [Type] -> Solve Subst
+  // unify_many [] [] = return emptySubst
+  // unify_many (t1 : ts1) (t2 : ts2) =
+  // do su1 <- unifies t1 t2
+  // su2 <- unify_many (apply su1 ts1) (apply su1 ts2)
+  // return (su2 `compose` su1)
+  // unify_many t1 t2 = throwError $ UnificationMismatch t1 t2
+  fn unify_many(&self, t1: &Vec<Type>, t2: &Vec<Type>) -> ErlResult<SubstitutionMap> {
+    if t1.is_empty() && t2.is_empty() {
+      return Ok(SubstitutionMap::new());
+    }
+    Err(TypeError(UnificationFail(Type::VecOfTypes(t1.clone()).into_box(),
+                                  Type::VecOfTypes(t1.clone()).into_box())))
+  }
+
+  // unifies :: Type -> Type -> Solve Subst
+  // unifies t1 t2 | t1 == t2 = return emptySubst
+  // unifies (TVar v) t = v `bind` t
+  // unifies t (TVar v) = v `bind` t
+  // unifies (TArr t1 t2) (TArr t3 t4) = unify_many [t1, t2] [t3, t4]
+  // unifies t1 t2 = throwError $ UnificationFail t1 t2
+  fn unifies(&self, t1: &Type, t2: &Type) -> ErlResult<SubstitutionMap> {
+    if t1 == t2 {
+      return Ok(SubstitutionMap::new());
+    }
+    if let Type::Var(v) = t1 {
+      return self.bind(v, t2);
+    }
+    if let Type::Var(v) = t2 {
+      return self.bind(v, t1);
+    }
+    if let Type::Arrow { in_arg: in_arg1, result: result1 } = t1 {
+      if let Type::Arrow { in_arg: in_arg2, result: result2 } = t2 {
+        return self.unify_many(&vec![*in_arg1.clone(), *result1.clone()],
+                               &vec![*in_arg2.clone(), *result2.clone()]);
+      }
+    }
+    Err(TypeError(UnificationFail(t1.clone().into_box(),
+                                  t2.clone().into_box())))
+  }
+
+  // solver :: Unifier -> Solve Subst
+  // solver (su, cs) =
+  //   case cs of
+  //     [] -> return su
+  //     ((t1, t2): cs0) -> do
+  //       su1  <- unifies t1 t2
+  //       solver (su1 `compose` su, apply su1 cs0)  /// Unification solver
+  fn solver(&self, mut input: Unifier) -> ErlResult<SubstitutionMap> {
+    if input.cs.is_empty() {
+      return Ok(input.su);
+    }
+
+    let cs = input.cs.pop_front().unwrap();
+
+    let mut su1 = self.unifies(&cs.t1, &cs.t2)?;
+
+    let mut constraints = input.cs;
+    let cs1 = Substitutable::RefConstraint(&cs).apply(&mut su1).into_constraint();
+    constraints.push_back(cs1);
+
+    self.solver(Unifier {
+      su: su1.compose(&input.su),
+      cs: constraints,
+    })
   }
 }
