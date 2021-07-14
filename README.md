@@ -3,8 +3,8 @@
 ## The Problem
 
 I have a dream, that one day there will be an Erlang compiler, which will generate high quality type-correct code from
-deduced value usages and `-type` specs. It will be able to print reasonable error messages about why the code is broken
-and will suggest how to fix the errors.
+deduced value usages and `-type` and `-spec`s. It will be able to print reasonable error messages about why the code is
+broken and will suggest how to fix the errors.
 
 The current standard compiler, `lib/compiler` in OTP, and the type checking tool, Dialyzer in `lib/dialyzer`, are two
 separate projects:
@@ -68,5 +68,10 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
     - [ ] Maps syntax
     - [ ] Records syntax
     - [ ] Typespec syntax
+- [ ] Type system and type inference engine
+    - [x] Define types, union types, special (any, none, ...)
+    - [x] Define expressions AST
+    - [x] Add support for types in the AST
+    - [ ] Infer expression types
 - [ ] ???
 - [ ] Code generator
