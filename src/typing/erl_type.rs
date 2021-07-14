@@ -37,8 +37,6 @@ pub enum ErlType {
   None,
   /// All types, usually signifies an unchecked or untyped type
   Any,
-  /// A type variable for not-yet-inferred types or generic types
-  Var(String),
 
   //-------------------
   // Erlang data types
@@ -126,7 +124,6 @@ impl ErlType {
           Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
         }
       }
-      ErlType::Var(tvar) => format!("<{}>", tvar), // TODO: Remove < >
     }
   }
 }

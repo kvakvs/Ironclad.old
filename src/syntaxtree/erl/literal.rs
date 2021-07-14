@@ -1,3 +1,5 @@
+use crate::typing::erl_type::ErlType;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErlLiteral {
   // TODO: Big integer
@@ -25,6 +27,17 @@ impl ErlLiteral {
       ErlLiteral::Bool(b) => format!("{}", if *b { "'true'" } else { "'false'" }),
       ErlLiteral::Pid => format!("<pid>"),
       ErlLiteral::Reference => format!("<ref>"),
+    }
+  }
+
+  pub fn get_type(&self) -> ErlType {
+    match self {
+      ErlLiteral::Integer(_) => ErlType::Integer,
+      ErlLiteral::Float(_) => ErlType::Float,
+      ErlLiteral::Atom(_) => ErlType::Atom,
+      ErlLiteral::Bool(_) => ErlType::Bool,
+      ErlLiteral::Pid => ErlType::Pid,
+      ErlLiteral::Reference => ErlType::Reference,
     }
   }
 }

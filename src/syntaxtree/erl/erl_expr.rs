@@ -23,3 +23,9 @@ pub enum ErlExpr {
   UnaryOp { expr: Box<ErlExpr>, op: ErlUnaryOp },
   If { cond: Box<ErlExpr>, on_true: Box<ErlExpr>, on_false: Box<ErlExpr> },
 }
+
+impl ErlExpr {
+  // pub fn lit_integer(value: isize) -> Self {
+  //   ErlExpr::Lit(ErlLiteral::Integer(value))
+  // }
+}
