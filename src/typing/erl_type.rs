@@ -28,12 +28,21 @@ impl MapField {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErlType {
+  //-------------------------------------
+  // Special types, groups of types, etc
+  //-------------------------------------
   /// Multiple types together
   Union(Vec<ErlType>),
   /// No type, usually signifies a type error
   None,
   /// All types, usually signifies an unchecked or untyped type
   Any,
+  /// A type variable for not-yet-inferred types or generic types
+  Var(String),
+
+  //-------------------
+  // Erlang data types
+  //-------------------
 
   /// Integers or floats
   Number,
@@ -117,6 +126,7 @@ impl ErlType {
           Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
         }
       }
+      ErlType::Var(tvar) => format!("<{}>", tvar), // TODO: Remove < >
     }
   }
 }
