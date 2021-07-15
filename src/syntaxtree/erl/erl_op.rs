@@ -1,3 +1,6 @@
+use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::ErlType::Union;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ErlBinaryOp {
   Add,
@@ -15,6 +18,27 @@ pub enum ErlBinaryOp {
 }
 
 impl ErlBinaryOp {
+  /// Returns some type for op arguments, useful for building type equations.
+  /// Returns none if type is Any (should not create any equations)
+  pub fn get_arg_type(&self) -> Option<ErlType> {
+    match self {
+      ErlBinaryOp::Add
+      | ErlBinaryOp::Sub
+      | ErlBinaryOp::Mul
+      | ErlBinaryOp::Div => Some(Union(vec![ErlType::Integer, ErlType::Float])),
+
+      ErlBinaryOp::IntDiv
+      | ErlBinaryOp::Modulo => Some(ErlType::Integer),
+
+      ErlBinaryOp::Less
+      | ErlBinaryOp::Greater
+      | ErlBinaryOp::LessEq
+      | ErlBinaryOp::GreaterEq
+      | ErlBinaryOp::Eq
+      | ErlBinaryOp::NotEq => None
+    }
+  }
+
   // /// Get full type for the binary op in form of (arg1_type -> arg2_type -> result_type)
   // pub fn op_type(op: ErlBinaryOp, t1: &Type, t2: &Type) -> ErlResult<Type> {
   //   // TODO: Can check t1 and t2 for add/sub/mul/div and return float if a float is involved

@@ -20,6 +20,9 @@ impl ErrorLocation {
 
 #[derive(Error, Debug)]
 pub enum ErlError {
+  #[error("Multiple errors: {0:?}")]
+  Multiple(Vec<ErlError>),
+
   #[error("Not implemented: {0}")]
   NotImpl(String),
 

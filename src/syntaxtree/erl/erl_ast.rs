@@ -1,10 +1,9 @@
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::fun_clause::FunctionClause;
 use crate::syntaxtree::erl::literal::ErlLiteral;
 use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type::ErlType;
-use crate::syntaxtree::erl::case_clause::CaseClause;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use std::borrow::Borrow;
 
 #[derive(Debug, PartialEq)]
 pub enum ErlAst {
@@ -28,7 +27,20 @@ pub enum ErlAst {
     name: String,
     // Each clause is ErlExpr, and union of clause types will be function return type
     ret: ErlType,
-    clauses: Vec<FunctionClause>,
+    clauses: Vec<ErlAst>,
+  },
+
+  FClause {
+    args: Vec<ErlAst>,
+    arg_types: Vec<TypeVar>,
+    body: Box<ErlAst>,
+  },
+  CClause {
+    /// A match expression, matched vs. case arg
+    cond: Box<ErlAst>,
+    /// Must resolve to bool, or an exception
+    guard: Box<ErlAst>,
+    body: Box<ErlAst>,
   },
 
   /// A named variable
@@ -40,9 +52,9 @@ pub enum ErlAst {
   /// Apply arguments to expression
   App {
     /// Target, to be called, expected to have function or lambda type
-    expr: Box<ErlExpr>,
+    expr: Box<ErlAst>,
     /// Arguments. Their  inferred types are stored inside.
-    args: Vec<ErlExpr>,
+    args: Vec<ErlAst>,
     /// Return inferred type.
     ty: ErlType,
   },
@@ -57,9 +69,9 @@ pub enum ErlAst {
     /// Type which we believe is Var
     var_ty: ErlType,
     /// Value (type is in it)
-    value: Box<ErlExpr>,
+    value: Box<ErlAst>,
     /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
-    in_expr: Box<ErlExpr>,
+    in_expr: Box<ErlAst>,
   },
 
   // // TODO: Remove If because can be replaced with Case
@@ -71,56 +83,88 @@ pub enum ErlAst {
   Case {
     /// A union type of all case clauses
     ty: ErlType,
-    arg: Box<ErlExpr>,
-    clauses: Vec<CaseClause>,
+    arg: Box<ErlAst>,
+    clauses: Vec<ErlAst>,
   },
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(ErlLiteral),
 
-  BinaryOp { left: Box<ErlExpr>, right: Box<ErlExpr>, op: ErlBinaryOp },
-  UnaryOp { expr: Box<ErlExpr>, op: ErlUnaryOp },
+  BinaryOp { left: Box<ErlAst>, right: Box<ErlAst>, op: ErlBinaryOp },
+  UnaryOp { expr: Box<ErlAst>, op: ErlUnaryOp },
 }
 
 impl ErlAst {
-  pub fn get_children(&self) -> Vec<&ErlAst> {
-    match self {
-      ErlAst::Forms(f) => f.iter(),
-      ErlAst::ModuleAttr { .. } => unreachable!("Ast::ModuleAttr has no nested nodes"),
-      ErlAst::Lit { .. } => unreachable!("Ast::Literal has no nested nodes"),
-      ErlAst::NewFunction { .. } => {}
-      ErlAst::Var { .. } => {}
-      ErlAst::App { .. } => {}
-      ErlAst::Let { .. } => {}
-      ErlAst::Case { .. } => {}
-      ErlAst::BinaryOp { .. } => {}
-      ErlAst::UnaryOp { .. } => {}
+  /// Create a new function clause
+  pub fn new_fclause(args: Vec<ErlAst>, expr: ErlAst) -> Self {
+    let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
+    Self::FClause {
+      args,
+      arg_types,
+      body: Box::from(expr),
     }
   }
 
-  pub fn has_children(&self) -> bool {
+  /// Build a vec of references to children
+  pub fn get_children(&self) -> Option<Vec<&ErlAst>> {
     match self {
-      // Descend into module contents
-      ErlAst::Forms(_) => unreachable!("Do not call on module root ErlAst::Forms"),
-      ErlAst::ModuleAttr { .. } => false,
-      ErlAst::Lit { .. } => false, // TODO: nested literals?
-      // Descend into args expressions, and into body
-      ErlAst::NewFunction { .. } => true,
-      ErlAst::Var { .. } => false,
-      // Descend into app expression and args expressions
-      ErlAst::App { .. } => true,
-      // Descend into variable value, and in-body
-      ErlAst::Let { .. } => true,
-      // Descend into the condition, and clauses
-      ErlAst::Case { .. } => true,
-      // Descend into the args
-      ErlAst::BinaryOp { .. } => true,
-      // Descend into the arg
-      ErlAst::UnaryOp { .. } => true,
+      ErlAst::Forms(f) => Some(f.iter().collect()),
+      ErlAst::ModuleAttr { .. } => None,
+      ErlAst::Lit { .. } => None,
+      ErlAst::NewFunction { clauses, .. } => Some(clauses.iter().collect()),
+      ErlAst::FClause { args, arg_types, body } => {
+        // Descend into args, and the body
+        let mut args_refs: Vec<&ErlAst> = args.iter().collect();
+        args_refs.push(&body);
+        Some(args_refs)
+      }
+      ErlAst::Var { .. } => None,
+      ErlAst::App { expr, args, .. } => {
+        let mut r = vec![expr.borrow()];
+        args.iter().for_each(|a| r.push(a));
+        Some(r)
+      }
+      ErlAst::Let { value, in_expr, .. } => {
+        Some(vec![&value, &in_expr])
+      }
+      ErlAst::Case { arg, clauses, .. } => {
+        let mut r = vec![arg.borrow()];
+        clauses.iter().for_each(|a| r.push(a));
+        Some(r)
+      }
+      ErlAst::CClause { cond, guard, body } => {
+        Some(vec![cond.borrow(), guard.borrow(), body.borrow()])
+      }
+      ErlAst::BinaryOp { left, right, .. } => {
+        Some(vec![left.borrow(), right.borrow()])
+      }
+      ErlAst::UnaryOp { expr, .. } => { Some(vec![expr.borrow()]) }
     }
   }
 
-  pub fn new_fun(name: &str, clauses: Vec<FunctionClause>) -> Self {
+  // pub fn has_children(&self) -> bool {
+  //   match self {
+  //     // Descend into module contents
+  //     ErlAst::Forms(_) => unreachable!("Do not call on module root ErlAst::Forms"),
+  //     ErlAst::ModuleAttr { .. } => false,
+  //     ErlAst::Lit { .. } => false, // TODO: nested literals?
+  //     // Descend into args expressions, and into body
+  //     ErlAst::NewFunction { .. } => true,
+  //     ErlAst::Var { .. } => false,
+  //     // Descend into app expression and args expressions
+  //     ErlAst::App { .. } => true,
+  //     // Descend into variable value, and in-body
+  //     ErlAst::Let { .. } => true,
+  //     // Descend into the condition, and clauses
+  //     ErlAst::Case { .. } => true,
+  //     // Descend into the args
+  //     ErlAst::BinaryOp { .. } => true,
+  //     // Descend into the arg
+  //     ErlAst::UnaryOp { .. } => true,
+  //   }
+  // }
+
+  pub fn new_fun(name: &str, clauses: Vec<ErlAst>) -> Self {
     ErlAst::NewFunction {
       name: name.to_string(),
       clauses,

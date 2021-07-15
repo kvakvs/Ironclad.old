@@ -17,6 +17,13 @@ pub enum ErlLiteral {
   Bool(bool),
   Pid,
   Reference,
+
+  List(Vec<ErlLiteral>),
+
+  /// A list containing only unicode codepoints is-a(List)
+  String(String),
+
+  Tuple(Vec<ErlLiteral>),
 }
 
 lazy_static! {

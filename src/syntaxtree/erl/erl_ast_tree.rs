@@ -5,6 +5,7 @@ use pest::Parser;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 use crate::erl_error::ErlResult;
+use crate::syntaxtree::erl::literal::ErlLiteral;
 
 /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
 impl ErlAstTree {
@@ -38,7 +39,7 @@ impl ErlAstTree {
         ErlAst::Forms(ast_nodes)
       },
       Rule::string => {
-        ErlAst::String(String::from(pair.as_str()))
+        ErlAst::Lit(ErlLiteral::String(String::from(pair.as_str())))
       }
 
       other => unreachable!("ErlAst value: {:?}", other),
