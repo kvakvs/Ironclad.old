@@ -9,6 +9,7 @@ mod tests {
   use crate::typing::equation::{TypeEquation};
   use crate::syntaxtree::erl::literal::ErlLiteral;
   use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
+  use crate::typing::erl_type::ErlType;
 
   #[test]
   fn expr1_test() {
@@ -19,6 +20,7 @@ mod tests {
       left: Box::new(ErlAst::new_var("A")),
       right: Box::new(ErlAst::Lit(ErlLiteral::Integer(1))),
       op: ErlBinaryOp::Add,
+      ty: ErlType::new_typevar(),
     };
     let clause1 = ErlAst::new_fclause(vec![ErlAst::new_var("A")], clause1_body);
     let erl_fn = ErlAst::new_fun("test1", vec![clause1]);

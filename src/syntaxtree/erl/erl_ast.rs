@@ -35,6 +35,7 @@ pub enum ErlAst {
     arg_types: Vec<TypeVar>,
     body: Box<ErlAst>,
   },
+
   CClause {
     /// A match expression, matched vs. case arg
     cond: Box<ErlAst>,
@@ -90,11 +91,28 @@ pub enum ErlAst {
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(ErlLiteral),
 
-  BinaryOp { left: Box<ErlAst>, right: Box<ErlAst>, op: ErlBinaryOp },
+  BinaryOp { left: Box<ErlAst>, right: Box<ErlAst>, op: ErlBinaryOp, ty: ErlType },
   UnaryOp { expr: Box<ErlAst>, op: ErlUnaryOp },
 }
 
 impl ErlAst {
+  pub fn get_type(&self) -> ErlType {
+    match self {
+      ErlAst::Forms(_) => ErlType::Any,
+      ErlAst::ModuleAttr { .. } => ErlType::Any,
+      ErlAst::NewFunction { ret, .. } => ret.clone(),
+      ErlAst::FClause { body, .. } => body.get_type(),
+      ErlAst::CClause { body, .. } => body.get_type(),
+      ErlAst::Var { ty, .. } => ty.clone(),
+      ErlAst::App { ty, .. } => ty.clone(),
+      ErlAst::Let { in_expr, .. } => in_expr.get_type(),
+      ErlAst::Case { ty, .. } => ty.clone(),
+      ErlAst::Lit(l) => l.get_type().clone(),
+      ErlAst::BinaryOp { op,.. } => op.get_result_type(),
+      ErlAst::UnaryOp { expr,.. } => expr.get_type(), // same type as expr bool or num
+    }
+  }
+
   /// Create a new function clause
   pub fn new_fclause(args: Vec<ErlAst>, expr: ErlAst) -> Self {
     let arg_types = args.iter().map(|_a| TypeVar::new()).collect();

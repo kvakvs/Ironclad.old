@@ -1,5 +1,5 @@
 use crate::typing::erl_type::ErlType;
-use crate::typing::erl_type::ErlType::Union;
+use crate::typing::erl_type::ErlType::{Union, Bool, Float, Integer};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ErlBinaryOp {
@@ -36,6 +36,23 @@ impl ErlBinaryOp {
       | ErlBinaryOp::GreaterEq
       | ErlBinaryOp::Eq
       | ErlBinaryOp::NotEq => None
+    }
+  }
+
+  pub fn get_result_type(&self) -> ErlType {
+    match self {
+      ErlBinaryOp::Add
+      |ErlBinaryOp::Sub
+      |ErlBinaryOp::Mul
+      |ErlBinaryOp::Div => Union(vec![Integer, Float]),
+      ErlBinaryOp::IntDiv => Integer,
+      ErlBinaryOp::Modulo => Integer,
+      ErlBinaryOp::Less
+      |ErlBinaryOp::Greater
+      |ErlBinaryOp::LessEq
+      |ErlBinaryOp::GreaterEq
+      |ErlBinaryOp::Eq
+      |ErlBinaryOp::NotEq => Bool
     }
   }
 
@@ -81,4 +98,13 @@ impl ErlBinaryOp {
 pub enum ErlUnaryOp {
   Not,
   Negate,
+}
+
+impl ErlUnaryOp {
+  pub fn get_return_type(&self) -> ErlType {
+    match self {
+      ErlUnaryOp::Not => ErlType::Bool,
+      ErlUnaryOp::Negate => ErlType::Union(vec![Integer, Float]),
+    }
+  }
 }

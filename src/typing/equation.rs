@@ -2,15 +2,16 @@ use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use crate::erl_error::{ErlResult, ErlError};
+use crate::typing::erl_type::ErlType::Union;
 
 pub struct TypeEquation<'a> {
-  left: &'a ErlType,
-  right: &'a ErlType,
+  left: ErlType,
+  right: ErlType,
   node: &'a ErlAst,
 }
 
 impl<'a> TypeEquation<'a> {
-  pub fn new(node: &'a ErlAst, ty1: &'a ErlType, ty2: &'a ErlType) -> Self {
+  pub fn new(node: &'a ErlAst, ty1: ErlType, ty2: ErlType) -> Self {
     Self {
       left: ty1,
       right: ty2,
@@ -42,16 +43,22 @@ impl<'a> TypeEquation<'a> {
       ErlAst::Forms(_) => unreachable!("Must not call generate_equations() on Forms"),
       ErlAst::ModuleAttr { .. } => Ok(()),
       ErlAst::Lit(_) => Ok(()), // creates no equation, type is known
-      ErlAst::NewFunction { .. } => {}
+      ErlAst::NewFunction { ret, clauses, .. } => {
+        // Return type of a function is union of its clauses return types
+        let union_t = Union(clauses.iter().map(|c| c.get_type()).collect());
+        result.push(TypeEquation::new(ast, ret.clone(), union_t));
+        Ok(())
+      }
       ErlAst::FClause { .. } => {}
       ErlAst::CClause { .. } => {}
       ErlAst::Var { .. } => {}
       ErlAst::App { .. } => {}
       ErlAst::Let { .. } => {}
       ErlAst::Case { .. } => {}
-      ErlAst::BinaryOp { left, right, op } => {
+      ErlAst::BinaryOp { left, right, op, ty } => {
         match op.get_arg_type() {
           Some(arg_type) => {
+            // Both sides of a binary op must have type appropriate for that op
             result.push(TypeEquation::new(ast, left.get_type(), &arg_type));
             result.push(TypeEquation::new(ast, right.get_type(), &arg_type));
           }
@@ -59,7 +66,12 @@ impl<'a> TypeEquation<'a> {
         }
         Ok(())
       }
-      ErlAst::UnaryOp { .. } => {}
+      ErlAst::UnaryOp { expr, op } => {
+        // Equation of expression type must match either bool for logical negation,
+        // or (int|float) for numerical negation
+        result.push(TypeEquation::new(ast, expr.get_type(), op.get_result_type()));
+        Ok(())
+      }
     }
 
     // elif isinstance(node, ast.OpExpr):
