@@ -8,7 +8,6 @@ mod tests {
   use crate::syntaxtree::erl::erl_ast::ErlAst;
   use crate::typing::equation::{TypeEquation};
   use crate::syntaxtree::erl::fun_clause::FunctionClause;
-  use crate::syntaxtree::erl::erl_expr::ErlExpr;
   use crate::syntaxtree::erl::literal::ErlLiteral;
   use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 
@@ -17,12 +16,11 @@ mod tests {
     // Build AST for a function
     // fun(A) -> A + 1.
     // The inferred type should be: ((integer()) -> integer())
-    let clause1_body = ErlAst::new_expr(
-      ErlExpr::BinaryOp {
-        left: Box::new(ErlExpr::Var("A".to_string())),
-        right: Box::new(ErlExpr::Lit(ErlLiteral::Integer(1))),
-        op: ErlBinaryOp::Add
-      });
+    let clause1_body = ErlAst::BinaryOp {
+      left: Box::new(ErlAst::new_var("A")),
+      right: Box::new(ErlExpr::Lit(ErlLiteral::Integer(1))),
+      op: ErlBinaryOp::Add,
+    };
     let clause1 = FunctionClause::new(
       vec![ErlAst::new_var("A")],
       clause1_body);

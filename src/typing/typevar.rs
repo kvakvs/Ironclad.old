@@ -10,6 +10,12 @@ pub struct TypeVar {
   id: usize,
 }
 
+impl TypeVar {
+  pub fn to_string(&self) -> String {
+    format!("${}", self.id)
+  }
+}
+
 lazy_static! {
     /// Counter to create unique TypeVar names
     static ref TYPEVAR_NUM: AtomicUsize = AtomicUsize::new(0);

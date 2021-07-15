@@ -1,4 +1,5 @@
 use crate::syntaxtree::erl::literal::ErlLiteral;
+use crate::typing::typevar::TypeVar;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RecordField {
@@ -37,6 +38,7 @@ pub enum ErlType {
   None,
   /// All types, usually signifies an unchecked or untyped type
   Any,
+  TypeVar(TypeVar),
 
   //-------------------
   // Erlang data types
@@ -74,10 +76,15 @@ pub enum ErlType {
   Literal(ErlLiteral),
 
   /// Named function or unnamed, lambda
-  Function { name: Option<String>, args: Vec<ErlType>, ret: Box<ErlType> },
+  Function { name: Option<String>, arg_ty: Vec<ErlType>, ret: Box<ErlType> },
 }
 
 impl ErlType {
+  pub fn new_typevar() -> Self {
+    ErlType::TypeVar(TypeVar::new())
+  }
+
+  /// Return type expressed as a printable string
   pub fn to_string(&self) -> String {
     match self {
       ErlType::Union(types) => {
@@ -115,7 +122,7 @@ impl ErlType {
       ErlType::Reference => String::from("reference()"),
       ErlType::Binary => String::from("binary()"),
       ErlType::Literal(lit) => lit.to_string(),
-      ErlType::Function { name, args, ret } => {
+      ErlType::Function { name, arg_ty: args, ret } => {
         let args_s = args.iter().map(|t| t.to_string())
             .collect::<Vec<String>>()
             .join(", ");
@@ -124,6 +131,7 @@ impl ErlType {
           Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
         }
       }
+      ErlType::TypeVar(tv) => tv.to_string()
     }
   }
 }
