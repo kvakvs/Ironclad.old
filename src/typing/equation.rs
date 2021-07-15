@@ -1,34 +1,36 @@
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
-use crate::typing::typevar::TypeVar;
 use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::erl_type::ErlType::Union;
+use std::rc::Rc;
+use std::borrow::Borrow;
 
-pub struct TypeEquation<'a> {
+pub struct TypeEquation {
   left: ErlType,
   right: ErlType,
-  node: &'a ErlAst,
+  node: Rc<ErlAst>,
 }
 
-impl<'a> TypeEquation<'a> {
-  pub fn new(node: &'a ErlAst, ty1: ErlType, ty2: ErlType) -> Self {
+impl TypeEquation {
+  pub fn new(node: &Rc<ErlAst>, ty1: ErlType, ty2: ErlType) -> Self {
     Self {
       left: ty1,
       right: ty2,
-      node,
+      node: node.clone(),
     }
   }
 
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
-  pub fn generate_equations(ast: &'a ErlAst, result: &'a mut Vec<TypeEquation<'a>>) -> ErlResult<()> {
+  pub fn generate_equations(ast: &Rc<ErlAst>, result: &mut Vec<TypeEquation>) -> ErlResult<()> {
     match ast.get_children() {
       Some(c) => {
-        let (_, errors): (Vec<_>, Vec<_>) = c.iter()
-            .map(|ast_node| { // drop OK results, keep errors
-              Self::generate_equations(ast_node, result)
-            })
-            .partition(Result::is_ok);
+        let (_, errors): (Vec<_>, Vec<_>) =
+            c.iter()
+                .map(|ast_node| { // drop OK results, keep errors
+                  Self::generate_equations(ast_node, result)
+                })
+                .partition(Result::is_ok);
         let mut errors: Vec<ErlError> = errors.into_iter().map(Result::unwrap_err).collect();
         match errors.len() {
           0 => (),
@@ -39,73 +41,74 @@ impl<'a> TypeEquation<'a> {
       None => {}
     }
 
-    match ast {
+    match ast.borrow() {
       ErlAst::Forms(_) => unreachable!("Must not call generate_equations() on Forms"),
-      ErlAst::ModuleAttr { .. } => Ok(()),
-      ErlAst::Lit(_) => Ok(()), // creates no equation, type is known
+      ErlAst::ModuleAttr { .. } => {}
+      ErlAst::Lit(_) => {} // creates no equation, type is known
       ErlAst::NewFunction { ret, clauses, .. } => {
         // Return type of a function is union of its clauses return types
         let union_t = Union(clauses.iter().map(|c| c.get_type()).collect());
         result.push(TypeEquation::new(ast, ret.clone(), union_t));
-        Ok(())
       }
-      ErlAst::FClause { .. } => {}
-      ErlAst::CClause { .. } => {}
+      ErlAst::FClause { ret, body, .. } => {
+        // For each fun clause its return type is matched with body expression type
+        result.push(TypeEquation::new(ast, ret.clone(), body.get_type()));
+      }
       ErlAst::Var { .. } => {}
-      ErlAst::App { .. } => {}
-      ErlAst::Let { .. } => {}
-      ErlAst::Case { .. } => {}
+      ErlAst::App { expr, args, ty } => {
+        let fn_type = ErlType::new_fun(
+          None, // unnamed function application
+          args.iter()
+              .map(|a| a.get_type())
+              .collect(),
+          ty.clone());
+        // A callable expression node type must match the supplied arguments types
+        result.push(TypeEquation::new(ast, expr.get_type(), fn_type));
+      }
+      ErlAst::Let { in_ty, in_expr, .. } => {
+        result.push(TypeEquation::new(ast, in_ty.clone(), in_expr.get_type()));
+      }
+      ErlAst::Case { ty, clauses, .. } => {
+        // For Case expression, type of case must be union of all clause types
+        let all_clause_types = clauses.iter()
+            .map(|c| c.get_type())
+            .collect();
+        let union_t = ErlType::Union(all_clause_types);
+        result.push(TypeEquation::new(ast, ty.clone(), union_t));
+      }
+      ErlAst::CClause { guard, body, ty, .. } => {
+        // Clause type must match body type
+        result.push(TypeEquation::new(ast, ty.clone(), body.get_type()));
+        // No check for clause condition, but the clause condition guard must be boolean
+        result.push(TypeEquation::new(ast, guard.get_type(), ErlType::Bool));
+      }
       ErlAst::BinaryOp { left, right, op, ty } => {
+        // Check result of the binary operation
+        result.push(TypeEquation::new(ast, ty.clone(), op.get_result_type()));
+
         match op.get_arg_type() {
           Some(arg_type) => {
             // Both sides of a binary op must have type appropriate for that op
-            result.push(TypeEquation::new(ast, left.get_type(), &arg_type));
-            result.push(TypeEquation::new(ast, right.get_type(), &arg_type));
+            result.push(TypeEquation::new(ast, left.get_type(), arg_type.clone()));
+            result.push(TypeEquation::new(ast, right.get_type(), arg_type));
           }
           None => {}
         }
-        Ok(())
       }
       ErlAst::UnaryOp { expr, op } => {
         // Equation of expression type must match either bool for logical negation,
         // or (int|float) for numerical negation
-        result.push(TypeEquation::new(ast, expr.get_type(), op.get_result_type()));
-        Ok(())
+        result.push(TypeEquation::new(ast,
+                                      expr.get_type(),
+                                      op.get_return_type()));
+        // TODO: Match return type with inferred return typevar?
+      }
+      ErlAst::Comma { exprs, ty } => {
+        result.push(TypeEquation::new(ast,
+                                      ty.clone(),
+                                      exprs[exprs.len() - 1].get_type()));
       }
     }
-
-    // elif isinstance(node, ast.OpExpr):
-    //     node.visit_children(lambda c: generate_equations(c, type_equations))
-    // # All op arguments are integers.
-    //     type_equations.append(TypeEquation(node.left._type, IntType(), node))
-    // type_equations.append(TypeEquation(node.right._type, IntType(), node))
-    // # Some ops return boolean, and some return integer.
-    // if node.op in {'!=', '==', '>=', '<=', '>', '<'}:
-    //     type_equations.append(TypeEquation(node._type, BoolType(), node))
-    // else:
-    // type_equations.append(TypeEquation(node._type, IntType(), node))
-
-    // elif isinstance(node, ast.AppExpr):
-    //     node.visit_children(lambda c: generate_equations(c, type_equations))
-    // argtypes = [arg._type for arg in node.args]
-    // # An application forces its function's type.
-    // type_equations.append(TypeEquation(node.func._type,
-    //                                    FuncType(argtypes, node._type),
-    //                                    node))
-
-    // elif isinstance(node, ast.IfExpr):
-    //     node.visit_children(lambda c: generate_equations(c, type_equations))
-    // type_equations.append(TypeEquation(node.ifexpr._type, BoolType(), node))
-    // type_equations.append(TypeEquation(node._type, node.thenexpr._type, node))
-    // type_equations.append(TypeEquation(node._type, node.elseexpr._type, node))
-
-    // elif isinstance(node, ast.LambdaExpr):
-    //     node.visit_children(lambda c: generate_equations(c, type_equations))
-    // argtypes = [node._arg_types[name] for name in node.argnames]
-    // type_equations.append(
-    //   TypeEquation(node._type,
-    //                FuncType(argtypes, node.expr._type), node))
-    // else:
-    // raise TypingError('unknown node {}', type(node))
+    Ok(())
   }
 }

@@ -5,6 +5,7 @@ use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
 use crate::erl_error::ErlResult;
+use std::rc::Rc;
 
 impl PpAstTree {
   /// Does rough preparse of ERL files, only being interested in -include, -ifdef, macros, ... etc
@@ -59,8 +60,8 @@ impl PpAstTree {
         // Parse all nested file elements, comments and text fragments
         let ast_nodes = pair.into_inner()
             .map(|p| self.pp_parse_tokens_to_ast(p))
-            .map(|r| r.unwrap())
-            .collect::<Vec<PpAst>>();
+            .map(|r| Rc::new(r.unwrap()))
+            .collect::<Vec<Rc<PpAst>>>();
         PpAst::File(ast_nodes)
       }
 

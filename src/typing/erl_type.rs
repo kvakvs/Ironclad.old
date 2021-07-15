@@ -53,6 +53,9 @@ pub enum ErlType {
   /// A list with element type, type can be union
   List(Box<ErlType>),
 
+  /// A list of unicode codepoints list(char())
+  String,
+
   /// A tuple with each element type defined
   Tuple(Vec<ErlType>),
 
@@ -80,6 +83,27 @@ pub enum ErlType {
 }
 
 impl ErlType {
+  /// Given vector of literals, make a union type
+  pub fn new_union_from_lit(items: &Vec<ErlLiteral>) -> ErlType {
+    Self::new_union(
+      items.iter()
+          .map(|it| it.get_type())
+          .collect())
+  }
+
+  pub fn new_union(types: Vec<ErlType>)-> Self {
+    // TODO: Deduplicate and join overtypes with subtypes in some good way
+    ErlType::Union(types)
+  }
+
+  pub fn new_fun(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
+    ErlType::Function {
+      name,
+      arg_ty: args,
+      ret: Box::from(ret),
+    }
+  }
+
   pub fn new_typevar() -> Self {
     ErlType::TypeVar(TypeVar::new())
   }
@@ -131,7 +155,8 @@ impl ErlType {
           Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
         }
       }
-      ErlType::TypeVar(tv) => tv.to_string()
+      ErlType::TypeVar(tv) => tv.to_string(),
+      ErlType::String => format!("string()"), // a list of unicode codepoint: list(char())
     }
   }
 }

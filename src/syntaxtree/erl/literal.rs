@@ -1,5 +1,4 @@
 use crate::typing::erl_type::ErlType;
-use lazy_static::lazy_static;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErlLiteral {
@@ -26,14 +25,17 @@ pub enum ErlLiteral {
   Tuple(Vec<ErlLiteral>),
 }
 
-lazy_static! {
-static ref ERLTYPE_Integer: ErlType = ErlType::Integer;
-static ref ERLTYPE_Float: ErlType = ErlType::Float;
-static ref ERLTYPE_Atom: ErlType = ErlType::Atom;
-static ref ERLTYPE_Bool: ErlType = ErlType::Bool;
-static ref ERLTYPE_Pid: ErlType = ErlType::Pid;
-static ref ERLTYPE_Reference: ErlType = ErlType::Reference;
-}
+// lazy_static! {
+//   static ref ERLTYPE_Integer: ErlType = ErlType::Integer;
+//   static ref ERLTYPE_Float: ErlType = ErlType::Float;
+//   static ref ERLTYPE_Atom: ErlType = ErlType::Atom;
+//   static ref ERLTYPE_Bool: ErlType = ErlType::Bool;
+//   static ref ERLTYPE_Pid: ErlType = ErlType::Pid;
+//   static ref ERLTYPE_Reference: ErlType = ErlType::Reference;
+//   static ref ERLTYPE_List: ErlType = ErlType::List;
+//   static ref ERLTYPE_String: ErlType = ErlType::String;
+//   static ref ERLTYPE_Tuple: ErlType = ErlType::Tuple;
+// }
 
 impl ErlLiteral {
   pub fn to_string(&self) -> String {
@@ -44,17 +46,42 @@ impl ErlLiteral {
       ErlLiteral::Bool(b) => format!("{}", if *b { "'true'" } else { "'false'" }),
       ErlLiteral::Pid => format!("<pid>"),
       ErlLiteral::Reference => format!("<ref>"),
+      ErlLiteral::List(items) => {
+        let items_s = items.iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("[{}]", items_s)
+      }
+      ErlLiteral::String(s) => format!("\"{}\"", s), // TODO: Quote special characters
+      ErlLiteral::Tuple(items) => {
+        let items_s = items.iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("{{{}}}", items_s)
+      }
     }
   }
 
-  pub fn get_type(&self) -> &ErlType {
+  pub fn get_type(&self) -> ErlType {
     match self {
-      ErlLiteral::Integer(_) => &ERLTYPE_Integer,
-      ErlLiteral::Float(_) => &ERLTYPE_Float,
-      ErlLiteral::Atom(_) => &ERLTYPE_Atom,
-      ErlLiteral::Bool(_) => &ERLTYPE_Bool,
-      ErlLiteral::Pid => &ERLTYPE_Pid,
-      ErlLiteral::Reference => &ERLTYPE_Reference,
+      ErlLiteral::Integer(_) => ErlType::Integer,
+      ErlLiteral::Float(_) => ErlType::Float,
+      ErlLiteral::Atom(_) => ErlType::Atom,
+      ErlLiteral::Bool(_) => ErlType::Bool,
+      ErlLiteral::Pid => ErlType::Pid,
+      ErlLiteral::Reference => ErlType::Reference,
+      ErlLiteral::List(items) => {
+        // List type is union of all element types
+        ErlType::List(Box::new(ErlType::new_union_from_lit(items)))
+      }
+      ErlLiteral::String(_) => ErlType::String,
+      ErlLiteral::Tuple(items) => {
+        ErlType::Tuple(items.iter()
+            .map(|it| it.get_type())
+            .collect())
+      }
     }
   }
 }

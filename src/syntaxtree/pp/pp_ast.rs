@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::project::ErlProject;
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use std::rc::Rc;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -14,7 +15,7 @@ pub enum PpAst {
   // /// Do nothing node, deleted code
   // Skip,
 
-  File(Vec<PpAst>),
+  File(Vec<Rc<PpAst>>),
 
   /// A % line comment
   Comment(String),

@@ -3,21 +3,18 @@ use crate::syntaxtree::erl::literal::ErlLiteral;
 use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type::ErlType;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use std::borrow::Borrow;
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
 pub enum ErlAst {
   /// Forms list, root of a module
-  Forms(Vec<ErlAst>),
+  Forms(Vec<Rc<ErlAst>>),
 
   /// Generic module attribute -"string"(value, ...).
   ModuleAttr { name: String, args: Vec<String> },
 
-  // Lit { value: ErlLiteral, ty: ErlType },
-  // Variable { name: String, tv: TypeVar }, // variable is part of ErlExpr enum
-
-  // /// Any expression, where its type initially is Any
-  // Expr { expr: ErlExpr, ty: ErlType },
+  /// Comma expression receives type of its last AST element
+  Comma { exprs: Vec<Rc<ErlAst>>, ty: ErlType },
 
   /// Defines a new function.
   /// A function has clauses.
@@ -27,21 +24,24 @@ pub enum ErlAst {
     name: String,
     // Each clause is ErlExpr, and union of clause types will be function return type
     ret: ErlType,
-    clauses: Vec<ErlAst>,
+    clauses: Vec<Rc<ErlAst>>,
   },
 
   FClause {
-    args: Vec<ErlAst>,
+    args: Vec<Rc<ErlAst>>,
     arg_types: Vec<TypeVar>,
-    body: Box<ErlAst>,
+    body: Rc<ErlAst>,
+    ret: ErlType,
   },
 
   CClause {
     /// A match expression, matched vs. case arg
-    cond: Box<ErlAst>,
+    cond: Rc<ErlAst>,
     /// Must resolve to bool, or an exception
-    guard: Box<ErlAst>,
-    body: Box<ErlAst>,
+    guard: Rc<ErlAst>,
+    body: Rc<ErlAst>,
+    /// Clause body type
+    ty: ErlType,
   },
 
   /// A named variable
@@ -52,11 +52,11 @@ pub enum ErlAst {
 
   /// Apply arguments to expression
   App {
-    /// Target, to be called, expected to have function or lambda type
-    expr: Box<ErlAst>,
+    /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
+    expr: Rc<ErlAst>,
     /// Arguments. Their  inferred types are stored inside.
-    args: Vec<ErlAst>,
-    /// Return inferred type.
+    args: Vec<Rc<ErlAst>>,
+    /// Inferred type of return
     ty: ErlType,
   },
 
@@ -70,9 +70,10 @@ pub enum ErlAst {
     /// Type which we believe is Var
     var_ty: ErlType,
     /// Value (type is in it)
-    value: Box<ErlAst>,
+    value: Rc<ErlAst>,
     /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
-    in_expr: Box<ErlAst>,
+    in_expr: Rc<ErlAst>,
+    in_ty: ErlType,
   },
 
   // // TODO: Remove If because can be replaced with Case
@@ -84,15 +85,23 @@ pub enum ErlAst {
   Case {
     /// A union type of all case clauses
     ty: ErlType,
-    arg: Box<ErlAst>,
-    clauses: Vec<ErlAst>,
+    arg: Rc<ErlAst>,
+    clauses: Vec<Rc<ErlAst>>,
   },
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(ErlLiteral),
 
-  BinaryOp { left: Box<ErlAst>, right: Box<ErlAst>, op: ErlBinaryOp, ty: ErlType },
-  UnaryOp { expr: Box<ErlAst>, op: ErlUnaryOp },
+  BinaryOp {
+    left: Rc<ErlAst>,
+    right: Rc<ErlAst>,
+    op: ErlBinaryOp,
+    ty: ErlType,
+  },
+  UnaryOp {
+    expr: Rc<ErlAst>,
+    op: ErlUnaryOp,
+  },
 }
 
 impl ErlAst {
@@ -108,93 +117,79 @@ impl ErlAst {
       ErlAst::Let { in_expr, .. } => in_expr.get_type(),
       ErlAst::Case { ty, .. } => ty.clone(),
       ErlAst::Lit(l) => l.get_type().clone(),
-      ErlAst::BinaryOp { op,.. } => op.get_result_type(),
-      ErlAst::UnaryOp { expr,.. } => expr.get_type(), // same type as expr bool or num
+      ErlAst::BinaryOp { op, .. } => op.get_result_type(),
+      ErlAst::UnaryOp { expr, .. } => expr.get_type(), // same type as expr bool or num
+      ErlAst::Comma { exprs, .. } => {
+        exprs[exprs.len() - 1].get_type()
+      }
     }
   }
 
   /// Create a new function clause
-  pub fn new_fclause(args: Vec<ErlAst>, expr: ErlAst) -> Self {
+  pub fn new_fclause(args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
     let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
-    Self::FClause {
+    Rc::new(Self::FClause {
       args,
       arg_types,
-      body: Box::from(expr),
-    }
+      body,
+      ret: ErlType::new_typevar(),
+    })
   }
 
   /// Build a vec of references to children
-  pub fn get_children(&self) -> Option<Vec<&ErlAst>> {
+  pub fn get_children(&self) -> Option<Vec<Rc<ErlAst>>> {
     match self {
-      ErlAst::Forms(f) => Some(f.iter().collect()),
+      ErlAst::Forms(f) => Some(f.clone()),
       ErlAst::ModuleAttr { .. } => None,
       ErlAst::Lit { .. } => None,
-      ErlAst::NewFunction { clauses, .. } => Some(clauses.iter().collect()),
-      ErlAst::FClause { args, arg_types, body } => {
+      ErlAst::NewFunction { clauses, .. } => {
+        Some(clauses.clone())
+      }
+      ErlAst::FClause { args, body, .. } => {
         // Descend into args, and the body
-        let mut args_refs: Vec<&ErlAst> = args.iter().collect();
-        args_refs.push(&body);
+        let mut args_refs: Vec<Rc<ErlAst>> = args.clone();
+        args_refs.push(body.clone());
         Some(args_refs)
       }
       ErlAst::Var { .. } => None,
       ErlAst::App { expr, args, .. } => {
-        let mut r = vec![expr.borrow()];
-        args.iter().for_each(|a| r.push(a));
+        let mut r = vec![expr.clone()];
+        args.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
       ErlAst::Let { value, in_expr, .. } => {
-        Some(vec![&value, &in_expr])
+        Some(vec![value.clone(),
+                  in_expr.clone()])
       }
       ErlAst::Case { arg, clauses, .. } => {
-        let mut r = vec![arg.borrow()];
-        clauses.iter().for_each(|a| r.push(a));
+        let mut r = vec![arg.clone()];
+        clauses.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
-      ErlAst::CClause { cond, guard, body } => {
-        Some(vec![cond.borrow(), guard.borrow(), body.borrow()])
+      ErlAst::CClause { cond, guard, body, .. } => {
+        Some(vec![cond.clone(), guard.clone(), body.clone()])
       }
       ErlAst::BinaryOp { left, right, .. } => {
-        Some(vec![left.borrow(), right.borrow()])
+        Some(vec![left.clone(), right.clone()])
       }
-      ErlAst::UnaryOp { expr, .. } => { Some(vec![expr.borrow()]) }
+      ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
+      ErlAst::Comma { exprs, .. } => Some(exprs.clone()),
     }
   }
 
-  // pub fn has_children(&self) -> bool {
-  //   match self {
-  //     // Descend into module contents
-  //     ErlAst::Forms(_) => unreachable!("Do not call on module root ErlAst::Forms"),
-  //     ErlAst::ModuleAttr { .. } => false,
-  //     ErlAst::Lit { .. } => false, // TODO: nested literals?
-  //     // Descend into args expressions, and into body
-  //     ErlAst::NewFunction { .. } => true,
-  //     ErlAst::Var { .. } => false,
-  //     // Descend into app expression and args expressions
-  //     ErlAst::App { .. } => true,
-  //     // Descend into variable value, and in-body
-  //     ErlAst::Let { .. } => true,
-  //     // Descend into the condition, and clauses
-  //     ErlAst::Case { .. } => true,
-  //     // Descend into the args
-  //     ErlAst::BinaryOp { .. } => true,
-  //     // Descend into the arg
-  //     ErlAst::UnaryOp { .. } => true,
-  //   }
-  // }
-
-  pub fn new_fun(name: &str, clauses: Vec<ErlAst>) -> Self {
-    ErlAst::NewFunction {
+  pub fn new_fun(name: &str, clauses: Vec<Rc<ErlAst>>) -> Rc<Self> {
+    Rc::new(ErlAst::NewFunction {
       name: name.to_string(),
       clauses,
       ret: ErlType::new_typevar(),
-    }
+    })
   }
 
-  pub fn new_var(name: &str) -> ErlAst {
-    ErlAst::Var {
+  pub fn new_var(name: &str) -> Rc<ErlAst> {
+    Rc::new(ErlAst::Var {
       name: name.to_string(),
       ty: ErlType::new_typevar(),
-    }
+    })
   }
 }
 

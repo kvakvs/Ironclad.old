@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 use crate::erl_error::ErlResult;
 use crate::syntaxtree::erl::literal::ErlLiteral;
+use std::rc::Rc;
 
 /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
 impl ErlAstTree {
@@ -34,8 +35,8 @@ impl ErlAstTree {
         // Parse all nested file elements, comments and text fragments
         let ast_nodes = pair.into_inner()
             .map(|p| self.erl_parse_tokens_to_ast(p))
-            .map(|r| r.unwrap())
-            .collect::<Vec<ErlAst>>();
+            .map(|r| Rc::new(r.unwrap()))
+            .collect::<Vec<Rc<ErlAst>>>();
         ErlAst::Forms(ast_nodes)
       },
       Rule::string => {
