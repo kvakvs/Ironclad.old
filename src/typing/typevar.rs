@@ -5,14 +5,11 @@ use crate::typing::erl_type::ErlType;
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct TypeVar {
-  /// Unique generated integer
-  id: usize,
-}
+pub struct TypeVar(usize);
 
 impl TypeVar {
   pub fn to_string(&self) -> String {
-    format!("${}", self.id)
+    format!("${}", self.0)
   }
 }
 
@@ -24,8 +21,7 @@ lazy_static! {
 impl TypeVar {
   pub fn new() -> Self {
     let new_id = TYPEVAR_NUM.fetch_add(1, Ordering::Acquire);
-    Self {
-      id: new_id}
+    Self(new_id)
   }
 
   pub fn get_type(&self) -> ErlType {

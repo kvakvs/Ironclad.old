@@ -5,6 +5,7 @@ use crate::typing::erl_type::ErlType::Union;
 use std::rc::Rc;
 use std::borrow::Borrow;
 
+#[derive(Debug)]
 pub struct TypeEquation {
   pub left: ErlType,
   pub right: ErlType,
@@ -47,7 +48,7 @@ impl TypeEquation {
       ErlAst::Lit(_) => {} // creates no equation, type is known
       ErlAst::NewFunction { ret, clauses, .. } => {
         // Return type of a function is union of its clauses return types
-        let union_t = Union(clauses.iter().map(|c| c.get_type()).collect());
+        let union_t = ErlType::new_union(clauses.iter().map(|c| c.get_type()).collect());
         result.push(TypeEquation::new(ast, ret.clone(), union_t));
       }
       ErlAst::FClause { ret, body, .. } => {
@@ -73,7 +74,7 @@ impl TypeEquation {
         let all_clause_types = clauses.iter()
             .map(|c| c.get_type())
             .collect();
-        let union_t = ErlType::Union(all_clause_types);
+        let union_t = ErlType::new_union(all_clause_types);
         result.push(TypeEquation::new(ast, ty.clone(), union_t));
       }
       ErlAst::CClause { guard, body, ty, .. } => {

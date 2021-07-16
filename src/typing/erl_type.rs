@@ -91,9 +91,22 @@ impl ErlType {
           .collect())
   }
 
-  pub fn new_union(types: Vec<ErlType>)-> Self {
-    // TODO: Deduplicate and join overtypes with subtypes in some good way
-    ErlType::Union(types)
+  pub fn new_union(types: Vec<ErlType>) -> Self {
+    let mut merged: Vec<ErlType> = Vec::new(); // TODO: Use BTreeSet or HashSet for uniqueness
+
+    // For every type in types, if its a Union, unfold it into member types.
+    // HashSet will ensure that the types are unique
+    types.into_iter().for_each(|t| {
+      match t {
+        ErlType::Union(members) => {
+          members.iter().for_each(
+            |m| merged.push(m.clone())
+          )
+        },
+        _ => merged.push(t),
+      }
+    });
+    ErlType::Union(merged)
   }
 
   pub fn new_fun(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {

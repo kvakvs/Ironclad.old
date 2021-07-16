@@ -29,14 +29,16 @@ mod tests {
       vec![ErlAst::new_var("A")],
       Rc::new(clause1_body));
     let erl_fn = ErlAst::new_fun("test1", vec![clause1]);
-    println!("{:?}", erl_fn);
+    println!("Fun: {:?}", erl_fn);
 
     let mut equations: Vec<TypeEquation> = Vec::new();
     TypeEquation::generate_equations(&erl_fn, &mut equations)
         .unwrap();
 
+    println!("Equations: {:#?}", equations);
+
     let unifier = Unifier::unify_all_equations(equations).unwrap();
-    println!("Unify map: {:?}", unifier.subst);
+    println!("Unify map: {:#?}", unifier.subst);
 
     // let inferred = unifier.get_expression_type(erl_fn, true).unwrap();
   }
