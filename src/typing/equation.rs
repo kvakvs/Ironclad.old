@@ -6,9 +6,9 @@ use std::rc::Rc;
 use std::borrow::Borrow;
 
 pub struct TypeEquation {
-  left: ErlType,
-  right: ErlType,
-  node: Rc<ErlAst>,
+  pub left: ErlType,
+  pub right: ErlType,
+  pub node: Rc<ErlAst>,
 }
 
 impl TypeEquation {

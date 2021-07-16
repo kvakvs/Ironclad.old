@@ -105,3 +105,9 @@ impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
     ErlError::ErlangSyntax(value)
   }
 }
+
+impl From<TypeError> for ErlError {
+  fn from(value: TypeError) -> Self {
+    ErlError::TypeError(value)
+  }
+}

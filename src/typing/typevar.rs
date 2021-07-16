@@ -4,7 +4,7 @@ use crate::typing::erl_type::ErlType;
 
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct TypeVar {
   /// Unique generated integer
   id: usize,
