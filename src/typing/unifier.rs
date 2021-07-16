@@ -137,7 +137,8 @@ impl Unifier {
   /// Applies the unifier subst to typ.
   /// Returns a type where all occurrences of variables bound in subst
   /// were replaced (recursively); on failure returns None.
-  fn apply_unifier(&mut self, ty: ErlType) -> ErlType {
+  /// Also known as: Apply Unifier (apply_unifier)
+  pub fn infer_type(&mut self, ty: ErlType) -> ErlType {
     if self.subst.is_empty() || ty.is_simple_value_type() {
       return ty;
     }
@@ -146,7 +147,7 @@ impl Unifier {
       match self.subst.entry(tvar.clone()) {
         Entry::Occupied(entry) => {
           let entry_val = entry.get().clone();
-          return self.apply_unifier(entry_val);
+          return self.infer_type(entry_val);
         },
         Entry::Vacant(_) => return ty,
       }
@@ -156,9 +157,9 @@ impl Unifier {
       let new_fn = ErlType::Function {
         name: name.clone(),
         arg_ty: arg_ty.iter()
-            .map(|t| self.apply_unifier(t.clone()))
+            .map(|t| self.infer_type(t.clone()))
             .collect(),
-        ret: Box::new(self.apply_unifier(*ret.clone()))
+        ret: Box::new(self.infer_type(*ret.clone()))
       };
       return new_fn;
     }
@@ -167,7 +168,7 @@ impl Unifier {
   }
 
   /// Finds the type of the expression for the given substitution.
-  pub fn get_expression_type(&mut self, expr: Rc<ErlAst>) -> ErlType {
-    self.apply_unifier(expr.get_type())
+  pub fn infer_ast(&mut self, expr: Rc<ErlAst>) -> ErlType {
+    self.infer_type(expr.get_type())
   }
 }

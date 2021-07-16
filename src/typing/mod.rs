@@ -10,7 +10,6 @@ mod tests {
   use crate::typing::equation::{TypeEquation};
   use crate::syntaxtree::erl::literal::ErlLiteral;
   use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-  use crate::typing::erl_type::ErlType;
   use std::rc::Rc;
   use crate::typing::unifier::Unifier;
 
@@ -24,7 +23,7 @@ mod tests {
       ErlBinaryOp::Add,
       Rc::new(ErlAst::Lit(ErlLiteral::Integer(1))));
     let clause1_body = ErlAst::new_binop(
-      clause1_expr1,
+      clause1_expr1.clone(),
       ErlBinaryOp::Div,
       Rc::new(ErlAst::Lit(ErlLiteral::Integer(2))));
     let clause1 = ErlAst::new_fclause(
@@ -42,6 +41,13 @@ mod tests {
     let mut unifier = Unifier::unify_all_equations(equations).unwrap();
     println!("Unify map: {:?}", unifier.subst);
 
-    println!("Inferred: {}", unifier.get_expression_type(erl_fn).to_string());
+    println!("Inferred for (A+1): {}",
+             unifier.infer_ast(clause1_expr1).to_string());
+
+    println!("Inferred for f(A) -> (A+1)/2.: {}",
+             unifier.infer_ast(erl_fn.clone()).to_string());
+
+    println!("Inferred for f(A): {}",
+             unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
   }
 }

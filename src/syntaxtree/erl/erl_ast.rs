@@ -125,6 +125,18 @@ impl ErlAst {
     }
   }
 
+  pub fn get_fun_type(&self) -> Option<ErlType> {
+    match self {
+      ErlAst::NewFunction { name, ret, clauses } => {
+        let t = ErlType::new_fun(Some(name.clone()),
+                                 clauses.iter().map(|c| c.get_type()).collect(),
+                                 ret.clone());
+        Some(t)
+      }
+      _ => None, // not a function
+    }
+  }
+
   /// Create a new function clause
   pub fn new_fclause(args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
     let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
