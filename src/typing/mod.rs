@@ -15,19 +15,21 @@ mod tests {
   use crate::typing::unifier::Unifier;
 
   /// Build AST for a function
-  /// fun(A) -> A + 1.
-  /// The inferred type should be: ((integer()) -> integer())
+  /// myfun(A) -> (A + 1) / 2.
+  /// The inferred type should be: float() (as return type)
   #[test]
   fn simple_inference_test() {
-    let clause1_body = ErlAst::BinaryOp {
-      left: ErlAst::new_var("A"),
-      right: Rc::new(ErlAst::Lit(ErlLiteral::Integer(1))),
-      op: ErlBinaryOp::Add,
-      ty: ErlType::new_typevar(),
-    };
+    let clause1_expr1 = ErlAst::new_binop(
+      ErlAst::new_var("A"),
+      ErlBinaryOp::Add,
+      Rc::new(ErlAst::Lit(ErlLiteral::Integer(1))));
+    let clause1_body = ErlAst::new_binop(
+      clause1_expr1,
+      ErlBinaryOp::Div,
+      Rc::new(ErlAst::Lit(ErlLiteral::Integer(2))));
     let clause1 = ErlAst::new_fclause(
       vec![ErlAst::new_var("A")],
-      Rc::new(clause1_body));
+      clause1_body.clone());
     let erl_fn = ErlAst::new_fun("test1", vec![clause1]);
     println!("Fun: {:?}", erl_fn);
 
@@ -35,11 +37,11 @@ mod tests {
     TypeEquation::generate_equations(&erl_fn, &mut equations)
         .unwrap();
 
-    println!("Equations: {:#?}", equations);
+    println!("Equations: {:?}", equations);
 
-    let unifier = Unifier::unify_all_equations(equations).unwrap();
-    println!("Unify map: {:#?}", unifier.subst);
+    let mut unifier = Unifier::unify_all_equations(equations).unwrap();
+    println!("Unify map: {:?}", unifier.subst);
 
-    // let inferred = unifier.get_expression_type(erl_fn, true).unwrap();
+    println!("Inferred: {}", unifier.get_expression_type(erl_fn).to_string());
   }
 }

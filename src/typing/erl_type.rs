@@ -102,7 +102,7 @@ impl ErlType {
           members.iter().for_each(
             |m| merged.push(m.clone())
           )
-        },
+        }
         _ => merged.push(t),
       }
     });
@@ -170,6 +170,20 @@ impl ErlType {
       }
       ErlType::TypeVar(tv) => tv.to_string(),
       ErlType::String => format!("string()"), // a list of unicode codepoint: list(char())
+    }
+  }
+
+  pub fn is_simple_value_type(&self) -> bool {
+    match self {
+      ErlType::Union(members) => {
+        members.iter().all(|m| m.is_simple_value_type())
+      },
+      ErlType::Number | ErlType::Integer | ErlType::Float | ErlType::Atom | ErlType::Bool
+      | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
+      | ErlType::Map(_) | ErlType::Record { .. }
+      | ErlType::Pid | ErlType::Reference
+      | ErlType::Literal(_) => true,
+      _ => false,
     }
   }
 }

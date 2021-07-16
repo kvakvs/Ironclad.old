@@ -43,8 +43,8 @@ impl ErlBinaryOp {
     match self {
       ErlBinaryOp::Add
       | ErlBinaryOp::Sub
-      | ErlBinaryOp::Mul
-      | ErlBinaryOp::Div => ErlType::new_union(vec![Integer, Float]),
+      | ErlBinaryOp::Mul=> ErlType::new_union(vec![Integer, Float]),
+      | ErlBinaryOp::Div => Float,
       ErlBinaryOp::IntDiv => Integer,
       ErlBinaryOp::Modulo => Integer,
       ErlBinaryOp::Less

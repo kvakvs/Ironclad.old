@@ -5,6 +5,8 @@ use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::error::TypeError;
 use crate::typing::typevar::TypeVar;
 use std::collections::hash_map::Entry;
+use std::rc::Rc;
+use crate::syntaxtree::erl::erl_ast::ErlAst;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -124,11 +126,7 @@ impl Unifier {
         members.iter().any(|m| self.occurs_check(tv, m))
       }
       // Any simple type cannot have typevar tv in it, so all false
-      ErlType::Number | ErlType::Integer | ErlType::Float | ErlType::Atom | ErlType::Bool
-      | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
-      | ErlType::Map(_) | ErlType::Record { .. }
-      | ErlType::Pid | ErlType::Reference
-      | ErlType::Literal(_) => false,
+      simple_type if simple_type.is_simple_value_type() => false,
 
       _ => todo!("Don't know how to occurs_check on {:?} and {:?}", tv, ty)
     }
@@ -136,7 +134,40 @@ impl Unifier {
     // false
   }
 
-  // pub fn get_expression_type(&self, expr: Rc<ErlAst>, rename_types: bool) -> ErlType {
-  //
-  // }
+  /// Applies the unifier subst to typ.
+  /// Returns a type where all occurrences of variables bound in subst
+  /// were replaced (recursively); on failure returns None.
+  fn apply_unifier(&mut self, ty: ErlType) -> ErlType {
+    if self.subst.is_empty() || ty.is_simple_value_type() {
+      return ty;
+    }
+
+    if let ErlType::TypeVar(tvar) = &ty {
+      match self.subst.entry(tvar.clone()) {
+        Entry::Occupied(entry) => {
+          let entry_val = entry.get().clone();
+          return self.apply_unifier(entry_val);
+        },
+        Entry::Vacant(_) => return ty,
+      }
+    }
+
+    if let ErlType::Function {arg_ty, ret, name} = &ty {
+      let new_fn = ErlType::Function {
+        name: name.clone(),
+        arg_ty: arg_ty.iter()
+            .map(|t| self.apply_unifier(t.clone()))
+            .collect(),
+        ret: Box::new(self.apply_unifier(*ret.clone()))
+      };
+      return new_fn;
+    }
+
+    ErlType::None
+  }
+
+  /// Finds the type of the expression for the given substitution.
+  pub fn get_expression_type(&mut self, expr: Rc<ErlAst>) -> ErlType {
+    self.apply_unifier(expr.get_type())
+  }
 }

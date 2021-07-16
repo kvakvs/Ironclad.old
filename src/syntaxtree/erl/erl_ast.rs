@@ -191,6 +191,15 @@ impl ErlAst {
       ty: ErlType::new_typevar(),
     })
   }
+
+  pub fn new_binop(left: Rc<ErlAst>, op: ErlBinaryOp, right: Rc<ErlAst>) -> Rc<Self> {
+    Rc::new(ErlAst::BinaryOp {
+      left,
+      right,
+      op,
+      ty: ErlType::new_typevar(),
+    })
+  }
 }
 
 /// A tree of Erlang nodes with attached file name, and root element removed

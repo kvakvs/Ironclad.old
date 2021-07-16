@@ -1,7 +1,6 @@
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::erl_error::{ErlResult, ErlError};
-use crate::typing::erl_type::ErlType::Union;
 use std::rc::Rc;
 use std::borrow::Borrow;
 
