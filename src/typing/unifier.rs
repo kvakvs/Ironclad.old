@@ -9,7 +9,7 @@ use std::collections::hash_map::Entry;
 type SubstMap = HashMap<TypeVar, ErlType>;
 
 pub struct Unifier {
-  subst: SubstMap,
+  pub(crate) subst: SubstMap,
 }
 
 impl Unifier {
@@ -41,7 +41,7 @@ impl Unifier {
     }
 
     if let ErlType::Function { arg_ty: arg_ty1, ret: ret1, .. } = &type1 {
-      if let ErlType::Function { arg_ty: arg_ty2, ret: ret2, .. } = type2 {
+      if let ErlType::Function { arg_ty: arg_ty2, ret: ret2, .. } = &type2 {
         if arg_ty1.len() != arg_ty2.len() {
           return Err(ErlError::from(TypeError::FunAritiesDontMatch));
         }
@@ -64,10 +64,24 @@ impl Unifier {
       }
     }
 
+    // Union should not be broken into subtypes
+    if let ErlType::Union(types) = &type2 {
+      if self.check_in_union(&type1, types) {
+        return Ok(());
+      }
+    }
+
     Err(ErlError::from(TypeError::TypesDontMatch {
       t1: type1.clone(),
       t2: type2.clone(),
     }))
+  }
+
+  /// Whether any member of type union matches type t?
+  fn check_in_union(&mut self, t: &ErlType, union: &Vec<ErlType>) -> bool {
+    union.iter().any(|member| {
+      self.unify(t.clone(), member.clone()).is_ok()
+    })
   }
 
   fn unify_variable(&mut self, tvar: TypeVar, ty: ErlType) -> ErlResult<()> {
@@ -102,10 +116,20 @@ impl Unifier {
     // if ty is a TypeVar and they're equal
     match ty {
       ErlType::TypeVar(ty_inner) if ty_inner == tv => { return true; }
-      ErlType::Function {arg_ty, ret, ..} => {
+      ErlType::Function { arg_ty, ret, .. } => {
         return self.occurs_check(tv, ret) ||
             arg_ty.iter().any(|a| self.occurs_check(tv, a));
       }
+      ErlType::Union(members) => {
+        members.iter().any(|m| self.occurs_check(tv, m))
+      }
+      // Any simple type cannot have typevar tv in it, so all false
+      ErlType::Number | ErlType::Integer | ErlType::Float | ErlType::Atom | ErlType::Bool
+      | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
+      | ErlType::Map(_) | ErlType::Record { .. }
+      | ErlType::Pid | ErlType::Reference
+      | ErlType::Literal(_) => false,
+
       _ => todo!("Don't know how to occurs_check on {:?} and {:?}", tv, ty)
     }
 
