@@ -35,8 +35,8 @@ guard_expr = { expr ~ (guard_separator ~ expr)* }
 guard_separator = _{ "," | ";" }
 
 // A literal is any value or constant expression whose result is fully known at compile time
-literal = {
-    number | atom | string
+literal = _{
+    number_float | number_int | atom | string
     // | list | tuple
     }
 
@@ -48,9 +48,8 @@ literal = {
 //    - {sign} 0.
 //    - {sign} .0
 //    - TODO: Scientific notation +0.0E+123
-number = _{ number_float | number_int }
 number_float = { number_sign? ~ ((ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT*) | (ASCII_DIGIT* ~ "." ~ ASCII_DIGIT+)) }
-number_int = { number_sign? ~ non_negative_int }
+number_int = ${ number_sign? ~ non_negative_int }
 number_sign = _{ "-" | "+" }
 non_negative_int = _{ ASCII_DIGIT+ }
 

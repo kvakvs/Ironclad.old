@@ -31,6 +31,6 @@ mod test_util {
     let sf = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
     let tree = ErlAstTree::new(Arc::new(sf), Rc::new(ErlAst::Empty));
 
-    tree.erl_parse_tokens_to_ast(parse_output)
+    tree.any_to_ast(parse_output)
   }
 }

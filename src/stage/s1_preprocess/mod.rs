@@ -248,12 +248,12 @@ impl PpState {
             result
           })
           .collect();
-      return Ok(Rc::new(PpAst::File(interpreted)))
+      return Ok(Rc::new(PpAst::File(interpreted)));
     }
     let err_s =
         format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
                 ast_tree.nodes);
-    Err(ErlError::PreprocessorParse(ErrorLocation::None, err_s))
+    Err(ErlError::PreprocessorParse { loc: ErrorLocation::None, msg: err_s })
   }
 }
 

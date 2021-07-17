@@ -5,6 +5,7 @@ use thiserror::Error;
 use crate::syntaxtree::pp::pp_parser;
 use crate::syntaxtree::erl::erl_parser;
 use crate::typing::error::TypeError;
+use std::num::ParseIntError;
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -23,14 +24,14 @@ pub enum ErlError {
   #[error("Multiple errors: {0:?}")]
   Multiple(Vec<ErlError>),
 
-  #[error("Not implemented: {0}")]
-  NotImpl(String),
+  #[error("Not implemented: {explanation}")]
+  NotImpl { explanation: String },
 
   #[error("File IO error: {0:?}")]
   Io(std::io::Error),
 
   // Project errors produced when glob() scanning input files and directories
-  #[error("Glob directory scan error: {0:?}")]
+  #[error("Directory scan error: {0:?}")]
   Glob(glob::GlobError),
 
   #[error("Glob pattern error: {0:?}")]
@@ -44,14 +45,17 @@ pub enum ErlError {
   // #[error("Compiler internal data locking error")]
   // LockingPoisonError,
 
-  #[error("Preprocessor parse error: {1} (at {0:?})")]
-  PreprocessorParse(ErrorLocation, String),
+  #[error("Preprocessor parse error: {msg} (at {loc:?})")]
+  PreprocessorParse { loc: ErrorLocation, msg: String },
 
-  #[error("Preprocessor syntax parse error: {0:?}")]
-  PreprocessorSyntax(pest::error::Error<pp_parser::Rule>),
+  #[error("Preprocessor syntax parse error: {parse_err:?}")]
+  PreprocessorSyntax { parse_err: pest::error::Error<pp_parser::Rule> },
 
-  #[error("Erlang syntax parse error: {0:?}")]
-  ErlangSyntax(pest::error::Error<erl_parser::Rule>),
+  #[error("Erlang parse error: {msg} (at {loc:?})")]
+  ErlangParse { loc: ErrorLocation, msg: String },
+
+  #[error("Erlang syntax parse error: {parse_err:?}")]
+  ErlangSyntax { parse_err: pest::error::Error<erl_parser::Rule> },
 
   #[error("Type error: {0:?}")]
   TypeError(TypeError),
@@ -59,12 +63,14 @@ pub enum ErlError {
 
 impl ErlError {
   pub(crate) fn not_impl<T>(what: &str) -> ErlResult<T> {
-    Err(ErlError::NotImpl(what.to_string()))
+    Err(ErlError::NotImpl { explanation: what.to_string() })
   }
 
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
-    Err(ErlError::PreprocessorParse(ErrorLocation::from_source_file(file_name),
-                                    String::from(message)))
+    Err(ErlError::PreprocessorParse {
+      loc: ErrorLocation::from_source_file(file_name),
+      msg: String::from(message),
+    })
   }
 }
 
@@ -96,18 +102,27 @@ impl From<glob::PatternError> for ErlError {
 
 impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
   fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
-    ErlError::PreprocessorSyntax(value)
+    ErlError::PreprocessorSyntax { parse_err: value }
   }
 }
 
 impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
   fn from(value: pest::error::Error<erl_parser::Rule>) -> Self {
-    ErlError::ErlangSyntax(value)
+    ErlError::ErlangSyntax { parse_err: value }
   }
 }
 
 impl From<TypeError> for ErlError {
   fn from(value: TypeError) -> Self {
     ErlError::TypeError(value)
+  }
+}
+
+impl From<ParseIntError> for ErlError {
+  fn from(pie: ParseIntError) -> Self {
+    ErlError::ErlangParse {
+      loc: ErrorLocation::None,
+      msg: format!("Cannot parse integer: {}", pie.to_string()),
+    }
   }
 }

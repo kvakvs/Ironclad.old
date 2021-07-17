@@ -220,6 +220,17 @@ impl ErlAst {
       ty: ErlType::new_typevar(),
     })
   }
+
+  pub fn new_lit_int(val: isize) -> Rc<Self> {
+    Rc::new(ErlAst::Lit(ErlLiteral::Integer(val)))
+  }
+
+  pub fn new_comma(items: Vec<Rc<ErlAst>>) -> Rc<Self> {
+    Rc::new(ErlAst::Comma {
+      exprs: items,
+      ty: ErlType::new_typevar(),
+    })
+  }
 }
 
 /// A tree of Erlang nodes with attached file name, and root element removed
