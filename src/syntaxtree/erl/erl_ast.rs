@@ -7,11 +7,17 @@ use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
 pub enum ErlAst {
+  /// Default value for when AST tree is empty
+  Empty,
+
   /// Forms list, root of a module
   Forms(Vec<Rc<ErlAst>>),
 
-  /// Generic module attribute -"string"(value, ...).
-  ModuleAttr { name: String, args: Vec<String> },
+  /// -module(name). attribute, defines module start
+  ModuleAttr { name: String },
+
+  // /// Generic module attribute -"string"(value, ...).
+  // Attr { name: String, args: Vec<String> },
 
   /// Comma expression receives type of its last AST element
   Comma { exprs: Vec<Rc<ErlAst>>, ty: ErlType },
@@ -122,6 +128,7 @@ impl ErlAst {
       ErlAst::Comma { exprs, .. } => {
         exprs[exprs.len() - 1].get_type()
       }
+      _ => unreachable!("Can't process {:?}", self),
     }
   }
 
@@ -186,6 +193,7 @@ impl ErlAst {
       }
       ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
       ErlAst::Comma { exprs, .. } => Some(exprs.clone()),
+      _ => unreachable!("Can't process {:?}", self),
     }
   }
 

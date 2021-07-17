@@ -45,7 +45,7 @@ pub enum ErlError {
   // LockingPoisonError,
 
   #[error("Preprocessor parse error: {1} (at {0:?})")]
-  PpParse(ErrorLocation, String),
+  PreprocessorParse(ErrorLocation, String),
 
   #[error("Preprocessor syntax parse error: {0:?}")]
   PreprocessorSyntax(pest::error::Error<pp_parser::Rule>),
@@ -63,8 +63,8 @@ impl ErlError {
   }
 
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
-    Err(ErlError::PpParse(ErrorLocation::from_source_file(file_name),
-                          String::from(message)))
+    Err(ErlError::PreprocessorParse(ErrorLocation::from_source_file(file_name),
+                                    String::from(message)))
   }
 }
 

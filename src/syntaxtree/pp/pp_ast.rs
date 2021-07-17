@@ -12,6 +12,9 @@ use std::rc::Rc;
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PpAst {
+  /// Default value for an empty AST tree
+  Empty,
+
   // /// Do nothing node, deleted code
   // Skip,
 
@@ -63,7 +66,7 @@ impl PpAst {
     &trimmed[..CLAMP_LENGTH - 1]
   }
 
-  pub fn fmt(&self) -> String {
+  pub fn to_dbg_str(&self) -> String {
     match self {
       Self::Comment(s) => format!("Comment({})", Self::trim(s)),
       Self::Text(s) => format!("T({})", Self::trim(s)),
@@ -75,7 +78,7 @@ impl PpAst {
       PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
       PpAst::File(nodes) => format!("File{{{:?}}}", nodes),
       PpAst::Define(name, body) => format!("Define({}, {})", name, body),
-      PpAst::DefineFun{ name, args, body } => format!("Define({}({:?}), {})", name, args, body),
+      PpAst::DefineFun { name, args, body } => format!("Define({}({:?}), {})", name, args, body),
       PpAst::Ifdef(name) => format!("If Def({})", name),
       PpAst::Ifndef(name) => format!("If !Def({})", name),
       PpAst::Else => "Else".to_string(),
@@ -85,9 +88,39 @@ impl PpAst {
       PpAst::Undef(name) => format!("Undef({})", name),
       PpAst::Error(t) => format!("Error({})", t),
       PpAst::Warning(t) => format!("Warning({})", t),
+      PpAst::Empty => unreachable!("PpAst::Empty encountered, while it shouldn't"),
+    }
+  }
+
+  pub fn to_string(&self) -> String {
+    match self {
+      PpAst::File(items) => {
+        items.into_iter()
+            .map(|node| node.to_string())
+            .collect::<Vec<String>>()
+            .join("\n")
+      }
+      PpAst::Text(s) => s.clone(),
+      PpAst::IncludedFile(include_rc) => include_rc.nodes.to_string(),
+      PpAst::Define(name, body) => format!("-define({}, {}).", name, body),
+      PpAst::DefineFun { name, args, body } => {
+        format!("-define({}({:?}), {})", name, args, body)
+      },
+      PpAst::Ifdef(name) => format!("-ifdef({}).", name),
+      PpAst::Ifndef(name) => format!("-ifndef({}).", name),
+      PpAst::Else => "-else.".to_string(),
+      PpAst::Endif => "-endif.".to_string(),
+      PpAst::If(expr) => format!("-if({}).", expr),
+      PpAst::Elif(expr) => format!("-elif({}).", expr),
+      PpAst::Undef(name) => format!("-undef({}).", name),
+      PpAst::Error(t) => format!("-error({}).", t),
+      PpAst::Warning(t) => format!("-warning({}).", t),
+
+      _ => unreachable!("PpAst::to_string() can't process {:?}", self),
     }
   }
 }
+
 
 /// A tree of Preprocessor syntax nodes with attached file name, and root element removed
 pub(crate) type PpAstTree = AstTree<PpAst>;

@@ -1,4 +1,4 @@
-use crate::erl_error::{ErlResult};
+use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::path::{PathBuf, Path};
@@ -6,6 +6,8 @@ use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstCache, PpAstTree};
 use std::sync::{Arc, Mutex};
 use crate::project::source_file::SourceFile;
 use std::collections::HashMap;
+use std::ops::Deref;
+use std::rc::Rc;
 
 enum PpCondition {
   Ifdef(String),
@@ -68,11 +70,7 @@ impl PpState {
 
     let pp_ast = self.interpret_pp_ast(&contents, ast_tree)?;
 
-    let output: String = pp_ast
-        .into_iter()
-        .map(|node| node.fmt())
-        .collect::<Vec<String>>()
-        .join("\n");
+    let output: String = pp_ast.to_string();
 
     { // Success: insert new string into preprocessed source cache
       let mut file_cache2 = self.file_cache.lock().unwrap();
@@ -130,9 +128,10 @@ fn interpret_include_directive(source_file: &SourceFile,
 impl PpState {
   /// This is called for each Preprocessor AST node to make the final decision whether the node
   /// is passed into the output or replaced with a SKIP.
-  fn interpret_pp_rule_map(&mut self, node: &PpAst, source_file: &SourceFile) -> Option<PpAst> {
+  fn interpret_pp_rule_map(&mut self, node: &Rc<PpAst>,
+                           source_file: &SourceFile) -> Option<Rc<PpAst>> {
     // First process ifdef/if!def/else/endif
-    match node {
+    match node.deref() {
       PpAst::Ifdef(symbol) => {
         self.condition_stack.push(PpCondition::Ifdef(symbol.clone()));
         return None;
@@ -165,7 +164,7 @@ impl PpState {
     }
 
     // Then copy or modify remaining AST nodes
-    match node {
+    match node.deref() {
       PpAst::Define(symbol, value) => {
         println!("define {} = {}", symbol, value);
         self.pp_symbols.insert(symbol.clone(), value.clone());
@@ -235,20 +234,26 @@ impl PpState {
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(&mut self,
                       source_file: &SourceFile,
-                      ast_tree: Arc<PpAstTree>) -> ErlResult<Vec<PpAst>> {
+                      ast_tree: Arc<PpAstTree>) -> ErlResult<Rc<PpAst>> {
     // From top to down interpret the preprocessed AST. Includes will restart the intepretation
     // from the pasted included AST.
-    let interpreted = ast_tree.nodes.iter()
-        .filter_map(|node| {
-          let result = self.interpret_pp_rule_map(node, &source_file);
-          match &result {
-            Some(r) => println!("Interpret: {:40} → {}", node.fmt(), r.fmt()),
-            None => println!("Interpret: {:40} → ×", node.fmt()),
-          }
-          result
-        })
-        .collect();
-    Ok(interpreted)
+    if let PpAst::File(nodes) = ast_tree.nodes.deref() {
+      let interpreted: Vec<Rc<PpAst>> = nodes.iter()
+          .filter_map(|node| {
+            let result = self.interpret_pp_rule_map(node, &source_file);
+            match &result {
+              Some(r) => println!("Interpret: {:40} → {}", node.to_dbg_str(), r.to_dbg_str()),
+              None => println!("Interpret: {:40} → ×", node.to_dbg_str()),
+            }
+            result
+          })
+          .collect();
+      return Ok(Rc::new(PpAst::File(interpreted)))
+    }
+    let err_s =
+        format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
+                ast_tree.nodes);
+    Err(ErlError::PreprocessorParse(ErrorLocation::None, err_s))
   }
 }
 

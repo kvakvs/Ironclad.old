@@ -108,6 +108,7 @@ impl TypeEquation {
                                       ty.clone(),
                                       exprs[exprs.len() - 1].get_type()));
       }
+      _ => unreachable!("Can't process {:?}", ast),
     }
     Ok(())
   }

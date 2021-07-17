@@ -6,17 +6,18 @@ pub mod unifier;
 
 #[cfg(test)]
 mod tests {
-  use crate::syntaxtree::erl::erl_ast::ErlAst;
+  use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree};
   use crate::typing::equation::{TypeEquation};
   use crate::syntaxtree::erl::literal::ErlLiteral;
   use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
   use std::rc::Rc;
   use crate::typing::unifier::Unifier;
+  use crate::erl_error::ErlResult;
 
   /// Build AST for a function
   /// myfun(A) -> (A + 1) / 2.
   /// The inferred type should be: float() (as return type)
-  #[test]
+  //#[test]
   fn simple_inference_test() {
     let clause1_expr1 = ErlAst::new_binop(
       ErlAst::new_var("A"),
@@ -49,5 +50,17 @@ mod tests {
 
     println!("Inferred for f(A): {}",
              unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
+  }
+
+  fn test_module(filename: &str, input: &str) -> ErlResult<ErlAstTree> {
+    ErlAstTree::from_str(filename,
+                         &(String::from("-module(test).\n") + input))
+  }
+
+  #[test]
+  fn simple_inference_test_2() {
+    let tree = test_module("<simple_inference_test_2>",
+                           "myfun(A) -> (A + 1) / 2.");
+    println!("Parsed: {:?}", tree);
   }
 }

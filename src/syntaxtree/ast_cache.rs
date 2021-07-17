@@ -4,16 +4,15 @@ use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 use std::rc::Rc;
 
-/// Defines a root contents of a module containing generic AST elements.
-/// It could be preprocessor Ast tree, or Erlang Ast tree or something else.
+/// Defines AST tree for a Erlang or Preprocessor-parsed module.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AstTree<TNode> {
   pub source: Arc<SourceFile>,
-  pub nodes: Vec<Rc<TNode>>,
+  pub nodes: Rc<TNode>,
 }
 
 impl<TNode> AstTree<TNode> {
-  pub fn new(source_file: Arc<SourceFile>, forms: Vec<Rc<TNode>>) -> Self {
+  pub fn new(source_file: Arc<SourceFile>, forms: Rc<TNode>) -> Self {
     Self {
       source: source_file,
       nodes: forms,

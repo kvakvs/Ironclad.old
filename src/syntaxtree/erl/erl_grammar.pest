@@ -10,13 +10,13 @@ module_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 
 attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr? ~ ("," ~ expr)* ~ ")" ~ "." }
 
-// Function definition begins with a name, and optional list of match variables in mandatory parentheses.
-// TODO: A function can have a guard expression
-// A function body is an expression.
-function_def = {atom ~ "(" ~ match_var? ~ ("," ~ match_var)* ~ ")"
+// Function contains of 1 or more clauses, separated by ";" and terminated by "."
+// A function clause begins with a name, and a list of match variables in parentheses.
+// A function body is an expression, often a comma expression.
+function_def = { function_clause ~ (";" ~ function_clause) * ~ "." }
+function_clause = {atom ~ "(" ~ match_var? ~ ("," ~ match_var)* ~ ")"
     ~ ("when" ~ guard_expr)? ~ "->"
-    ~ expr
-    ~ "." }
+    ~ expr }
 
 var = _{ capitalized_ident }
 
