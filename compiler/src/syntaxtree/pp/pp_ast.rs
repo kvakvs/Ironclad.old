@@ -1,3 +1,4 @@
+//! Defines AST structure for Erlang Preprocessor
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -15,9 +16,7 @@ pub enum PpAst {
   /// Default value for an empty AST tree
   Empty,
 
-  // /// Do nothing node, deleted code
-  // Skip,
-
+  /// Root of a preprocessed file
   File(Vec<Rc<PpAst>>),
 
   /// A % line comment
@@ -34,29 +33,46 @@ pub enum PpAst {
 
   /// Specific directive: -define(NAME, any text...).
   Define(String, String),
-  DefineFun { name: String, args: Vec<String>, body: String },
+  /// Defines a macro with parameters, and body
+  DefineFun {
+    /// Name of the macro
+    name: String,
+    /// Arguments as strings
+    args: Vec<String>,
+    /// Macro body
+    body: String,
+  },
 
-  /// Specific directive: -undef(NAME).
+  /// Specific directive: -undef(NAME). removes a named macro definition
   Undef(String),
 
+  /// Proceed interpreting AST nodes if the named macro is defined
   Ifdef(String),
+  /// ...or not defined
   Ifndef(String),
 
   /// If and Elif store Erlang syntax parsable by Erlang grammar, which must resolve to a constant
   /// expression otherwise compile error will be triggered.
   If(String),
+  /// Else if
   Elif(String),
 
+  /// Else clause of a conditional block
   Else,
+  /// End of a conditional block
   Endif,
 
+  /// Produce a compiler error
   Error(String),
+  /// Produce a compiler warning
   Warning(String),
 
+  /// Nested included file
   IncludedFile(Arc<PpAstTree>),
 }
 
 impl PpAst {
+  /// Trim the contents to CLAMP_LENGTH characters for convenient narrow debug printing
   pub fn trim(s: &str) -> &str {
     const CLAMP_LENGTH: usize = 40;
     let trimmed = s.trim();
@@ -66,6 +82,7 @@ impl PpAst {
     &trimmed[..CLAMP_LENGTH - 1]
   }
 
+  /// Format as a debug string
   pub fn to_dbg_str(&self) -> String {
     match self {
       Self::Comment(s) => format!("Comment({})", Self::trim(s)),
@@ -92,6 +109,8 @@ impl PpAst {
     }
   }
 
+  /// Format AST as a string
+  // TODO: Replace with fmt/Display or something that doesn't build a string in memory?
   pub fn to_string(&self) -> String {
     match self {
       PpAst::File(items) => {
@@ -105,7 +124,7 @@ impl PpAst {
       PpAst::Define(name, body) => format!("-define({}, {}).", name, body),
       PpAst::DefineFun { name, args, body } => {
         format!("-define({}({:?}), {})", name, args, body)
-      },
+      }
       PpAst::Ifdef(name) => format!("-ifdef({}).", name),
       PpAst::Ifndef(name) => format!("-ifndef({}).", name),
       PpAst::Else => "-else.".to_string(),
@@ -129,6 +148,7 @@ pub type PpAstTree = AstTree<PpAst>;
 pub type PpAstCache = AstCache<PpAst>;
 
 impl PpAstCache {
+  /// Create a new empty AST cache for preprocessed files
   pub fn new() -> Self {
     Self {
       items: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),

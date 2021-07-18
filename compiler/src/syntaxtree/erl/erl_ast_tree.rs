@@ -1,3 +1,4 @@
+//! Defines additional operations on Erlang syntax tree
 use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule};
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree};
 use pest::iterators::{Pair};
@@ -5,7 +6,7 @@ use pest::Parser;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::literal::ErlLiteral;
+use crate::syntaxtree::erl::literal::ErlLit;
 use std::rc::Rc;
 use std::path::PathBuf;
 
@@ -35,14 +36,14 @@ impl ErlAstTree {
     ErlAstTree::from_source_file(&Arc::new(sf))
   }
 
-  // Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
+  /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
   pub fn any_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     let pair_s = pair.as_str(); // use for reporting erroneous text
 
     let result: Rc<ErlAst> = match pair.as_rule() {
       Rule::forms => self.file_root_to_ast(pair)?,
       Rule::string => {
-        let s = ErlAst::Lit(ErlLiteral::String(String::from(pair.as_str())));
+        let s = ErlAst::Lit(ErlLit::String(String::from(pair.as_str())));
         Rc::new(s)
       }
       Rule::module_attr => {

@@ -1,3 +1,5 @@
+//! Scans the project directory structure and preloads all ERL and HRL source files into memory
+
 use crate::erl_error::ErlResult;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;

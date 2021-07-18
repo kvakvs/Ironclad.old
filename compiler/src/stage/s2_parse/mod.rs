@@ -1,3 +1,5 @@
+//! Parses Erlang source into AST
+
 use crate::project::ErlProject;
 use std::sync::{Arc, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;

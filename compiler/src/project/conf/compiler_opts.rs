@@ -1,3 +1,6 @@
+//! Compiler options for each module, and for the entire project, as loaded from TOML with optional
+//! fields wrapped with Option tag. Later converted to CompilerOpts with Option stripped and missing
+//! fields replaced with the defaults.
 use serde_derive::Deserialize;
 use std::fmt::Debug;
 

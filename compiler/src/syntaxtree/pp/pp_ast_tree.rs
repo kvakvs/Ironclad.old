@@ -1,3 +1,4 @@
+//! Erlang preprocessor AST tree
 use crate::syntaxtree::pp::pp_parser::{PpParser, Rule};
 use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;

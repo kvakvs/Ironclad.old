@@ -3,14 +3,14 @@ mod test_util;
 
 use compiler::syntaxtree::erl::erl_parser::{Rule};
 use compiler::syntaxtree::erl::erl_ast::{ErlAst};
-use compiler::syntaxtree::erl::literal::ErlLiteral;
+use compiler::syntaxtree::erl::literal::ErlLit;
 use std::ops::Deref;
 
 /// Try parse string
 #[test]
 fn parse_string_test() {
   let s0 = test_util::erl_parse(Rule::string, "\"abc\"").unwrap();
-  if let ErlAst::Lit(ErlLiteral::String(_value)) = s0.deref() {} else {
+  if let ErlAst::Lit(ErlLit::String(_value)) = s0.deref() {} else {
     assert!(false, "Expected: Literal(String) result, got {:?}", s0)
   }
 }

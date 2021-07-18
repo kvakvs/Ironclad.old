@@ -1,3 +1,5 @@
+//! Project input files as parsed from TOML, optional fields wrapped in Option. Later it is
+//! converted into InputOpts with Option tags stripped and replaced with the defaults.
 use serde_derive::Deserialize;
 use std::fmt::Debug;
 

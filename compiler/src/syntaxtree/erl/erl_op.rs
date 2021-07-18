@@ -1,25 +1,40 @@
+//! Binary and unary operations used in type checking.
 use crate::typing::erl_type::ErlType;
 use crate::typing::erl_type::ErlType::{Bool, Float, Integer};
 
+/// Binary operation taking two arguments
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ErlBinaryOp {
+  /// Sum of two any numbers
   Add,
+  /// Subtraction resut of two any numbers
   Sub,
+  /// Product of two any numbers
   Mul,
+  /// Float division result of two any numbers
   Div,
+  /// Integer division result of two integer numbers
   IntDiv,
+  /// Division remainder of two integer numbers
   Modulo,
+  /// Left value is less than the right value
   Less,
+  /// Left value is greater than the right value
   Greater,
+  /// Left value is less or equal to the right value
   LessEq,
+  /// Left value is greater or equal to the right value
   GreaterEq,
+  /// Equality of two any values
   Eq,
+  /// Inequality of two any values
   NotEq,
 }
 
 impl ErlBinaryOp {
-  /// Returns some type for op arguments, useful for building type equations.
-  /// Returns none if type is Any (should not create any equations)
+  /// Gets the type for a binary operation, type is widened for numeric ops (return unions of
+  /// types) which later will be constrained by the type equations solver.
+  /// Returns None if the input type is not limited to any type.
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self {
       ErlBinaryOp::Add
@@ -39,6 +54,7 @@ impl ErlBinaryOp {
     }
   }
 
+  /// Gets the result type of a binary operation
   pub fn get_result_type(&self) -> ErlType {
     match self {
       ErlBinaryOp::Add
@@ -55,53 +71,20 @@ impl ErlBinaryOp {
       | ErlBinaryOp::NotEq => Bool
     }
   }
-
-  // /// Get full type for the binary op in form of (arg1_type -> arg2_type -> result_type)
-  // pub fn op_type(op: ErlBinaryOp, t1: &Type, t2: &Type) -> ErlResult<Type> {
-  //   // TODO: Can check t1 and t2 for add/sub/mul/div and return float if a float is involved
-  //   match op {
-  //     ErlBinaryOp::Add => Self::math_binop_type(op, t1, t2),
-  //     ErlBinaryOp::Sub => Self::math_binop_type(op, t1, t2),
-  //     ErlBinaryOp::Mul => Self::math_binop_type(op, t1, t2),
-  //     ErlBinaryOp::Div => Self::math_binop_type(op, t1, t2),
-  //     ErlBinaryOp::IntDiv => Ok(Type::new_fun(&Type::integer_vec2(), Type::integer())),
-  //     ErlBinaryOp::Modulo => Ok(Type::new_fun(&Type::integer_vec2(), Type::integer())),
-  //     ErlBinaryOp::Less => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //     ErlBinaryOp::Greater => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //     ErlBinaryOp::LessEq => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //     ErlBinaryOp::GreaterEq => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //     ErlBinaryOp::Eq => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //     ErlBinaryOp::NotEq => Ok(Type::new_fun(&Type::integer_vec2(), Type::bool())), // TODO: any term
-  //   }
-  // }
-
-  // fn math_binop_type(op: ErlBinaryOp, t1: &Type, t2: &Type) -> ErlResult<Type> {
-  //   if t1 != Type::integer() || t1 != Type::float() {
-  //     return Err(ErlError::TypeError(MathOpNumberExpected { arg: 1, op }));
-  //   }
-  //   if t2 != Type::integer() || t2 != Type::float() {
-  //     return Err(ErlError::TypeError(MathOpNumberExpected { arg: 2, op }));
-  //   }
-  //   let ret_type = if op == ErlBinaryOp::Div {
-  //     Type::float() // Division result is always float
-  //   } else if t1 == Type::float() || t2 == Type::float() {
-  //     Type::float() // Add/Sub/Mul result is float if one of argument is float
-  //   } else {
-  //     Type::integer() // Two integer arguments produce integer result
-  //   };
-  //   let result = Type::new_fun(&vec![t1.clone(), t2.clone()], ret_type);
-  //   Ok(result)
-  // }
 }
 
+/// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlUnaryOp {
+  /// Logical negation
   Not,
+  /// Numerical sign change
   Negate,
 }
 
 impl ErlUnaryOp {
-  pub fn get_return_type(&self) -> ErlType {
+  /// Get the type of an unary operation. Input type is same as return type.
+  pub fn get_type(&self) -> ErlType {
     match self {
       ErlUnaryOp::Not => ErlType::Bool,
       ErlUnaryOp::Negate => ErlType::new_union(vec![Integer, Float]),

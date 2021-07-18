@@ -1,3 +1,5 @@
+//! Defines an Erlang module ready to be compiled
+
 use crate::project::compiler_opts::CompilerOpts;
 use std::fmt::Debug;
 use std::fmt;
@@ -9,6 +11,7 @@ use std::sync::Arc;
 pub struct ErlModule {
   /// Options used to build this module. Possibly just a ref to the main project's options
   compiler_options: Arc<CompilerOpts>,
+  /// Module name atom, as a string
   name: String,
 }
 

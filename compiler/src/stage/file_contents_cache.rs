@@ -1,3 +1,4 @@
+//! File contents cache stores all loaded files in memory
 use std::collections::HashMap;
 use std::path::{PathBuf, Path};
 
@@ -9,11 +10,14 @@ use std::sync::Arc;
 /// Contains loaded files ready for s2_parse by the preprocessor.
 /// More files will be added in s1_preprocess stage, as include directives are parsed
 pub struct FileContentsCache {
+  /// Statistics of bytes read
   pub read_bytes_count: usize,
+  /// File contents stored here
   pub all_files: HashMap<PathBuf, Arc<SourceFile>>,
 }
 
 impl<'a> FileContentsCache {
+  /// Create a new empty file cache
   pub fn new() -> Self {
     Self {
       read_bytes_count: 0,

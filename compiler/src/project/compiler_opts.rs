@@ -1,5 +1,7 @@
+//! Defines compiler options for a file
 use crate::project::conf::compiler_opts::CompilerOptsConf;
 
+/// Compiler options for a file
 #[derive(Debug)]
 pub struct CompilerOpts {
   /// If not specified, defaults to empty

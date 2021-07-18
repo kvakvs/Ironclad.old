@@ -1,3 +1,4 @@
+//! Contains all possible Erlang compiler errors
 use std::path::{Path, PathBuf};
 
 use thiserror::Error;
@@ -7,73 +8,108 @@ use crate::syntaxtree::erl::erl_parser;
 use crate::typing::error::TypeError;
 use std::num::ParseIntError;
 use pest::error::LineColLocation;
+use std::rc::Rc;
+use crate::syntaxtree::erl::erl_ast::ErlAst;
 
+/// Shows to the user where the error was found
 #[derive(Debug)]
-pub enum ErrorLocation {
-  None,
-  SourceFile(PathBuf),
+pub struct ErrorLocation {
+  /// If we know the file where this happened
+  pub path: Option<PathBuf>,
+  /// If we know where in file this happened
+  pub ast: Option<Rc<ErlAst>>,
 }
 
 impl ErrorLocation {
-  pub fn from_source_file(p: &Path) -> ErrorLocation {
-    Self::SourceFile(p.to_path_buf())
+  /// Creates a new error location for filename and possibly AST location
+  pub fn new(filename: Option<PathBuf>,
+             ast: Option<Rc<ErlAst>>) -> ErrorLocation {
+    Self {
+      path: filename,
+      ast,
+    }
   }
 }
 
+/// Erlang compiler errors all gathered together
 #[derive(Error, Debug)]
 pub enum ErlError {
+  /// Returned when multiple errors were found, report each error
   #[error("Multiple errors: {0:?}")]
   Multiple(Vec<ErlError>),
 
-  #[error("Not implemented: {explanation}")]
-  NotImpl { explanation: String },
+  // #[error("Not implemented: {explanation}")]
+  // NotImpl { explanation: String },
 
+  /// Returned when file or directory read/write failed
   #[error("File IO error: {0:?}")]
   Io(std::io::Error),
 
-  // Project errors produced when glob() scanning input files and directories
+  /// Project errors produced when glob() scanning input files and directories
   #[error("Directory scan error: {0:?}")]
   Glob(glob::GlobError),
 
+  /// Returned when directory scan glob pattern contained an error
   #[error("Glob pattern error: {0:?}")]
   GlobPattern(glob::PatternError),
 
-  // Project loading error produced when loading TOML
+  /// Project loading error produced when loading TOML
   #[error("Configuration file syntax error: {0:?}")]
   Config(toml::de::Error),
 
-  // Lock poisoning happens when a Write-lock caught a panic
-  // #[error("Compiler internal data locking error")]
-  // LockingPoisonError,
-
+  /// Returned when preprocessor parser failed
   #[error("Preprocessor parse error: {msg} (at {loc:?})")]
-  PreprocessorParse { loc: ErrorLocation, msg: String },
+  PreprocessorParse {
+    /// Location where error was found
+    loc: ErrorLocation,
+    /// Message from the compiler
+    msg: String,
+  },
 
+  /// Returned when preprocessor syntax is not correct
   #[error("Preprocessor syntax parse error: {parse_err:?}")]
-  PreprocessorSyntax { parse_err: pest::error::Error<pp_parser::Rule> },
+  PreprocessorSyntax {
+    /// Error from the PEST parser
+    parse_err: pest::error::Error<pp_parser::Rule>
+  },
 
+  /// Returned when Erlang parser failed
   #[error("Erlang parse error: {msg} (at {loc:?})")]
-  ErlangParse { loc: ErrorLocation, msg: String },
+  ErlangParse {
+    /// Some hint at where the error has occured
+    loc: ErrorLocation,
+    /// Message from the compiler
+    msg: String,
+  },
 
+  /// Returned when Erlang syntax is not correct
   #[error("Erlang syntax parse error: {msg}")]
-  ErlangSyntax { parse_err: pest::error::Error<erl_parser::Rule>, msg: String },
+  ErlangSyntax {
+    /// Error from PEST parser
+    parse_err: pest::error::Error<erl_parser::Rule>,
+    /// Message from the compiler
+    msg: String,
+  },
 
+  /// Returned when a type error or mismatching types were found
   #[error("Type error: {0:?}")]
   TypeError(TypeError),
 }
 
 impl ErlError {
-  pub(crate) fn not_impl<T>(what: &str) -> ErlResult<T> {
-    Err(ErlError::NotImpl { explanation: what.to_string() })
-  }
+  // pub(crate) fn not_impl<T>(what: &str) -> ErlResult<T> {
+  //   Err(ErlError::NotImpl { explanation: what.to_string() })
+  // }
 
+  /// Creates a preprocessor error from a filename and a message
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
     Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::from_source_file(file_name),
+      loc: ErrorLocation::new(Some(file_name.to_path_buf()), None),
       msg: String::from(message),
     })
   }
 
+  /// Formats a linecol-location from Pest nicely
   fn format_line_col(p: &LineColLocation) -> String {
     match p {
       LineColLocation::Pos((l, c)) => format!("{}:{}", l, c),
@@ -84,6 +120,7 @@ impl ErlError {
   }
 }
 
+/// Used as Result<T> for all parse and compile operations
 pub type ErlResult<T> = Result<T, ErlError>;
 
 impl From<std::io::Error> for ErlError {
@@ -135,7 +172,7 @@ impl From<TypeError> for ErlError {
 impl From<ParseIntError> for ErlError {
   fn from(pie: ParseIntError) -> Self {
     ErlError::ErlangParse {
-      loc: ErrorLocation::None,
+      loc: ErrorLocation::new(None, None),
       msg: format!("Cannot parse integer: {}", pie.to_string()),
     }
   }

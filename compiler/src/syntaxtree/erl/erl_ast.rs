@@ -1,10 +1,12 @@
+//! AST syntax structure of an Erlang file
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::literal::ErlLiteral;
+use crate::syntaxtree::erl::literal::ErlLit;
 use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type::ErlType;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use std::rc::Rc;
 
+/// AST node in parsed Erlang source
 #[derive(Debug, PartialEq)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
@@ -14,45 +16,60 @@ pub enum ErlAst {
   Forms(Vec<Rc<ErlAst>>),
 
   /// -module(name). attribute, defines module start
-  ModuleAttr { name: String },
-
-  // /// Generic module attribute -"string"(value, ...).
-  // Attr { name: String, args: Vec<String> },
+  ModuleAttr {
+    /// Module name atom, stored as string
+    name: String
+  },
 
   /// Comma expression receives type of its last AST element
-  Comma { exprs: Vec<Rc<ErlAst>>, ty: ErlType },
+  Comma {
+    /// Expressions joined with commas
+    exprs: Vec<Rc<ErlAst>>,
+    /// Final type for last expression, also is the type of entire comma operator
+    ty: ErlType,
+  },
 
-  /// Defines a new function.
-  /// A function has clauses.
+  /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
   NewFunction {
+    /// Function name atom, stored as a string
     name: String,
-    // Each clause is ErlExpr, and union of clause types will be function return type
+    /// Each clause is ErlExpr, and union of clause types will be function return type
     ret: ErlType,
+    /// Function clauses in order
     clauses: Vec<Rc<ErlAst>>,
   },
 
+  /// Function clause for a new function definition
   FClause {
+    /// Function clause arguments, binding/match expressions
     args: Vec<Rc<ErlAst>>,
+    /// Types we believe the arguments will have
     arg_types: Vec<TypeVar>,
+    /// Function clause body
     body: Rc<ErlAst>,
+    /// Return type for this function clause
     ret: ErlType,
   },
 
+  /// Case clause for a `case x of` switch
   CClause {
     /// A match expression, matched vs. case arg
     cond: Rc<ErlAst>,
     /// Must resolve to bool, or an exception
     guard: Rc<ErlAst>,
+    /// Case clause body expression
     body: Rc<ErlAst>,
-    /// Clause body type
+    /// Clause body type, for type inference
     ty: ErlType,
   },
 
   /// A named variable
   Var {
+    /// Variable name
     name: String,
+    /// Variable type for inference
     ty: ErlType,
   },
 
@@ -66,51 +83,56 @@ pub enum ErlAst {
     ty: ErlType,
   },
 
-  // /// A lambda definition or a function
-  // Function { args: Vec<ErlExpr>, expr: Box<ErlExpr> },
-
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
   Let {
+    /// The variable name assigned in let..in
     var: String,
-    /// Type which we believe is Var
+    /// Type which we believe the Variable will have
     var_ty: ErlType,
     /// Value (type is in it)
     value: Rc<ErlAst>,
     /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
     in_expr: Rc<ErlAst>,
+    /// The let .. in ... result type
     in_ty: ErlType,
   },
 
-  // // TODO: Remove If because can be replaced with Case
-  // If {
-  //   cond: Box<ErlExpr>,
-  //   on_true: Box<ErlExpr>,
-  //   on_false: Box<ErlExpr>,
-  // },
+  /// Case switch containing the argument to check, and case clauses
   Case {
     /// A union type of all case clauses
     ty: ErlType,
+    /// Argument of the `case X of`
     arg: Rc<ErlAst>,
+    /// All case clauses in order
     clauses: Vec<Rc<ErlAst>>,
   },
 
   /// A literal value, constant. Type is known via literal.get_type()
-  Lit(ErlLiteral),
+  Lit(ErlLit),
 
+  /// Binary operation with two arguments
   BinaryOp {
+    /// Left operand
     left: Rc<ErlAst>,
+    /// Right operand
     right: Rc<ErlAst>,
+    /// The operation
     op: ErlBinaryOp,
+    /// The type of the operation
     ty: ErlType,
   },
+  /// Unary operation with 1 argument
   UnaryOp {
+    /// The operand
     expr: Rc<ErlAst>,
+    /// The operation
     op: ErlUnaryOp,
   },
 }
 
 impl ErlAst {
+  /// Gets the type of an AST node
   pub fn get_type(&self) -> ErlType {
     match self {
       ErlAst::Forms(_) => ErlType::Any,
@@ -132,6 +154,7 @@ impl ErlAst {
     }
   }
 
+  /// Retrieve a type of a function node (None if node is not a new function definition)
   pub fn get_fun_type(&self) -> Option<ErlType> {
     match self {
       ErlAst::NewFunction { name, ret, clauses } => {
@@ -197,6 +220,7 @@ impl ErlAst {
     }
   }
 
+  /// Create a new function definition node
   pub fn new_fun(name: &str, clauses: Vec<Rc<ErlAst>>) -> Rc<Self> {
     Rc::new(ErlAst::NewFunction {
       name: name.to_string(),
@@ -205,6 +229,7 @@ impl ErlAst {
     })
   }
 
+  /// Create a new variable AST node
   pub fn new_var(name: &str) -> Rc<ErlAst> {
     Rc::new(ErlAst::Var {
       name: name.to_string(),
@@ -212,6 +237,7 @@ impl ErlAst {
     })
   }
 
+  /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(left: Rc<ErlAst>, op: ErlBinaryOp, right: Rc<ErlAst>) -> Rc<Self> {
     Rc::new(ErlAst::BinaryOp {
       left,
@@ -221,10 +247,12 @@ impl ErlAst {
     })
   }
 
+  /// Create a new literal AST node of an integer
   pub fn new_lit_int(val: isize) -> Rc<Self> {
-    Rc::new(ErlAst::Lit(ErlLiteral::Integer(val)))
+    Rc::new(ErlAst::Lit(ErlLit::Integer(val)))
   }
 
+  /// Create a new Comma operator from list of AST expressions
   pub fn new_comma(items: Vec<Rc<ErlAst>>) -> Rc<Self> {
     Rc::new(ErlAst::Comma {
       exprs: items,

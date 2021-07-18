@@ -1,3 +1,6 @@
+//! Module provides logic for unifying the type equations generated for a program's AST, and
+//! then using this data is able to infer the type of any AST piece from the same program.
+
 use crate::typing::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
 use std::collections::HashMap;
@@ -10,11 +13,16 @@ use crate::syntaxtree::erl::erl_ast::ErlAst;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
+/// A program AST is analyzed and type equations are generated outside of this struct.
+/// This struct contains substitution map with found solutions for the type equations.
+/// This struct is able to provide type inference for any piece of AST thereafter.
 pub struct Unifier {
-  pub(crate) subst: SubstMap,
+  /// Substitution map containing solutions matching type variables to real types
+  pub subst: SubstMap,
 }
 
 impl Unifier {
+  /// Goes through all generated type equations and applies self.unify() to arrive to a solution
   pub fn unify_all_equations(equations: Vec<TypeEquation>) -> ErlResult<Self> {
     let mut unifier = Self { subst: HashMap::new() };
     let errors: Vec<ErlError> = equations.iter()

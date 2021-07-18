@@ -1,3 +1,4 @@
+//! Erlang project contains all settings for input files and compiler options
 use std::fmt::Debug;
 
 use crate::erl_error::{ErlError, ErlResult};
@@ -54,6 +55,7 @@ impl ErlProject {
     self.compiler_opts.clone()
   }
 
+  /// Default file dict capacity
   pub const DEFAULT_CAPACITY: usize = 1024; // preallocate this many inputs in the file_list
 
   /// Traverse directories starting from each of the inputs.directories;
@@ -64,7 +66,7 @@ impl ErlProject {
     for file_mask in &self.inputs.files {
       for dir in &self.inputs.directories {
         let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
-        println!("Globbing: {}", file_glob);
+        // println!("Globbing: {}", file_glob);
 
         for entry in glob(&file_glob)? {
           match entry {
@@ -94,6 +96,7 @@ impl ErlProject {
     Ok(())
   }
 
+  /// Preprocesses and attempts to parse AST in all input files
   pub fn compile(mut project: ErlProject) -> ErlResult<()> {
     // Load files and store contents in the hashmap
     let file_cache = stage::s0_preload::run(&mut project)?;

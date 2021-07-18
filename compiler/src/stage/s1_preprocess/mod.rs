@@ -1,3 +1,6 @@
+//! Preprocess Stage - parses and interprets the Erlang source and gets rid of -if/-ifdef/-ifndef
+//! directives, substitutes HRL files contents in place of -include/-include_lib etc.
+
 use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
@@ -253,7 +256,10 @@ impl PpState {
     let err_s =
         format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
                 ast_tree.nodes);
-    Err(ErlError::PreprocessorParse { loc: ErrorLocation::None, msg: err_s })
+    Err(ErlError::PreprocessorParse {
+      loc: ErrorLocation::new(Some(source_file.file_name.clone()), None),
+      msg: err_s,
+    })
   }
 }
 
