@@ -75,6 +75,9 @@ impl ErlAstTree {
 
   /// Parse funname(arg, arg...) -> body.
   fn function_def_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+    let pair_s = pair.as_str();
+    println!("Parsing: function_def from {}", pair_s);
+
     assert_eq!(pair.as_rule(), Rule::function_def);
 
     let p = pair.into_inner();
@@ -93,8 +96,8 @@ impl ErlAstTree {
         .map(|p| self.any_to_ast(p))
         .map(Result::unwrap)
         .collect();
-    println!("Parsing fclause result={:?}\nfrom: {:?}", nodes, pair_s);
-    Ok(ErlAst::new_fclause(nodes, Rc::new(ErlAst::Empty)))
+    todo!("Parsing fclause result={:?}\nfrom: {:?}", nodes, pair_s);
+    // Ok(ErlAst::new_fclause(nodes, Rc::new(ErlAst::Empty)))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap

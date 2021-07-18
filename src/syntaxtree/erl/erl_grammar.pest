@@ -1,7 +1,7 @@
 // Erlang file contains list of forms
 // Each form is either an attribute or a function definition.
 
-forms = { module_attr ~ form* }
+forms = { module_attr ~ end_line ~ (form ~ end_line)* }
 form = _{ attribute | attribute_noargs | function_def }
 
 attribute_noargs = { "-" ~ ident ~ "." }
@@ -12,7 +12,7 @@ attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr? ~ ("," ~ expr)* ~ ")" ~ "." 
 
 // Function contains of 1 or more clauses, separated by ";" and terminated by "."
 // A function clause begins with a name, and a list of match variables in parentheses.
-// A function body is an expression, often a comma expression.
+// A function body is an expression (attempted to parse as a comma expression).
 function_def = { function_clause ~ (";" ~ function_clause) * ~ "." }
 function_clause = {atom ~ "(" ~ match_var? ~ ("," ~ match_var)* ~ ")"
     ~ ("when" ~ guard_expr)? ~ "->"

@@ -6,6 +6,7 @@ use crate::syntaxtree::pp::pp_parser;
 use crate::syntaxtree::erl::erl_parser;
 use crate::typing::error::TypeError;
 use std::num::ParseIntError;
+use pest::error::LineColLocation;
 
 #[derive(Debug)]
 pub enum ErrorLocation {
@@ -54,8 +55,8 @@ pub enum ErlError {
   #[error("Erlang parse error: {msg} (at {loc:?})")]
   ErlangParse { loc: ErrorLocation, msg: String },
 
-  #[error("Erlang syntax parse error: {parse_err:?}")]
-  ErlangSyntax { parse_err: pest::error::Error<erl_parser::Rule> },
+  #[error("Erlang syntax parse error: {msg}")]
+  ErlangSyntax { parse_err: pest::error::Error<erl_parser::Rule>, msg: String },
 
   #[error("Type error: {0:?}")]
   TypeError(TypeError),
@@ -71,6 +72,15 @@ impl ErlError {
       loc: ErrorLocation::from_source_file(file_name),
       msg: String::from(message),
     })
+  }
+
+  fn format_line_col(p: &LineColLocation) -> String {
+    match p {
+      LineColLocation::Pos((l, c)) => format!("{}:{}", l, c),
+      LineColLocation::Span((l, c), (l2, c2)) => {
+        format!("{}:{} .. {}:{}", l, c, l2, c2)
+      }
+    }
   }
 }
 
@@ -108,7 +118,11 @@ impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
 
 impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
   fn from(value: pest::error::Error<erl_parser::Rule>) -> Self {
-    ErlError::ErlangSyntax { parse_err: value }
+    let msg = format!("{}", value.to_string());
+    ErlError::ErlangSyntax {
+      parse_err: value,
+      msg,
+    }
   }
 }
 

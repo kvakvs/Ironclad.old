@@ -59,8 +59,10 @@ mod tests {
 
   #[test]
   fn simple_inference_test_2() {
-    let tree = test_module("<simple_inference_test_2>",
-                           "myfun(A) -> (A + 1) / 2.");
-    println!("Parsed: {:?}", tree);
+    match test_module("<simple_inference_test_2>",
+                           "myfun(A) -> (A + 1) / 2.") {
+      Ok(tree) => println!("Parsed: {:?}", tree),
+      Err(e) => println!("Failed {}", e),
+    }
   }
 }
