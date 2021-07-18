@@ -10,10 +10,10 @@ use std::collections::{HashSet, HashMap};
 use crate::stage;
 use std::sync::Arc;
 
-pub(crate) mod conf;
-pub(crate) mod compiler_opts;
-pub(crate) mod input_opts;
-pub(crate) mod source_file;
+pub mod conf;
+pub mod compiler_opts;
+pub mod input_opts;
+pub mod source_file;
 
 /// Same as ErlProjectConf but no Option<> fields
 #[derive(Debug)]

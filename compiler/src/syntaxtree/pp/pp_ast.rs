@@ -123,10 +123,10 @@ impl PpAst {
 
 
 /// A tree of Preprocessor syntax nodes with attached file name, and root element removed
-pub(crate) type PpAstTree = AstTree<PpAst>;
+pub type PpAstTree = AstTree<PpAst>;
 
 /// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
-pub(crate) type PpAstCache = AstCache<PpAst>;
+pub type PpAstCache = AstCache<PpAst>;
 
 impl PpAstCache {
   pub fn new() -> Self {
