@@ -112,22 +112,25 @@ impl ErlAstTree {
 
   /// Parse funname(arg, arg...) -> body.
   fn function_def_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    let pair_s = pair.as_str();
-    println!("Parsing: function_def from {}", pair_s);
-
+    // let pair_s = pair.as_str();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
-    let p = pair.into_inner();
-    let name = p.as_str();
+    // Step down twice to get the function name, and then will be followed by
+    // args, optional guard and expr body
+    let mut p = pair.into_inner().next().unwrap().into_inner();
+    let name = p.next().unwrap().as_str();
+
     let clauses: Vec<Rc<ErlAst>> =
         p.map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
             .collect();
+    println!("Parsing: function_def {:?}", clauses );
     Ok(ErlAst::new_fun(name, clauses))
   }
 
   fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    assert_eq!(pair.as_rule(), Rule::function_clause);
+    // assert_eq!(pair.as_rule(), Rule::function_clause);
+
     // let pair_s = pair.as_str();
     let nodes: Vec<Rc<ErlAst>> = pair.into_inner()
         .map(|p| self.any_to_ast(p))

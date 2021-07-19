@@ -2,7 +2,7 @@
 use crate::typing::erl_type::ErlType;
 
 /// An Erlang literal, a value fully known at compile time
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ErlLit {
   // TODO: Big integer
   /// Small enough to fit into a machine word

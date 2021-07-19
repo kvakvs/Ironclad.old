@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::path::PathBuf;
 use pest::Parser;
 use std::rc::Rc;
+use std::fmt::Debug;
 
 #[allow(dead_code)]
 pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
@@ -47,4 +48,10 @@ pub fn test_module(filename: &str, input: &str) -> ErlAstTree {
       Default::default()
     }
  }
+}
+
+#[allow(dead_code)]
+pub fn fail_unexpected<T>(val: &T) where T: Debug {
+  println!("Unexpected value: {:?}", val);
+  panic!()
 }

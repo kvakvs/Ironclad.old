@@ -9,7 +9,7 @@ use std::rc::Rc;
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
 #[allow(missing_docs)]
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum ErlToken {
   Comma,
   Plus,
@@ -46,7 +46,7 @@ pub enum ErlToken {
 }
 
 /// AST node in parsed Erlang source
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,

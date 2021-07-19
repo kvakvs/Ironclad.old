@@ -10,6 +10,7 @@ use compiler::typing::unifier::Unifier;
 use std::rc::Rc;
 use compiler::erl_error::ErlResult;
 use compiler::syntaxtree::erl::erl_parser;
+use std::ops::Deref;
 
 /// Build AST for a function
 /// myfun(A) -> (A + 1) / 2.
@@ -53,8 +54,23 @@ fn simple_inference_test() {
 #[test]
 fn parse_infer_test_1() -> ErlResult<()> {
   let tree = test_util::erl_parse(
-    erl_parser:: Rule::function_def,
-    "myfun(A) -> (A + 1) / 2.");
+    erl_parser::Rule::function_def,
+    "myfun(A) -> (A + 1) / 2.")
+      .unwrap();
+  match tree.deref() {
+    ErlAst::NewFunction { name, clauses, .. } => {
+      assert_eq!(name, "myfun");
+      assert_eq!(clauses.len(), 1);
+      match clauses[0].deref() {
+        ErlAst::FClause { args, ..} => {
+          assert_eq!(args.len(), 1);
+          assert!(matches!(args[0].deref(), ErlAst::Var{..}));
+        },
+        other2 => test_util::fail_unexpected(other2),
+      }
+    }
+    other1 => test_util::fail_unexpected(other1),
+  }
   println!("Parsed: {:?}", tree);
   Ok(())
 }
