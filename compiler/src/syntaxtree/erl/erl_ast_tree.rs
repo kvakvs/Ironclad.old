@@ -1,6 +1,6 @@
 //! Defines additional operations on Erlang syntax tree
 use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule};
-use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree};
+use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree, ErlToken};
 use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
@@ -51,13 +51,49 @@ impl ErlAstTree {
         Rc::new(ma)
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
-      Rule::expr => self.expr_to_ast(pair)?,
+      Rule::expr => self.expr_to_ast(self.parse_inner(pair)?)?,
+      Rule::bindable_expr => self.bindable_expr_to_ast(self.parse_inner(pair)?)?,
       Rule::capitalized_ident => ErlAst::new_var(pair.as_str()),
-      //Rule::literal => self.literal_to_ast(pair)?,
       Rule::number_int => {
         let val = pair_s.parse::<isize>()?;
         ErlAst::new_lit_int(val)
       }
+      Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
+
+      // Temporary tokens must be consumed by this function and never exposed to the
+      // rest of the program
+      Rule::op_plus => ErlAst::temporary_token(ErlToken::Plus),
+      Rule::op_minus => ErlAst::temporary_token(ErlToken::Minus),
+      Rule::op_not => ErlAst::temporary_token(ErlToken::Not),
+      Rule::op_bnot => ErlAst::temporary_token(ErlToken::BinaryNot),
+      Rule::op_div => ErlAst::temporary_token(ErlToken::Div),
+      Rule::op_mul => ErlAst::temporary_token(ErlToken::Mul),
+      Rule::op_integer_div => ErlAst::temporary_token(ErlToken::IntegerDiv),
+      Rule::op_remainder => ErlAst::temporary_token(ErlToken::Remainder),
+      Rule::op_band => ErlAst::temporary_token(ErlToken::BinaryAnd),
+      Rule::op_and => ErlAst::temporary_token(ErlToken::And),
+      Rule::op_bor => ErlAst::temporary_token(ErlToken::BinaryOr),
+      Rule::op_bxor => ErlAst::temporary_token(ErlToken::BinaryXor),
+      Rule::op_bsl => ErlAst::temporary_token(ErlToken::BinaryShiftLeft),
+      Rule::op_bsr => ErlAst::temporary_token(ErlToken::BinaryShiftRight),
+      Rule::op_or => ErlAst::temporary_token(ErlToken::Or),
+      Rule::op_xor => ErlAst::temporary_token(ErlToken::Xor),
+      Rule::op_list_append => ErlAst::temporary_token(ErlToken::ListAppend),
+      Rule::op_list_subtract => ErlAst::temporary_token(ErlToken::ListSubtract),
+      Rule::op_eq => ErlAst::temporary_token(ErlToken::Eq),
+      Rule::op_neq => ErlAst::temporary_token(ErlToken::NotEq),
+      Rule::op_lteq => ErlAst::temporary_token(ErlToken::LessThanEq),
+      Rule::op_lt => ErlAst::temporary_token(ErlToken::LessThan),
+      Rule::op_geq => ErlAst::temporary_token(ErlToken::GreaterEq),
+      Rule::op_gt => ErlAst::temporary_token(ErlToken::GreaterThan),
+      Rule::op_hard_eq => ErlAst::temporary_token(ErlToken::HardEq),
+      Rule::op_hard_neq => ErlAst::temporary_token(ErlToken::HardNotEq),
+      Rule::op_andalso => ErlAst::temporary_token(ErlToken::AndAlso),
+      Rule::op_orelse => ErlAst::temporary_token(ErlToken::OrElse),
+      Rule::op_assign => ErlAst::temporary_token(ErlToken::Assign),
+      Rule::op_send => ErlAst::temporary_token(ErlToken::Send),
+      Rule::op_catch => ErlAst::temporary_token(ErlToken::Catch),
+      Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
       other => todo!("process ErlAst value: {:?}", other),
     };
@@ -92,18 +128,23 @@ impl ErlAstTree {
 
   fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
-    let pair_s = pair.as_str();
+    // let pair_s = pair.as_str();
     let nodes: Vec<Rc<ErlAst>> = pair.into_inner()
         .map(|p| self.any_to_ast(p))
         .map(Result::unwrap)
         .collect();
-    todo!("Parsing fclause result={:?}\nfrom: {:?}", nodes, pair_s);
-    // Ok(ErlAst::new_fclause(nodes, Rc::new(ErlAst::Empty)))
+
+    // Last node of a function clause is the expression body
+    let last = nodes[nodes.len() - 1].clone();
+    Ok(ErlAst::new_fclause(
+      nodes,
+      self.expr_to_ast(last)?.clone(),
+    ))
   }
 
-  /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
-  /// them into a Comma AST node, otherwise return as is.
-  fn expr_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+  /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense
+  /// of the nodes and verify they're correct.
+  fn parse_inner(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     // let pair_s = pair.as_str();
     let expr_item = pair.into_inner();
 
@@ -117,6 +158,18 @@ impl ErlAstTree {
     } else {
       Ok(ErlAst::new_comma(ast_items))
     }
+  }
+
+  /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
+  /// them into a Comma AST node, otherwise return as is.
+  fn expr_to_ast(&self, ast: Rc<ErlAst>) -> ErlResult<Rc<ErlAst>> {
+    Ok(ast)
+  }
+
+  /// Parse a generic bindable expression, this is used as function arguments, in matching and
+  /// variable assignments.
+  fn bindable_expr_to_ast(&self, ast: Rc<ErlAst>) -> ErlResult<Rc<ErlAst>> {
+    Ok(ast)
   }
 
   // fn literal_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {

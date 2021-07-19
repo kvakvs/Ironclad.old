@@ -6,11 +6,53 @@ use crate::typing::erl_type::ErlType;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use std::rc::Rc;
 
+/// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
+/// the final AST produced by the parser.
+#[allow(missing_docs)]
+#[derive(Debug, PartialEq)]
+pub enum ErlToken {
+  Comma,
+  Plus,
+  Minus,
+  Div,
+  Mul,
+  IntegerDiv,
+  Remainder,
+  Not,
+  Or,
+  Xor,
+  And,
+  BinaryNot,
+  BinaryAnd,
+  BinaryOr,
+  BinaryXor,
+  BinaryShiftLeft,
+  BinaryShiftRight,
+  ListAppend,
+  ListSubtract,
+  Eq,
+  NotEq,
+  LessThanEq,
+  LessThan,
+  GreaterEq,
+  GreaterThan,
+  HardEq,
+  HardNotEq,
+  AndAlso,
+  OrElse,
+  Assign,
+  Send,
+  Catch,
+}
+
 /// AST node in parsed Erlang source
 #[derive(Debug, PartialEq)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,
+
+  /// A token to be consumed by AST builder, temporary, must not exist in final AST
+  Token(ErlToken),
 
   /// Forms list, root of a module
   Forms(Vec<Rc<ErlAst>>),
@@ -252,6 +294,17 @@ impl ErlAst {
     Rc::new(ErlAst::Lit(ErlLit::Integer(val)))
   }
 
+  /// Create a new literal AST node of an atom
+  pub fn new_lit_atom(val: &str) -> Rc<Self> {
+    Rc::new(ErlAst::Lit(ErlLit::Atom(String::from(val))))
+  }
+
+  /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
+  /// same function and not exposed to the rest of the program.
+  pub fn temporary_token(t: ErlToken) -> Rc<Self> {
+    Rc::new(ErlAst::Token(t))
+  }
+
   /// Create a new Comma operator from list of AST expressions
   pub fn new_comma(items: Vec<Rc<ErlAst>>) -> Rc<Self> {
     Rc::new(ErlAst::Comma {
@@ -266,3 +319,9 @@ pub type ErlAstTree = AstTree<ErlAst>;
 
 /// A cache of trees of Erlang nodes, keyed by filename or module name
 pub type ErlAstCache = AstCache<ErlAst>;
+
+impl Default for ErlAst {
+  fn default() -> Self {
+    ErlAst::Empty
+  }
+}

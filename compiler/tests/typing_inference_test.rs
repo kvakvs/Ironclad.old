@@ -1,18 +1,21 @@
 extern crate compiler;
-//mod test_util;
 
-use compiler::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree};
+mod test_util;
+
+use compiler::syntaxtree::erl::erl_ast::{ErlAst};
 use compiler::typing::equation::{TypeEquation};
 use compiler::syntaxtree::erl::literal::ErlLit;
 use compiler::syntaxtree::erl::erl_op::ErlBinaryOp;
 use compiler::typing::unifier::Unifier;
-use compiler::erl_error::ErlResult;
 use std::rc::Rc;
+use compiler::erl_error::ErlResult;
+use compiler::syntaxtree::erl::erl_parser;
 
 /// Build AST for a function
 /// myfun(A) -> (A + 1) / 2.
 /// The inferred type should be: float() (as return type)
 #[test]
+#[ignore]
 fn simple_inference_test() {
   let clause1_expr1 = ErlAst::new_binop(
     ErlAst::new_var("A"),
@@ -47,16 +50,11 @@ fn simple_inference_test() {
            unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
 }
 
-fn test_module(filename: &str, input: &str) -> ErlResult<ErlAstTree> {
-  ErlAstTree::from_str(filename,
-                       &(String::from("-module(test).\n") + input))
-}
-
 #[test]
-fn simple_inference_test_2() {
-  match test_module("<simple_inference_test_2>",
-                    "myfun(A) -> (A + 1) / 2.") {
-    Ok(tree) => println!("Parsed: {:?}", tree),
-    Err(e) => println!("Failed {}", e),
-  }
+fn parse_infer_test_1() -> ErlResult<()> {
+  let tree = test_util::erl_parse(
+    erl_parser:: Rule::function_def,
+    "myfun(A) -> (A + 1) / 2.");
+  println!("Parsed: {:?}", tree);
+  Ok(())
 }

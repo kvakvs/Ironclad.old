@@ -6,7 +6,7 @@ use crate::project::source_file::SourceFile;
 use std::rc::Rc;
 
 /// Defines AST tree for a Erlang or Preprocessor-parsed module.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct AstTree<TNode> {
   /// Source file reference with filename and source text
   pub source: Arc<SourceFile>,
