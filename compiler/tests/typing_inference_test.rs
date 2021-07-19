@@ -27,9 +27,10 @@ fn simple_inference_test() {
     ErlBinaryOp::Div,
     Rc::new(ErlAst::Lit(ErlLit::Integer(2))));
   let clause1 = ErlAst::new_fclause(
+    "myfun",
     vec![ErlAst::new_var("A")],
     clause1_body.clone());
-  let erl_fn = ErlAst::new_fun("test1", vec![clause1]);
+  let erl_fn = ErlAst::new_fun(vec![clause1]);
   println!("Fun: {:?}", erl_fn);
 
   let mut equations: Vec<TypeEquation> = Vec::new();
@@ -58,14 +59,15 @@ fn parse_infer_test_1() -> ErlResult<()> {
     "myfun(A) -> (A + 1) / 2.")
       .unwrap();
   match tree.deref() {
-    ErlAst::NewFunction { name, clauses, .. } => {
-      assert_eq!(name, "myfun");
-      assert_eq!(clauses.len(), 1);
+    ErlAst::NewFunction { clauses, .. } => {
+      assert_eq!(clauses.len(), 1, "NewFunction must have exact one clause");
+      assert_eq!(clauses[0].get_fclause_name().unwrap(), "myfun", "FClause name must be myfun");
+
       match clauses[0].deref() {
-        ErlAst::FClause { args, ..} => {
-          assert_eq!(args.len(), 1);
-          assert!(matches!(args[0].deref(), ErlAst::Var{..}));
-        },
+        ErlAst::FClause { args, .. } => {
+          assert_eq!(args.len(), 1, "FClause must have exact one arg");
+          assert!(matches!(args[0].deref(), ErlAst::Var{..}), "FClause arg must be a Var node");
+        }
         other2 => test_util::fail_unexpected(other2),
       }
     }

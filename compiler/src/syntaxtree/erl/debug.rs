@@ -18,8 +18,8 @@ impl fmt::Debug for ErlAst {
         write!(f, "Comma")?;
         f.debug_list().entries(exprs.iter()).finish()
       }
-      ErlAst::NewFunction { name, clauses, .. } => {
-        write!(f, "λ{} ", name)?;
+      ErlAst::NewFunction { clauses, .. } => {
+        write!(f, "λ")?;
         f.debug_list().entries(clauses.iter()).finish()
       }
       ErlAst::FClause { args, body, .. } => {

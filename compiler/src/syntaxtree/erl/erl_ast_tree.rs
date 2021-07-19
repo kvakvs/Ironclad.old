@@ -117,15 +117,16 @@ impl ErlAstTree {
 
     // Step down twice to get the function name, and then will be followed by
     // args, optional guard and expr body
-    let mut p = pair.into_inner().next().unwrap().into_inner();
-    let name = p.next().unwrap().as_str();
+    // let mut p = pair.into_inner().next().unwrap().into_inner();
+    // let name = p.next().unwrap().as_str();
 
     let clauses: Vec<Rc<ErlAst>> =
-        p.map(|p| self.fun_clause_to_ast(p))
+        pair.into_inner()
+            .map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
             .collect();
     println!("Parsing: function_def {:?}", clauses );
-    Ok(ErlAst::new_fun(name, clauses))
+    Ok(ErlAst::new_fun(clauses))
   }
 
   fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
@@ -137,12 +138,20 @@ impl ErlAstTree {
         .map(Result::unwrap)
         .collect();
 
+    // First node of a fun clause is the name
     // Last node of a function clause is the expression body
-    let last = nodes[nodes.len() - 1].clone();
-    Ok(ErlAst::new_fclause(
-      nodes,
-      self.expr_to_ast(last)?.clone(),
-    ))
+    // Args are in between
+    assert!(nodes.len() > 2, "Nodes must include function name and at least 1 expr");
+
+    let name = &nodes[0].get_atom_text().unwrap();
+    let args = nodes[1..nodes.len()-1].iter()
+        .cloned()
+        .collect();
+    let body = {
+      let body_nodes = nodes[nodes.len() - 1].clone();
+      self.expr_to_ast(body_nodes)?.clone()
+    };
+    Ok(ErlAst::new_fclause(name, args, body))
   }
 
   /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense

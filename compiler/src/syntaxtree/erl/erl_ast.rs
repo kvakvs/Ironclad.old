@@ -75,8 +75,6 @@ pub enum ErlAst {
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
   NewFunction {
-    /// Function name atom, stored as a string
-    name: String,
     /// Each clause is ErlExpr, and union of clause types will be function return type
     ret: ErlType,
     /// Function clauses in order
@@ -85,6 +83,8 @@ pub enum ErlAst {
 
   /// Function clause for a new function definition
   FClause {
+    /// Function name atom, stored as a string. All clauses of the same function must have same name
+    name: String,
     /// Function clause arguments, binding/match expressions
     args: Vec<Rc<ErlAst>>,
     /// Types we believe the arguments will have
@@ -199,10 +199,12 @@ impl ErlAst {
   /// Retrieve a type of a function node (None if node is not a new function definition)
   pub fn get_fun_type(&self) -> Option<ErlType> {
     match self {
-      ErlAst::NewFunction { name, ret, clauses } => {
-        let t = ErlType::new_fun(Some(name.clone()),
-                                 clauses.iter().map(|c| c.get_type()).collect(),
-                                 ret.clone());
+      ErlAst::NewFunction { ret, clauses } => {
+        assert!(clauses.len() > 0, "Function clauses must not be empty");
+        let t = ErlType::new_fun(
+          clauses[0].get_fclause_name(),
+          clauses.iter().map(|c| c.get_type()).collect(),
+          ret.clone());
         Some(t)
       }
       _ => None, // not a function
@@ -210,9 +212,10 @@ impl ErlAst {
   }
 
   /// Create a new function clause
-  pub fn new_fclause(args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
+  pub fn new_fclause(name: &str, args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
     let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
     Rc::new(Self::FClause {
+      name: name.to_string(),
       args,
       arg_types,
       body,
@@ -263,9 +266,8 @@ impl ErlAst {
   }
 
   /// Create a new function definition node
-  pub fn new_fun(name: &str, clauses: Vec<Rc<ErlAst>>) -> Rc<Self> {
+  pub fn new_fun(clauses: Vec<Rc<ErlAst>>) -> Rc<Self> {
     Rc::new(ErlAst::NewFunction {
-      name: name.to_string(),
       clauses,
       ret: ErlType::new_typevar(),
     })
@@ -311,6 +313,22 @@ impl ErlAst {
       exprs: items,
       ty: ErlType::new_typevar(),
     })
+  }
+
+  /// Retrieve Some(atom text) if AST node is atom
+  pub fn get_atom_text(&self) -> Option<String> {
+    match self {
+      ErlAst::Lit(ErlLit::Atom(s)) => Some(s.clone()),
+      _ => None,
+    }
+  }
+
+  /// Retrieve Some(function clause name) if AST node is a function clause
+  pub fn get_fclause_name(&self) -> Option<String> {
+    match self {
+      ErlAst::FClause { name, .. } => Some(name.clone()),
+      _ => None,
+    }
   }
 }
 
