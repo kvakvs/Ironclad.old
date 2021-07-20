@@ -7,10 +7,14 @@ use crate::syntaxtree::erl::literal::ErlLit;
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      ErlAst::Empty => write!(f, "∅"),
-      ErlAst::Token(t) => write!(f, "⊥{:?}", t),
+      ErlAst::Empty => write!(f, "ʎʇdɯǝ"),
+      ErlAst::Token(t) => {
+        // Tokens should look funny because they do not belong in final AST, must be removed while
+        // parsing and processing AST
+        write!(f, "uǝʞoʇ{:?}", t)
+      },
       ErlAst::Forms(forms) => {
-        write!(f, "Forms")?;
+        write!(f, "sɯɹoɟ")?;
         f.debug_list().entries(forms.iter()).finish()
       }
       ErlAst::ModuleAttr { name } => write!(f, "module('{}')", name),
@@ -22,38 +26,21 @@ impl fmt::Debug for ErlAst {
         write!(f, "λ")?;
         f.debug_list().entries(clauses.iter()).finish()
       }
-      ErlAst::FClause { args, body, .. } => {
-        f.debug_struct("fclause")
-            .field("args", args)
-            .field("->", body)
-            .finish()
+      ErlAst::FClause { args, body, name, .. } => {
+        write!(f, "{}{:?} -> {:?}", name, args, body)
       }
       ErlAst::CClause { cond, guard, body, .. } => {
-        f.debug_struct("clause")
-            .field("cond", cond)
-            .field("guard", guard)
-            .field("->", body)
-            .finish()
+        write!(f, "{:?} when {:?} -> {:?}", cond, guard, body)
       }
       ErlAst::Var { name, .. } => write!(f, "{}", name),
       ErlAst::App { expr, args, .. } => {
-        f.debug_tuple("apply")
-            .field(expr)
-            .field(args)
-            .finish()
+        write!(f, "apply({:?}, {:?})", expr, args)
       }
       ErlAst::Let { var, value, in_expr, .. } => {
-        f.debug_struct("let")
-            .field("var", var)
-            .field("=", value)
-            .field("in", in_expr)
-            .finish()
+        write!(f, "let {} = {:?} in {:?}", var, value, in_expr)
       }
       ErlAst::Case { arg, clauses, .. } => {
-        f.debug_struct("case")
-            .field("arg", arg)
-            .field("of", clauses)
-            .finish()
+        write!(f, "case {:?} of {:?}", arg, clauses)
       }
       ErlAst::Lit(lit) => write!(f, "{:?}", lit),
       ErlAst::BinaryOp { left, right, op, .. } => {

@@ -211,6 +211,18 @@ impl ErlAst {
     }
   }
 
+  /// Retrieve a name of a function node (first clause name)
+  pub fn get_fun_name(&self) -> Option<&str> {
+    match self {
+      ErlAst::NewFunction { clauses, .. } => {
+        assert!(clauses.len() > 0, "get_fun_name: FClauses must not be empty");
+        clauses[0].get_fun_name()
+      }
+      ErlAst::FClause { name, .. } => Some(&name),
+      _ => None, // not a function
+    }
+  }
+
   /// Create a new function clause
   pub fn new_fclause(name: &str, args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
     let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
@@ -261,6 +273,7 @@ impl ErlAst {
       }
       ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
       ErlAst::Comma { exprs, .. } => Some(exprs.clone()),
+
       _ => unreachable!("Can't process {:?}", self),
     }
   }

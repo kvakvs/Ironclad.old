@@ -125,7 +125,6 @@ impl ErlAstTree {
             .map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
             .collect();
-    println!("Parsing: function_def {:?}", clauses );
     Ok(ErlAst::new_fun(clauses))
   }
 

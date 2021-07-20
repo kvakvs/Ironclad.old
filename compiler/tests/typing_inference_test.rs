@@ -4,61 +4,17 @@ mod test_util;
 
 use compiler::syntaxtree::erl::erl_ast::{ErlAst};
 use compiler::typing::equation::{TypeEquation};
-use compiler::syntaxtree::erl::literal::ErlLit;
-use compiler::syntaxtree::erl::erl_op::ErlBinaryOp;
 use compiler::typing::unifier::Unifier;
-use std::rc::Rc;
 use compiler::erl_error::ErlResult;
-use compiler::syntaxtree::erl::erl_parser;
+use compiler::syntaxtree::erl::erl_parser::{Rule};
 use std::ops::Deref;
-
-/// Build AST for a function
-/// myfun(A) -> (A + 1) / 2.
-/// The inferred type should be: float() (as return type)
-#[test]
-#[ignore]
-fn simple_inference_test() {
-  let clause1_expr1 = ErlAst::new_binop(
-    ErlAst::new_var("A"),
-    ErlBinaryOp::Add,
-    Rc::new(ErlAst::Lit(ErlLit::Integer(1))));
-  let clause1_body = ErlAst::new_binop(
-    clause1_expr1.clone(),
-    ErlBinaryOp::Div,
-    Rc::new(ErlAst::Lit(ErlLit::Integer(2))));
-  let clause1 = ErlAst::new_fclause(
-    "myfun",
-    vec![ErlAst::new_var("A")],
-    clause1_body.clone());
-  let erl_fn = ErlAst::new_fun(vec![clause1]);
-  println!("Fun: {:?}", erl_fn);
-
-  let mut equations: Vec<TypeEquation> = Vec::new();
-  TypeEquation::generate_equations(&erl_fn, &mut equations)
-      .unwrap();
-
-  println!("Equations: {:?}", equations);
-
-  let mut unifier = Unifier::unify_all_equations(equations).unwrap();
-  println!("Unify map: {:?}", unifier.subst);
-
-  println!("Inferred for (A+1): {}",
-           unifier.infer_ast(clause1_expr1).to_string());
-
-  println!("Inferred for f(A) -> (A+1)/2.: {}",
-           unifier.infer_ast(erl_fn.clone()).to_string());
-
-  println!("Inferred for f(A): {}",
-           unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
-}
 
 #[test]
 fn parse_infer_test_1() -> ErlResult<()> {
-  let tree = test_util::erl_parse(
-    erl_parser::Rule::function_def,
-    "myfun(A) -> (A + 1) / 2.")
-      .unwrap();
-  match tree.deref() {
+  let code = "myfun(A) -> (A + 1) / 2.";
+  let erl_fn = test_util::erl_parse(Rule::function_def, code).unwrap();
+
+  match erl_fn.deref() {
     ErlAst::NewFunction { clauses, .. } => {
       assert_eq!(clauses.len(), 1, "NewFunction must have exact one clause");
       assert_eq!(clauses[0].get_fclause_name().unwrap(), "myfun", "FClause name must be myfun");
@@ -73,6 +29,22 @@ fn parse_infer_test_1() -> ErlResult<()> {
     }
     other1 => test_util::fail_unexpected(other1),
   }
-  println!("Parsed: {:?}", tree);
+  println!("Parsed: {:?}", erl_fn);
+
+  let mut equations: Vec<TypeEquation> = Vec::new();
+  TypeEquation::generate_equations(&erl_fn, &mut equations)
+      .unwrap();
+
+  println!("Equations: {:?}", equations);
+
+  let mut unifier = Unifier::unify_all_equations(equations).unwrap();
+  println!("Unify map: {:?}", unifier.subst);
+
+  let erl_fn_t = unifier.infer_ast(erl_fn.clone());
+  println!("Inferred for {:?}: {}", erl_fn, erl_fn_t.to_string());
+
+  // println!("Inferred for f(A): {}",
+  //          unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
+
   Ok(())
 }
