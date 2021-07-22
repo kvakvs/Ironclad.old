@@ -114,6 +114,15 @@ pub enum ErlType {
 }
 
 impl ErlType {
+  /// If self is a TypeVar, return Any, otherwise do not change.
+  /// Used after type inference was done to replace all typevars with any()
+  pub fn into_final_type(self) -> Self {
+    match self {
+      ErlType::TVar(_) => ErlType::Any,
+      other => other,
+    }
+  }
+
   /// Given vector of literals, make a union type
   pub fn new_union_from_lit(items: &Vec<ErlLit>) -> ErlType {
     Self::new_union(
@@ -125,6 +134,11 @@ impl ErlType {
   /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
   /// flatten them while also trying to maintain uniqueness (see to do below)
   pub fn new_union(types: Vec<ErlType>) -> Self {
+    assert!(types.len() > 0, "Can't create union of 0 types");
+    if types.len() == 1 {
+      return types[0].clone()
+    }
+
     let mut merged: Vec<ErlType> = Vec::new(); // TODO: Use BTreeSet or HashSet for uniqueness
 
     // For every type in types, if its a Union, unfold it into member types.

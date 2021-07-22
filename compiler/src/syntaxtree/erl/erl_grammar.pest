@@ -51,6 +51,8 @@ op_band = { "band" }
 op_and = { "and" }
 
 op_binary2 = _{ op_plus | op_minus | op_bor | op_bxor | op_bsl | op_bsr | op_or | op_xor }
+// includes op_plus
+// includes op_minus
 op_bor = { "bor" }
 op_bxor = { "bxor" }
 op_bsl = { "bsl" }
@@ -82,7 +84,7 @@ guard_expr = { expr ~ (guard_separator ~ expr)* }
 guard_separator = _{ "," | ";" }
 
 // A literal is any value or constant expression whose result is fully known at compile time
-literal = _{
+literal = {
     number_float | number_int | atom | string
     // | list | tuple
     }

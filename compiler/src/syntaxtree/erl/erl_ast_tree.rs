@@ -1,7 +1,7 @@
 //! Defines additional operations on Erlang syntax tree
 use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule, get_prec_climber};
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree, ErlToken};
-use pest::iterators::{Pair, Pairs};
+use pest::iterators::{Pair};
 use pest::Parser;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
@@ -10,6 +10,7 @@ use crate::syntaxtree::erl::literal::ErlLit;
 use std::rc::Rc;
 use std::path::PathBuf;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
+use pest::prec_climber::PrecClimber;
 
 impl ErlAstTree {
   /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
@@ -38,39 +39,58 @@ impl ErlAstTree {
     ErlAstTree::from_source_file(&Arc::new(sf))
   }
 
+  fn prec_climb_infix_fn(lhs0: ErlResult<Rc<ErlAst>>,
+                         op: Pair<Rule>,
+                         rhs0: ErlResult<Rc<ErlAst>>) -> ErlResult<Rc<ErlAst>> {
+    let lhs = lhs0?;
+    let rhs = rhs0?;
+
+    println!("PrecC: infix({:?} ⋄ {} ⋄ {:?}) ->", lhs, op, rhs);
+    let result = match op.as_rule() {
+      Rule::op_plus => ErlAst::new_binop(lhs, ErlBinaryOp::Add, rhs),
+      Rule::op_minus => ErlAst::new_binop(lhs, ErlBinaryOp::Sub, rhs),
+      Rule::op_mul => ErlAst::new_binop(lhs, ErlBinaryOp::Mul, rhs),
+      Rule::op_div => ErlAst::new_binop(lhs, ErlBinaryOp::Div, rhs),
+      Rule::op_integer_div => ErlAst::new_binop(lhs, ErlBinaryOp::IntegerDiv, rhs),
+      Rule::op_comma => ErlAst::new_comma(vec![lhs, rhs]),
+      _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
+    };
+    println!("PrecC: infix -> result {:?}", &result);
+    Ok(result)
+  }
+
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
   /// This time using Precedence Climber, processes children of a node.
   /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
-  pub fn to_ast_prec_climb(&self, pairs: Pairs<Rule>) -> ErlResult<Rc<ErlAst>> {
-    let climber = get_prec_climber();
+  pub fn to_ast_prec_climb(&self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<Rc<ErlAst>> {
+    println!("PrecC: in {}", pair.as_str());
 
     let primary_fn = |p: Pair<Rule>| {
-      self.to_ast_single_node(p).unwrap()
+      // let p_str = p.as_str();
+      // let result = self.to_ast_single_node(p).unwrap();
+      // println!("PrecC: primary in {} -> out {:?}", p_str, &result);
+      // result
+      self.to_ast_prec_climb(p, climber)
     };
 
-    let infix_fn = |lhs: Rc<ErlAst>, op: Pair<Rule>, rhs: Rc<ErlAst>| -> Rc<ErlAst> {
-      match op.as_rule() {
-        Rule::op_plus => ErlAst::new_binop(lhs, ErlBinaryOp::Add, rhs),
-        Rule::op_minus => ErlAst::new_binop(lhs, ErlBinaryOp::Sub, rhs),
-        Rule::op_mul => ErlAst::new_binop(lhs, ErlBinaryOp::Mul, rhs),
-        Rule::op_div => ErlAst::new_binop(lhs, ErlBinaryOp::Div, rhs),
-        Rule::op_integer_div => ErlAst::new_binop(lhs, ErlBinaryOp::IntegerDiv, rhs),
-        Rule::op_comma => ErlAst::new_comma(vec![lhs, rhs]),
-        _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
+    match pair.as_rule() {
+      Rule::expr => {
+        let ast_items = climber.climb(pair.into_inner(),
+                                      primary_fn,
+                                      Self::prec_climb_infix_fn)?;
+        println!("Climber parsed: {:?}", ast_items);
+        Ok(ast_items)
       }
-    };
-
-    let ast_items = climber.climb(pairs, primary_fn, infix_fn);
-
-    println!("Climber parsed: {:?}", ast_items);
-    Ok(ast_items)
+      Rule::literal | Rule::var | Rule::capitalized_ident => {
+        self.to_ast_single_node(pair)
+      },
+      _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
+    }
   }
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
   /// Processes a single node where there's no need to use precedence climber.
   pub fn to_ast_single_node(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    let pair_s = pair.as_str(); // use for reporting erroneous text
-
     let result: Rc<ErlAst> = match pair.as_rule() {
       Rule::forms => self.file_root_to_ast(pair)?,
       Rule::string => {
@@ -82,16 +102,16 @@ impl ErlAstTree {
         Rc::new(ma)
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
-      Rule::expr => {
-        // self.expr_to_ast(self.parse_inner(pair)?)?
-        self.to_ast_prec_climb(pair.into_inner())?
-      },
+      Rule::expr => self.to_ast_prec_climb(pair, get_prec_climber())?,
       Rule::bindable_expr => self.bindable_expr_to_ast(self.parse_inner(pair)?)?,
       Rule::capitalized_ident => ErlAst::new_var(pair.as_str()),
-      Rule::number_int => {
-        let val = pair_s.parse::<isize>()?;
-        ErlAst::new_lit_int(val)
-      }
+
+      Rule::literal => self.parse_literal(pair.into_inner().next().unwrap())?,
+      // moved to parse_literal
+      // Rule::number_int => {
+      //   let val = pair_s.parse::<isize>()?;
+      //   ErlAst::new_lit_int(val)
+      // }
       Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
 
       // Temporary tokens must be consumed by this function and never exposed to the
@@ -129,7 +149,7 @@ impl ErlAstTree {
       Rule::op_catch => ErlAst::temporary_token(ErlToken::Catch),
       Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
-      other => todo!("process ErlAst value: {:?}", other),
+      other => todo!("to_ast_single_node: unknown parse node {:?}", other),
     };
     Ok(result)
   }
@@ -165,7 +185,7 @@ impl ErlAstTree {
 
     // let pair_s = pair.as_str();
     let nodes: Vec<Rc<ErlAst>> = pair.into_inner()
-        .map(|p| self.to_ast_single_node(  p))
+        .map(|p| self.to_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
 
@@ -215,4 +235,19 @@ impl ErlAstTree {
     Ok(ast)
   }
 
+  /// Given some token from literal pest parse hierarchy, try and get a literal value out of it
+  fn parse_literal(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+    let pair_s = pair.as_str(); // use for reporting erroneous text
+
+    let result = match pair.as_rule() {
+      Rule::number_int => {
+        let val = pair_s.parse::<isize>()?;
+        ErlAst::new_lit_int(val)
+      }
+      Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
+
+      other => todo!("parse_literal: unknown parse node {:?}", other),
+    };
+    Ok(result)
+  }
 }

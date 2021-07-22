@@ -41,7 +41,7 @@ fn parse_infer_test_1() -> ErlResult<()> {
   println!("Unify map: {:?}", unifier.subst);
 
   let erl_fn_t = unifier.infer_ast(erl_fn.clone());
-  println!("Inferred for {:?}: {:?}", erl_fn, erl_fn_t);
+  println!("Inferred for {:?}: {:?}", erl_fn, erl_fn_t.into_final_type());
 
   // println!("Inferred for f(A): {}",
   //          unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
