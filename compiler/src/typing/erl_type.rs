@@ -53,6 +53,7 @@ pub enum ErlType {
   // Erlang data types
   //-------------------
 
+  // TODO: Integer ranges, maybe float ranges possible too?
   /// Integers or floats
   Number,
   /// A integer number

@@ -17,17 +17,38 @@ type SubstMap = HashMap<TypeVar, ErlType>;
 /// This struct contains substitution map with found solutions for the type equations.
 /// This struct is able to provide type inference for any piece of AST thereafter.
 pub struct Unifier {
+  /// Generated type constraints in the program
+  equations: Vec<TypeEquation>,
   /// Substitution map containing solutions matching type variables to real types
   pub subst: SubstMap,
 }
 
 impl Unifier {
+  /// Create a new Unifier from AST tree, and setup the equations for this code.
+  /// This will scan the AST and prepare data for type inference.
+  pub fn new(ast: Rc<ErlAst>) -> ErlResult<Self> {
+    let mut unifier = Self {
+      equations: vec![],
+      subst: Default::default(),
+    };
+
+    TypeEquation::generate_equations(&ast, &mut unifier.equations)?;
+    println!("Equations: {:?}", unifier.equations);
+
+    unifier.unify_all_equations().unwrap();
+    println!("Unify map: {:?}", &unifier.subst);
+
+    Ok(unifier)
+  }
+
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
-  pub fn unify_all_equations(equations: Vec<TypeEquation>) -> ErlResult<Self> {
-    let mut unifier = Self { subst: HashMap::new() };
+  fn unify_all_equations(&mut self) -> ErlResult<()> {
+    let mut equations: Vec<TypeEquation> = Vec::new();
+    std::mem::swap(&mut self.equations, &mut equations); // move
+
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          unifier.unify(eq.left.clone(), eq.right.clone())
+          self.unify(eq.left.clone(), eq.right.clone())
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -35,7 +56,7 @@ impl Unifier {
     if !errors.is_empty() {
       return Err(ErlError::Multiple(errors));
     }
-    Ok(unifier)
+    Ok(())
   }
 
   /// Unify two types type1 and type2, with self.subst map
@@ -156,18 +177,18 @@ impl Unifier {
         Entry::Occupied(entry) => {
           let entry_val = entry.get().clone();
           return self.infer_type(entry_val);
-        },
+        }
         Entry::Vacant(_) => return ty,
       }
     }
 
-    if let ErlType::Function {arg_ty, ret, name} = &ty {
+    if let ErlType::Function { arg_ty, ret, name } = &ty {
       let new_fn = ErlType::Function {
         name: name.clone(),
         arg_ty: arg_ty.iter()
             .map(|t| self.infer_type(t.clone()))
             .collect(),
-        ret: Box::new(self.infer_type(*ret.clone()))
+        ret: Box::new(self.infer_type(*ret.clone())),
       };
       return new_fn;
     }
