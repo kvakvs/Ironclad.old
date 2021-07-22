@@ -32,7 +32,7 @@ fn infer_simplemath() -> ErlResult<()> {
 
   let mut unifier = Unifier::new(ast.clone()).unwrap();
   let f_t = unifier.infer_ast(ast.clone());
-  println!("Inferred for {:?}: {:?}", ast, f_t.into_final_type());
+  println!("Inferred for {:?} 🡆 {:?}", ast, f_t.into_final_type());
 
   // println!("Inferred for f(A): {}",
   //          unifier.infer_type(erl_fn.get_fun_type().unwrap()).to_string());
@@ -44,13 +44,13 @@ fn infer_simplemath() -> ErlResult<()> {
 fn infer_funcall() -> ErlResult<()> {
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\
-                   main() -> add(A, 4).";
-  let ast = test_util::erl_parse(Rule::forms, code).unwrap();
+                   main() -> add(A, 4).\n";
+  let ast = test_util::erl_parse(Rule::module, code).unwrap();
+  let f_ast = ast.find_fun("main").unwrap();
 
   let mut unifier = Unifier::new(ast.clone()).unwrap();
-  let f = ast.find_fun("main").unwrap();
-  let f_t = unifier.infer_ast(f.clone());
-  println!("Inferred for {:?}: {:?}", ast, f_t.into_final_type());
+  let f_t = unifier.infer_ast(f_ast.clone());
+  println!("Inferred for {:?} 🡆 {:?}", f_ast, f_t.into_final_type());
 
   Ok(())
 }

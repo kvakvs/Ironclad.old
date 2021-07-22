@@ -16,7 +16,8 @@ impl fmt::Debug for ErlType {
       ErlType::Any => write!(f, "∀"),
       ErlType::TVar(v) => write!(f, "{}", v.to_string()),
       ErlType::Number => write!(f, "ℝ"),
-      ErlType::Integer => write!(f, "ℤ"),
+      ErlType::AnyInteger => write!(f, "ℤ"),
+      ErlType::Integer(i) => write!(f, "{}", i),
       ErlType::Float => write!(f, "ℚ"),
       ErlType::List(t) => write!(f, "list({:?})", t),
       ErlType::String => write!(f, "str"),
@@ -35,28 +36,30 @@ impl fmt::Debug for ErlType {
         });
         d.finish()
       }
-      ErlType::Atom => write!(f, "atom"),
-      ErlType::Bool => write!(f, "bool"),
+      ErlType::AnyAtom => write!(f, "atom"),
+      ErlType::Atom(s) => write!(f, "'{}'", s),
+      ErlType::AnyBool => write!(f, "bool"),
       ErlType::Pid => write!(f, "pid"),
       ErlType::Reference => write!(f, "ref"),
       ErlType::BinaryBits => write!(f, "bits"),
       ErlType::Binary => write!(f, "bin"),
       ErlType::Literal(lit) => write!(f, "{:?}", lit),
+      ErlType::LocalFunction {name, arity} => write!(f, "fun {}/{}", name, arity),
       ErlType::Function { name, arg_ty, ret } => {
         match name {
           None => write!(f, "fun(")?,
           Some(n) => write!(f, "{}", n)?,
         }
 
-        let mut d = f.debug_tuple("arg");
+        let mut d = f.debug_tuple("");
         arg_ty.iter().for_each(|argt| {
           d.field(argt);
         });
         d.finish()?;
 
         match name {
-          None => write!(f, "→ {:?})", ret),
-          Some(_) => write!(f, "→ {:?}", ret),
+          None => write!(f, " → {:?})", ret),
+          Some(_) => write!(f, " → {:?}", ret),
         }
       }
     }

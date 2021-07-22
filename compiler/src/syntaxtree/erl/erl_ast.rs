@@ -56,7 +56,7 @@ pub enum ErlAst {
   Token(ErlToken),
 
   /// Forms list, root of a module
-  Forms(Vec<Rc<ErlAst>>),
+  ModuleForms(Vec<Rc<ErlAst>>),
 
   /// -module(name). attribute, defines module start
   ModuleAttr {
@@ -180,7 +180,7 @@ impl ErlAst {
   /// Gets the type of an AST node
   pub fn get_type(&self) -> ErlType {
     match self {
-      ErlAst::Forms(_) => ErlType::Any,
+      ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
       ErlAst::NewFunction { ret, .. } => ret.clone(),
       ErlAst::FClause { body, .. } => body.get_type(),
@@ -204,7 +204,7 @@ impl ErlAst {
     match self {
       ErlAst::NewFunction { ret, clauses } => {
         assert!(clauses.len() > 0, "Function clauses must not be empty");
-        let t = ErlType::new_fun(
+        let t = ErlType::new_fun_type(
           clauses[0].get_fclause_name(),
           clauses.iter().map(|c| c.get_type()).collect(),
           ret.clone());
@@ -241,7 +241,7 @@ impl ErlAst {
   /// Build a vec of references to children
   pub fn get_children(&self) -> Option<Vec<Rc<ErlAst>>> {
     match self {
-      ErlAst::Forms(f) => Some(f.clone()),
+      ErlAst::ModuleForms(f) => Some(f.clone()),
       ErlAst::ModuleAttr { .. } => None,
       ErlAst::Lit { .. } => None,
       ErlAst::NewFunction { clauses, .. } => {

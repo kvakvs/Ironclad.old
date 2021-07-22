@@ -1,6 +1,5 @@
 //! Binary and unary operations used in type checking.
 use crate::typing::erl_type::ErlType;
-use crate::typing::erl_type::ErlType::{Bool, Float, Integer};
 
 /// Binary operation taking two arguments
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -42,11 +41,11 @@ impl ErlBinaryOp {
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
-        Some(ErlType::new_union(vec![ErlType::Integer, ErlType::Float]))
+        Some(ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float]))
       },
 
       ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
-        Some(ErlType::Integer)
+        Some(ErlType::AnyInteger)
       },
 
       ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
@@ -60,18 +59,18 @@ impl ErlBinaryOp {
   pub fn get_result_type(&self) -> ErlType {
     match self {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
-        ErlType::new_union(vec![Integer, Float])
+        ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float])
       },
 
-      | ErlBinaryOp::Div => Float,
+      | ErlBinaryOp::Div => ErlType::Float,
 
-      ErlBinaryOp::IntegerDiv => Integer,
+      ErlBinaryOp::IntegerDiv => ErlType::AnyInteger,
 
-      ErlBinaryOp::Modulo => Integer,
+      ErlBinaryOp::Modulo => ErlType::AnyInteger,
 
       ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
       | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
-        Bool
+        ErlType::AnyBool
       },
     }
   }
@@ -90,8 +89,8 @@ impl ErlUnaryOp {
   /// Get the type of an unary operation. Input type is same as return type.
   pub fn get_type(&self) -> ErlType {
     match self {
-      ErlUnaryOp::Not => ErlType::Bool,
-      ErlUnaryOp::Negate => ErlType::new_union(vec![Integer, Float]),
+      ErlUnaryOp::Not => ErlType::AnyBool,
+      ErlUnaryOp::Negate => ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float]),
     }
   }
 }

@@ -14,7 +14,7 @@ impl fmt::Debug for ErlAst {
         // parsing and processing AST
         write!(f, "uǝʞoʇ{:?}", t)
       },
-      ErlAst::Forms(forms) => {
+      ErlAst::ModuleForms(forms) => {
         write!(f, "sɯɹoɟ")?;
         f.debug_list().entries(forms.iter()).finish()
       }

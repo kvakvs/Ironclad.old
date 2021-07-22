@@ -48,7 +48,7 @@ impl TypeEquation {
     }
 
     match ast.borrow() {
-      ErlAst::Forms(_) => unreachable!("Must not call generate_equations() on Forms"),
+      ErlAst::ModuleForms(_) => {} // module root creates no equations
       ErlAst::ModuleAttr { .. } => {}
       ErlAst::Lit(_) => {} // creates no equation, type is known
       ErlAst::NewFunction { ret, clauses, .. } => {
@@ -61,16 +61,32 @@ impl TypeEquation {
         result.push(TypeEquation::new(ast, ret.clone(), body.get_type()));
       }
       ErlAst::Var { .. } => {}
+
       ErlAst::App { expr, args, ty } => {
-        let fn_type = ErlType::new_fun(
+        let fn_type = ErlType::new_fun_type(
           None, // unnamed function application
           args.iter()
               .map(|a| a.get_type())
               .collect(),
           ty.clone());
+
         // A callable expression node type must match the supplied arguments types
-        result.push(TypeEquation::new(ast, expr.get_type(), fn_type));
+        let expr_type = expr.get_type();
+        match expr_type {
+          ErlType::Atom(s) => {
+            // Application on atom, example: myfun(Arg, Arg2), where myfun/2 exists
+            //    Must produce rule: App.type ↔ fun/2(T1, T2)
+            let local_fun_type = ErlType::new_localref(s, args.len());
+            result.push(TypeEquation::new(ast, local_fun_type, fn_type));
+          },
+          _ => {
+            // Application on expr, example: Expr(Arg, Arg2)
+            //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
+            result.push(TypeEquation::new(ast, expr_type, fn_type));
+          }
+        }
       }
+
       ErlAst::Let { in_ty, in_expr, .. } => {
         result.push(TypeEquation::new(ast, in_ty.clone(), in_expr.get_type()));
       }
@@ -86,7 +102,7 @@ impl TypeEquation {
         // Clause type must match body type
         result.push(TypeEquation::new(ast, ty.clone(), body.get_type()));
         // No check for clause condition, but the clause condition guard must be boolean
-        result.push(TypeEquation::new(ast, guard.get_type(), ErlType::Bool));
+        result.push(TypeEquation::new(ast, guard.get_type(), ErlType::AnyBool));
       }
       ErlAst::BinaryOp { left, right, op, ty } => {
         // Check result of the binary operation

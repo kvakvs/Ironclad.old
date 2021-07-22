@@ -76,10 +76,10 @@ impl ErlLit {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
     match self {
-      ErlLit::Integer(_) => ErlType::Integer,
+      ErlLit::Integer(i) => ErlType::Integer(*i),
       ErlLit::Float(_) => ErlType::Float,
-      ErlLit::Atom(_) => ErlType::Atom,
-      ErlLit::Bool(_) => ErlType::Bool,
+      ErlLit::Atom(s) => ErlType::Atom(s.clone()),
+      ErlLit::Bool(_) => ErlType::AnyBool,
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,

@@ -56,8 +56,13 @@ pub enum ErlType {
   // TODO: Integer ranges, maybe float ranges possible too?
   /// Integers or floats
   Number,
+
   /// A integer number
-  Integer,
+  AnyInteger,
+
+  /// Specific integer value
+  Integer(isize),
+
   /// 64 bit floating point, is-a(Number)
   Float,
 
@@ -82,10 +87,13 @@ pub enum ErlType {
   Map(Vec<MapField>),
 
   /// Any atom. For specific atom values see Literal
-  Atom,
+  AnyAtom,
+
+  /// Specific atom value
+  Atom(String),
 
   /// Atom 'true' or atom 'false', is-a(Atom)
-  Bool,
+  AnyBool,
 
   /// A process id value, generated at runtime
   Pid,
@@ -112,6 +120,14 @@ pub enum ErlType {
     /// Return type
     ret: Box<ErlType>,
   },
+
+  /// Refers to a function in local module
+  LocalFunction {
+    /// Atom of the function name
+    name: String,
+    /// How many args
+    arity: usize,
+  }
 }
 
 impl ErlType {
@@ -158,7 +174,12 @@ impl ErlType {
   }
 
   /// Create a new function type provided args types and return type, possibly with a name
-  pub fn new_fun(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
+  pub fn new_localref(name: String, arity: usize) -> Self {
+    ErlType::LocalFunction { name, arity }
+  }
+
+  /// Create a new function type provided args types and return type, possibly with a name
+  pub fn new_fun_type(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
     ErlType::Function {
       name,
       arg_ty: args,
@@ -182,7 +203,8 @@ impl ErlType {
       ErlType::None => String::from("none()"),
       ErlType::Any => String::from("any()"),
       ErlType::Number => String::from("number()"),
-      ErlType::Integer => String::from("integer()"),
+      ErlType::AnyInteger => String::from("integer()"),
+      ErlType::Integer(i) => format!("{}", i),
       ErlType::Float => String::from("float()"),
       ErlType::List(ty) => format!("list({})", ty.to_string()),
       ErlType::Tuple(items) => {
@@ -203,13 +225,16 @@ impl ErlType {
             .join(", ");
         format!("#{{{}}}", fields_s)
       }
-      ErlType::Atom => String::from("atom()"),
-      ErlType::Bool => String::from("bool()"),
+      ErlType::AnyAtom => String::from("atom()"),
+      ErlType::Atom(s) => format!("'{}'", s),
+
+      ErlType::AnyBool => String::from("bool()"),
       ErlType::Pid => String::from("pid()"),
       ErlType::Reference => String::from("reference()"),
       ErlType::Binary => String::from("binary()"),
       ErlType::BinaryBits => String::from("bits()"),
       ErlType::Literal(lit) => lit.to_string(),
+      ErlType::LocalFunction {name, arity} => format!("fun {}/{}", name, arity),
       ErlType::Function { name, arg_ty: args, ret } => {
         let args_s = args.iter().map(|t| t.to_string())
             .collect::<Vec<String>>()
@@ -231,7 +256,8 @@ impl ErlType {
       ErlType::Union(members) => {
         members.iter().all(|m| m.is_simple_value_type())
       }
-      ErlType::Number | ErlType::Integer | ErlType::Float | ErlType::Atom | ErlType::Bool
+      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float
+      | ErlType::AnyAtom | ErlType::Atom(_) | ErlType::AnyBool
       | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
       | ErlType::Map(_) | ErlType::Record { .. }
       | ErlType::Pid | ErlType::Reference

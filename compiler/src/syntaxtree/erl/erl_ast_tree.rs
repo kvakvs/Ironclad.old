@@ -15,7 +15,7 @@ use pest::prec_climber::PrecClimber;
 impl ErlAstTree {
   /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<ErlAstTree> {
-    let successful_parse = ErlParser::parse(Rule::forms, &source_file.text)?.next().unwrap();
+    let successful_parse = ErlParser::parse(Rule::module, &source_file.text)?.next().unwrap();
     // println!("Parse tokens: {:?}", successful_parse);
 
     let mut erl_tree = ErlAstTree {
@@ -86,7 +86,7 @@ impl ErlAstTree {
   /// Processes a single node where there's no need to use precedence climber.
   pub fn to_ast_single_node(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     let result: Rc<ErlAst> = match pair.as_rule() {
-      Rule::forms => self.file_root_to_ast(pair)?,
+      Rule::module => self.file_root_to_ast(pair)?,
       Rule::string => {
         let s = ErlAst::Lit(ErlLit::String(String::from(pair.as_str())));
         Rc::new(s)
@@ -101,7 +101,7 @@ impl ErlAstTree {
         // self.bindable_expr_to_ast(self.parse_inner(pair)?)?
         self.to_ast_prec_climb(pair.into_inner().next().unwrap(), get_prec_climber())?
         // TODO: Use prec_climber but a different grammar rule
-      },
+      }
       Rule::capitalized_ident => ErlAst::new_var(pair.as_str()),
 
       Rule::literal => self.parse_literal(pair.into_inner().next().unwrap())?,
@@ -133,7 +133,7 @@ impl ErlAstTree {
             ErlAst::comma_to_vec(&args_ast, &mut args);
 
             ErlAst::new_application(expr, args)
-          },
+          }
           _ => {
             unreachable!("to_ast_single_node: While parsing expr application, can't handle {:?}",
                          app_node.as_rule())
@@ -183,9 +183,12 @@ impl ErlAstTree {
 
   /// Parse all nested file elements, comments and text fragments
   fn file_root_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    assert_eq!(pair.as_rule(), Rule::forms);
-    let ast_nodes = self.to_ast_single_node(pair)?;
-    Ok(ast_nodes)
+    assert_eq!(pair.as_rule(), Rule::module);
+    let ast_nodes = pair.into_inner().into_iter()
+        .map(|p| self.to_ast_single_node(p))
+        .map(Result::unwrap)
+        .collect();
+    Ok(Rc::new(ErlAst::ModuleForms(ast_nodes)))
   }
 
   /// Parse funname(arg, arg...) -> body.
@@ -210,7 +213,8 @@ impl ErlAstTree {
   fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
-    // let pair_s = pair.as_str();
+    // println!("Fun clause {:#?}", pair);
+
     let nodes: Vec<Rc<ErlAst>> = pair.into_inner()
         .map(|p| self.to_ast_single_node(p))
         .map(Result::unwrap)
@@ -219,7 +223,8 @@ impl ErlAstTree {
     // First node of a fun clause is the name
     // Last node of a function clause is the expression body
     // Args are in between
-    assert!(nodes.len() > 2, "Nodes must include function name and at least 1 expr");
+    assert!(nodes.len() >= 2,
+            "fun_clause_to_ast: Inner nodes of a function clause must include a function name and at least 1 expr");
 
     let name = &nodes[0].get_atom_text().unwrap();
     let args = nodes[1..nodes.len() - 1].iter()

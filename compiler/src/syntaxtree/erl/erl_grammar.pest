@@ -1,14 +1,13 @@
 // Erlang file contains list of forms
 // Each form is either an attribute or a function definition.
 
-forms = { module_attr ~ form* }
-form = _{ attribute | attribute_noargs | function_def }
+module = { form * }
 
-attribute_noargs = { "-" ~ ident ~ "." }
+module_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+attribute_noargs = { "-" ~ ident ~ ( "." | ( "(" ~ ")" ~ "." )) }
+attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr ~ ("," ~ expr)* ~ ")" ~ "." }
 
-module_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." ~ end_line }
-
-attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr? ~ ("," ~ expr)* ~ ")" ~ "." }
+form = _{ module_attr | attribute | attribute_noargs | function_def }
 
 // Function contains of 1 or more clauses, separated by ";" and terminated by "."
 // A function clause begins with a name, and a list of match variables in parentheses.
@@ -139,11 +138,9 @@ capitalized_ident = ${ (ASCII_ALPHA_UPPER | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | 
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 
 // // Take all characters which are not newline, even with whitespaces
-// text = ${ (!NEWLINE ~ ANY)+ ~ end_line }
+// text = ${ (!NEWLINE ~ ANY)+ ~ NEWLINE }
 //
 // // erl_comment = ${ "%" ~ (!NEWLINE ~ ANY)*  }
 //
 WHITESPACE = _{ WHITE_SPACE }
-COMMENT = ${ "%" ~ (!NEWLINE ~ ANY)* ~ end_line }
-
-end_line = _{ NEWLINE | EOI }
+COMMENT = ${ "%" ~ ( ! NEWLINE ~ ANY )* ~ NEWLINE }

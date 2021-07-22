@@ -10,6 +10,7 @@ use crate::typing::typevar::TypeVar;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
+use std::ops::Deref;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -21,6 +22,8 @@ pub struct Unifier {
   equations: Vec<TypeEquation>,
   /// Substitution map containing solutions matching type variables to real types
   pub subst: SubstMap,
+  /// Root AST node for source queries, like checking whether a function exists
+  root: Rc<ErlAst>,
 }
 
 impl Unifier {
@@ -30,6 +33,7 @@ impl Unifier {
     let mut unifier = Self {
       equations: vec![],
       subst: Default::default(),
+      root: ast.clone(),
     };
 
     TypeEquation::generate_equations(&ast, &mut unifier.equations)?;
@@ -99,6 +103,23 @@ impl Unifier {
     if let ErlType::Union(types) = &type2 {
       if self.check_in_union(&type1, types) {
         return Ok(());
+      }
+    }
+
+    // Left is a LocalFunction and the right is a function type
+    // Atom must be an existing local function
+    if let ErlType::LocalFunction { name: name1, arity: arity1 } = &type1 {
+      if let ErlType::Function { arg_ty: arg_ty2, .. } = &type2 {
+        // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
+        let found_fun = self.root.find_fun(&name1).unwrap();
+
+        if let ErlAst::NewFunction { clauses, .. } = found_fun.deref() {
+          if let ErlAst::FClause { args, .. } = clauses[0].deref() {
+            if args.len() == *arity1 && arg_ty2.len() == *arity1 {
+              return Ok(());
+            }
+          }
+        }
       }
     }
 
