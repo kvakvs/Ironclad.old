@@ -3,6 +3,7 @@
 use std::fmt;
 use crate::typing::erl_type::{ErlType, MapField, RecordField};
 use crate::typing::typevar::TypeVar;
+use crate::typing::equation::TypeEquation;
 
 impl fmt::Debug for ErlType {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -77,5 +78,11 @@ impl fmt::Debug for MapField {
 impl fmt::Debug for TypeVar {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.to_string())
+  }
+}
+
+impl fmt::Debug for TypeEquation {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{:?} ↔ {:?}", self.left, self.right)
   }
 }

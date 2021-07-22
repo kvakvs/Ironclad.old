@@ -18,7 +18,7 @@ function_clause = {atom ~ "(" ~ bindable_expr? ~ ("," ~ bindable_expr)* ~ ")"
     ~ ("when" ~ guard_expr)? ~ "->"
     ~ expr }
 
-var = _{ capitalized_ident }
+var = { capitalized_ident }
 
 // A bindable expression, used for function arguments and for matching
 bindable_expr = { var | "_" | literal }
@@ -32,20 +32,20 @@ expr_term = _{
 }
 
 expr_operator = _{
-    op_colon | op_hash | op_unary | op_binary1 | op_binary2 | op_list_append | op_list_subtract
+    op_colon | op_hash | op_unary_ | op_binary1_ | op_binary2_ | op_list_append | op_list_subtract
     | op_cmp | op_andalso | op_orelse | op_assign | op_send
     | op_catch | op_comma
 }
 op_colon = { ":" }
 op_hash = { "#" }
 
-op_unary = _{ op_plus | op_minus | op_bnot | op_not }
+op_unary_ = _{ op_plus | op_minus | op_bnot | op_not }
 op_plus = { "+" }
 op_minus = { "-" }
 op_bnot = { "bnot" }
 op_not = { "not" }
 
-op_binary1 = _{ op_div | op_mul | op_integer_div | op_remainder | op_band | op_and }
+op_binary1_ = _{ op_div | op_mul | op_integer_div | op_remainder | op_band | op_and }
 op_div = { "/" }
 op_mul = { "*" }
 op_integer_div = { "div" }
@@ -53,7 +53,7 @@ op_remainder = { "rem" }
 op_band = { "band" }
 op_and = { "and" }
 
-op_binary2 = _{ op_plus | op_minus | op_bor | op_bxor | op_bsl | op_bsr | op_or | op_xor }
+op_binary2_ = _{ op_plus | op_minus | op_bor | op_bxor | op_bsl | op_bsr | op_or | op_xor }
 // includes op_plus
 // includes op_minus
 op_bor = { "bor" }
@@ -101,9 +101,8 @@ literal = {
 //    - {sign} .0
 //    - TODO: Scientific notation +0.0E+123
 number_float = { number_sign? ~ (ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+) }
-number_int = ${ number_sign? ~ non_negative_int }
-number_sign = _{ "-" | "+" }
-non_negative_int = _{ ASCII_DIGIT+ }
+number_int = ${ number_sign? ~ ASCII_DIGIT+ }
+number_sign = _{ "S-" | "S+" } // TODO: remove S
 
 string = ${ "\"" ~ string_inner ~ "\"" }
 string_inner = @{ string_char* }

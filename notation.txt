@@ -1,0 +1,28 @@
+Notation 	Convention
+{a,b,c}	    Set
+_
+α           Vector
+e:τ         Type judgement
+P(x)    	Predicate
+P(x):Q(x)   Conditional
+P⊢Q     	Implication
+α,β     	Type variables
+Γ       	Type context
+x,y,z   	Expression variables
+e       	Expression metavariable
+τ       	Type metavariable
+κ       	Kind metavariable
+σ       	Type scheme metavariable
+C       	Type constraint
+τ1∼τ2   	Unification constraint
+[τ/α]   	Substitution
+s       	Substitution metavariable
+[s]τ    	Substitution application
+τ1→τ2   	Function type
+C⇒τ     	Qualified type
+τ1×τ2   	Product type
+τ1+τ2   	Sum type
+⊥       	Bottom type
+∀α.τ    	Universal quantifier
+∃α.τ    	Existential quantifier
+Nat,Bool    Ground type

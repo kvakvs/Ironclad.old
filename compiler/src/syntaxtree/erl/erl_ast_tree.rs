@@ -45,7 +45,7 @@ impl ErlAstTree {
     let lhs = lhs0?;
     let rhs = rhs0?;
 
-    println!("PrecC: infix({:?} ⋄ {} ⋄ {:?}) ->", lhs, op, rhs);
+    // println!("PrecC: infix({:?} ⋄ {} ⋄ {:?}) ->", lhs, op, rhs);
     let result = match op.as_rule() {
       Rule::op_plus => ErlAst::new_binop(lhs, ErlBinaryOp::Add, rhs),
       Rule::op_minus => ErlAst::new_binop(lhs, ErlBinaryOp::Sub, rhs),
@@ -55,7 +55,7 @@ impl ErlAstTree {
       Rule::op_comma => ErlAst::new_comma(vec![lhs, rhs]),
       _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
     };
-    println!("PrecC: infix -> result {:?}", &result);
+    // println!("PrecC: infix -> result {:?}", &result);
     Ok(result)
   }
 
@@ -63,7 +63,7 @@ impl ErlAstTree {
   /// This time using Precedence Climber, processes children of a node.
   /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
   pub fn to_ast_prec_climb(&self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<Rc<ErlAst>> {
-    println!("PrecC: in {}", pair.as_str());
+    // println!("PrecC: in {}", pair.as_str());
 
     match pair.as_rule() {
       Rule::expr => {
@@ -72,12 +72,12 @@ impl ErlAstTree {
           |p| self.to_ast_prec_climb(p, climber),
           Self::prec_climb_infix_fn
         )?;
-        println!("Climber parsed: {:?}", ast_items);
+        // println!("Climber parsed: {:?}", ast_items);
         Ok(ast_items)
       }
-      Rule::literal | Rule::var | Rule::capitalized_ident => {
+      Rule::literal | Rule::var => {
         let r = self.to_ast_single_node(pair);
-        println!("Climber parsed-single-node {:?}", &r);
+        // println!("Climber parsed-single-node {:?}", &r);
         r
       }
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
@@ -109,6 +109,7 @@ impl ErlAstTree {
       //   ErlAst::new_lit_int(val)
       // }
       Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
+      Rule::var => ErlAst::new_var(pair.as_str()),
 
       // Temporary tokens must be consumed by this function and never exposed to the
       // rest of the program

@@ -3,7 +3,7 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::erl_type::ErlType::{Bool, Float, Integer};
 
 /// Binary operation taking two arguments
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ErlBinaryOp {
   /// Sum of two any numbers
   Add,
@@ -29,6 +29,10 @@ pub enum ErlBinaryOp {
   Eq,
   /// Inequality of two any values
   NotEq,
+  /// Hard equality (identity) of two any values
+  HardEq,
+  /// Hard inequality (identity mismatch) of two any values
+  HardNotEq,
 }
 
 impl ErlBinaryOp {
@@ -37,38 +41,38 @@ impl ErlBinaryOp {
   /// Returns None if the input type is not limited to any type.
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self {
-      ErlBinaryOp::Add
-      | ErlBinaryOp::Sub
-      | ErlBinaryOp::Mul
-      | ErlBinaryOp::Div => Some(ErlType::new_union(vec![ErlType::Integer, ErlType::Float])),
+      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
+        Some(ErlType::new_union(vec![ErlType::Integer, ErlType::Float]))
+      },
 
-      ErlBinaryOp::IntegerDiv
-      | ErlBinaryOp::Modulo => Some(ErlType::Integer),
+      ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
+        Some(ErlType::Integer)
+      },
 
-      ErlBinaryOp::Less
-      | ErlBinaryOp::Greater
-      | ErlBinaryOp::LessEq
-      | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq
-      | ErlBinaryOp::NotEq => None
+      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
+      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
+        None
+      }
     }
   }
 
   /// Gets the result type of a binary operation
   pub fn get_result_type(&self) -> ErlType {
     match self {
-      ErlBinaryOp::Add
-      | ErlBinaryOp::Sub
-      | ErlBinaryOp::Mul=> ErlType::new_union(vec![Integer, Float]),
+      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
+        ErlType::new_union(vec![Integer, Float])
+      },
+
       | ErlBinaryOp::Div => Float,
+
       ErlBinaryOp::IntegerDiv => Integer,
+
       ErlBinaryOp::Modulo => Integer,
-      ErlBinaryOp::Less
-      | ErlBinaryOp::Greater
-      | ErlBinaryOp::LessEq
-      | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq
-      | ErlBinaryOp::NotEq => Bool
+
+      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
+      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
+        Bool
+      },
     }
   }
 }

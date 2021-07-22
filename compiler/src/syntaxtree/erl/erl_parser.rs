@@ -13,11 +13,6 @@ lazy_static! {
     use Rule::*;
 
     PrecClimber::new(vec![
-      // Operator::new(op_colon, Left),
-      // Operator::new(op_hash, Left),
-      Operator::new(op_unary, Assoc::Right),
-      Operator::new(op_binary1, Assoc::Left),
-      Operator::new(op_binary2, Assoc::Left),
       Operator::new(op_list_append, Assoc::Left) | Operator::new(op_list_subtract, Assoc::Left),
       Operator::new(op_cmp, Assoc::Left),
       Operator::new(op_andalso, Assoc::Left),
@@ -25,6 +20,21 @@ lazy_static! {
       Operator::new(op_assign, Assoc::Left) | Operator::new(op_send, Assoc::Left),
       Operator::new(op_catch, Assoc::Right),
       Operator::new(op_comma, Assoc::Left),
+
+      Operator::new(op_plus, Assoc::Left) | Operator::new(op_minus, Assoc::Left)
+      | Operator::new(op_bor, Assoc::Left) | Operator::new(op_bxor, Assoc::Left)
+      | Operator::new(op_bsl, Assoc::Left) | Operator::new(op_bsr, Assoc::Left)
+      | Operator::new(op_or, Assoc::Left) | Operator::new(op_xor, Assoc::Left),
+
+      Operator::new(op_div, Assoc::Left) | Operator::new(op_mul, Assoc::Left)
+      | Operator::new(op_integer_div, Assoc::Left) | Operator::new(op_remainder, Assoc::Left)
+      | Operator::new(op_band, Assoc::Left) | Operator::new(op_and, Assoc::Left),
+
+      Operator::new(op_plus, Assoc::Right) | Operator::new(op_minus, Assoc::Right)
+      | Operator::new(op_bnot, Assoc::Right) | Operator::new(op_not, Assoc::Right),
+
+      Operator::new(op_hash, Assoc::Left),
+      Operator::new(op_colon, Assoc::Left),
     ])
   };
 }

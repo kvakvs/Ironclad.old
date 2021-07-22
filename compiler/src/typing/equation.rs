@@ -7,7 +7,6 @@ use std::rc::Rc;
 use std::borrow::Borrow;
 
 /// Type equation, assumes matching or equal types, t1 = t2
-#[derive(Debug)]
 pub struct TypeEquation {
   /// Left type of equation of t1 = t2, must equal (match) the right type
   pub left: ErlType,

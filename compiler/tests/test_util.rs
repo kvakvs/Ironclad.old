@@ -22,13 +22,13 @@ pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
 
 #[allow(dead_code)]
 pub fn erl_parse(rule: erl_parser::Rule, input: &str) -> ErlResult<Rc<ErlAst>> {
-  println!("------ Parsing: {}", input);
+  // println!("------ Parsing: {}", input);
 
   let parse_output = match erl_parser::ErlParser::parse(rule, input) {
     Ok(mut root) => root.next().unwrap(),
     Err(bad) => {
-      println!("Parse failed: {}", bad);
-      assert!(false, "Parse failed");
+      // println!("Parse failed: {}", bad);
+      assert!(false, "Parse failed {}", bad);
       return Err(ErlError::from(bad));
     }
   };
@@ -45,8 +45,8 @@ pub fn test_module(filename: &str, input: &str) -> ErlAstTree {
   match ErlAstTree::from_str(filename, &mod_text) {
     Ok(ast) => ast,
     Err(e) => {
-      println!("Parse failed: {}", e);
-      assert!(false, "Parse failed");
+      // println!("Parse failed: {}", e);
+      assert!(false, "Parse failed {}", e);
       Default::default()
     }
  }

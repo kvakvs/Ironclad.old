@@ -3,6 +3,7 @@
 use std::fmt;
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
 use crate::syntaxtree::erl::literal::ErlLit;
+use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -107,6 +108,27 @@ impl fmt::Debug for ErlLit {
         write!(f, "tuple")?;
         f.debug_list().entries(t.iter()).finish()
       }
+    }
+  }
+}
+
+impl fmt::Debug for ErlBinaryOp {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      ErlBinaryOp::Add => write!(f, "+"),
+      ErlBinaryOp::Sub => write!(f, "-"),
+      ErlBinaryOp::Mul => write!(f, "*"),
+      ErlBinaryOp::Div => write!(f, "/"),
+      ErlBinaryOp::IntegerDiv => write!(f, "div"),
+      ErlBinaryOp::Modulo => write!(f, "mod"),
+      ErlBinaryOp::Less => write!(f, "<"),
+      ErlBinaryOp::Greater => write!(f, ">"),
+      ErlBinaryOp::LessEq => write!(f, "⩽"),
+      ErlBinaryOp::GreaterEq => write!(f, "⩾"),
+      ErlBinaryOp::Eq => write!(f, "≃"),
+      ErlBinaryOp::NotEq => write!(f, "≄"),
+      ErlBinaryOp::HardEq => write!(f, "≡"),
+      ErlBinaryOp::HardNotEq => write!(f, "≢"),
     }
   }
 }
