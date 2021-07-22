@@ -18,7 +18,16 @@ fn parse_string_test() {
 /// Try parse a comma expression with some simpler nested exprs
 #[test]
 fn parse_expr1() {
-  let ex1 = test_util::erl_parse(Rule::expr, "A, B, 123 + B").unwrap();
+  let ex1 = test_util::erl_parse(Rule::expr, "123 + 1 / (2 * hello)").unwrap();
+  if let ErlAst::BinaryOp { .. } = ex1.deref() {} else {
+    assert!(false, "Expected: ErlAst::BinaryOp(+), got {:?}", ex1);
+  }
+}
+
+/// Try parse a comma expression with some simpler nested exprs
+#[test]
+fn parse_expr2() {
+  let ex1 = test_util::erl_parse(Rule::expr, "A, B, 123 * C").unwrap();
   if let ErlAst::Comma { .. } = ex1.deref() {} else {
     assert!(false, "Expected: ErlAst::Comma, got {:?}", ex1);
   }
@@ -27,7 +36,7 @@ fn parse_expr1() {
 /// Try parse some function defs
 #[test]
 fn parse_fn1() {
-  let f1 = test_util::erl_parse(Rule::function_def, "f(A) -> ok.").unwrap();
+  let f1 = test_util::erl_parse(Rule::function_def, "f(A) -> atom123.").unwrap();
   if let ErlAst::NewFunction{..} = f1.deref() {} else {
     assert!(false, "Expected: ErlAst::NewFunction, got {:?}", f1);
   }

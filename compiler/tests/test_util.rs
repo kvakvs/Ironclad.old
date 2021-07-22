@@ -22,6 +22,8 @@ pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
 
 #[allow(dead_code)]
 pub fn erl_parse(rule: erl_parser::Rule, input: &str) -> ErlResult<Rc<ErlAst>> {
+  println!("------ Parsing: {}", input);
+
   let parse_output = match erl_parser::ErlParser::parse(rule, input) {
     Ok(mut root) => root.next().unwrap(),
     Err(bad) => {

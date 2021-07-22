@@ -26,7 +26,10 @@ bindable_expr = { var | "_" | literal }
 // An expression is a tree of values and variables and function calls, but also can be separated by commas and only
 // last one will count as the result, while others just contribute their variable values to the scope.
 expr = { expr_term ~ (expr_operator ~ expr_term)* }
-expr_term = _{ var | literal | ( "(" ~ expr ~ ")" ) }
+expr_term = _{
+    ( "(" ~ expr ~ ")" ) |
+    var | literal
+}
 
 expr_operator = _{
     op_colon | op_hash | op_unary | op_binary1 | op_binary2 | op_list_append | op_list_subtract

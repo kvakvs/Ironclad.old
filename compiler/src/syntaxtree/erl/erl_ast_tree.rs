@@ -65,25 +65,21 @@ impl ErlAstTree {
   pub fn to_ast_prec_climb(&self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<Rc<ErlAst>> {
     println!("PrecC: in {}", pair.as_str());
 
-    let primary_fn = |p: Pair<Rule>| {
-      // let p_str = p.as_str();
-      // let result = self.to_ast_single_node(p).unwrap();
-      // println!("PrecC: primary in {} -> out {:?}", p_str, &result);
-      // result
-      self.to_ast_prec_climb(p, climber)
-    };
-
     match pair.as_rule() {
       Rule::expr => {
-        let ast_items = climber.climb(pair.into_inner(),
-                                      primary_fn,
-                                      Self::prec_climb_infix_fn)?;
+        let ast_items = climber.climb(
+          pair.into_inner(),
+          |p| self.to_ast_prec_climb(p, climber),
+          Self::prec_climb_infix_fn
+        )?;
         println!("Climber parsed: {:?}", ast_items);
         Ok(ast_items)
       }
       Rule::literal | Rule::var | Rule::capitalized_ident => {
-        self.to_ast_single_node(pair)
-      },
+        let r = self.to_ast_single_node(pair);
+        println!("Climber parsed-single-node {:?}", &r);
+        r
+      }
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
     }
   }
