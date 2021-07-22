@@ -109,10 +109,10 @@ impl TypeEquation {
                                       op.get_type()));
         // TODO: Match return type with inferred return typevar?
       }
-      ErlAst::Comma { exprs, ty } => {
+      ErlAst::Comma { right, ty, .. } => {
         result.push(TypeEquation::new(ast,
                                       ty.clone(),
-                                      exprs[exprs.len() - 1].get_type()));
+                                      right.get_type()));
       }
       _ => unreachable!("Can't process {:?}", ast),
     }

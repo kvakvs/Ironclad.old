@@ -23,13 +23,24 @@ var = { capitalized_ident }
 // A bindable expression, used for function arguments and for matching
 bindable_expr = { var | "_" | literal }
 
-// An expression is a tree of values and variables and function calls, but also can be separated by commas and only
-// last one will count as the result, while others just contribute their variable values to the scope.
-expr = { expr_term ~ (expr_operator ~ expr_term)* }
-expr_term = _{
-    ( "(" ~ expr ~ ")" ) |
-    var | literal
+// An expression is a tree of values and variables and function calls, but also can be a comma expression (multiple
+// expressions, separated by commas and only last one will count as the result, while others just contribute their
+// variable values to the scope). And any expression can become a function application (a call) if added the args.
+expr = {
+    ( application_or_term ~ ( expr_operator ~ application_or_term )* )
 }
+application_or_term = _{ application | expr_term }
+expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal }
+
+// Attaches to the end of an expression converting it into a function call
+application = {
+    ( expr_term ~ application0 ) // optionally followed by empty ()
+    | ( expr_term ~ applicationN )
+}
+application0 = { "(" ~ ")" }
+
+// this will be a solo expr or a comma operator, which we will unwrap into args
+applicationN = { "(" ~ expr ~ ")" }
 
 expr_operator = _{
     op_colon | op_hash | op_unary_ | op_binary1_ | op_binary2_ | op_list_append | op_list_subtract

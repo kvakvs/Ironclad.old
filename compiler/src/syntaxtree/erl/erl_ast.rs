@@ -5,6 +5,7 @@ use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type::ErlType;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use std::rc::Rc;
+use std::ops::Deref;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
@@ -65,9 +66,11 @@ pub enum ErlAst {
 
   /// Comma expression receives type of its last AST element
   Comma {
-    /// Expressions joined with commas
-    exprs: Vec<Rc<ErlAst>>,
-    /// Final type for last expression, also is the type of entire comma operator
+    /// Left expression
+    left: Rc<ErlAst>,
+    /// Right expression
+    right: Rc<ErlAst>,
+    /// Type for right expression, also is the type of entire comma operator
     ty: ErlType,
   },
 
@@ -189,8 +192,8 @@ impl ErlAst {
       ErlAst::Lit(l) => l.get_type().clone(),
       ErlAst::BinaryOp { op, .. } => op.get_result_type(),
       ErlAst::UnaryOp { expr, .. } => expr.get_type(), // same type as expr bool or num
-      ErlAst::Comma { exprs, .. } => {
-        exprs[exprs.len() - 1].get_type()
+      ErlAst::Comma { right, .. } => {
+        right.get_type()
       }
       _ => unreachable!("Can't process {:?}", self),
     }
@@ -272,7 +275,9 @@ impl ErlAst {
         Some(vec![left.clone(), right.clone()])
       }
       ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
-      ErlAst::Comma { exprs, .. } => Some(exprs.clone()),
+      ErlAst::Comma { left, right, .. } => {
+        Some(vec![left.clone(), right.clone()])
+      }
       ErlAst::Token(_) => panic!("Token {:?} must be eliminated in AST build phase", self),
 
       _ => unreachable!("Can't process {:?}", self),
@@ -291,6 +296,24 @@ impl ErlAst {
   pub fn new_var(name: &str) -> Rc<ErlAst> {
     Rc::new(ErlAst::Var {
       name: name.to_string(),
+      ty: ErlType::new_typevar(),
+    })
+  }
+
+  /// Creates a new AST node to perform a function call (application of args to a func expression)
+  pub fn new_application(expr: Rc<ErlAst>, args: Vec<Rc<ErlAst>>) -> Rc<ErlAst> {
+    Rc::new(ErlAst::App {
+      expr,
+      args,
+      ty: ErlType::new_typevar(),
+    })
+  }
+
+  /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
+  pub fn new_application0(expr: Rc<ErlAst>) -> Rc<ErlAst> {
+    Rc::new(ErlAst::App {
+      expr,
+      args: vec![],
       ty: ErlType::new_typevar(),
     })
   }
@@ -322,10 +345,11 @@ impl ErlAst {
   }
 
   /// Create a new Comma operator from list of AST expressions
-  pub fn new_comma(items: Vec<Rc<ErlAst>>) -> Rc<Self> {
+  pub fn new_comma(left: Rc<ErlAst>, right: Rc<ErlAst>) -> Rc<Self> {
     Rc::new(ErlAst::Comma {
-      exprs: items,
-      ty: ErlType::new_typevar(),
+      left,
+      right,
+      ty: ErlType::new_typevar()
     })
   }
 
@@ -342,6 +366,19 @@ impl ErlAst {
     match self {
       ErlAst::FClause { name, .. } => Some(name.clone()),
       _ => None,
+    }
+  }
+
+  /// Given a comma operator, unroll the comma nested tree into a vector of AST, this is used for
+  /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
+  /// A non-comma AST-node becomes a single result element.
+  pub fn comma_to_vec(ast: &Rc<ErlAst>, dst: &mut Vec<Rc<ErlAst>>) {
+    match ast.deref() {
+      ErlAst::Comma { left, right, .. } => {
+        Self::comma_to_vec(&left, dst);
+        Self::comma_to_vec(&right, dst);
+      }
+      _ => dst.push(ast.clone()),
     }
   }
 }

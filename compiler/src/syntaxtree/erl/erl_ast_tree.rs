@@ -52,7 +52,7 @@ impl ErlAstTree {
       Rule::op_mul => ErlAst::new_binop(lhs, ErlBinaryOp::Mul, rhs),
       Rule::op_div => ErlAst::new_binop(lhs, ErlBinaryOp::Div, rhs),
       Rule::op_integer_div => ErlAst::new_binop(lhs, ErlBinaryOp::IntegerDiv, rhs),
-      Rule::op_comma => ErlAst::new_comma(vec![lhs, rhs]),
+      Rule::op_comma => ErlAst::new_comma(lhs, rhs),
       _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
     };
     // println!("PrecC: infix -> result {:?}", &result);
@@ -70,15 +70,13 @@ impl ErlAstTree {
         let ast_items = climber.climb(
           pair.into_inner(),
           |p| self.to_ast_prec_climb(p, climber),
-          Self::prec_climb_infix_fn
+          Self::prec_climb_infix_fn,
         )?;
         // println!("Climber parsed: {:?}", ast_items);
         Ok(ast_items)
       }
-      Rule::literal | Rule::var => {
-        let r = self.to_ast_single_node(pair);
-        // println!("Climber parsed-single-node {:?}", &r);
-        r
+      Rule::literal | Rule::var | Rule::application => {
+        self.to_ast_single_node(pair)
       }
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
     }
@@ -99,7 +97,11 @@ impl ErlAstTree {
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
       Rule::expr => self.to_ast_prec_climb(pair, get_prec_climber())?,
-      Rule::bindable_expr => self.bindable_expr_to_ast(self.parse_inner(pair)?)?,
+      Rule::bindable_expr => {
+        // self.bindable_expr_to_ast(self.parse_inner(pair)?)?
+        self.to_ast_prec_climb(pair.into_inner().next().unwrap(), get_prec_climber())?
+        // TODO: Use prec_climber but a different grammar rule
+      },
       Rule::capitalized_ident => ErlAst::new_var(pair.as_str()),
 
       Rule::literal => self.parse_literal(pair.into_inner().next().unwrap())?,
@@ -110,6 +112,34 @@ impl ErlAstTree {
       // }
       Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
       Rule::var => ErlAst::new_var(pair.as_str()),
+      Rule::application => {
+        // println!("application pair {:#?}", &pair);
+        let mut pair_inner = pair.into_inner();
+        let expr_node = pair_inner.next().unwrap();
+        let app_node = pair_inner.next().unwrap();
+        let expr = self.to_ast_prec_climb(expr_node, get_prec_climber())?;
+
+        match app_node.as_rule() {
+          Rule::application0 => ErlAst::new_application0(expr),
+          Rule::applicationN => {
+            // Args come as a single expression (1 arg) or as a Comma expression (multiple)
+            // Comma needs to be unrolled into a vector of AST
+            let args_node = app_node.into_inner().next().unwrap();
+            let args_ast = self.to_ast_prec_climb(args_node, get_prec_climber())?;
+
+            // Unwrap comma operator into a vec of args, a non-comma AST node will become
+            // a single vec element
+            let mut args = Vec::new();
+            ErlAst::comma_to_vec(&args_ast, &mut args);
+
+            ErlAst::new_application(expr, args)
+          },
+          _ => {
+            unreachable!("to_ast_single_node: While parsing expr application, can't handle {:?}",
+                         app_node.as_rule())
+          }
+        }
+      }
 
       // Temporary tokens must be consumed by this function and never exposed to the
       // rest of the program
@@ -202,23 +232,23 @@ impl ErlAstTree {
     Ok(ErlAst::new_fclause(name, args, body))
   }
 
-  /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense
-  /// of the nodes and verify they're correct.
-  fn parse_inner(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    // let pair_s = pair.as_str();
-    let expr_item = pair.into_inner();
-
-    let mut ast_items: Vec<Rc<ErlAst>> = expr_item
-        .map(|p| self.to_ast_single_node(p))
-        .map(Result::unwrap)
-        .collect();
-
-    if ast_items.len() == 1 {
-      Ok(ast_items.pop().unwrap())
-    } else {
-      Ok(ErlAst::new_comma(ast_items))
-    }
-  }
+  // /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense
+  // /// of the nodes and verify they're correct.
+  // fn parse_inner(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+  //   // let pair_s = pair.as_str();
+  //   let expr_item = pair.into_inner();
+  //
+  //   let mut ast_items: Vec<Rc<ErlAst>> = expr_item
+  //       .map(|p| self.to_ast_single_node(p))
+  //       .map(Result::unwrap)
+  //       .collect();
+  //
+  //   if ast_items.len() == 1 {
+  //     Ok(ast_items.pop().unwrap())
+  //   } else {
+  //     Ok(ErlAst::new_comma(ast_items)
+  //   }
+  // }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
   /// them into a Comma AST node, otherwise return as is.

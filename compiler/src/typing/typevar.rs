@@ -24,7 +24,7 @@ impl TypeVar {
   pub fn to_string(&self) -> String {
     // displayed as T₂ or 𝜎₂
     // format!("T{}", Self::subscript(self.0))
-    format!("T{}", self.0)
+    format!("𝜎{}", self.0)
   }
 }
 

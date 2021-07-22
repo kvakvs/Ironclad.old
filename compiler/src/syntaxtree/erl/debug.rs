@@ -19,9 +19,9 @@ impl fmt::Debug for ErlAst {
         f.debug_list().entries(forms.iter()).finish()
       }
       ErlAst::ModuleAttr { name } => write!(f, "module('{}')", name),
-      ErlAst::Comma { exprs, .. } => {
-        write!(f, "Comma")?;
-        f.debug_list().entries(exprs.iter()).finish()
+      ErlAst::Comma { left, right, .. } => {
+        write!(f, "{:?}, {:?}", left, right)
+        // f.debug_list().entries(exprs.iter()).finish()
       }
       ErlAst::NewFunction { clauses, .. } => {
         write!(f, "λ")?;
