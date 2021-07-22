@@ -273,6 +273,7 @@ impl ErlAst {
       }
       ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
       ErlAst::Comma { exprs, .. } => Some(exprs.clone()),
+      ErlAst::Token(_) => panic!("Token {:?} must be eliminated in AST build phase", self),
 
       _ => unreachable!("Can't process {:?}", self),
     }

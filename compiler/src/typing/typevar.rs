@@ -4,8 +4,9 @@ use lazy_static::lazy_static;
 
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub struct TypeVar(usize);
+
 lazy_static! {
     /// Counter to create unique TypeVar names
     static ref TYPEVAR_NUM: AtomicUsize = AtomicUsize::new(0);
@@ -13,16 +14,17 @@ lazy_static! {
 }
 
 impl TypeVar {
-  fn subscript(n: usize) -> String {
-    format!("{}", n).drain(..)
-        .map(|c| SUBSCRIPT_NUMERICS[c as usize - 48]) // guarantee the input is 0..9
-        .collect()
-  }
+  // fn subscript(n: usize) -> String {
+  //   format!("{}", n).drain(..)
+  //       .map(|c| SUBSCRIPT_NUMERICS[c as usize - 48]) // guarantee the input is 0..9
+  //       .collect()
+  // }
 
   /// Format typevar as a nice string (sigma 𝞼 + number)
   pub fn to_string(&self) -> String {
-    // displayed as sigma<number>
-    format!("𝞼{}", Self::subscript(self.0))
+    // displayed as T₂ or 𝜎₂
+    // format!("T{}", Self::subscript(self.0))
+    format!("T{}", self.0)
   }
 }
 

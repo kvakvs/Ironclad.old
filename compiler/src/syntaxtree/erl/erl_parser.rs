@@ -28,3 +28,7 @@ lazy_static! {
     ])
   };
 }
+
+pub fn get_prec_climber() -> &'static PrecClimber<Rule> {
+  &PREC_CLIMBER
+}

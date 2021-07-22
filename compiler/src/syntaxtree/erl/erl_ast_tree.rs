@@ -1,7 +1,7 @@
 //! Defines additional operations on Erlang syntax tree
-use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule};
+use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule, get_prec_climber};
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree, ErlToken};
-use pest::iterators::{Pair};
+use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use std::sync::Arc;
 use crate::project::source_file::SourceFile;
@@ -9,6 +9,7 @@ use crate::erl_error::{ErlResult};
 use crate::syntaxtree::erl::literal::ErlLit;
 use std::rc::Rc;
 use std::path::PathBuf;
+use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 
 impl ErlAstTree {
   /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
@@ -21,7 +22,8 @@ impl ErlAstTree {
       nodes: Rc::new(ErlAst::Empty),
     };
 
-    match erl_tree.any_to_ast(successful_parse) {
+    // Ignore Forms AST node and go into_inner() using precedence climber parser.
+    match erl_tree.to_ast_single_node(successful_parse) {
       Ok(root) => {
         erl_tree.nodes = root;
         Ok(erl_tree)
@@ -37,7 +39,36 @@ impl ErlAstTree {
   }
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
-  pub fn any_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+  /// This time using Precedence Climber, processes children of a node.
+  /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
+  pub fn to_ast_prec_climb(&self, pairs: Pairs<Rule>) -> ErlResult<Rc<ErlAst>> {
+    let climber = get_prec_climber();
+
+    let primary_fn = |p: Pair<Rule>| {
+      self.to_ast_single_node(p).unwrap()
+    };
+
+    let infix_fn = |lhs: Rc<ErlAst>, op: Pair<Rule>, rhs: Rc<ErlAst>| -> Rc<ErlAst> {
+      match op.as_rule() {
+        Rule::op_plus => ErlAst::new_binop(lhs, ErlBinaryOp::Add, rhs),
+        Rule::op_minus => ErlAst::new_binop(lhs, ErlBinaryOp::Sub, rhs),
+        Rule::op_mul => ErlAst::new_binop(lhs, ErlBinaryOp::Mul, rhs),
+        Rule::op_div => ErlAst::new_binop(lhs, ErlBinaryOp::Div, rhs),
+        Rule::op_integer_div => ErlAst::new_binop(lhs, ErlBinaryOp::IntegerDiv, rhs),
+        Rule::op_comma => ErlAst::new_comma(vec![lhs, rhs]),
+        _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
+      }
+    };
+
+    let ast_items = climber.climb(pairs, primary_fn, infix_fn);
+
+    println!("Climber parsed: {:?}", ast_items);
+    Ok(ast_items)
+  }
+
+  /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
+  /// Processes a single node where there's no need to use precedence climber.
+  pub fn to_ast_single_node(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     let pair_s = pair.as_str(); // use for reporting erroneous text
 
     let result: Rc<ErlAst> = match pair.as_rule() {
@@ -51,7 +82,10 @@ impl ErlAstTree {
         Rc::new(ma)
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
-      Rule::expr => self.expr_to_ast(self.parse_inner(pair)?)?,
+      Rule::expr => {
+        // self.expr_to_ast(self.parse_inner(pair)?)?
+        self.to_ast_prec_climb(pair.into_inner())?
+      },
       Rule::bindable_expr => self.bindable_expr_to_ast(self.parse_inner(pair)?)?,
       Rule::capitalized_ident => ErlAst::new_var(pair.as_str()),
       Rule::number_int => {
@@ -103,11 +137,8 @@ impl ErlAstTree {
   /// Parse all nested file elements, comments and text fragments
   fn file_root_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
     assert_eq!(pair.as_rule(), Rule::forms);
-    let ast_nodes = pair.into_inner()
-        .map(|p| self.any_to_ast(p))
-        .map(Result::unwrap)
-        .collect();
-    Ok(Rc::new(ErlAst::Forms(ast_nodes)))
+    let ast_nodes = self.to_ast_single_node(pair)?;
+    Ok(ast_nodes)
   }
 
   /// Parse funname(arg, arg...) -> body.
@@ -128,12 +159,13 @@ impl ErlAstTree {
     Ok(ErlAst::new_fun(clauses))
   }
 
+  /// Takes a Rule::function_clause and returns ErlAst::FClause
   fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-    // assert_eq!(pair.as_rule(), Rule::function_clause);
+    assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // let pair_s = pair.as_str();
     let nodes: Vec<Rc<ErlAst>> = pair.into_inner()
-        .map(|p| self.any_to_ast(p))
+        .map(|p| self.to_ast_single_node(  p))
         .map(Result::unwrap)
         .collect();
 
@@ -143,7 +175,7 @@ impl ErlAstTree {
     assert!(nodes.len() > 2, "Nodes must include function name and at least 1 expr");
 
     let name = &nodes[0].get_atom_text().unwrap();
-    let args = nodes[1..nodes.len()-1].iter()
+    let args = nodes[1..nodes.len() - 1].iter()
         .cloned()
         .collect();
     let body = {
@@ -160,7 +192,7 @@ impl ErlAstTree {
     let expr_item = pair.into_inner();
 
     let mut ast_items: Vec<Rc<ErlAst>> = expr_item
-        .map(|p| self.any_to_ast(p))
+        .map(|p| self.to_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
 
@@ -183,13 +215,4 @@ impl ErlAstTree {
     Ok(ast)
   }
 
-  // fn literal_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-  //   let pair_s = pair.as_str();
-  //   match pair.as_rule() {
-  //     _ => Err(ErlError::ErlangParse {
-  //       loc: ErrorLocation::None,
-  //       msg: format!("Literal is expected, found: {:?} (in {})", pair.as_rule(), pair_s),
-  //     })
-  //   }
-  // }
 }

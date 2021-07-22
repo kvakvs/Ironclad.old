@@ -14,7 +14,7 @@ pub enum ErlBinaryOp {
   /// Float division result of two any numbers
   Div,
   /// Integer division result of two integer numbers
-  IntDiv,
+  IntegerDiv,
   /// Division remainder of two integer numbers
   Modulo,
   /// Left value is less than the right value
@@ -42,7 +42,7 @@ impl ErlBinaryOp {
       | ErlBinaryOp::Mul
       | ErlBinaryOp::Div => Some(ErlType::new_union(vec![ErlType::Integer, ErlType::Float])),
 
-      ErlBinaryOp::IntDiv
+      ErlBinaryOp::IntegerDiv
       | ErlBinaryOp::Modulo => Some(ErlType::Integer),
 
       ErlBinaryOp::Less
@@ -61,7 +61,7 @@ impl ErlBinaryOp {
       | ErlBinaryOp::Sub
       | ErlBinaryOp::Mul=> ErlType::new_union(vec![Integer, Float]),
       | ErlBinaryOp::Div => Float,
-      ErlBinaryOp::IntDiv => Integer,
+      ErlBinaryOp::IntegerDiv => Integer,
       ErlBinaryOp::Modulo => Integer,
       ErlBinaryOp::Less
       | ErlBinaryOp::Greater

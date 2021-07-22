@@ -3,7 +3,7 @@ use crate::syntaxtree::erl::literal::ErlLit;
 use crate::typing::typevar::TypeVar;
 
 /// A record field definition
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct RecordField {
   /// Field name, an atom stored as string
   pub name: String,
@@ -19,7 +19,7 @@ impl RecordField {
 }
 
 /// A map field constraint
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct MapField {
   /// Key can be any literal
   pub key: ErlLit,
@@ -35,7 +35,7 @@ impl MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
@@ -47,7 +47,7 @@ pub enum ErlType {
   /// All types, usually signifies an unchecked or untyped type
   Any,
   /// A type variable, unique generated integer id
-  TypeVar(TypeVar),
+  TVar(TypeVar),
 
   //-------------------
   // Erlang data types
@@ -153,7 +153,7 @@ impl ErlType {
 
   /// Create a new type, containing a new type variable with unique integer id
   pub fn new_typevar() -> Self {
-    ErlType::TypeVar(TypeVar::new())
+    ErlType::TVar(TypeVar::new())
   }
 
   /// Return type expressed as a printable string
@@ -204,7 +204,7 @@ impl ErlType {
           Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
         }
       }
-      ErlType::TypeVar(tv) => tv.to_string(),
+      ErlType::TVar(tv) => tv.to_string(),
       ErlType::String => format!("string()"), // a list of unicode codepoint: list(char())
     }
   }

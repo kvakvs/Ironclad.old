@@ -34,7 +34,7 @@ pub fn erl_parse(rule: erl_parser::Rule, input: &str) -> ErlResult<Rc<ErlAst>> {
   let sf = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
   let tree = ErlAstTree::new(Arc::new(sf), Rc::new(ErlAst::Empty));
 
-  tree.any_to_ast(parse_output)
+  tree.to_ast_single_node(parse_output)
 }
 
 #[allow(dead_code)]

@@ -46,7 +46,7 @@ impl Unifier {
       return Ok(());
     }
 
-    if let ErlType::TypeVar(tv) = type1 {
+    if let ErlType::TVar(tv) = type1 {
       return self.unify_variable(tv, type2);
     }
 
@@ -100,10 +100,10 @@ impl Unifier {
       return self.unify(subst_entry, ty);
     }
 
-    if let ErlType::TypeVar { .. } = ty {
+    if let ErlType::TVar { .. } = ty {
       if let Entry::Occupied(entry2) = self.subst.entry(tvar.clone()) {
         let subst_entry = entry2.get().clone();
-        return self.unify(ErlType::TypeVar(tvar), subst_entry);
+        return self.unify(ErlType::TVar(tvar), subst_entry);
       }
     }
 
@@ -125,7 +125,7 @@ impl Unifier {
   fn occurs_check(&self, tv: &TypeVar, ty: &ErlType) -> bool {
     // if ty is a TypeVar and they're equal
     match ty {
-      ErlType::TypeVar(ty_inner) if ty_inner == tv => { return true; }
+      ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Function { arg_ty, ret, .. } => {
         return self.occurs_check(tv, ret) ||
             arg_ty.iter().any(|a| self.occurs_check(tv, a));
@@ -136,7 +136,7 @@ impl Unifier {
       // Any simple type cannot have typevar tv in it, so all false
       simple_type if simple_type.is_simple_value_type() => false,
 
-      _ => todo!("Don't know how to occurs_check on {:?} and {:?}", tv, ty)
+      _ => todo!("Don't know how to occurs_check on typevar {:?} and type {:?}", tv, ty)
     }
 
     // false
@@ -151,7 +151,7 @@ impl Unifier {
       return ty;
     }
 
-    if let ErlType::TypeVar(tvar) = &ty {
+    if let ErlType::TVar(tvar) = &ty {
       match self.subst.entry(tvar.clone()) {
         Entry::Occupied(entry) => {
           let entry_val = entry.get().clone();
