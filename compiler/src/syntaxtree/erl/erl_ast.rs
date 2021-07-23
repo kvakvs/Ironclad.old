@@ -1,11 +1,13 @@
 //! AST syntax structure of an Erlang file
-use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::literal::ErlLit;
-use crate::typing::typevar::TypeVar;
-use crate::typing::erl_type::ErlType;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use std::rc::Rc;
 use std::ops::Deref;
+use std::rc::Rc;
+
+use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::syntaxtree::erl::fclause::FClause;
+use crate::syntaxtree::erl::literal::ErlLit;
+use crate::syntaxtree::erl::new_function::NewFunction;
+use crate::typing::erl_type::ErlType;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
@@ -47,7 +49,7 @@ pub enum ErlToken {
 }
 
 /// AST node in parsed Erlang source
-#[derive(PartialEq)]
+#[derive(PartialEq, EnumAsInner)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,
@@ -77,26 +79,10 @@ pub enum ErlAst {
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
-  NewFunction {
-    /// Each clause is ErlExpr, and union of clause types will be function return type
-    ret: ErlType,
-    /// Function clauses in order
-    clauses: Vec<Rc<ErlAst>>,
-  },
+  NewFunction(NewFunction),
 
   /// Function clause for a new function definition
-  FClause {
-    /// Function name atom, stored as a string. All clauses of the same function must have same name
-    name: String,
-    /// Function clause arguments, binding/match expressions
-    args: Vec<Rc<ErlAst>>,
-    /// Types we believe the arguments will have
-    arg_types: Vec<TypeVar>,
-    /// Function clause body
-    body: Rc<ErlAst>,
-    /// Return type for this function clause
-    ret: ErlType,
-  },
+  FClause(FClause),
 
   /// Case clause for a `case x of` switch
   CClause {
@@ -182,8 +168,8 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::NewFunction { ret, .. } => ret.clone(),
-      ErlAst::FClause { body, .. } => body.get_type(),
+      ErlAst::NewFunction(nf) => nf.ret.clone(),
+      ErlAst::FClause(fc) => fc.body.get_type(),
       ErlAst::CClause { body, .. } => body.get_type(),
       ErlAst::Var { ty, .. } => ty.clone(),
       ErlAst::App { ty, .. } => ty.clone(),
@@ -199,43 +185,16 @@ impl ErlAst {
     }
   }
 
-  /// Retrieve a type of a function node (None if node is not a new function definition)
-  pub fn get_fun_type(&self) -> Option<ErlType> {
-    match self {
-      ErlAst::NewFunction { ret, clauses } => {
-        assert!(clauses.len() > 0, "Function clauses must not be empty");
-        let t = ErlType::new_fun_type(
-          clauses[0].get_fclause_name(),
-          clauses.iter().map(|c| c.get_type()).collect(),
-          ret.clone());
-        Some(t)
-      }
-      _ => None, // not a function
-    }
-  }
-
   /// Retrieve a name of a function node (first clause name)
   pub fn get_fun_name(&self) -> Option<&str> {
     match self {
-      ErlAst::NewFunction { clauses, .. } => {
-        assert!(clauses.len() > 0, "get_fun_name: FClauses must not be empty");
-        clauses[0].get_fun_name()
+      ErlAst::NewFunction(nf) => {
+        assert!(nf.clauses.len() > 0, "get_fun_name: NewFunction must have more than 0 function clauses");
+        Some(&nf.clauses[0].name)
       }
-      ErlAst::FClause { name, .. } => Some(&name),
+      ErlAst::FClause(fc) => Some(&fc.name),
       _ => None, // not a function
     }
-  }
-
-  /// Create a new function clause
-  pub fn new_fclause(name: &str, args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Rc<Self> {
-    let arg_types = args.iter().map(|_a| TypeVar::new()).collect();
-    Rc::new(Self::FClause {
-      name: name.to_string(),
-      args,
-      arg_types,
-      body,
-      ret: ErlType::new_typevar(),
-    })
   }
 
   /// Build a vec of references to children
@@ -244,13 +203,16 @@ impl ErlAst {
       ErlAst::ModuleForms(f) => Some(f.clone()),
       ErlAst::ModuleAttr { .. } => None,
       ErlAst::Lit { .. } => None,
-      ErlAst::NewFunction { clauses, .. } => {
-        Some(clauses.clone())
+      ErlAst::NewFunction(nf) => {
+        let all_clause_bodies = nf.clauses.iter()
+            .map(|clause| clause.body.clone())
+            .collect();
+        Some(all_clause_bodies)
       }
-      ErlAst::FClause { args, body, .. } => {
+      ErlAst::FClause(fc) => {
         // Descend into args, and the body
-        let mut args_refs: Vec<Rc<ErlAst>> = args.clone();
-        args_refs.push(body.clone());
+        let mut args_refs: Vec<Rc<ErlAst>> = fc.args.clone();
+        args_refs.push(fc.body.clone());
         Some(args_refs)
       }
       ErlAst::Var { .. } => None,
@@ -285,11 +247,17 @@ impl ErlAst {
   }
 
   /// Create a new function definition node
-  pub fn new_fun(clauses: Vec<Rc<ErlAst>>) -> Rc<Self> {
-    Rc::new(ErlAst::NewFunction {
-      clauses,
-      ret: ErlType::new_typevar(),
-    })
+  pub fn new_fun(clauses: Vec<FClause>) -> Rc<Self> {
+    assert_eq!(clauses.is_empty(), false, "Clauses must not be empty");
+
+    let arity = clauses[0].arg_types.len();
+    assert!(clauses.iter().all(|fc| fc.arg_types.len() == arity),
+            "All clauses must have same arity");
+    assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
+            "All clause arg types must match in length all clauses' arguments");
+
+    let nf = NewFunction::new(arity, clauses, ErlType::new_typevar());
+    Rc::new(ErlAst::NewFunction(nf))
   }
 
   /// Create a new variable AST node
@@ -349,7 +317,7 @@ impl ErlAst {
     Rc::new(ErlAst::Comma {
       left,
       right,
-      ty: ErlType::new_typevar()
+      ty: ErlType::new_typevar(),
     })
   }
 
@@ -364,7 +332,7 @@ impl ErlAst {
   /// Retrieve Some(function clause name) if AST node is a function clause
   pub fn get_fclause_name(&self) -> Option<String> {
     match self {
-      ErlAst::FClause { name, .. } => Some(name.clone()),
+      ErlAst::FClause(fc) => Some(fc.name.clone()),
       _ => None,
     }
   }

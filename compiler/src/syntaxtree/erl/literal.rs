@@ -85,7 +85,7 @@ impl ErlLit {
       // ErlLit::Reference => ErlType::Reference,
       ErlLit::List(items) => {
         // List type is union of all element types
-        ErlType::List(Box::new(ErlType::new_union_from_lit(items)))
+        ErlType::List(Box::new(ErlType::union_of_literal_types(items)))
       }
       ErlLit::String(_) => ErlType::String, // is-a(list(char))
       ErlLit::Tuple(items) => {

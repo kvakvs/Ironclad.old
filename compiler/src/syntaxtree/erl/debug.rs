@@ -4,6 +4,7 @@ use std::fmt;
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
 use crate::syntaxtree::erl::literal::ErlLit;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
+use crate::syntaxtree::erl::fclause::FClause;
 
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -13,7 +14,7 @@ impl fmt::Debug for ErlAst {
         // Tokens should look funny because they do not belong in final AST, must be removed while
         // parsing and processing AST
         write!(f, "uǝʞoʇ{:?}", t)
-      },
+      }
       ErlAst::ModuleForms(forms) => {
         write!(f, "sɯɹoɟ")?;
         f.debug_list().entries(forms.iter()).finish()
@@ -23,13 +24,11 @@ impl fmt::Debug for ErlAst {
         write!(f, "{:?}, {:?}", left, right)
         // f.debug_list().entries(exprs.iter()).finish()
       }
-      ErlAst::NewFunction { clauses, .. } => {
+      ErlAst::NewFunction(nf) => {
         write!(f, "λ")?;
-        f.debug_list().entries(clauses.iter()).finish()
+        f.debug_list().entries(nf.clauses.iter()).finish()
       }
-      ErlAst::FClause { args, body, name, .. } => {
-        write!(f, "{}{:?} -> {:?}", name, args, body)
-      }
+      ErlAst::FClause(fc) => write!(f, "{:?}", fc),
       ErlAst::CClause { cond, guard, body, .. } => {
         write!(f, "{:?} when {:?} -> {:?}", cond, guard, body)
       }
@@ -109,6 +108,12 @@ impl fmt::Debug for ErlLit {
         f.debug_list().entries(t.iter()).finish()
       }
     }
+  }
+}
+
+impl fmt::Debug for FClause {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}{:?} -> {:?}", self.name, self.args, self.body)
   }
 }
 

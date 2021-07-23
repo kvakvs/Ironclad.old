@@ -14,17 +14,14 @@ fn infer_simplemath() -> ErlResult<()> {
   let ast = test_util::erl_parse(Rule::function_def, code).unwrap();
 
   match ast.deref() {
-    ErlAst::NewFunction { clauses, .. } => {
-      assert_eq!(clauses.len(), 1, "NewFunction must have exact one clause");
-      assert_eq!(clauses[0].get_fclause_name().unwrap(), "myfun", "FClause name must be myfun");
+    ErlAst::NewFunction(nf) => {
+      assert_eq!(nf.clauses.len(), 1, "NewFunction must have exact one clause");
+      assert_eq!(nf.arity, 1, "NewFunction must have arity 1");
+      assert_eq!(nf.clauses[0].name, "myfun", "FClause name must be myfun");
 
-      match clauses[0].deref() {
-        ErlAst::FClause { args, .. } => {
-          assert_eq!(args.len(), 1, "FClause must have exact one arg");
-          assert!(matches!(args[0].deref(), ErlAst::Var{..}), "FClause arg must be a Var node");
-        }
-        other2 => test_util::fail_unexpected(other2),
-      }
+      let fc = &nf.clauses[0];
+      assert_eq!(fc.args.len(), 1, "FClause must have exact one arg");
+      assert!(matches!(fc.args[0].deref(), ErlAst::Var{..}), "FClause arg must be a Var node");
     }
     other1 => test_util::fail_unexpected(other1),
   }
@@ -46,11 +43,11 @@ fn infer_funcall() -> ErlResult<()> {
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";
   let ast = test_util::erl_parse(Rule::module, code).unwrap();
-  let f_ast = ast.find_fun("main").unwrap();
+  let find_result = ast.find_fun("main", 0).unwrap();
 
   let mut unifier = Unifier::new(ast.clone()).unwrap();
-  let f_t = unifier.infer_ast(f_ast.clone());
-  println!("Inferred for {:?} 🡆 {:?}", f_ast, f_t.into_final_type());
+  let f_t = unifier.infer_ast(find_result.ast.clone());
+  println!("Inferred for {:?} 🡆 {:?}", find_result.ast, f_t.into_final_type());
 
   Ok(())
 }

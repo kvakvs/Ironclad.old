@@ -41,7 +41,7 @@ impl ErlBinaryOp {
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
-        Some(ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float]))
+        Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float]))
       },
 
       ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
@@ -59,7 +59,7 @@ impl ErlBinaryOp {
   pub fn get_result_type(&self) -> ErlType {
     match self {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
-        ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float])
+        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
       },
 
       | ErlBinaryOp::Div => ErlType::Float,
@@ -90,7 +90,7 @@ impl ErlUnaryOp {
   pub fn get_type(&self) -> ErlType {
     match self {
       ErlUnaryOp::Not => ErlType::AnyBool,
-      ErlUnaryOp::Negate => ErlType::new_union(vec![ErlType::AnyInteger, ErlType::Float]),
+      ErlUnaryOp::Negate => ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float]),
     }
   }
 }

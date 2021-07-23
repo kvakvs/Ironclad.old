@@ -41,6 +41,7 @@ pub enum ErlType {
   // Special types, groups of types, etc
   //-------------------------------------
   /// Multiple types together
+  // TODO: Vec replace with HashSet and impl hash for all ErlType's
   Union(Vec<ErlType>),
   /// No type, usually signifies a type error
   None,
@@ -127,7 +128,7 @@ pub enum ErlType {
     name: String,
     /// How many args
     arity: usize,
-  }
+  },
 }
 
 impl ErlType {
@@ -141,8 +142,8 @@ impl ErlType {
   }
 
   /// Given vector of literals, make a union type
-  pub fn new_union_from_lit(items: &Vec<ErlLit>) -> ErlType {
-    Self::new_union(
+  pub fn union_of_literal_types(items: &Vec<ErlLit>) -> ErlType {
+    Self::union_of(
       items.iter()
           .map(|it| it.get_type())
           .collect())
@@ -150,10 +151,10 @@ impl ErlType {
 
   /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
   /// flatten them while also trying to maintain uniqueness (see to do below)
-  pub fn new_union(types: Vec<ErlType>) -> Self {
+  pub fn union_of(types: Vec<ErlType>) -> Self {
     assert!(types.len() > 0, "Can't create union of 0 types");
     if types.len() == 1 {
-      return types[0].clone()
+      return types[0].clone();
     }
 
     let mut merged: Vec<ErlType> = Vec::new(); // TODO: Use BTreeSet or HashSet for uniqueness
@@ -234,7 +235,7 @@ impl ErlType {
       ErlType::Binary => String::from("binary()"),
       ErlType::BinaryBits => String::from("bits()"),
       ErlType::Literal(lit) => lit.to_string(),
-      ErlType::LocalFunction {name, arity} => format!("fun {}/{}", name, arity),
+      ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
       ErlType::Function { name, arg_ty: args, ret } => {
         let args_s = args.iter().map(|t| t.to_string())
             .collect::<Vec<String>>()
@@ -263,6 +264,35 @@ impl ErlType {
       | ErlType::Pid | ErlType::Reference
       | ErlType::Literal(_) => true,
       _ => false,
+    }
+  }
+
+  /// Given a union type, add t to the union, with uniqueness check
+  /// Returns Some() if the union was modified, None if no update has happened
+  pub fn union_add(&self, t: &ErlType) -> Option<Self> {
+    match self {
+      ErlType::Union(members) => {
+        let mut new_members = members.clone();
+        // TODO: uniqueness check
+        new_members.push(t.clone());
+        Some(ErlType::Union(new_members))
+      },
+      _ => None,
+    }
+  }
+
+  /// For Union type, if it contains empty set, collapses into None, if contains one type - will
+  /// collapse into that type.
+  pub fn union_collapse(&self) -> Self {
+    match self {
+      ErlType::Union(members) => {
+        match members.len() {
+          1 => members[0].clone(),
+          0 => ErlType::None,
+          _ => self.clone(),
+        }
+      }
+      _ => unreachable!("ErlType::union_collapse called on not-a-Union type")
     }
   }
 }

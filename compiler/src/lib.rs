@@ -22,3 +22,5 @@ extern crate thiserror;
 extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;
+#[macro_use]
+extern crate enum_as_inner;

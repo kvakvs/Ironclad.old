@@ -11,6 +11,7 @@ use std::rc::Rc;
 use std::path::PathBuf;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use pest::prec_climber::PrecClimber;
+use crate::syntaxtree::erl::fclause::FClause;
 
 impl ErlAstTree {
   /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
@@ -201,7 +202,7 @@ impl ErlAstTree {
     // let mut p = pair.into_inner().next().unwrap().into_inner();
     // let name = p.next().unwrap().as_str();
 
-    let clauses: Vec<Rc<ErlAst>> =
+    let clauses: Vec<FClause> =
         pair.into_inner()
             .map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
@@ -210,7 +211,7 @@ impl ErlAstTree {
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+  fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<FClause> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);
@@ -234,7 +235,7 @@ impl ErlAstTree {
       let body_nodes = nodes[nodes.len() - 1].clone();
       self.expr_to_ast(body_nodes)?.clone()
     };
-    Ok(ErlAst::new_fclause(name, args, body))
+    Ok(FClause::new(name, args, body))
   }
 
   // /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense

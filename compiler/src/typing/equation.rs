@@ -51,18 +51,23 @@ impl TypeEquation {
       ErlAst::ModuleForms(_) => {} // module root creates no equations
       ErlAst::ModuleAttr { .. } => {}
       ErlAst::Lit(_) => {} // creates no equation, type is known
-      ErlAst::NewFunction { ret, clauses, .. } => {
+      ErlAst::NewFunction(nf) => {
         // Return type of a function is union of its clauses return types
-        let union_t = ErlType::new_union(clauses.iter().map(|c| c.get_type()).collect());
-        result.push(TypeEquation::new(ast, ret.clone(), union_t));
+        let ret_union_members = nf.clauses.iter()
+            .map(|c| c.ret.clone())
+            .collect();
+        let ret_union_t = ErlType::union_of(ret_union_members);
+        result.push(TypeEquation::new(ast, nf.ret.clone(), ret_union_t));
       }
-      ErlAst::FClause { ret, body, .. } => {
+      ErlAst::FClause(fc) => {
         // For each fun clause its return type is matched with body expression type
-        result.push(TypeEquation::new(ast, ret.clone(), body.get_type()));
+        result.push(TypeEquation::new(ast, fc.ret.clone(), fc.body.get_type()));
       }
       ErlAst::Var { .. } => {}
 
       ErlAst::App { expr, args, ty } => {
+        // Application Expr ( Arg1, Arg2, ... )
+        // Equation: Expr.Type = Fn ( Arg1.Type, Arg2.Type, ... )
         let fn_type = ErlType::new_fun_type(
           None, // unnamed function application
           args.iter()
@@ -74,11 +79,11 @@ impl TypeEquation {
         let expr_type = expr.get_type();
         match expr_type {
           ErlType::Atom(s) => {
-            // Application on atom, example: myfun(Arg, Arg2), where myfun/2 exists
+            // Application on an atom, example: myfun(Arg, Arg2), where myfun/2 exists
             //    Must produce rule: App.type ↔ fun/2(T1, T2)
             let local_fun_type = ErlType::new_localref(s, args.len());
             result.push(TypeEquation::new(ast, local_fun_type, fn_type));
-          },
+          }
           _ => {
             // Application on expr, example: Expr(Arg, Arg2)
             //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
@@ -95,7 +100,7 @@ impl TypeEquation {
         let all_clause_types = clauses.iter()
             .map(|c| c.get_type())
             .collect();
-        let union_t = ErlType::new_union(all_clause_types);
+        let union_t = ErlType::union_of(all_clause_types);
         result.push(TypeEquation::new(ast, ty.clone(), union_t));
       }
       ErlAst::CClause { guard, body, ty, .. } => {

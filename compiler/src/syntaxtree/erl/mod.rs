@@ -6,3 +6,5 @@ pub mod erl_op;
 pub mod literal;
 pub mod debug;
 pub mod query;
+pub mod fclause;
+pub mod new_function;

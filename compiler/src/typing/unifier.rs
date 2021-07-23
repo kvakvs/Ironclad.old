@@ -10,7 +10,6 @@ use crate::typing::typevar::TypeVar;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use std::ops::Deref;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -52,7 +51,32 @@ impl Unifier {
 
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          self.unify(eq.left.clone(), eq.right.clone())
+          self.unify(&eq.left, &eq.right)
+        })
+        .filter(Result::is_err)
+        .map(Result::unwrap_err)
+        .collect();
+    if !errors.is_empty() {
+      return Err(ErlError::Multiple(errors));
+    }
+    Ok(())
+  }
+
+  /// Unify for when both sides of equation are function types
+  fn unify_fun_fun(&mut self,
+                   arg_ty1: &Vec<ErlType>, ret1: &ErlType,
+                   arg_ty2: &Vec<ErlType>, ret2: &ErlType) -> ErlResult<()> {
+    if arg_ty1.len() != arg_ty2.len() {
+      return Err(ErlError::from(TypeError::FunAritiesDontMatch));
+    }
+
+    // Unify functions return types
+    self.unify(&ret1, &ret2)?;
+
+    // Then unify each arg of function1 with corresponding arg of function2
+    let errors: Vec<ErlError> = arg_ty1.iter().zip(arg_ty2.iter())
+        .map(|(t1, t2)| {
+          self.unify(&t1, &t2)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -66,59 +90,56 @@ impl Unifier {
   /// Unify two types type1 and type2, with self.subst map
   /// Updates self.subst (map of name->Type) with new record which unifies type1 and type2,
   /// and returns true. Returns false if they can't be unified.
-  fn unify(&mut self, type1: ErlType, type2: ErlType) -> ErlResult<()> {
+  fn unify(&mut self, type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
     if type1 == type2 {
       return Ok(());
     }
 
-    if let ErlType::TVar(tv) = type1 {
-      return self.unify_variable(tv, type2);
-    }
-
-    if let ErlType::Function { arg_ty: arg_ty1, ret: ret1, .. } = &type1 {
-      if let ErlType::Function { arg_ty: arg_ty2, ret: ret2, .. } = &type2 {
-        if arg_ty1.len() != arg_ty2.len() {
-          return Err(ErlError::from(TypeError::FunAritiesDontMatch));
-        }
-
-        // Unify functions return types
-        self.unify(*ret1.clone(), *ret2.clone())?;
-
-        // Then unify each arg of function1 with corresponding arg of function2
-        let errors: Vec<ErlError> = arg_ty1.iter().zip(arg_ty2.iter())
-            .map(|(t1, t2)| {
-              self.unify(t1.clone(), t2.clone())
-            })
-            .filter(Result::is_err)
-            .map(Result::unwrap_err)
-            .collect();
-        if !errors.is_empty() {
-          return Err(ErlError::Multiple(errors));
-        }
-        return Ok(());
+    match type1 {
+      ErlType::TVar(tv1) => {
+        return self.unify_variable(tv1, type2);
       }
-    }
 
-    // Union should not be broken into subtypes
-    if let ErlType::Union(types) = &type2 {
-      if self.check_in_union(&type1, types) {
-        return Ok(());
+      ErlType::Function { arg_ty: arg_ty1, ret: ret1, .. } => {
+        match type2 {
+          ErlType::Function { arg_ty: arg_ty2, ret: ret2, .. } => {
+            // match two function types
+            return self.unify_fun_fun(&arg_ty1, &ret1, &arg_ty2, &ret2);
+          }
+          _any_type2 => {}
+        }
       }
-    }
 
-    // Left is a LocalFunction and the right is a function type
-    // Atom must be an existing local function
-    if let ErlType::LocalFunction { name: name1, arity: arity1 } = &type1 {
-      if let ErlType::Function { arg_ty: arg_ty2, .. } = &type2 {
-        // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
-        let found_fun = self.root.find_fun(&name1).unwrap();
+      // Left is a LocalFunction and the right is a function type
+      // Atom must be an existing local function
+      ErlType::LocalFunction { name: name1, arity: arity1 } => {
+        match type2 {
+          ErlType::Function { arg_ty: arg_ty2, ret: _, .. } => {
+            // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
+            let found_fun = self.root.find_fun(&name1, *arity1).unwrap()
+                .new_function.clone();
 
-        if let ErlAst::NewFunction { clauses, .. } = found_fun.deref() {
-          if let ErlAst::FClause { args, .. } = clauses[0].deref() {
-            if args.len() == *arity1 && arg_ty2.len() == *arity1 {
+            // Unify left and right as function types
+            self.unify(&found_fun.ret, &type2)?;
+
+            let fc = &found_fun.clauses[0];
+            if fc.args.len() == *arity1 && arg_ty2.len() == *arity1 {
               return Ok(());
             }
           }
+          _any_type2 => {}
+        }
+      }
+
+      _any_type1 => {
+        // Union should not be broken into subtypes, match left equation part directly vs the union
+        match type2 {
+          ErlType::Union(types) => {
+            if self.check_in_union(&type1, &types) {
+              return Ok(());
+            }
+          }
+          _any_type2 => {}
         }
       }
     }
@@ -132,25 +153,29 @@ impl Unifier {
   /// Whether any member of type union matches type t?
   fn check_in_union(&mut self, t: &ErlType, union: &Vec<ErlType>) -> bool {
     union.iter().any(|member| {
-      self.unify(t.clone(), member.clone()).is_ok()
+      self.unify(&t, &member).is_ok()
     })
   }
 
-  fn unify_variable(&mut self, tvar: TypeVar, ty: ErlType) -> ErlResult<()> {
+  fn unify_variable(&mut self, tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
     if let Entry::Occupied(entry1) = self.subst.entry(tvar.clone()) {
       let subst_entry = entry1.get().clone();
-      return self.unify(subst_entry, ty);
+      return self.unify(&subst_entry, &ty);
     }
 
     if let ErlType::TVar { .. } = ty {
       if let Entry::Occupied(entry2) = self.subst.entry(tvar.clone()) {
         let subst_entry = entry2.get().clone();
-        return self.unify(ErlType::TVar(tvar), subst_entry);
+        return self.unify(&ErlType::TVar(tvar.clone()), &subst_entry);
       }
     }
 
     if self.occurs_check(&tvar, &ty) {
-      return Err(ErlError::from(TypeError::OccursCheckFailed { tvar, ty }));
+      let error = TypeError::OccursCheckFailed {
+        tvar: tvar.clone(),
+        ty: ty.clone(),
+      };
+      return Err(ErlError::from(error));
     }
 
     // tvar is not yet in subst and can't simplify the right side. Extend subst.
