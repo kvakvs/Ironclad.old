@@ -1,5 +1,6 @@
 //! Defines a type enum for any Erlang value or function
 use crate::syntaxtree::erl::literal::ErlLit;
+use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 
 /// A record field definition
@@ -113,14 +114,7 @@ pub enum ErlType {
   Literal(ErlLit),
 
   /// Named function or unnamed
-  Function {
-    /// Name if known, for module level functions, or unnamed for anonymous funs
-    name: Option<String>,
-    /// Types of input args
-    arg_ty: Vec<ErlType>,
-    /// Return type
-    ret: Box<ErlType>,
-  },
+  Function(FunctionType),
 
   /// Refers to a function in local module
   LocalFunction {
@@ -181,11 +175,11 @@ impl ErlType {
 
   /// Create a new function type provided args types and return type, possibly with a name
   pub fn new_fun_type(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
-    ErlType::Function {
+    ErlType::Function(FunctionType {
       name,
       arg_ty: args,
       ret: Box::from(ret),
-    }
+    })
   }
 
   /// Create a new type, containing a new type variable with unique integer id
@@ -236,13 +230,14 @@ impl ErlType {
       ErlType::BinaryBits => String::from("bits()"),
       ErlType::Literal(lit) => lit.to_string(),
       ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
-      ErlType::Function { name, arg_ty: args, ret } => {
-        let args_s = args.iter().map(|t| t.to_string())
+      ErlType::Function(fun_type) => {
+        let args_s = fun_type.arg_ty.iter()
+            .map(|t| t.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        match name {
-          None => format!("fun(({}) -> {})", args_s, ret.to_string()),
-          Some(n) => format!("{}({}) -> {}", n, args_s, ret.to_string()),
+        match &fun_type.name {
+          None => format!("fun(({}) -> {})", args_s, fun_type.ret.to_string()),
+          Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret.to_string()),
         }
       }
       ErlType::TVar(tv) => tv.to_string(),
@@ -276,7 +271,7 @@ impl ErlType {
         // TODO: uniqueness check
         new_members.push(t.clone());
         Some(ErlType::Union(new_members))
-      },
+      }
       _ => None,
     }
   }

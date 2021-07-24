@@ -4,16 +4,14 @@ use crate::project::ErlProject;
 use std::sync::{Arc, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
-use crate::stage::compile_module::CompileModule;
-use crate::project::source_file::SourceFile;
-use crate::syntaxtree::erl::erl_ast::{ErlAstTree};
 use crate::stage::code_cache::CodeCache;
+use crate::erl_module::ErlModule;
 
-/// Run syntax parser on an ERL or HRL source file
-fn parse_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<ErlAstTree>> {
-  let tree = ErlAstTree::from_source_file(&source_file)?;
-  Ok(Arc::new(tree))
-}
+// /// Run syntax parser on an ERL or HRL source file
+// fn parse_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<ErlAstTree>> {
+//   let tree = ErlAstTree::from_source_file(&source_file)?;
+//   Ok(Arc::new(tree))
+// }
 
 /// Parse stage
 /// * Parse loaded ERL files as Erlang.
@@ -32,10 +30,10 @@ pub fn run(project: &mut ErlProject,
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
       let compile_options = project.get_compiler_options_for(path);
 
-      let mut module = CompileModule::new(&source_file, compile_options);
-      module.compile(parse_file(&source_file)?);
+      let mut module = ErlModule::new(compile_options, source_file.clone());
+      module.parse()?;
 
-      code_cache.items.insert(module.module_name.clone(),
+      code_cache.items.insert(module.name_atom.clone(),
                               Arc::new(Mutex::new(module)));
     }
   }

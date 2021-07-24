@@ -6,3 +6,4 @@ pub mod typevar;
 pub mod equation;
 pub mod unifier;
 pub mod debug;
+mod function_type;

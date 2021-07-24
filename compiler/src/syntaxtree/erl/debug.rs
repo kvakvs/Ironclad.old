@@ -9,6 +9,7 @@ use crate::syntaxtree::erl::fclause::FClause;
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
+      ErlAst::Comment => write!(f, "%comment"),
       ErlAst::Empty => write!(f, "ʎʇdɯǝ"),
       ErlAst::Token(t) => {
         // Tokens should look funny because they do not belong in final AST, must be removed while
@@ -25,16 +26,24 @@ impl fmt::Debug for ErlAst {
         // f.debug_list().entries(exprs.iter()).finish()
       }
       ErlAst::NewFunction(nf) => {
-        write!(f, "λ")?;
-        f.debug_list().entries(nf.clauses.iter()).finish()
+        write!(f, "fun/{}: ", nf.arity)?;
+        let results: Vec<_> = nf.clauses.iter()
+            .map(|fc| write!(f, "{:?};", fc))
+            .filter(Result::is_err)
+            .collect();
+        if results.is_empty() {
+          Ok(())
+        } else {
+          results[0]
+        }
       }
       ErlAst::FClause(fc) => write!(f, "{:?}", fc),
       ErlAst::CClause { cond, guard, body, .. } => {
         write!(f, "{:?} when {:?} -> {:?}", cond, guard, body)
       }
       ErlAst::Var { name, .. } => write!(f, "{}", name),
-      ErlAst::App { expr, args, .. } => {
-        write!(f, "apply({:?}, {:?})", expr, args)
+      ErlAst::App (app) => {
+        write!(f, "apply({:?}, {:?})", app.expr, app.args)
       }
       ErlAst::Let { var, value, in_expr, .. } => {
         write!(f, "let {} = {:?} in {:?}", var, value, in_expr)

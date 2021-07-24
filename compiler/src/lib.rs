@@ -11,6 +11,7 @@ pub mod erl_module;
 pub mod erl_error;
 pub mod stage;
 pub mod typing;
+mod funarity;
 
 extern crate pest;
 #[macro_use]

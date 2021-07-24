@@ -10,6 +10,8 @@ use crate::typing::typevar::TypeVar;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::typing::function_type::FunctionType;
+use std::ops::Deref;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -25,17 +27,27 @@ pub struct Unifier {
   root: Rc<ErlAst>,
 }
 
+impl Default for Unifier {
+  fn default() -> Self {
+    Self {
+      equations: vec![],
+      subst: Default::default(),
+      root: Rc::new(ErlAst::Empty)
+    }
+  }
+}
+
 impl Unifier {
   /// Create a new Unifier from AST tree, and setup the equations for this code.
   /// This will scan the AST and prepare data for type inference.
-  pub fn new(ast: Rc<ErlAst>) -> ErlResult<Self> {
+  pub fn new(ast: &Rc<ErlAst>) -> ErlResult<Self> {
     let mut unifier = Self {
       equations: vec![],
       subst: Default::default(),
       root: ast.clone(),
     };
 
-    TypeEquation::generate_equations(&ast, &mut unifier.equations)?;
+    unifier.generate_equations(&ast)?;
     println!("Equations: {:?}", unifier.equations);
 
     unifier.unify_all_equations().unwrap();
@@ -63,18 +75,17 @@ impl Unifier {
   }
 
   /// Unify for when both sides of equation are function types
-  fn unify_fun_fun(&mut self,
-                   arg_ty1: &Vec<ErlType>, ret1: &ErlType,
-                   arg_ty2: &Vec<ErlType>, ret2: &ErlType) -> ErlResult<()> {
-    if arg_ty1.len() != arg_ty2.len() {
+  fn unify_fun_fun(&mut self, fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
+    if fun1.arg_ty.len() != fun2.arg_ty.len() {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
     // Unify functions return types
-    self.unify(&ret1, &ret2)?;
+    self.unify(&fun1.ret, &fun2.ret)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
-    let errors: Vec<ErlError> = arg_ty1.iter().zip(arg_ty2.iter())
+    let errors: Vec<ErlError> = fun1.arg_ty.iter()
+        .zip(fun2.arg_ty.iter())
         .map(|(t1, t2)| {
           self.unify(&t1, &t2)
         })
@@ -100,11 +111,11 @@ impl Unifier {
         return self.unify_variable(tv1, type2);
       }
 
-      ErlType::Function { arg_ty: arg_ty1, ret: ret1, .. } => {
+      ErlType::Function(fun1) => {
         match type2 {
-          ErlType::Function { arg_ty: arg_ty2, ret: ret2, .. } => {
+          ErlType::Function(fun2) => {
             // match two function types
-            return self.unify_fun_fun(&arg_ty1, &ret1, &arg_ty2, &ret2);
+            return self.unify_fun_fun(fun1, fun2);
           }
           _any_type2 => {}
         }
@@ -114,16 +125,19 @@ impl Unifier {
       // Atom must be an existing local function
       ErlType::LocalFunction { name: name1, arity: arity1 } => {
         match type2 {
-          ErlType::Function { arg_ty: arg_ty2, ret: _, .. } => {
+          ErlType::Function(fun2) => {
             // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
             let found_fun = self.root.find_fun(&name1, *arity1).unwrap()
                 .new_function.clone();
 
             // Unify left and right as function types
+            // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
             self.unify(&found_fun.ret, &type2)?;
 
+            // Equation: Application Expr(Args...) <=> Fn.Ret
+
             let fc = &found_fun.clauses[0];
-            if fc.args.len() == *arity1 && arg_ty2.len() == *arity1 {
+            if fc.args.len() == *arity1 && fun2.arg_ty.len() == *arity1 {
               return Ok(());
             }
           }
@@ -193,9 +207,9 @@ impl Unifier {
     // if ty is a TypeVar and they're equal
     match ty {
       ErlType::TVar(ty_inner) => ty_inner == tv,
-      ErlType::Function { arg_ty, ret, .. } => {
-        return self.occurs_check(tv, ret) ||
-            arg_ty.iter().any(|a| self.occurs_check(tv, a));
+      ErlType::Function(fun_type) => {
+        return self.occurs_check(tv, &fun_type.ret)
+            || fun_type.arg_ty.iter().any(|a| self.occurs_check(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))
@@ -228,22 +242,145 @@ impl Unifier {
       }
     }
 
-    if let ErlType::Function { arg_ty, ret, name } = &ty {
-      let new_fn = ErlType::Function {
-        name: name.clone(),
-        arg_ty: arg_ty.iter()
+    if let ErlType::Function(fun_type) = &ty {
+      return ErlType::Function(FunctionType {
+        name: fun_type.name.clone(),
+        arg_ty: fun_type.arg_ty.iter()
             .map(|t| self.infer_type(t.clone()))
             .collect(),
-        ret: Box::new(self.infer_type(*ret.clone())),
-      };
-      return new_fn;
+        ret: Box::new(self.infer_type(*fun_type.ret.clone())),
+      });
     }
 
     ErlType::None
   }
 
   /// Finds the type of the expression for the given substitution.
-  pub fn infer_ast(&mut self, expr: Rc<ErlAst>) -> ErlType {
+  pub fn infer_ast(&mut self, expr: &Rc<ErlAst>) -> ErlType {
     self.infer_type(expr.get_type())
+  }
+
+  /// Generate type equations from node. Each type variable is opposed to some type which we know, or
+  /// to Any, if we don't know.
+  pub fn generate_equations(&mut self, ast: &Rc<ErlAst>) -> ErlResult<()> {
+    match ast.get_children() {
+      Some(c) => {
+        let (_, errors): (Vec<_>, Vec<_>) =
+            c.iter()
+                .map(|ast_node| { // drop OK results, keep errors
+                  self.generate_equations(ast_node)
+                })
+                .partition(Result::is_ok);
+        let mut errors: Vec<ErlError> = errors.into_iter().map(Result::unwrap_err).collect();
+        match errors.len() {
+          0 => (),
+          1 => return Err(errors.pop().unwrap()),
+          _ => return Err(ErlError::Multiple(errors)),
+        }
+      }
+      None => {}
+    }
+
+    match ast.deref() {
+      ErlAst::ModuleForms(_) => {} // module root creates no equations
+      ErlAst::ModuleAttr { .. } => {}
+      ErlAst::Comment => {}
+      ErlAst::Lit(_) => {} // creates no equation, type is known
+
+      ErlAst::NewFunction(nf) => {
+        // Return type of a function is union of its clauses return types
+        let ret_union_members = nf.clauses.iter()
+            .map(|c| c.ret.clone())
+            .collect();
+        let ret_union_t = ErlType::union_of(ret_union_members);
+        self.equations.push(TypeEquation::new(ast, nf.ret.clone(), ret_union_t));
+      }
+
+      ErlAst::FClause(fc) => {
+        // For each fun clause its return type is matched with body expression type
+        self.equations.push(TypeEquation::new(ast, fc.ret.clone(), fc.body.get_type()));
+      }
+
+      ErlAst::Var { .. } => {}
+
+      ErlAst::App(app) => {
+        // Application Expr ( Arg1, Arg2, ... )
+        let fn_type = ErlType::new_fun_type(
+          None, // unnamed function application
+          app.args.iter()
+              .map(|a| a.get_type())
+              .collect(),
+          app.ret.clone());
+
+        // A callable expression node type must match the supplied arguments types
+        // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
+        let expr_type = app.expr.get_type();
+        match expr_type {
+          ErlType::Atom(s) => {
+            // Application on an atom, example: myfun(Arg, Arg2), where myfun/2 exists
+            //    Must produce rule: App.type ↔ fun/2(T1, T2)
+            let local_fun_type = ErlType::new_localref(s, app.args.len());
+            self.equations.push(TypeEquation::new(ast, local_fun_type, fn_type));
+
+            // Equation: Application Expr(Args...) <=> Fn.Ret
+            // result.push(TypeEquation::new(ast, ty.clone(), local_fun.ret));
+          }
+          _ => {
+            // Application on expr, example: Expr(Arg, Arg2)
+            //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
+            self.equations.push(TypeEquation::new(ast, expr_type, fn_type));
+          }
+        }
+      }
+
+      ErlAst::Let { in_ty, in_expr, .. } => {
+        self.equations.push(TypeEquation::new(ast, in_ty.clone(), in_expr.get_type()));
+      }
+
+      ErlAst::Case { ty, clauses, .. } => {
+        // For Case expression, type of case must be union of all clause types
+        let all_clause_types = clauses.iter()
+            .map(|c| c.get_type())
+            .collect();
+        let union_t = ErlType::union_of(all_clause_types);
+        self.equations.push(TypeEquation::new(ast, ty.clone(), union_t));
+      }
+
+      ErlAst::CClause { guard, body, ty, .. } => {
+        // Clause type must match body type
+        self.equations.push(TypeEquation::new(ast, ty.clone(), body.get_type()));
+        // No check for clause condition, but the clause condition guard must be boolean
+        self.equations.push(TypeEquation::new(ast, guard.get_type(), ErlType::AnyBool));
+      }
+
+      ErlAst::BinaryOp { left, right, op, ty } => {
+        // Check result of the binary operation
+        self.equations.push(TypeEquation::new(ast, ty.clone(), op.get_result_type()));
+
+        match op.get_arg_type() {
+          Some(arg_type) => {
+            // Both sides of a binary op must have type appropriate for that op
+            self.equations.push(TypeEquation::new(ast, left.get_type(), arg_type.clone()));
+            self.equations.push(TypeEquation::new(ast, right.get_type(), arg_type));
+          }
+          None => {}
+        }
+      }
+      ErlAst::UnaryOp { expr, op } => {
+        // Equation of expression type must match either bool for logical negation,
+        // or (int|float) for numerical negation
+        self.equations.push(TypeEquation::new(ast,
+                                              expr.get_type(),
+                                              op.get_type()));
+        // TODO: Match return type with inferred return typevar?
+      }
+      ErlAst::Comma { right, ty, .. } => {
+        self.equations.push(TypeEquation::new(ast,
+                                              ty.clone(),
+                                              right.get_type()));
+      }
+      _ => unreachable!("Can't process {:?}", ast),
+    }
+    Ok(())
   }
 }

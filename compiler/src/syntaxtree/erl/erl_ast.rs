@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use crate::syntaxtree::erl::application::Application;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntaxtree::erl::fclause::FClause;
 use crate::syntaxtree::erl::literal::ErlLit;
@@ -53,6 +54,8 @@ pub enum ErlToken {
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,
+  /// Comment text eliminated.
+  Comment,
 
   /// A token to be consumed by AST builder, temporary, must not exist in final AST
   Token(ErlToken),
@@ -105,14 +108,7 @@ pub enum ErlAst {
   },
 
   /// Apply arguments to expression
-  App {
-    /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
-    expr: Rc<ErlAst>,
-    /// Arguments. Their  inferred types are stored inside.
-    args: Vec<Rc<ErlAst>>,
-    /// Inferred type of return
-    ty: ErlType,
-  },
+  App(Application),
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
@@ -172,7 +168,7 @@ impl ErlAst {
       ErlAst::FClause(fc) => fc.body.get_type(),
       ErlAst::CClause { body, .. } => body.get_type(),
       ErlAst::Var { ty, .. } => ty.clone(),
-      ErlAst::App { ty, .. } => ty.clone(),
+      ErlAst::App (app) => app.ret.clone(),
       ErlAst::Let { in_expr, .. } => in_expr.get_type(),
       ErlAst::Case { ty, .. } => ty.clone(),
       ErlAst::Lit(l) => l.get_type().clone(),
@@ -203,6 +199,7 @@ impl ErlAst {
       ErlAst::ModuleForms(f) => Some(f.clone()),
       ErlAst::ModuleAttr { .. } => None,
       ErlAst::Lit { .. } => None,
+      ErlAst::Comment => None,
       ErlAst::NewFunction(nf) => {
         let all_clause_bodies = nf.clauses.iter()
             .map(|clause| clause.body.clone())
@@ -216,9 +213,9 @@ impl ErlAst {
         Some(args_refs)
       }
       ErlAst::Var { .. } => None,
-      ErlAst::App { expr, args, .. } => {
-        let mut r = vec![expr.clone()];
-        args.iter().for_each(|a| r.push(a.clone()));
+      ErlAst::App (app) => {
+        let mut r = vec![app.expr.clone()];
+        app.args.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
       ErlAst::Let { value, in_expr, .. } => {
@@ -270,20 +267,20 @@ impl ErlAst {
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(expr: Rc<ErlAst>, args: Vec<Rc<ErlAst>>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App {
+    Rc::new(ErlAst::App(Application {
       expr,
       args,
-      ty: ErlType::new_typevar(),
-    })
+      ret: ErlType::new_typevar(),
+    }))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(expr: Rc<ErlAst>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App {
+    Rc::new(ErlAst::App(Application {
       expr,
       args: vec![],
-      ty: ErlType::new_typevar(),
-    })
+      ret: ErlType::new_typevar(),
+    }))
   }
 
   /// Create an new binary operation AST node with left and right operands AST

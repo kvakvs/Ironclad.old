@@ -1,45 +1,17 @@
-//! Defines additional operations on Erlang syntax tree
-use crate::syntaxtree::erl::erl_parser::{ErlParser, Rule, get_prec_climber};
-use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlAstTree, ErlToken};
-use pest::iterators::{Pair};
-use pest::Parser;
-use std::sync::Arc;
-use crate::project::source_file::SourceFile;
+//! Processes parser output and produces ErlAst tree for the program
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::literal::ErlLit;
-use std::rc::Rc;
-use std::path::PathBuf;
+use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use pest::prec_climber::PrecClimber;
+use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
 use crate::syntaxtree::erl::fclause::FClause;
+use crate::syntaxtree::erl::literal::ErlLit;
+use pest::iterators::{Pair};
+use pest::prec_climber::PrecClimber;
+use std::rc::Rc;
 
-impl ErlAstTree {
-  /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
-  pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<ErlAstTree> {
-    let successful_parse = ErlParser::parse(Rule::module, &source_file.text)?.next().unwrap();
-    // println!("Parse tokens: {:?}", successful_parse);
+use crate::erl_module::ErlModule;
 
-    let mut erl_tree = ErlAstTree {
-      source: source_file.clone(),
-      nodes: Rc::new(ErlAst::Empty),
-    };
-
-    // Ignore Forms AST node and go into_inner() using precedence climber parser.
-    match erl_tree.to_ast_single_node(successful_parse) {
-      Ok(root) => {
-        erl_tree.nodes = root;
-        Ok(erl_tree)
-      }
-      _ => panic!("Only 'file' AST node is expected as erl_ast_tree parse result root")
-    }
-  }
-
-  /// Parses Erlang syntax of .ERL/.HRL files or arbitrary string input
-  pub fn from_str(filename: &str, input: &str) -> ErlResult<ErlAstTree> {
-    let sf = SourceFile::new(&PathBuf::from(filename), String::from(input));
-    ErlAstTree::from_source_file(&Arc::new(sf))
-  }
-
+impl ErlModule {
   fn prec_climb_infix_fn(lhs0: ErlResult<Rc<ErlAst>>,
                          op: Pair<Rule>,
                          rhs0: ErlResult<Rc<ErlAst>>) -> ErlResult<Rc<ErlAst>> {
@@ -177,6 +149,7 @@ impl ErlAstTree {
       Rule::op_catch => ErlAst::temporary_token(ErlToken::Catch),
       Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
+      Rule::COMMENT => Rc::new(ErlAst::Comment),
       other => todo!("to_ast_single_node: unknown parse node {:?}", other),
     };
     Ok(result)

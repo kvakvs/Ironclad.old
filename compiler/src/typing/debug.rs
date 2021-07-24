@@ -45,21 +45,21 @@ impl fmt::Debug for ErlType {
       ErlType::Binary => write!(f, "bin"),
       ErlType::Literal(lit) => write!(f, "{:?}", lit),
       ErlType::LocalFunction {name, arity} => write!(f, "fun {}/{}", name, arity),
-      ErlType::Function { name, arg_ty, ret } => {
-        match name {
+      ErlType::Function(fun_type) => {
+        match &fun_type.name {
           None => write!(f, "fun(")?,
           Some(n) => write!(f, "{}", n)?,
         }
 
         let mut d = f.debug_tuple("");
-        arg_ty.iter().for_each(|argt| {
+        fun_type.arg_ty.iter().for_each(|argt| {
           d.field(argt);
         });
         d.finish()?;
 
-        match name {
-          None => write!(f, " → {:?})", ret),
-          Some(_) => write!(f, " → {:?}", ret),
+        match fun_type.name {
+          None => write!(f, " → {:?})", fun_type.ret),
+          Some(_) => write!(f, " → {:?}", fun_type.ret),
         }
       }
     }

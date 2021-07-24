@@ -32,7 +32,7 @@ impl<'a> FileContentsCache {
     let contents = std::fs::read_to_string(file_name)?;
     self.read_bytes_count += contents.len();
 
-    let src_file_definition = Arc::new(SourceFile::new(file_name, contents));
+    let src_file_definition = SourceFile::new(file_name, contents);
     self.all_files.insert(file_name.to_path_buf(), src_file_definition);
     Ok(())
   }
@@ -52,7 +52,7 @@ impl<'a> FileContentsCache {
   /// As source file text is read only, we replace.
   /// The s2_parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
-    let new_source_file = Arc::new(SourceFile::new(file_name, new_text));
+    let new_source_file = SourceFile::new(file_name, new_text);
     self.all_files.insert(file_name.to_path_buf(), new_source_file);
   }
 }
