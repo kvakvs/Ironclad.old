@@ -80,14 +80,14 @@ impl ErlModule {
   }
 
   /// Parse self.source_file
-  pub fn parse(&mut self) -> ErlResult<()> {
+  pub fn parse_and_unify(&mut self) -> ErlResult<()> {
     let sf = self.source_file.clone(); // lure the borrow checker to letting us use text
-    self.parse_str(erl_parser::Rule::module, &sf.text)
+    self.parse_and_unify_str(erl_parser::Rule::module, &sf.text)
   }
 
   /// Create a dummy sourcefile and parse it starting with the given parser rule.
   /// This updates the self.fun_table and self.ast
-  pub fn parse_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+  pub fn parse_and_unify_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
@@ -99,6 +99,22 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
     self.ast = self.to_ast_single_node(parse_output)?;
     self.unifier = Unifier::new(&self.ast).unwrap();
+    Ok(())
+  }
+
+  /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
+  /// This updates only self.ast
+  pub fn parse_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+    let parse_output = match erl_parser::ErlParser::parse(rule, input) {
+      Ok(mut root) => root.next().unwrap(),
+      Err(bad) => {
+        assert!(false, "Parse str failed {}", bad);
+        return Err(ErlError::from(bad));
+      }
+    };
+
+    self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
+    self.ast = self.to_ast_single_node(parse_output)?;
     Ok(())
   }
 }

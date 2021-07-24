@@ -31,7 +31,7 @@ pub fn run(project: &mut ErlProject,
       let compile_options = project.get_compiler_options_for(path);
 
       let mut module = ErlModule::new(compile_options, source_file.clone());
-      module.parse()?;
+      module.parse_and_unify()?;
 
       code_cache.items.insert(module.name_atom.clone(),
                               Arc::new(Mutex::new(module)));

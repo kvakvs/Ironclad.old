@@ -63,7 +63,7 @@ pub enum ErlType {
   AnyInteger,
 
   /// Specific integer value
-  Integer(isize),
+  IntegerConst(isize),
 
   /// 64 bit floating point, is-a(Number)
   Float,
@@ -199,7 +199,7 @@ impl ErlType {
       ErlType::Any => String::from("any()"),
       ErlType::Number => String::from("number()"),
       ErlType::AnyInteger => String::from("integer()"),
-      ErlType::Integer(i) => format!("{}", i),
+      ErlType::IntegerConst(i) => format!("{}", i),
       ErlType::Float => String::from("float()"),
       ErlType::List(ty) => format!("list({})", ty.to_string()),
       ErlType::Tuple(items) => {
@@ -252,7 +252,7 @@ impl ErlType {
       ErlType::Union(members) => {
         members.iter().all(|m| m.is_simple_value_type())
       }
-      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float
+      ErlType::Number | ErlType::AnyInteger | ErlType::IntegerConst(_) | ErlType::Float
       | ErlType::AnyAtom | ErlType::Atom(_) | ErlType::AnyBool
       | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
       | ErlType::Map(_) | ErlType::Record { .. }

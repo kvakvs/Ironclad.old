@@ -13,7 +13,7 @@ use compiler::erl_module::ErlModule;
 fn infer_simplemath() -> ErlResult<()> {
   let code = "myfun(A) -> (A + 1) / 2.";
   let mut module = ErlModule::new_testing();
-  module.parse_str(Rule::function_def, code)?;
+  module.parse_and_unify_str(Rule::function_def, code)?;
 
   match module.ast.deref() {
     ErlAst::NewFunction(nf) => {
@@ -41,7 +41,7 @@ fn infer_funcall() -> ErlResult<()> {
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";
   let mut module = ErlModule::new_testing();
-  module.parse_str(Rule::module, code)?;
+  module.parse_and_unify_str(Rule::module, code)?;
 
   let find_result1 = module.ast.find_fun("add", 2).unwrap();
   let f_t1 = module.unifier.infer_ast(find_result1.ast).into_final_type();

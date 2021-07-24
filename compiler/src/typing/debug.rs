@@ -17,7 +17,7 @@ impl fmt::Debug for ErlType {
       ErlType::TVar(v) => write!(f, "{}", v.to_string()),
       ErlType::Number => write!(f, "ℝ"),
       ErlType::AnyInteger => write!(f, "ℤ"),
-      ErlType::Integer(i) => write!(f, "{}", i),
+      ErlType::IntegerConst(i) => write!(f, "{}", i),
       ErlType::Float => write!(f, "ℚ"),
       ErlType::List(t) => write!(f, "list({:?})", t),
       ErlType::String => write!(f, "str"),

@@ -17,19 +17,6 @@ pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
   tree.pp_parse_tokens_to_ast(parse_output)
 }
 
-// #[allow(dead_code)]
-// pub fn test_module(filename: &str, input: &str) -> ErlAstTree {
-//   let mod_text = String::from("-module(test).\n") + input;
-//   match ErlAstTree::from_str(filename, &mod_text) {
-//     Ok(ast) => ast,
-//     Err(e) => {
-//       // println!("Parse failed: {}", e);
-//       assert!(false, "Parse failed {}", e);
-//       Default::default()
-//     }
-//  }
-// }
-
 #[allow(dead_code)]
 pub fn fail_unexpected<T>(val: &T) where T: Debug {
   println!("Unexpected value: {:?}", val);

@@ -76,7 +76,7 @@ impl LiteralNode {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
     match self {
-      LiteralNode::Integer(i) => ErlType::Integer(*i),
+      LiteralNode::Integer(i) => ErlType::IntegerConst(*i),
       LiteralNode::Float(_) => ErlType::Float,
       LiteralNode::Atom(s) => ErlType::Atom(s.clone()),
       LiteralNode::Bool(_) => ErlType::AnyBool,

@@ -161,6 +161,35 @@ impl Unifier {
       }
     }
 
+    //
+    // Reverse rules type2 then type1
+    //
+    match type2 {
+      ErlType::Number => {
+        match type1 {
+          // Any numbers and number sets will match a number
+          ErlType::Number | ErlType::IntegerConst(_) | ErlType::AnyInteger
+          | ErlType::Float => return Ok(()),
+          _any_type1 => {},
+        }
+      }
+      ErlType::AnyInteger => {
+        match type1 {
+          // Any numbers and number sets will match a number
+          ErlType::IntegerConst(_) | ErlType::AnyInteger => return Ok(()),
+          _any_type1 => {},
+        }
+      }
+      ErlType::IntegerConst(c2) => {
+        match type1 {
+          // Any numbers and number sets will match a number
+          ErlType::IntegerConst(c1) if c1 == c2 => return Ok(()),
+          _any_type1 => {},
+        }
+      }
+      _any_type2 => {},
+    }
+
     Err(ErlError::from(TypeError::TypesDontMatch {
       t1: type1.clone(),
       t2: type2.clone(),
