@@ -52,11 +52,11 @@ impl fmt::Debug for ErlAst {
         write!(f, "case {:?} of {:?}", case.arg, case.clauses)
       }
       ErlAst::Lit(lit) => write!(f, "{:?}", lit),
-      ErlAst::BinaryOp { left, right, op, .. } => {
-        write!(f, "({:?} {:?} {:?})", left, op, right)
+      ErlAst::BinaryOp(binop) => {
+        write!(f, "({:?} {:?} {:?})", binop.left, binop.operator, binop.right)
       }
-      ErlAst::UnaryOp { expr, op, .. } => {
-        write!(f, "({:?} {:?})", op, expr)
+      ErlAst::UnaryOp(unop) => {
+        write!(f, "({:?} {:?})", unop.operator, unop.expr)
       }
     }
   }

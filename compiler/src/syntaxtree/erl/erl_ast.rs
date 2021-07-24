@@ -6,11 +6,12 @@ use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::application::Application;
 use crate::syntaxtree::erl::case_clause::CaseClause;
 use crate::syntaxtree::erl::case_expr::CaseExpr;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::syntaxtree::erl::erl_op::{ErlBinaryOp};
 use crate::syntaxtree::erl::fun_clause::FunctionClause;
 use crate::syntaxtree::erl::let_expr::LetExpr;
 use crate::syntaxtree::erl::literal::ErlLit;
 use crate::syntaxtree::erl::new_function::NewFunction;
+use crate::syntaxtree::erl::operator_expr::{BinaryOperatorExpr, UnaryOperatorExpr};
 use crate::typing::erl_type::ErlType;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
@@ -115,23 +116,10 @@ pub enum ErlAst {
   Lit(ErlLit),
 
   /// Binary operation with two arguments
-  BinaryOp {
-    /// Left operand
-    left: Rc<ErlAst>,
-    /// Right operand
-    right: Rc<ErlAst>,
-    /// The operation
-    op: ErlBinaryOp,
-    /// The type of the operation
-    ty: ErlType,
-  },
+  BinaryOp(BinaryOperatorExpr),
+
   /// Unary operation with 1 argument
-  UnaryOp {
-    /// The operand
-    expr: Rc<ErlAst>,
-    /// The operation
-    op: ErlUnaryOp,
-  },
+  UnaryOp(UnaryOperatorExpr),
 }
 
 impl ErlAst {
@@ -148,8 +136,8 @@ impl ErlAst {
       ErlAst::Let(let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(case) => case.ret.clone(),
       ErlAst::Lit(l) => l.get_type().clone(),
-      ErlAst::BinaryOp { op, .. } => op.get_result_type(),
-      ErlAst::UnaryOp { expr, .. } => expr.get_type(), // same type as expr bool or num
+      ErlAst::BinaryOp(binop) => binop.operator.get_result_type(),
+      ErlAst::UnaryOp(unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => {
         right.get_type()
       }
@@ -202,15 +190,16 @@ impl ErlAst {
         case.clauses.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
-      ErlAst::CClause (clause) => {
+      ErlAst::CClause(clause) => {
         Some(vec![clause.cond.clone(),
                   clause.guard.clone(),
                   clause.body.clone()])
       }
-      ErlAst::BinaryOp { left, right, .. } => {
-        Some(vec![left.clone(), right.clone()])
+      ErlAst::BinaryOp(binop) => {
+        Some(vec![binop.left.clone(),
+                  binop.right.clone()])
       }
-      ErlAst::UnaryOp { expr, .. } => Some(vec![expr.clone()]),
+      ErlAst::UnaryOp(unop) => Some(vec![unop.expr.clone()]),
       ErlAst::Comma { left, right, .. } => {
         Some(vec![left.clone(), right.clone()])
       }
@@ -262,12 +251,12 @@ impl ErlAst {
 
   /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(left: Rc<ErlAst>, op: ErlBinaryOp, right: Rc<ErlAst>) -> Rc<Self> {
-    Rc::new(ErlAst::BinaryOp {
+    Rc::new(ErlAst::BinaryOp(BinaryOperatorExpr {
       left,
       right,
-      op,
+      operator: op,
       ty: ErlType::new_typevar(),
-    })
+    }))
   }
 
   /// Create a new literal AST node of an integer

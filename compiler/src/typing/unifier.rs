@@ -375,25 +375,34 @@ impl Unifier {
                             ErlType::AnyBool));
       }
 
-      ErlAst::BinaryOp { left, right, op, ty } => {
+      ErlAst::BinaryOp(binop) => {
         // Check result of the binary operation
-        self.equations.push(TypeEquation::new(ast, ty.clone(), op.get_result_type()));
+        self.equations.push(
+          TypeEquation::new(ast,
+                            binop.ty.clone(),
+                            binop.operator.get_result_type()));
 
-        match op.get_arg_type() {
+        match binop.operator.get_arg_type() {
           Some(arg_type) => {
             // Both sides of a binary op must have type appropriate for that op
-            self.equations.push(TypeEquation::new(ast, left.get_type(), arg_type.clone()));
-            self.equations.push(TypeEquation::new(ast, right.get_type(), arg_type));
+            self.equations.push(
+              TypeEquation::new(ast,
+                                binop.left.get_type(),
+                                arg_type.clone()));
+            self.equations.push(
+              TypeEquation::new(ast,
+                                binop.right.get_type(),
+                                arg_type));
           }
           None => {}
         }
       }
-      ErlAst::UnaryOp { expr, op } => {
+      ErlAst::UnaryOp(unop) => {
         // Equation of expression type must match either bool for logical negation,
         // or (int|float) for numerical negation
         self.equations.push(TypeEquation::new(ast,
-                                              expr.get_type(),
-                                              op.get_type()));
+                                              unop.expr.get_type(),
+                                              unop.operator.get_type()));
         // TODO: Match return type with inferred return typevar?
       }
       ErlAst::Comma { right, ty, .. } => {
