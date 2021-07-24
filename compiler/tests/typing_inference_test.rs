@@ -36,7 +36,9 @@ fn infer_simplemath() -> ErlResult<()> {
 }
 
 #[test]
-fn infer_funcall() -> ErlResult<()> {
+fn infer_funcall_test() -> ErlResult<()> {
+  println!("--- testing function call type inference ---");
+
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";

@@ -53,7 +53,7 @@ impl Unifier {
     unifier.generate_equations(&ast)?;
     println!("Equations: {:?}", unifier.equations);
 
-    unifier.unify_all_equations().unwrap();
+    unifier.unify_all_equations()?;
     println!("Unify map: {:?}", &unifier.subst);
 
     Ok(unifier)
@@ -79,16 +79,16 @@ impl Unifier {
 
   /// Unify for when both sides of equation are function types
   fn unify_fun_fun(&mut self, fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
-    if fun1.arg_ty.len() != fun2.arg_ty.len() {
+    if fun1.arg_types.len() != fun2.arg_types.len() {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
     // Unify functions return types
-    self.unify(&fun1.ret, &fun2.ret)?;
+    self.unify(&fun1.ret_type, &fun2.ret_type)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
-    let errors: Vec<ErlError> = fun1.arg_ty.iter()
-        .zip(fun2.arg_ty.iter())
+    let errors: Vec<ErlError> = fun1.arg_types.iter()
+        .zip(fun2.arg_types.iter())
         .map(|(t1, t2)| {
           self.unify(&t1, &t2)
         })
@@ -130,17 +130,17 @@ impl Unifier {
         match type2 {
           ErlType::Function(fun2) => {
             // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
-            let found_fun = self.root.find_fun(&name1, *arity1).unwrap()
+            let local_fun = self.root.find_fun(&name1, *arity1).unwrap()
                 .new_function.clone();
 
             // Unify left and right as function types
             // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-            self.unify(&found_fun.ret, &type2)?;
+            self.unify(&local_fun.ret, &type2)?;
 
             // Equation: Application Expr(Args...) <=> Fn.Ret
 
-            let fc = &found_fun.clauses[0];
-            if fc.args.len() == *arity1 && fun2.arg_ty.len() == *arity1 {
+            let fc = &local_fun.clauses[0];
+            if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
               return Ok(());
             }
           }
@@ -240,8 +240,8 @@ impl Unifier {
     match ty {
       ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Function(fun_type) => {
-        return self.occurs_check(tv, &fun_type.ret)
-            || fun_type.arg_ty.iter().any(|a| self.occurs_check(tv, a));
+        return self.occurs_check(tv, &fun_type.ret_type)
+            || fun_type.arg_types.iter().any(|a| self.occurs_check(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))
@@ -277,10 +277,10 @@ impl Unifier {
     if let ErlType::Function(fun_type) = &ty {
       return ErlType::Function(FunctionType {
         name: fun_type.name.clone(),
-        arg_ty: fun_type.arg_ty.iter()
+        arg_types: fun_type.arg_types.iter()
             .map(|t| self.infer_type(t.clone()))
             .collect(),
-        ret: Box::new(self.infer_type(*fun_type.ret.clone())),
+        ret_type: Box::new(self.infer_type(*fun_type.ret_type.clone())),
       });
     }
 
@@ -315,33 +315,16 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call)
   fn generate_equations_app(&mut self, ast: &Rc<ErlAst>, app: &ApplicationNode) -> ErlResult<()> {
-    // Application Expr ( Arg1, Arg2, ... )
-    let fn_type = ErlType::new_fun_type(
-      None, // unnamed function application
-      app.args.iter()
-          .map(|a| a.get_type())
-          .collect(),
-      app.ret.clone());
+    // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
+    // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
+    self.equations.push(
+      TypeEquation::new(ast, app.expr.get_type(), app.expr_type.clone()));
 
-    // A callable expression node type must match the supplied arguments types
-    // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-    let expr_type = app.expr.get_type();
-    match expr_type {
-      ErlType::Atom(s) => {
-        // Application on an atom, example: myfun(Arg, Arg2), where myfun/2 exists
-        //    Must produce rule: App.type ↔ fun/2(T1, T2)
-        let local_fun_type = ErlType::new_localref(s, app.args.len());
-        self.equations.push(TypeEquation::new(ast, local_fun_type, fn_type));
-
-        // Equation: Application Expr(Args...) <=> Fn.Ret
-        // result.push(TypeEquation::new(ast, ty.clone(), local_fun.ret));
-      }
-      _ => {
-        // Application on expr, example: Expr(Arg, Arg2)
-        //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
-        self.equations.push(TypeEquation::new(ast, expr_type, fn_type));
-      }
-    }
+    // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
+    // Equation: Application.Ret <=> Expr(Args...).Ret
+    let expr_type: &FunctionType = app.expr_type.as_function().unwrap();
+    self.equations.push(
+      TypeEquation::new(ast, app.ret_type.clone(), *(expr_type.ret_type).clone()));
     Ok(())
   }
 

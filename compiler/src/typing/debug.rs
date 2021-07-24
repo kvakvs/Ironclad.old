@@ -52,14 +52,14 @@ impl fmt::Debug for ErlType {
         }
 
         let mut d = f.debug_tuple("");
-        fun_type.arg_ty.iter().for_each(|argt| {
+        fun_type.arg_types.iter().for_each(|argt| {
           d.field(argt);
         });
         d.finish()?;
 
         match fun_type.name {
-          None => write!(f, " → {:?})", fun_type.ret),
-          Some(_) => write!(f, " → {:?}", fun_type.ret),
+          None => write!(f, " → {:?})", fun_type.ret_type),
+          Some(_) => write!(f, " → {:?}", fun_type.ret_type),
         }
       }
     }

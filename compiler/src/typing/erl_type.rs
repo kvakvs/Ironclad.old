@@ -2,6 +2,7 @@
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use enum_as_inner::EnumAsInner;
 
 /// A record field definition
 #[derive(Clone, PartialEq)]
@@ -36,7 +37,7 @@ impl MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, EnumAsInner)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
@@ -169,16 +170,19 @@ impl ErlType {
   }
 
   /// Create a new function type provided args types and return type, possibly with a name
-  pub fn new_localref(name: String, arity: usize) -> Self {
-    ErlType::LocalFunction { name, arity }
+  pub fn new_localref(name: &str, arity: usize) -> Self {
+    ErlType::LocalFunction {
+      name: String::from(name),
+      arity,
+    }
   }
 
   /// Create a new function type provided args types and return type, possibly with a name
   pub fn new_fun_type(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
     ErlType::Function(FunctionType {
       name,
-      arg_ty: args,
-      ret: Box::from(ret),
+      arg_types: args,
+      ret_type: Box::from(ret),
     })
   }
 
@@ -231,13 +235,13 @@ impl ErlType {
       ErlType::Literal(lit) => lit.to_string(),
       ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
       ErlType::Function(fun_type) => {
-        let args_s = fun_type.arg_ty.iter()
+        let args_s = fun_type.arg_types.iter()
             .map(|t| t.to_string())
             .collect::<Vec<String>>()
             .join(", ");
         match &fun_type.name {
-          None => format!("fun(({}) -> {})", args_s, fun_type.ret.to_string()),
-          Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret.to_string()),
+          None => format!("fun(({}) -> {})", args_s, fun_type.ret_type.to_string()),
+          Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret_type.to_string()),
         }
       }
       ErlType::TVar(tv) => tv.to_string(),

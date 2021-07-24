@@ -6,7 +6,7 @@ pub struct FunctionType {
   /// Name if known, for module level functions, or unnamed for anonymous funs
   pub name: Option<String>,
   /// Types of input args
-  pub arg_ty: Vec<ErlType>,
+  pub arg_types: Vec<ErlType>,
   /// Return type
-  pub ret: Box<ErlType>,
+  pub ret_type: Box<ErlType>,
 }

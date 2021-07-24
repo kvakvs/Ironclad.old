@@ -1,6 +1,7 @@
 //! AST syntax structure of an Erlang file
 use std::ops::Deref;
 use std::rc::Rc;
+use enum_as_inner::EnumAsInner;
 
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
@@ -128,7 +129,7 @@ impl ErlAst {
       ErlAst::FClause(fc) => fc.body.get_type(),
       ErlAst::CClause(clause) => clause.body.get_type(),
       ErlAst::Var(v) => v.ty.clone(),
-      ErlAst::App(app) => app.ret.clone(),
+      ErlAst::App(app) => app.ret_type.clone(),
       ErlAst::Let(let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(case) => case.ret.clone(),
       ErlAst::Lit(l) => l.get_type().clone(),
@@ -231,11 +232,7 @@ impl ErlAst {
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(expr: Rc<ErlAst>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App(ApplicationNode {
-      expr,
-      args: vec![],
-      ret: ErlType::new_typevar(),
-    }))
+    Rc::new(ErlAst::App(ApplicationNode::new(expr, vec![])))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
