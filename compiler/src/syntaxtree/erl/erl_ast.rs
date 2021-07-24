@@ -4,8 +4,11 @@ use std::rc::Rc;
 
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::application::Application;
+use crate::syntaxtree::erl::case_clause::CaseClause;
+use crate::syntaxtree::erl::case_expr::CaseExpr;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::syntaxtree::erl::fclause::FClause;
+use crate::syntaxtree::erl::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::let_expr::LetExpr;
 use crate::syntaxtree::erl::literal::ErlLit;
 use crate::syntaxtree::erl::new_function::NewFunction;
 use crate::typing::erl_type::ErlType;
@@ -85,19 +88,10 @@ pub enum ErlAst {
   NewFunction(NewFunction),
 
   /// Function clause for a new function definition
-  FClause(FClause),
+  FClause(FunctionClause),
 
   /// Case clause for a `case x of` switch
-  CClause {
-    /// A match expression, matched vs. case arg
-    cond: Rc<ErlAst>,
-    /// Must resolve to bool, or an exception
-    guard: Rc<ErlAst>,
-    /// Case clause body expression
-    body: Rc<ErlAst>,
-    /// Clause body type, for type inference
-    ty: ErlType,
-  },
+  CClause(CaseClause),
 
   /// A named variable
   Var {
@@ -112,28 +106,10 @@ pub enum ErlAst {
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
-  Let {
-    /// The variable name assigned in let..in
-    var: String,
-    /// Type which we believe the Variable will have
-    var_ty: ErlType,
-    /// Value (type is in it)
-    value: Rc<ErlAst>,
-    /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
-    in_expr: Rc<ErlAst>,
-    /// The let .. in ... result type
-    in_ty: ErlType,
-  },
+  Let(LetExpr),
 
   /// Case switch containing the argument to check, and case clauses
-  Case {
-    /// A union type of all case clauses
-    ty: ErlType,
-    /// Argument of the `case X of`
-    arg: Rc<ErlAst>,
-    /// All case clauses in order
-    clauses: Vec<Rc<ErlAst>>,
-  },
+  Case(CaseExpr),
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(ErlLit),
@@ -166,11 +142,11 @@ impl ErlAst {
       ErlAst::ModuleAttr { .. } => ErlType::Any,
       ErlAst::NewFunction(nf) => nf.ret.clone(),
       ErlAst::FClause(fc) => fc.body.get_type(),
-      ErlAst::CClause { body, .. } => body.get_type(),
+      ErlAst::CClause(clause) => clause.body.get_type(),
       ErlAst::Var { ty, .. } => ty.clone(),
-      ErlAst::App (app) => app.ret.clone(),
-      ErlAst::Let { in_expr, .. } => in_expr.get_type(),
-      ErlAst::Case { ty, .. } => ty.clone(),
+      ErlAst::App(app) => app.ret.clone(),
+      ErlAst::Let(let_expr) => let_expr.in_expr.get_type(),
+      ErlAst::Case(case) => case.ret.clone(),
       ErlAst::Lit(l) => l.get_type().clone(),
       ErlAst::BinaryOp { op, .. } => op.get_result_type(),
       ErlAst::UnaryOp { expr, .. } => expr.get_type(), // same type as expr bool or num
@@ -213,22 +189,23 @@ impl ErlAst {
         Some(args_refs)
       }
       ErlAst::Var { .. } => None,
-      ErlAst::App (app) => {
+      ErlAst::App(app) => {
         let mut r = vec![app.expr.clone()];
         app.args.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
-      ErlAst::Let { value, in_expr, .. } => {
-        Some(vec![value.clone(),
-                  in_expr.clone()])
+      ErlAst::Let(let_expr) => {
+        Some(vec![let_expr.value.clone(), let_expr.in_expr.clone()])
       }
-      ErlAst::Case { arg, clauses, .. } => {
-        let mut r = vec![arg.clone()];
-        clauses.iter().for_each(|a| r.push(a.clone()));
+      ErlAst::Case(case) => {
+        let mut r = vec![case.arg.clone()];
+        case.clauses.iter().for_each(|a| r.push(a.clone()));
         Some(r)
       }
-      ErlAst::CClause { cond, guard, body, .. } => {
-        Some(vec![cond.clone(), guard.clone(), body.clone()])
+      ErlAst::CClause (clause) => {
+        Some(vec![clause.cond.clone(),
+                  clause.guard.clone(),
+                  clause.body.clone()])
       }
       ErlAst::BinaryOp { left, right, .. } => {
         Some(vec![left.clone(), right.clone()])
@@ -244,7 +221,7 @@ impl ErlAst {
   }
 
   /// Create a new function definition node
-  pub fn new_fun(clauses: Vec<FClause>) -> Rc<Self> {
+  pub fn new_fun(clauses: Vec<FunctionClause>) -> Rc<Self> {
     assert_eq!(clauses.is_empty(), false, "Clauses must not be empty");
 
     let arity = clauses[0].arg_types.len();

@@ -4,7 +4,7 @@ use std::fmt;
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
 use crate::syntaxtree::erl::literal::ErlLit;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::fclause::FClause;
+use crate::syntaxtree::erl::fun_clause::FunctionClause;
 
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -38,18 +38,18 @@ impl fmt::Debug for ErlAst {
         }
       }
       ErlAst::FClause(fc) => write!(f, "{:?}", fc),
-      ErlAst::CClause { cond, guard, body, .. } => {
-        write!(f, "{:?} when {:?} -> {:?}", cond, guard, body)
+      ErlAst::CClause(clause) => {
+        write!(f, "{:?} when {:?} -> {:?}", clause.cond, clause.guard, clause.body)
       }
       ErlAst::Var { name, .. } => write!(f, "{}", name),
-      ErlAst::App (app) => {
+      ErlAst::App(app) => {
         write!(f, "apply({:?}, {:?})", app.expr, app.args)
       }
-      ErlAst::Let { var, value, in_expr, .. } => {
-        write!(f, "let {} = {:?} in {:?}", var, value, in_expr)
+      ErlAst::Let(let_expr) => {
+        write!(f, "let {} = {:?} in {:?}", let_expr.var, let_expr.value, let_expr.in_expr)
       }
-      ErlAst::Case { arg, clauses, .. } => {
-        write!(f, "case {:?} of {:?}", arg, clauses)
+      ErlAst::Case(case) => {
+        write!(f, "case {:?} of {:?}", case.arg, case.clauses)
       }
       ErlAst::Lit(lit) => write!(f, "{:?}", lit),
       ErlAst::BinaryOp { left, right, op, .. } => {
@@ -120,7 +120,7 @@ impl fmt::Debug for ErlLit {
   }
 }
 
-impl fmt::Debug for FClause {
+impl fmt::Debug for FunctionClause {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}{:?} -> {:?}", self.name, self.args, self.body)
   }

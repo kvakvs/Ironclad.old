@@ -12,6 +12,9 @@ use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::function_type::FunctionType;
 use std::ops::Deref;
+use crate::syntaxtree::erl::new_function::NewFunction;
+use crate::syntaxtree::erl::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::application::Application;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -32,7 +35,7 @@ impl Default for Unifier {
     Self {
       equations: vec![],
       subst: Default::default(),
-      root: Rc::new(ErlAst::Empty)
+      root: Rc::new(ErlAst::Empty),
     }
   }
 }
@@ -260,6 +263,60 @@ impl Unifier {
     self.infer_type(expr.get_type())
   }
 
+  /// Type inference wiring
+  /// Generate type equations for AST node NewFunction
+  fn generate_equations_newfunction(&mut self, ast: &Rc<ErlAst>, nf: &NewFunction) -> ErlResult<()> {
+    // Return type of a function is union of its clauses return types
+    let ret_union_members = nf.clauses.iter()
+        .map(|c| c.ret.clone())
+        .collect();
+    let ret_union_t = ErlType::union_of(ret_union_members);
+    self.equations.push(TypeEquation::new(ast, nf.ret.clone(), ret_union_t));
+    Ok(())
+  }
+
+  /// Type inference wiring
+  /// Generate type equations for AST node FClause
+  fn generate_equations_fclause(&mut self, ast: &Rc<ErlAst>, fc: &FunctionClause) -> ErlResult<()> {
+    // For each fun clause its return type is matched with body expression type
+    self.equations.push(TypeEquation::new(ast, fc.ret.clone(), fc.body.get_type()));
+    Ok(())
+  }
+
+  /// Type inference wiring
+  /// Generate type equations for AST node Application (a function call)
+  fn generate_equations_app(&mut self, ast: &Rc<ErlAst>, app: &Application) -> ErlResult<()> {
+    // Application Expr ( Arg1, Arg2, ... )
+    let fn_type = ErlType::new_fun_type(
+      None, // unnamed function application
+      app.args.iter()
+          .map(|a| a.get_type())
+          .collect(),
+      app.ret.clone());
+
+    // A callable expression node type must match the supplied arguments types
+    // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
+    let expr_type = app.expr.get_type();
+    match expr_type {
+      ErlType::Atom(s) => {
+        // Application on an atom, example: myfun(Arg, Arg2), where myfun/2 exists
+        //    Must produce rule: App.type ↔ fun/2(T1, T2)
+        let local_fun_type = ErlType::new_localref(s, app.args.len());
+        self.equations.push(TypeEquation::new(ast, local_fun_type, fn_type));
+
+        // Equation: Application Expr(Args...) <=> Fn.Ret
+        // result.push(TypeEquation::new(ast, ty.clone(), local_fun.ret));
+      }
+      _ => {
+        // Application on expr, example: Expr(Arg, Arg2)
+        //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
+        self.equations.push(TypeEquation::new(ast, expr_type, fn_type));
+      }
+    }
+    Ok(())
+  }
+
+  /// Type inference wiring
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
   pub fn generate_equations(&mut self, ast: &Rc<ErlAst>) -> ErlResult<()> {
@@ -286,71 +343,36 @@ impl Unifier {
       ErlAst::ModuleAttr { .. } => {}
       ErlAst::Comment => {}
       ErlAst::Lit(_) => {} // creates no equation, type is known
-
-      ErlAst::NewFunction(nf) => {
-        // Return type of a function is union of its clauses return types
-        let ret_union_members = nf.clauses.iter()
-            .map(|c| c.ret.clone())
-            .collect();
-        let ret_union_t = ErlType::union_of(ret_union_members);
-        self.equations.push(TypeEquation::new(ast, nf.ret.clone(), ret_union_t));
-      }
-
-      ErlAst::FClause(fc) => {
-        // For each fun clause its return type is matched with body expression type
-        self.equations.push(TypeEquation::new(ast, fc.ret.clone(), fc.body.get_type()));
-      }
-
       ErlAst::Var { .. } => {}
-
-      ErlAst::App(app) => {
-        // Application Expr ( Arg1, Arg2, ... )
-        let fn_type = ErlType::new_fun_type(
-          None, // unnamed function application
-          app.args.iter()
-              .map(|a| a.get_type())
-              .collect(),
-          app.ret.clone());
-
-        // A callable expression node type must match the supplied arguments types
-        // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-        let expr_type = app.expr.get_type();
-        match expr_type {
-          ErlType::Atom(s) => {
-            // Application on an atom, example: myfun(Arg, Arg2), where myfun/2 exists
-            //    Must produce rule: App.type ↔ fun/2(T1, T2)
-            let local_fun_type = ErlType::new_localref(s, app.args.len());
-            self.equations.push(TypeEquation::new(ast, local_fun_type, fn_type));
-
-            // Equation: Application Expr(Args...) <=> Fn.Ret
-            // result.push(TypeEquation::new(ast, ty.clone(), local_fun.ret));
-          }
-          _ => {
-            // Application on expr, example: Expr(Arg, Arg2)
-            //    Must produce rule: Expr.type ↔ fun/2(T1, T2)
-            self.equations.push(TypeEquation::new(ast, expr_type, fn_type));
-          }
-        }
+      ErlAst::NewFunction(nf) => self.generate_equations_newfunction(ast, nf)?,
+      ErlAst::FClause(fc) => self.generate_equations_fclause(ast, fc)?,
+      ErlAst::App(app) => self.generate_equations_app(ast, app)?,
+      ErlAst::Let(let_expr) => {
+        self.equations.push(
+          TypeEquation::new(ast,
+                            let_expr.in_ty.clone(),
+                            let_expr.in_expr.get_type()));
       }
-
-      ErlAst::Let { in_ty, in_expr, .. } => {
-        self.equations.push(TypeEquation::new(ast, in_ty.clone(), in_expr.get_type()));
-      }
-
-      ErlAst::Case { ty, clauses, .. } => {
+      ErlAst::Case(case) => {
         // For Case expression, type of case must be union of all clause types
-        let all_clause_types = clauses.iter()
+        let all_clause_types = case.clauses.iter()
             .map(|c| c.get_type())
             .collect();
-        let union_t = ErlType::union_of(all_clause_types);
-        self.equations.push(TypeEquation::new(ast, ty.clone(), union_t));
+        let all_clauses_t = ErlType::union_of(all_clause_types);
+        self.equations.push(TypeEquation::new(ast, case.ret.clone(), all_clauses_t));
       }
 
-      ErlAst::CClause { guard, body, ty, .. } => {
+      ErlAst::CClause(clause) => {
         // Clause type must match body type
-        self.equations.push(TypeEquation::new(ast, ty.clone(), body.get_type()));
+        self.equations.push(
+          TypeEquation::new(ast,
+                            clause.ty.clone(),
+                            clause.body.get_type()));
         // No check for clause condition, but the clause condition guard must be boolean
-        self.equations.push(TypeEquation::new(ast, guard.get_type(), ErlType::AnyBool));
+        self.equations.push(
+          TypeEquation::new(ast,
+                            clause.guard.get_type(),
+                            ErlType::AnyBool));
       }
 
       ErlAst::BinaryOp { left, right, op, ty } => {

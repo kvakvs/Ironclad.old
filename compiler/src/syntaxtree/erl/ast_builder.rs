@@ -3,7 +3,7 @@ use crate::erl_error::{ErlResult};
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
-use crate::syntaxtree::erl::fclause::FClause;
+use crate::syntaxtree::erl::fun_clause::FunctionClause;
 use crate::syntaxtree::erl::literal::ErlLit;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
@@ -175,7 +175,7 @@ impl ErlModule {
     // let mut p = pair.into_inner().next().unwrap().into_inner();
     // let name = p.next().unwrap().as_str();
 
-    let clauses: Vec<FClause> =
+    let clauses: Vec<FunctionClause> =
         pair.into_inner()
             .map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
@@ -184,7 +184,7 @@ impl ErlModule {
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<FClause> {
+  fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<FunctionClause> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);
@@ -208,7 +208,7 @@ impl ErlModule {
       let body_nodes = nodes[nodes.len() - 1].clone();
       self.expr_to_ast(body_nodes)?.clone()
     };
-    Ok(FClause::new(name, args, body))
+    Ok(FunctionClause::new(name, args, body))
   }
 
   // /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense
