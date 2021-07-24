@@ -7,7 +7,7 @@ use crate::typing::erl_type::ErlType;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(PartialEq)]
-pub struct BinaryOperatorExpr {
+pub struct BinaryOperatorExprNode {
   /// Left operand
   pub left: Rc<ErlAst>,
   /// Right operand
@@ -20,7 +20,7 @@ pub struct BinaryOperatorExpr {
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
 #[derive(PartialEq)]
-pub struct UnaryOperatorExpr {
+pub struct UnaryOperatorExprNode {
   /// The operand
   pub expr: Rc<ErlAst>,
   /// The operator

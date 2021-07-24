@@ -2,7 +2,7 @@
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use std::rc::Rc;
-use crate::syntaxtree::erl::new_function::NewFunction;
+use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
 use std::ops::Deref;
 
 /// Returned from find_fun. Contains references, if you need to use them in the code and drop the
@@ -13,7 +13,7 @@ pub struct FindFunResult<'a> {
   pub ast: &'a Rc<ErlAst>,
   /// Reference to a NewFunction struct in the AST node which was found. Use .clone() if you
   /// need to retain it.
-  pub(crate) new_function: &'a NewFunction,
+  pub(crate) new_function: &'a NewFunctionNode,
 }
 
 impl ErlAst {

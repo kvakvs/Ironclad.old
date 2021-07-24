@@ -6,7 +6,7 @@ use crate::typing::erl_type::ErlType;
 
 /// `Case X of ... end` expression AST node
 #[derive(PartialEq)]
-pub struct CaseExpr {
+pub struct CaseExprNode {
   /// A union type of all case clauses, also is the return type of the case expression
   pub ret: ErlType,
   /// Argument of the `case X of`

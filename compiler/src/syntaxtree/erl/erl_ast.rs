@@ -3,15 +3,16 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::application::Application;
-use crate::syntaxtree::erl::case_clause::CaseClause;
-use crate::syntaxtree::erl::case_expr::CaseExpr;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp};
-use crate::syntaxtree::erl::fun_clause::FunctionClause;
-use crate::syntaxtree::erl::let_expr::LetExpr;
-use crate::syntaxtree::erl::literal::ErlLit;
-use crate::syntaxtree::erl::new_function::NewFunction;
-use crate::syntaxtree::erl::operator_expr::{BinaryOperatorExpr, UnaryOperatorExpr};
+use crate::syntaxtree::erl::node::application_node::ApplicationNode;
+use crate::syntaxtree::erl::node::case_clause_node::CaseClauseNode;
+use crate::syntaxtree::erl::node::case_expr_node::CaseExprNode;
+use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
+use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::syntaxtree::erl::node::let_expr_node::LetExprNode;
+use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use crate::syntaxtree::erl::node::expr_node::{BinaryOperatorExprNode, UnaryOperatorExprNode};
+use crate::syntaxtree::erl::node::var_node::VarNode;
 use crate::typing::erl_type::ErlType;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
@@ -86,40 +87,35 @@ pub enum ErlAst {
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
-  NewFunction(NewFunction),
+  NewFunction(NewFunctionNode),
 
   /// Function clause for a new function definition
-  FClause(FunctionClause),
+  FClause(FunctionClauseNode),
 
   /// Case clause for a `case x of` switch
-  CClause(CaseClause),
+  CClause(CaseClauseNode),
 
   /// A named variable
-  Var {
-    /// Variable name
-    name: String,
-    /// Variable type for inference
-    ty: ErlType,
-  },
+  Var(VarNode),
 
   /// Apply arguments to expression
-  App(Application),
+  App(ApplicationNode),
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
-  Let(LetExpr),
+  Let(LetExprNode),
 
   /// Case switch containing the argument to check, and case clauses
-  Case(CaseExpr),
+  Case(CaseExprNode),
 
   /// A literal value, constant. Type is known via literal.get_type()
-  Lit(ErlLit),
+  Lit(LiteralNode),
 
   /// Binary operation with two arguments
-  BinaryOp(BinaryOperatorExpr),
+  BinaryOp(BinaryOperatorExprNode),
 
   /// Unary operation with 1 argument
-  UnaryOp(UnaryOperatorExpr),
+  UnaryOp(UnaryOperatorExprNode),
 }
 
 impl ErlAst {
@@ -131,7 +127,7 @@ impl ErlAst {
       ErlAst::NewFunction(nf) => nf.ret.clone(),
       ErlAst::FClause(fc) => fc.body.get_type(),
       ErlAst::CClause(clause) => clause.body.get_type(),
-      ErlAst::Var { ty, .. } => ty.clone(),
+      ErlAst::Var(v) => v.ty.clone(),
       ErlAst::App(app) => app.ret.clone(),
       ErlAst::Let(let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(case) => case.ret.clone(),
@@ -210,7 +206,7 @@ impl ErlAst {
   }
 
   /// Create a new function definition node
-  pub fn new_fun(clauses: Vec<FunctionClause>) -> Rc<Self> {
+  pub fn new_fun(clauses: Vec<FunctionClauseNode>) -> Rc<Self> {
     assert_eq!(clauses.is_empty(), false, "Clauses must not be empty");
 
     let arity = clauses[0].arg_types.len();
@@ -219,30 +215,23 @@ impl ErlAst {
     assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
             "All clause arg types must match in length all clauses' arguments");
 
-    let nf = NewFunction::new(arity, clauses, ErlType::new_typevar());
+    let nf = NewFunctionNode::new(arity, clauses, ErlType::new_typevar());
     Rc::new(ErlAst::NewFunction(nf))
   }
 
   /// Create a new variable AST node
   pub fn new_var(name: &str) -> Rc<ErlAst> {
-    Rc::new(ErlAst::Var {
-      name: name.to_string(),
-      ty: ErlType::new_typevar(),
-    })
+    Rc::new(ErlAst::Var(VarNode::new(name)))
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(expr: Rc<ErlAst>, args: Vec<Rc<ErlAst>>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App(Application {
-      expr,
-      args,
-      ret: ErlType::new_typevar(),
-    }))
+    Rc::new(ErlAst::App(ApplicationNode::new(expr, args)))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(expr: Rc<ErlAst>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App(Application {
+    Rc::new(ErlAst::App(ApplicationNode {
       expr,
       args: vec![],
       ret: ErlType::new_typevar(),
@@ -251,7 +240,7 @@ impl ErlAst {
 
   /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(left: Rc<ErlAst>, op: ErlBinaryOp, right: Rc<ErlAst>) -> Rc<Self> {
-    Rc::new(ErlAst::BinaryOp(BinaryOperatorExpr {
+    Rc::new(ErlAst::BinaryOp(BinaryOperatorExprNode {
       left,
       right,
       operator: op,
@@ -261,12 +250,12 @@ impl ErlAst {
 
   /// Create a new literal AST node of an integer
   pub fn new_lit_int(val: isize) -> Rc<Self> {
-    Rc::new(ErlAst::Lit(ErlLit::Integer(val)))
+    Rc::new(ErlAst::Lit(LiteralNode::Integer(val)))
   }
 
   /// Create a new literal AST node of an atom
   pub fn new_lit_atom(val: &str) -> Rc<Self> {
-    Rc::new(ErlAst::Lit(ErlLit::Atom(String::from(val))))
+    Rc::new(ErlAst::Lit(LiteralNode::Atom(String::from(val))))
   }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
@@ -287,7 +276,7 @@ impl ErlAst {
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
     match self {
-      ErlAst::Lit(ErlLit::Atom(s)) => Some(s.clone()),
+      ErlAst::Lit(LiteralNode::Atom(s)) => Some(s.clone()),
       _ => None,
     }
   }

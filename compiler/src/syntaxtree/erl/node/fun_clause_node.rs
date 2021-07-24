@@ -7,7 +7,7 @@ use crate::typing::erl_type::ErlType;
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
 #[derive(PartialEq, Clone)]
-pub struct FunctionClause {
+pub struct FunctionClauseNode {
   /// Function name atom, stored as a string. All clauses of the same function must have same name
   pub name: String,
   /// Function clause arguments, binding/match expressions
@@ -20,13 +20,13 @@ pub struct FunctionClause {
   pub ret: ErlType,
 }
 
-impl FunctionClause {
+impl FunctionClauseNode {
   /// Create a new function clause
   pub fn new(name: &str, args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Self {
     let arg_types = args.iter()
         .map(|_a| ErlType::new_typevar())
         .collect();
-    FunctionClause {
+    FunctionClauseNode {
       name: name.to_string(),
       args,
       arg_types,

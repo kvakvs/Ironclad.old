@@ -12,9 +12,9 @@ use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::function_type::FunctionType;
 use std::ops::Deref;
-use crate::syntaxtree::erl::new_function::NewFunction;
-use crate::syntaxtree::erl::fun_clause::FunctionClause;
-use crate::syntaxtree::erl::application::Application;
+use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -265,7 +265,7 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node NewFunction
-  fn generate_equations_newfunction(&mut self, ast: &Rc<ErlAst>, nf: &NewFunction) -> ErlResult<()> {
+  fn generate_equations_newfunction(&mut self, ast: &Rc<ErlAst>, nf: &NewFunctionNode) -> ErlResult<()> {
     // Return type of a function is union of its clauses return types
     let ret_union_members = nf.clauses.iter()
         .map(|c| c.ret.clone())
@@ -277,7 +277,7 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node FClause
-  fn generate_equations_fclause(&mut self, ast: &Rc<ErlAst>, fc: &FunctionClause) -> ErlResult<()> {
+  fn generate_equations_fclause(&mut self, ast: &Rc<ErlAst>, fc: &FunctionClauseNode) -> ErlResult<()> {
     // For each fun clause its return type is matched with body expression type
     self.equations.push(TypeEquation::new(ast, fc.ret.clone(), fc.body.get_type()));
     Ok(())
@@ -285,7 +285,7 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call)
-  fn generate_equations_app(&mut self, ast: &Rc<ErlAst>, app: &Application) -> ErlResult<()> {
+  fn generate_equations_app(&mut self, ast: &Rc<ErlAst>, app: &ApplicationNode) -> ErlResult<()> {
     // Application Expr ( Arg1, Arg2, ... )
     let fn_type = ErlType::new_fun_type(
       None, // unnamed function application
@@ -320,6 +320,8 @@ impl Unifier {
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
   pub fn generate_equations(&mut self, ast: &Rc<ErlAst>) -> ErlResult<()> {
+    // Recursively descend into AST and visit deepest nodes first
+    //
     match ast.get_children() {
       Some(c) => {
         let (_, errors): (Vec<_>, Vec<_>) =

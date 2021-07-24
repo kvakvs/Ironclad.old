@@ -3,7 +3,7 @@ use crate::typing::erl_type::ErlType;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, PartialEq)]
-pub enum ErlLit {
+pub enum LiteralNode {
   // TODO: Big integer
   /// Small enough to fit into a machine word
   Integer(isize),
@@ -23,13 +23,13 @@ pub enum ErlLit {
   // Reference,
 
   /// A list of literals
-  List(Vec<ErlLit>),
+  List(Vec<LiteralNode>),
 
   /// A list containing only unicode codepoints is-a(List)
   String(String),
 
   /// A tuple of literals
-  Tuple(Vec<ErlLit>),
+  Tuple(Vec<LiteralNode>),
 }
 
 // lazy_static! {
@@ -44,26 +44,26 @@ pub enum ErlLit {
 //   static ref ERLTYPE_Tuple: ErlType = ErlType::Tuple;
 // }
 
-impl ErlLit {
+impl LiteralNode {
   /// Print a literal nicely
   pub fn to_string(&self) -> String {
     match self {
-      ErlLit::Integer(n) => format!("{}", n),
-      ErlLit::Float(f) => format!("{}", f),
-      ErlLit::Atom(a) => format!("'{}'", a),
-      ErlLit::Bool(b) => format!("{}", if *b { "'true'" } else { "'false'" }),
+      LiteralNode::Integer(n) => format!("{}", n),
+      LiteralNode::Float(f) => format!("{}", f),
+      LiteralNode::Atom(a) => format!("'{}'", a),
+      LiteralNode::Bool(b) => format!("{}", if *b { "'true'" } else { "'false'" }),
       // Cannot have runtime values as literals
       // ErlLit::Pid => format!("<pid>"),
       // ErlLit::Reference => format!("<ref>"),
-      ErlLit::List(items) => {
+      LiteralNode::List(items) => {
         let items_s = items.iter()
             .map(|i| i.to_string())
             .collect::<Vec<String>>()
             .join(", ");
         format!("[{}]", items_s)
       }
-      ErlLit::String(s) => format!("\"{}\"", s), // TODO: Quote special characters
-      ErlLit::Tuple(items) => {
+      LiteralNode::String(s) => format!("\"{}\"", s), // TODO: Quote special characters
+      LiteralNode::Tuple(items) => {
         let items_s = items.iter()
             .map(|i| i.to_string())
             .collect::<Vec<String>>()
@@ -76,19 +76,19 @@ impl ErlLit {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
     match self {
-      ErlLit::Integer(i) => ErlType::Integer(*i),
-      ErlLit::Float(_) => ErlType::Float,
-      ErlLit::Atom(s) => ErlType::Atom(s.clone()),
-      ErlLit::Bool(_) => ErlType::AnyBool,
+      LiteralNode::Integer(i) => ErlType::Integer(*i),
+      LiteralNode::Float(_) => ErlType::Float,
+      LiteralNode::Atom(s) => ErlType::Atom(s.clone()),
+      LiteralNode::Bool(_) => ErlType::AnyBool,
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
-      ErlLit::List(items) => {
+      LiteralNode::List(items) => {
         // List type is union of all element types
         ErlType::List(Box::new(ErlType::union_of_literal_types(items)))
       }
-      ErlLit::String(_) => ErlType::String, // is-a(list(char))
-      ErlLit::Tuple(items) => {
+      LiteralNode::String(_) => ErlType::String, // is-a(list(char))
+      LiteralNode::Tuple(items) => {
         ErlType::Tuple(items.iter()
             .map(|it| it.get_type())
             .collect())

@@ -2,9 +2,9 @@
 
 use std::fmt;
 use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
-use crate::syntaxtree::erl::literal::ErlLit;
+use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -41,7 +41,7 @@ impl fmt::Debug for ErlAst {
       ErlAst::CClause(clause) => {
         write!(f, "{:?} when {:?} -> {:?}", clause.cond, clause.guard, clause.body)
       }
-      ErlAst::Var { name, .. } => write!(f, "{}", name),
+      ErlAst::Var(v) => write!(f, "{}", v.name),
       ErlAst::App(app) => {
         write!(f, "apply({:?}, {:?})", app.expr, app.args)
       }
@@ -101,18 +101,18 @@ impl fmt::Debug for ErlToken {
   }
 }
 
-impl fmt::Debug for ErlLit {
+impl fmt::Debug for LiteralNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      ErlLit::Integer(i) => write!(f, "{}", i),
-      ErlLit::Float(flt) => write!(f, "{}", flt),
-      ErlLit::Atom(a) => write!(f, "'{}'", a),
-      ErlLit::Bool(b) => write!(f, "{}", b),
-      ErlLit::List(lst) => {
+      LiteralNode::Integer(i) => write!(f, "{}", i),
+      LiteralNode::Float(flt) => write!(f, "{}", flt),
+      LiteralNode::Atom(a) => write!(f, "'{}'", a),
+      LiteralNode::Bool(b) => write!(f, "{}", b),
+      LiteralNode::List(lst) => {
         f.debug_list().entries(lst.iter()).finish()
       }
-      ErlLit::String(s) => write!(f, "\"{}\"", s),
-      ErlLit::Tuple(t) => {
+      LiteralNode::String(s) => write!(f, "\"{}\"", s),
+      LiteralNode::Tuple(t) => {
         write!(f, "tuple")?;
         f.debug_list().entries(t.iter()).finish()
       }
@@ -120,7 +120,7 @@ impl fmt::Debug for ErlLit {
   }
 }
 
-impl fmt::Debug for FunctionClause {
+impl fmt::Debug for FunctionClauseNode {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}{:?} -> {:?}", self.name, self.args, self.body)
   }

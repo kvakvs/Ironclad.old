@@ -1,25 +1,25 @@
 //! Define a NewFunction struct for a new function AST node
-use crate::syntaxtree::erl::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::typing::erl_type::ErlType;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
 #[derive(PartialEq, Clone)]
-pub struct NewFunction {
+pub struct NewFunctionNode {
   /// Function arity, must be same for each clause
   pub arity: usize,
   /// Argument types where each is a union of each function clause
   pub arg_ty: Vec<ErlType>,
   /// Function clauses in order
-  pub clauses: Vec<FunctionClause>,
+  pub clauses: Vec<FunctionClauseNode>,
   /// For each clause, ret is union of each clause return type
   pub ret: ErlType,
 }
 
-impl NewFunction {
+impl NewFunctionNode {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(arity: usize, clauses: Vec<FunctionClause>, ret: ErlType) -> Self {
+  pub fn new(arity: usize, clauses: Vec<FunctionClauseNode>, ret: ErlType) -> Self {
     let mut result = Self {
       arity,
       clauses,

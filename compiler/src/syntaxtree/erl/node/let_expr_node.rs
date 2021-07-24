@@ -6,7 +6,7 @@ use crate::typing::erl_type::ErlType;
 
 /// Represents Haskell-style `let x = Value in Expr` node, might be useful in Erlang too?
 #[derive(PartialEq)]
-pub struct LetExpr {
+pub struct LetExprNode {
   /// The variable name assigned in let..in
   pub var: String,
   /// Type which we believe the Variable will have

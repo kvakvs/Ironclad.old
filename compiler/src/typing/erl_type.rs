@@ -1,5 +1,5 @@
 //! Defines a type enum for any Erlang value or function
-use crate::syntaxtree::erl::literal::ErlLit;
+use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 
@@ -23,7 +23,7 @@ impl RecordField {
 #[derive(Clone, PartialEq)]
 pub struct MapField {
   /// Key can be any literal
-  pub key: ErlLit,
+  pub key: LiteralNode,
   /// Value type
   pub ty: ErlType,
 }
@@ -111,7 +111,7 @@ pub enum ErlType {
 
   /// Type for an Erlang Literal value, a data value fully known at compile time, having no type
   /// variables or references to other types or other data
-  Literal(ErlLit),
+  Literal(LiteralNode),
 
   /// Named function or unnamed
   Function(FunctionType),
@@ -136,7 +136,7 @@ impl ErlType {
   }
 
   /// Given vector of literals, make a union type
-  pub fn union_of_literal_types(items: &Vec<ErlLit>) -> ErlType {
+  pub fn union_of_literal_types(items: &Vec<LiteralNode>) -> ErlType {
     Self::union_of(
       items.iter()
           .map(|it| it.get_type())
