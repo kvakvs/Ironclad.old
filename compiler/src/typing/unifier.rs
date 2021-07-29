@@ -337,7 +337,6 @@ impl Unifier {
   /// to Any, if we don't know.
   pub fn generate_equations(&mut self, ast: &Rc<ErlAst>) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    //
     match ast.get_children() {
       Some(c) => {
         let (_, errors): (Vec<_>, Vec<_>) =

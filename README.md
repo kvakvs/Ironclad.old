@@ -72,6 +72,6 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
     - [x] Define types, union types, special (any, none, ...)
     - [x] Define expressions AST
     - [x] Add support for types in the AST
-    - [ ] Infer expression types
+    - [x] Infer expression types
 - [ ] ???
 - [ ] Code generator

@@ -85,34 +85,7 @@ impl ErlModule {
       // }
       Rule::atom => ErlAst::new_lit_atom(pair.as_str()),
       Rule::var => ErlAst::new_var(pair.as_str()),
-      Rule::application => {
-        // println!("application pair {:#?}", &pair);
-        let mut pair_inner = pair.into_inner();
-        let expr_node = pair_inner.next().unwrap();
-        let app_node = pair_inner.next().unwrap();
-        let expr = self.to_ast_prec_climb(expr_node, get_prec_climber())?;
-
-        match app_node.as_rule() {
-          Rule::application0 => ErlAst::new_application0(expr),
-          Rule::applicationN => {
-            // Args come as a single expression (1 arg) or as a Comma expression (multiple)
-            // Comma needs to be unrolled into a vector of AST
-            let args_node = app_node.into_inner().next().unwrap();
-            let args_ast = self.to_ast_prec_climb(args_node, get_prec_climber())?;
-
-            // Unwrap comma operator into a vec of args, a non-comma AST node will become
-            // a single vec element
-            let mut args = Vec::new();
-            ErlAst::comma_to_vec(&args_ast, &mut args);
-
-            ErlAst::new_application(expr, args)
-          }
-          _ => {
-            unreachable!("to_ast_single_node: While parsing expr application, can't handle {:?}",
-                         app_node.as_rule())
-          }
-        }
-      }
+      Rule::application => self.application_to_ast(pair)?,
 
       // Temporary tokens must be consumed by this function and never exposed to the
       // rest of the program
@@ -151,6 +124,42 @@ impl ErlModule {
 
       Rule::COMMENT => Rc::new(ErlAst::Comment),
       other => todo!("to_ast_single_node: unknown parse node {:?}", other),
+    };
+    Ok(result)
+  }
+
+  /// Parsed Application tokens are converted to App AST node.
+  /// The expression is analyzed if it resembles anything callable, and is then transformed to a
+  /// function pointer (or an export etc).
+  fn application_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
+    // println!("application pair {:#?}", &pair);
+    let mut pair_inner = pair.into_inner();
+
+    let expr_node = pair_inner.next().unwrap();
+    let expr = self.to_ast_prec_climb(expr_node, get_prec_climber())?;
+    // TODO: Attempt to convert expr node to a different callable AST node, i.e. from atom to fun/2 for example. Postprocess after parse?
+
+    let app_node = pair_inner.next().unwrap();
+
+    let result = match app_node.as_rule() {
+      Rule::application0 => ErlAst::new_application0(expr),
+      Rule::applicationN => {
+        // Args come as a single expression (1 arg) or as a Comma expression (multiple)
+        // Comma needs to be unrolled into a vector of AST
+        let args_node = app_node.into_inner().next().unwrap();
+        let args_ast = self.to_ast_prec_climb(args_node, get_prec_climber())?;
+
+        // Unwrap comma operator into a vec of args, a non-comma AST node will become
+        // a single vec element
+        let mut args = Vec::new();
+        ErlAst::comma_to_vec(&args_ast, &mut args);
+
+        ErlAst::new_application(expr, args)
+      }
+      _ => {
+        unreachable!("to_ast_single_node: While parsing expr application, can't handle {:?}",
+                     app_node.as_rule())
+      }
     };
     Ok(result)
   }

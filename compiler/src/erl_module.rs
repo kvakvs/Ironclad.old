@@ -97,7 +97,8 @@ impl ErlModule {
     };
 
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-    self.ast = self.to_ast_single_node(parse_output)?;
+    self.ast = self.postprocess_ast(self.to_ast_single_node(parse_output)?)?
+        .unwrap();
     self.unifier = Unifier::new(&self.ast).unwrap();
     Ok(())
   }
@@ -114,7 +115,8 @@ impl ErlModule {
     };
 
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-    self.ast = self.to_ast_single_node(parse_output)?;
+    self.ast = self.postprocess_ast(self.to_ast_single_node(parse_output)?)?
+        .unwrap();
     Ok(())
   }
 }

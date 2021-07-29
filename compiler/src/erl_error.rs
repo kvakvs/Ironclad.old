@@ -73,6 +73,15 @@ pub enum ErlError {
     parse_err: pest::error::Error<pp_parser::Rule>
   },
 
+  /// Returned when Erlang parser failed: internal error must not occur with the user
+  #[error("Parser internal error: {msg} (at {loc:?})")]
+  ParserInternal {
+    /// Some hint at where the error has occured
+    loc: ErrorLocation,
+    /// Message from the compiler
+    msg: String,
+  },
+
   /// Returned when Erlang parser failed
   #[error("Erlang parse error: {msg} (at {loc:?})")]
   ErlangParse {
@@ -116,6 +125,15 @@ impl ErlError {
       LineColLocation::Span((l, c), (l2, c2)) => {
         format!("{}:{} .. {}:{}", l, c, l2, c2)
       }
+    }
+  }
+
+  /// Create a parser internal error. Should not happen for the user, only during the development
+  /// and testing.
+  pub fn parser_internal(ast: Rc<ErlAst>, msg: String) -> Self {
+    ErlError::ParserInternal {
+      loc: ErrorLocation { path: None, ast: Some(ast.clone()) },
+      msg,
     }
   }
 }

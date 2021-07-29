@@ -5,4 +5,5 @@ pub mod erl_op;
 pub mod debug;
 pub mod query;
 pub mod ast_builder;
+pub mod ast_processor;
 pub mod node;
