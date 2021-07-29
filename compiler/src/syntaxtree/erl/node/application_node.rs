@@ -2,7 +2,9 @@
 use std::rc::Rc;
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::syntaxtree::erl::node::t_postprocess::TPostProcess;
 use crate::typing::erl_type::ErlType;
+use crate::erl_module::ErlModule;
 
 /// AST node which contains a function call
 #[derive(PartialEq)]
@@ -34,5 +36,17 @@ impl ApplicationNode {
           .map(|a| a.get_type())
           .collect(),
       ret.clone())
+  }
+}
+
+impl TPostProcess for ApplicationNode {
+  fn postprocess_ast(&self, env: &mut ErlModule, ast: &Rc<ErlAst>) -> Option<Rc<ErlAst>> {
+    // Check if expr (target) points to some existing function that we know
+    match env.find_function_expr_arity(ast, self.args.len()) {
+      None => Some(ast.clone()), // no changes, return same node
+      Some(found_fun) => {
+        // TODO: replace self.expr with the found fun pointer
+      }
+    }
   }
 }

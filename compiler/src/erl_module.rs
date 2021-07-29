@@ -15,6 +15,9 @@ use crate::typing::unifier::Unifier;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::source_file::SourceFile;
 use crate::syntaxtree::erl::erl_parser;
+use std::ops::Deref;
+use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use std::collections::hash_map::Entry;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -118,5 +121,22 @@ impl ErlModule {
     self.ast = self.postprocess_ast(self.to_ast_single_node(parse_output)?)?
         .unwrap();
     Ok(())
+  }
+
+  /// For an expression check whether it is a constant expression, and whether it points to some
+  /// known function in this module. Arity is provided as the expression might be just an atom.
+  pub fn find_function_expr_arity(&mut self, expr: &Rc<ErlAst>, arity: usize) -> Option<Rc<ErlAst>> {
+    if let ErlAst::Lit(lit) = expr.deref() {
+      // A single atom points to a possible existing function of `arity` in the current module
+      if let LiteralNode::Atom(a) = lit {
+        let fa = FunArity{ name: a.clone(), arity };
+
+        match self.fun_table.entry(fa) {
+          Entry::Occupied(e) => Some(e.get()), // found!
+          Entry::Vacant(_) => None, // not found
+        }
+      }
+    }
+    None
   }
 }
