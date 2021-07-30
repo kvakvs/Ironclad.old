@@ -4,7 +4,7 @@ use crate::typing::erl_type::ErlType;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq)]
 pub struct NewFunctionNode {
   /// Function arity, must be same for each clause
   pub arity: usize,

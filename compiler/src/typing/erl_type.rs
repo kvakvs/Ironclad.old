@@ -2,7 +2,7 @@
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
-use enum_as_inner::EnumAsInner;
+// use enum_as_inner::EnumAsInner;
 
 /// A record field definition
 #[derive(Clone, PartialEq)]
@@ -37,7 +37,7 @@ impl MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Clone, PartialEq, EnumAsInner)]
+#[derive(Clone, PartialEq)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
@@ -292,6 +292,13 @@ impl ErlType {
         }
       }
       _ => unreachable!("ErlType::union_collapse called on not-a-Union type")
+    }
+  }
+
+  pub fn as_function(&self) -> &FunctionType {
+    match self {
+      Self::Function(ft) => &ft,
+      _ => panic!("Node {:?} is expected to be a Function type", self)
     }
   }
 }

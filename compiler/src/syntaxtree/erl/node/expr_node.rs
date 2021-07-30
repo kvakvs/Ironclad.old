@@ -9,9 +9,9 @@ use crate::typing::erl_type::ErlType;
 #[derive(PartialEq)]
 pub struct BinaryOperatorExprNode {
   /// Left operand
-  pub left: Rc<ErlAst>,
+  pub left: Box<ErlAst>,
   /// Right operand
-  pub right: Rc<ErlAst>,
+  pub right: Box<ErlAst>,
   /// The operator
   pub operator: ErlBinaryOp,
   /// The return type of the operation
@@ -22,7 +22,7 @@ pub struct BinaryOperatorExprNode {
 #[derive(PartialEq)]
 pub struct UnaryOperatorExprNode {
   /// The operand
-  pub expr: Rc<ErlAst>,
+  pub expr: Box<ErlAst>,
   /// The operator
   pub operator: ErlUnaryOp,
 }

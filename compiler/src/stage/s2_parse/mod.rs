@@ -1,7 +1,7 @@
 //! Parses Erlang source into AST
 
 use crate::project::ErlProject;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
 use crate::stage::code_cache::CodeCache;
@@ -34,7 +34,7 @@ pub fn run(project: &mut ErlProject,
       module.parse_and_unify()?;
 
       code_cache.items.insert(module.name_atom.clone(),
-                              Arc::new(Mutex::new(module)));
+                              Arc::new(RwLock::new(module)));
     }
   }
 

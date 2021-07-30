@@ -7,11 +7,11 @@ use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 
 impl fmt::Debug for ErlAst {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ErlAst::Comment => write!(f, "%comment"),
+      ErlAst::Comment { .. } => write!(f, "%comment"),
       ErlAst::Empty => write!(f, "ʎʇdɯǝ"),
-      ErlAst::Token(t) => {
+      ErlAst::Token { token: t, .. } => {
         // Tokens should look funny because they do not belong in final AST, must be removed while
         // parsing and processing AST
         write!(f, "uǝʞoʇ{:?}", t)
@@ -20,12 +20,12 @@ impl fmt::Debug for ErlAst {
         write!(f, "sɯɹoɟ")?;
         f.debug_list().entries(forms.iter()).finish()
       }
-      ErlAst::ModuleAttr { name } => write!(f, "module('{}')", name),
+      ErlAst::ModuleAttr { name, .. } => write!(f, "module('{}')", name),
       ErlAst::Comma { left, right, .. } => {
         write!(f, "{:?}, {:?}", left, right)
         // f.debug_list().entries(exprs.iter()).finish()
       }
-      ErlAst::NewFunction(nf) => {
+      ErlAst::NewFunction(_loc, nf) => {
         write!(f, "fun/{}: ", nf.arity)?;
         let results: Vec<_> = nf.clauses.iter()
             .map(|fc| write!(f, "{:?};", fc))
@@ -37,34 +37,34 @@ impl fmt::Debug for ErlAst {
           results[0]
         }
       }
-      ErlAst::FClause(fc) => write!(f, "{:?}", fc),
-      ErlAst::CClause(clause) => {
+      ErlAst::FClause(_loc, fc) => write!(f, "{:?}", fc),
+      ErlAst::CClause(_loc, clause) => {
         write!(f, "{:?} when {:?} -> {:?}", clause.cond, clause.guard, clause.body)
       }
-      ErlAst::Var(v) => write!(f, "{}", v.name),
-      ErlAst::App(app) => {
+      ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
+      ErlAst::App(_loc, app) => {
         write!(f, "apply({:?}, {:?})", app.expr, app.args)
       }
-      ErlAst::Let(let_expr) => {
+      ErlAst::Let(_loc, let_expr) => {
         write!(f, "let {} = {:?} in {:?}", let_expr.var, let_expr.value, let_expr.in_expr)
       }
-      ErlAst::Case(case) => {
+      ErlAst::Case(_loc, case) => {
         write!(f, "case {:?} of {:?}", case.arg, case.clauses)
       }
-      ErlAst::Lit(lit) => write!(f, "{:?}", lit),
-      ErlAst::BinaryOp(binop) => {
+      ErlAst::Lit(_loc, lit) => write!(f, "{:?}", lit),
+      ErlAst::BinaryOp(_loc, binop) => {
         write!(f, "({:?} {:?} {:?})", binop.left, binop.operator, binop.right)
       }
-      ErlAst::UnaryOp(unop) => {
+      ErlAst::UnaryOp(_loc, unop) => {
         write!(f, "({:?} {:?})", unop.operator, unop.expr)
       }
-      ErlAst::FunArity(fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
+      ErlAst::FunArity(_loc, fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
     }
   }
 }
 
 impl fmt::Debug for ErlToken {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ErlToken::Comma => write!(f, ","),
       ErlToken::Plus => write!(f, "+"),
@@ -103,7 +103,7 @@ impl fmt::Debug for ErlToken {
 }
 
 impl fmt::Debug for LiteralNode {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       LiteralNode::Integer(i) => write!(f, "{}", i),
       LiteralNode::Float(flt) => write!(f, "{}", flt),
@@ -122,13 +122,13 @@ impl fmt::Debug for LiteralNode {
 }
 
 impl fmt::Debug for FunctionClauseNode {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}{:?} -> {:?}", self.name, self.args, self.body)
   }
 }
 
 impl fmt::Debug for ErlBinaryOp {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ErlBinaryOp::Add => write!(f, "+"),
       ErlBinaryOp::Sub => write!(f, "-"),

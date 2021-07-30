@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::fmt;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, Weak, RwLock};
 use pest::Parser;
 
 use crate::funarity::FunArity;
@@ -31,11 +31,14 @@ pub struct ErlModule {
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: Arc<SourceFile>,
   /// AST tree of the module
-  pub ast: Rc<ErlAst>,
+  pub ast: ErlAst,
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
   /// Function definitions of the module
-  pub fun_table: HashMap<FunArity, Rc<ErlAst>>,
+  pub fun_table: HashMap<FunArity, ErlAst>,
+
+  /// Weak self-pointer to pass down the chain, similar to C++ smart_ptr_from_this
+  pub weak_self: Weak<RwLock<ErlModule>>,
 }
 
 
@@ -45,15 +48,16 @@ impl Default for ErlModule {
       compiler_options: Default::default(),
       name_atom: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: Rc::new(ErlAst::Empty),
+      ast: ErlAst::Empty,
       unifier: Unifier::default(),
       fun_table: Default::default(),
+      weak_self: Weak::new(), // null here
     }
   }
 }
 
 impl Debug for ErlModule {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "ErlModule({})", self.name_atom)
   }
 }
@@ -65,9 +69,10 @@ impl ErlModule {
       compiler_options: opt,
       name_atom: String::new(), // filled during parse
       source_file,
-      ast: Rc::new(ErlAst::Empty), // filled after parse
+      ast: ErlAst::Empty, // filled after parse
       fun_table: Default::default(), // filled during parse
       unifier: Unifier::default(), // filled after parse
+      weak_self: Weak::new(), // null here
     }
   }
 
@@ -77,9 +82,10 @@ impl ErlModule {
       compiler_options: Arc::new(Default::default()),
       name_atom: String::new(), // filled during parse
       source_file: Arc::new(SourceFile::default()),
-      ast: Rc::new(ErlAst::Empty), // filled after parse
+      ast: ErlAst::Empty, // filled after parse
       unifier: Unifier::default(), // filled after parse
       fun_table: Default::default(), // filled during parse
+      weak_self: Weak::new(), // null here
     }
   }
 
@@ -103,12 +109,13 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
     self.ast = {
       // Parse tree to raw AST
-      let intermediate_ast = self.to_ast_single_node(parse_output)?;
+      let mut intermediate_ast = self.to_ast_single_node(parse_output)?;
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
-      self.postprocess_ast(intermediate_ast)?.unwrap()
+      self.postprocess_ast(&mut intermediate_ast)?;
+      intermediate_ast
     };
-    self.unifier = Unifier::new(&self.ast).unwrap();
+    self.unifier = Unifier::new(self.weak_self.clone()).unwrap();
     Ok(())
   }
 
@@ -124,22 +131,28 @@ impl ErlModule {
       }
     };
 
-    self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-    self.ast = self.postprocess_ast(self.to_ast_single_node(parse_output)?)?
-        .unwrap();
+    // Create a fake source file with no filename and copy of input (for error reporting)
+    self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
+
+    // build initial AST from parse
+    let mut ast0 = self.to_ast_single_node(parse_output)?;
+
+    // Modify some AST nodes as required
+    self.postprocess_ast(&mut ast0)?;
+    self.ast = ast0;
     Ok(())
   }
 
   /// For an expression check whether it is a constant expression, and whether it points to some
   /// known function in this module. Arity is provided as the expression might be just an atom.
-  pub fn find_function_expr_arity(&mut self, expr: &Rc<ErlAst>, arity: usize) -> Option<Rc<ErlAst>> {
-    if let ErlAst::Lit(lit) = expr.deref() {
+  pub fn find_function_expr_arity(&mut self, expr: &'a ErlAst, arity: usize) -> Option<&ErlAst> {
+    if let ErlAst::Lit(_loc, lit) = expr {
       // A single atom points to a possible existing function of `arity` in the current module
       if let LiteralNode::Atom(a) = lit {
         let fa = FunArity { name: a.clone(), arity };
 
         match self.fun_table.entry(fa) {
-          Entry::Occupied(e) => return Some(e.get().clone()), // found!
+          Entry::Occupied(e) => return Some(&e.get()), // found!
           Entry::Vacant(_) => return None, // not found
         }
       }

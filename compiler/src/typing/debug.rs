@@ -6,7 +6,7 @@ use crate::typing::typevar::TypeVar;
 use crate::typing::equation::TypeEquation;
 
 impl fmt::Debug for ErlType {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ErlType::Union(members) => {
         write!(f, "∪")?;
@@ -67,25 +67,25 @@ impl fmt::Debug for ErlType {
 }
 
 impl fmt::Debug for RecordField {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}", self.to_string())
   }
 }
 
 impl fmt::Debug for MapField {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}", self.to_string())
   }
 }
 
 impl fmt::Debug for TypeVar {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}", self.to_string())
   }
 }
 
 impl fmt::Debug for TypeEquation {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{:?} ↔ {:?}", self.left, self.right)
   }
 }

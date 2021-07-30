@@ -12,9 +12,9 @@ pub struct LetExprNode {
   /// Type which we believe the Variable will have
   pub var_ty: ErlType,
   /// Value (type is in it)
-  pub value: Rc<ErlAst>,
+  pub value: Box<ErlAst>,
   /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
-  pub in_expr: Rc<ErlAst>,
+  pub in_expr: Box<ErlAst>,
   /// The let .. in ... result type
   pub in_ty: ErlType,
 }

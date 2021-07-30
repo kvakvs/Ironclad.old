@@ -3,6 +3,7 @@
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use std::rc::Rc;
+use crate::source_loc::SourceLoc;
 
 /// Type equation, assumes matching or equal types, t1 = t2
 pub struct TypeEquation {
@@ -10,17 +11,17 @@ pub struct TypeEquation {
   pub left: ErlType,
   /// Right type of equation of t1 = t2
   pub right: ErlType,
-  /// The reference to the AST node which generated this equation
-  pub node: Rc<ErlAst>,
+  /// The reference to the source code which generated this equation
+  pub location: SourceLoc,
 }
 
 impl TypeEquation {
   /// Create a new type equation
-  pub fn new(node: &Rc<ErlAst>, ty1: ErlType, ty2: ErlType) -> Self {
+  pub fn new(location: SourceLoc, ty1: ErlType, ty2: ErlType) -> Self {
     Self {
       left: ty1,
       right: ty2,
-      node: node.clone(),
+      location,
     }
   }
 }

@@ -6,31 +6,31 @@ use crate::typing::erl_type::ErlType;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq)]
 pub struct FunctionClauseNode {
   /// Function name atom, stored as a string. All clauses of the same function must have same name
   pub name: String,
   /// Function clause arguments, binding/match expressions
-  pub args: Vec<Rc<ErlAst>>,
+  pub args: Vec<ErlAst>,
   /// Types we believe the arguments will have
   pub arg_types: Vec<ErlType>,
   /// Function clause body
-  pub body: Rc<ErlAst>,
+  pub body: Box<ErlAst>,
   /// Return type for this function clause
   pub ret: ErlType,
 }
 
 impl FunctionClauseNode {
   /// Create a new function clause
-  pub fn new(name: &str, args: Vec<Rc<ErlAst>>, body: Rc<ErlAst>) -> Self {
+  pub fn new(name: String, args: Vec<ErlAst>, body: ErlAst) -> Self {
     let arg_types = args.iter()
         .map(|_a| ErlType::new_typevar())
         .collect();
     FunctionClauseNode {
-      name: name.to_string(),
+      name,
       args,
       arg_types,
-      body,
+      body: Box::new(body),
       ret: ErlType::new_typevar(),
     }
   }

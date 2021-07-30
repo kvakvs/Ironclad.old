@@ -1,15 +1,16 @@
 //! Contains all possible Erlang compiler errors
+use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
+use pest::error::{LineColLocation};
 use thiserror::Error;
 
-use crate::syntaxtree::pp::pp_parser;
-use crate::syntaxtree::erl::erl_parser;
-use crate::typing::error::TypeError;
-use std::num::ParseIntError;
-use pest::error::LineColLocation;
-use std::rc::Rc;
+use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::syntaxtree::erl::erl_parser;
+use crate::syntaxtree::pp::pp_parser;
+use crate::typing::error::TypeError;
 
 /// Shows to the user where the error was found
 #[derive(Debug)]
@@ -17,16 +18,16 @@ pub struct ErrorLocation {
   /// If we know the file where this happened
   pub path: Option<PathBuf>,
   /// If we know where in file this happened
-  pub ast: Option<Rc<ErlAst>>,
+  pub location: SourceLoc,
 }
 
 impl ErrorLocation {
   /// Creates a new error location for filename and possibly AST location
   pub fn new(filename: Option<PathBuf>,
-             ast: Option<Rc<ErlAst>>) -> ErrorLocation {
+             location: SourceLoc) -> ErrorLocation {
     Self {
       path: filename,
-      ast,
+      location,
     }
   }
 }
@@ -113,7 +114,7 @@ impl ErlError {
   /// Creates a preprocessor error from a filename and a message
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
     Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::new(Some(file_name.to_path_buf()), None),
+      loc: ErrorLocation::new(Some(file_name.to_path_buf()), SourceLoc::new()),
       msg: String::from(message),
     })
   }
@@ -130,9 +131,12 @@ impl ErlError {
 
   /// Create a parser internal error. Should not happen for the user, only during the development
   /// and testing.
-  pub fn parser_internal(ast: Rc<ErlAst>, msg: String) -> Self {
+  pub fn parser_internal(location: SourceLoc, msg: String) -> Self {
     ErlError::ParserInternal {
-      loc: ErrorLocation { path: None, ast: Some(ast.clone()) },
+      loc: ErrorLocation {
+        path: None,
+        location,
+      },
       msg,
     }
   }
@@ -190,7 +194,7 @@ impl From<TypeError> for ErlError {
 impl From<ParseIntError> for ErlError {
   fn from(pie: ParseIntError) -> Self {
     ErlError::ErlangParse {
-      loc: ErrorLocation::new(None, None),
+      loc: ErrorLocation::new(None, SourceLoc::new()),
       msg: format!("Cannot parse integer: {}", pie.to_string()),
     }
   }

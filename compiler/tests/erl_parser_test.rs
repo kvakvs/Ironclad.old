@@ -15,7 +15,7 @@ fn parse_string_test() -> ErlResult<()> {
   let mut module1 = ErlModule::new_testing();
   module1.parse_str(Rule::string, "\"abc\"").unwrap();
 
-  if let ErlAst::Lit(LiteralNode::String(_value)) = module1.ast.deref() {} else {
+  if let ErlAst::Lit(_loc, LiteralNode::String(_value)) = module1.ast.deref() {} else {
     assert!(false, "Expected: Literal(String) result, got {:?}", module1.ast)
   }
   Ok(())

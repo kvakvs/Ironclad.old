@@ -1,7 +1,7 @@
 //! AST syntax structure of an Erlang file
 use std::ops::Deref;
 use std::rc::Rc;
-use enum_as_inner::EnumAsInner;
+// use enum_as_inner::EnumAsInner;
 
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
@@ -16,6 +16,8 @@ use crate::syntaxtree::erl::node::expr_node::{BinaryOperatorExprNode, UnaryOpera
 use crate::syntaxtree::erl::node::var_node::VarNode;
 use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
+use crate::source_loc::SourceLoc;
+use std::borrow::BorrowMut;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
@@ -57,31 +59,40 @@ pub enum ErlToken {
 }
 
 /// AST node in parsed Erlang source
-#[derive(PartialEq, EnumAsInner)]
+#[derive(PartialEq)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,
   /// Comment text eliminated.
-  Comment,
+  Comment(SourceLoc),
 
   /// A token to be consumed by AST builder, temporary, must not exist in final AST
-  Token(ErlToken),
+  Token {
+    /// Source file pointer
+    location: SourceLoc,
+    /// The token enum
+    token: ErlToken,
+  },
 
   /// Forms list, root of a module
-  ModuleForms(Vec<Rc<ErlAst>>),
+  ModuleForms(Vec<ErlAst>),
 
   /// -module(name). attribute, defines module start
   ModuleAttr {
+    /// Source file pointer
+    location: SourceLoc,
     /// Module name atom, stored as string
-    name: String
+    name: String,
   },
 
   /// Comma expression receives type of its last AST element
   Comma {
+    /// Source file pointer
+    location: SourceLoc,
     /// Left expression
-    left: Rc<ErlAst>,
+    left: Box<ErlAst>,
     /// Right expression
-    right: Rc<ErlAst>,
+    right: Box<ErlAst>,
     /// Type for right expression, also is the type of entire comma operator
     ty: ErlType,
   },
@@ -89,39 +100,39 @@ pub enum ErlAst {
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
-  NewFunction(NewFunctionNode),
+  NewFunction(SourceLoc, NewFunctionNode),
 
   /// Function clause for a new function definition
-  FClause(FunctionClauseNode),
+  FClause(SourceLoc, FunctionClauseNode),
 
   /// Case clause for a `case x of` switch
-  CClause(CaseClauseNode),
+  CClause(SourceLoc, CaseClauseNode),
 
   /// Name/arity which refers to a function in the current module
-  FunArity(FunArity),
+  FunArity(SourceLoc, FunArity),
   // ModFunArity()
 
   /// A named variable
-  Var(VarNode),
+  Var(SourceLoc, VarNode),
 
   /// Apply arguments to expression
-  App(ApplicationNode),
+  App(SourceLoc, ApplicationNode),
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
-  Let(LetExprNode),
+  Let(SourceLoc, LetExprNode),
 
   /// Case switch containing the argument to check, and case clauses
-  Case(CaseExprNode),
+  Case(SourceLoc, CaseExprNode),
 
   /// A literal value, constant. Type is known via literal.get_type()
-  Lit(LiteralNode),
+  Lit(SourceLoc, LiteralNode),
 
   /// Binary operation with two arguments
-  BinaryOp(BinaryOperatorExprNode),
+  BinaryOp(SourceLoc, BinaryOperatorExprNode),
 
   /// Unary operation with 1 argument
-  UnaryOp(UnaryOperatorExprNode),
+  UnaryOp(SourceLoc, UnaryOperatorExprNode),
 }
 
 impl ErlAst {
@@ -130,16 +141,16 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::NewFunction(nf) => nf.ret.clone(),
-      ErlAst::FClause(fc) => fc.body.get_type(),
-      ErlAst::CClause(clause) => clause.body.get_type(),
-      ErlAst::Var(v) => v.ty.clone(),
-      ErlAst::App(app) => app.ret_type.clone(),
-      ErlAst::Let(let_expr) => let_expr.in_expr.get_type(),
-      ErlAst::Case(case) => case.ret.clone(),
-      ErlAst::Lit(l) => l.get_type().clone(),
-      ErlAst::BinaryOp(binop) => binop.operator.get_result_type(),
-      ErlAst::UnaryOp(unop) => unop.expr.get_type(), // same type as expr bool or num
+      ErlAst::NewFunction(_loc, nf) => nf.ret.clone(),
+      ErlAst::FClause(_loc, fc) => fc.body.get_type(),
+      ErlAst::CClause(_loc, clause) => clause.body.get_type(),
+      ErlAst::Var(_loc, v) => v.ty.clone(),
+      ErlAst::App(_loc, app) => app.ret_type.clone(),
+      ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
+      ErlAst::Case(_loc, case) => case.ret.clone(),
+      ErlAst::Lit(_loc, l) => l.get_type().clone(),
+      ErlAst::BinaryOp(_loc, binop) => binop.operator.get_result_type(),
+      ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => {
         right.get_type()
       }
@@ -150,69 +161,68 @@ impl ErlAst {
   /// Retrieve a name of a function node (first clause name)
   pub fn get_fun_name(&self) -> Option<&str> {
     match self {
-      ErlAst::NewFunction(nf) => {
+      ErlAst::NewFunction(_loc, nf) => {
         assert!(nf.clauses.len() > 0, "get_fun_name: NewFunction must have more than 0 function clauses");
         Some(&nf.clauses[0].name)
       }
-      ErlAst::FClause(fc) => Some(&fc.name),
+      ErlAst::FClause(_loc, fc) => Some(&fc.name),
       _ => None, // not a function
     }
   }
 
   /// Build a vec of references to children
-  pub fn get_children(&self) -> Option<Vec<Rc<ErlAst>>> {
+  pub fn get_children(&mut self) -> Option<Vec<&mut ErlAst>> {
     match self {
-      ErlAst::ModuleForms(f) => Some(f.clone()),
-      ErlAst::ModuleAttr { .. } => None,
-      ErlAst::Lit { .. } => None,
-      ErlAst::Comment => None,
-      ErlAst::NewFunction(nf) => {
-        let all_clause_bodies = nf.clauses.iter()
-            .map(|clause| clause.body.clone())
+      ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
+      | ErlAst::Var { .. } => None,
+
+      ErlAst::ModuleForms(f) => Some(f.iter_mut().collect()),
+      ErlAst::NewFunction(_loc, nf) => {
+        let all_clause_bodies: Vec<&mut ErlAst> = nf.clauses.iter_mut()
+            .map(|clause| clause.body.borrow_mut())
             .collect();
         Some(all_clause_bodies)
       }
-      ErlAst::FClause(fc) => {
+      ErlAst::FClause(_loc, fc) => {
         // Descend into args, and the body
-        let mut args_refs: Vec<Rc<ErlAst>> = fc.args.clone();
-        args_refs.push(fc.body.clone());
+        let mut args_refs: Vec<&mut ErlAst> = fc.args.iter_mut().collect();
+        args_refs.push(&mut fc.body);
         Some(args_refs)
       }
-      ErlAst::Var { .. } => None,
-      ErlAst::App(app) => {
-        let mut r = vec![app.expr.clone()];
-        app.args.iter().for_each(|a| r.push(a.clone()));
+      ErlAst::App(_loc, app) => {
+        let mut r: Vec<&mut ErlAst> = vec![&mut app.expr];
+        app.args.iter_mut().for_each(|a| r.push(a));
         Some(r)
       }
-      ErlAst::Let(let_expr) => {
-        Some(vec![let_expr.value.clone(), let_expr.in_expr.clone()])
+      ErlAst::Let(_loc, let_expr) => {
+        Some(vec![&mut let_expr.value, &mut let_expr.in_expr])
       }
-      ErlAst::Case(case) => {
-        let mut r = vec![case.arg.clone()];
-        case.clauses.iter().for_each(|a| r.push(a.clone()));
+      ErlAst::Case(_loc, case) => {
+        let mut r = vec![case.arg.borrow_mut()];
+        case.clauses.iter_mut().for_each(|a| r.push(a));
         Some(r)
       }
-      ErlAst::CClause(clause) => {
-        Some(vec![clause.cond.clone(),
-                  clause.guard.clone(),
-                  clause.body.clone()])
+      ErlAst::CClause(_loc, clause) => {
+        Some(vec![&mut clause.cond,
+                  &mut clause.guard,
+                  &mut clause.body])
       }
-      ErlAst::BinaryOp(binop) => {
-        Some(vec![binop.left.clone(),
-                  binop.right.clone()])
+      ErlAst::BinaryOp(_loc, binop) => {
+        Some(vec![&mut binop.left,
+                  &mut binop.right])
       }
-      ErlAst::UnaryOp(unop) => Some(vec![unop.expr.clone()]),
+      ErlAst::UnaryOp(_loc, unop) => Some(vec![&mut unop.expr]),
       ErlAst::Comma { left, right, .. } => {
-        Some(vec![left.clone(), right.clone()])
+        Some(vec![left, right])
       }
-      ErlAst::Token(_) => panic!("Token {:?} must be eliminated in AST build phase", self),
+      ErlAst::Token { .. } => panic!("Token {:?} must be eliminated in AST build phase", self),
 
       _ => unreachable!("Can't process {:?}", self),
     }
   }
 
   /// Create a new function definition node
-  pub fn new_fun(clauses: Vec<FunctionClauseNode>) -> Rc<Self> {
+  pub fn new_fun(location: SourceLoc, clauses: Vec<FunctionClauseNode>) -> Self {
     assert_eq!(clauses.is_empty(), false, "Clauses must not be empty");
 
     let arity = clauses[0].arg_types.len();
@@ -222,63 +232,66 @@ impl ErlAst {
             "All clause arg types must match in length all clauses' arguments");
 
     let nf = NewFunctionNode::new(arity, clauses, ErlType::new_typevar());
-    Rc::new(ErlAst::NewFunction(nf))
+    ErlAst::NewFunction(location, nf)
   }
 
   /// Create a new variable AST node
-  pub fn new_var(name: &str) -> Rc<ErlAst> {
-    Rc::new(ErlAst::Var(VarNode::new(name)))
+  pub fn new_var(location: SourceLoc, name: &str) -> ErlAst {
+    ErlAst::Var(location, VarNode::new(name))
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
-  pub fn new_application(expr: Rc<ErlAst>, args: Vec<Rc<ErlAst>>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App(ApplicationNode::new(expr, args)))
+  pub fn new_application(location: SourceLoc, expr: ErlAst, args: Vec<ErlAst>) -> ErlAst {
+    ErlAst::App(location, ApplicationNode::new(expr, args))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
-  pub fn new_application0(expr: Rc<ErlAst>) -> Rc<ErlAst> {
-    Rc::new(ErlAst::App(ApplicationNode::new(expr, vec![])))
+  pub fn new_application0(location: SourceLoc, expr: ErlAst) -> ErlAst {
+    ErlAst::App(location, ApplicationNode::new(expr, vec![]))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
-  pub fn new_binop(left: Rc<ErlAst>, op: ErlBinaryOp, right: Rc<ErlAst>) -> Rc<Self> {
-    Rc::new(ErlAst::BinaryOp(BinaryOperatorExprNode {
-      left,
-      right,
-      operator: op,
-      ty: ErlType::new_typevar(),
-    }))
+  pub fn new_binop(location: SourceLoc,
+                   left: ErlAst, op: ErlBinaryOp, right: ErlAst) -> ErlAst {
+    ErlAst::BinaryOp(location,
+                     BinaryOperatorExprNode {
+                       left: Box::new(left),
+                       right: Box::new(right),
+                       operator: op,
+                       ty: ErlType::new_typevar(),
+                     })
   }
 
   /// Create a new literal AST node of an integer
-  pub fn new_lit_int(val: isize) -> Rc<Self> {
-    Rc::new(ErlAst::Lit(LiteralNode::Integer(val)))
+  pub fn new_lit_int(location: SourceLoc, val: isize) -> Self {
+    ErlAst::Lit(location, LiteralNode::Integer(val))
   }
 
   /// Create a new literal AST node of an atom
-  pub fn new_lit_atom(val: &str) -> Rc<Self> {
-    Rc::new(ErlAst::Lit(LiteralNode::Atom(String::from(val))))
+  pub fn new_lit_atom(location: SourceLoc, val: &str) -> ErlAst {
+    ErlAst::Lit(location, LiteralNode::Atom(String::from(val)))
   }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
-  pub fn temporary_token(t: ErlToken) -> Rc<Self> {
-    Rc::new(ErlAst::Token(t))
+  pub fn temporary_token(t: ErlToken) -> ErlAst {
+    ErlAst::Token { location: SourceLoc::new(), token: t }
   }
 
   /// Create a new Comma operator from list of AST expressions
-  pub fn new_comma(left: Rc<ErlAst>, right: Rc<ErlAst>) -> Rc<Self> {
-    Rc::new(ErlAst::Comma {
-      left,
-      right,
+  pub fn new_comma(location: SourceLoc, left: ErlAst, right: ErlAst) -> Self {
+    ErlAst::Comma {
+      location,
+      left: Box::new(left),
+      right: Box::new(right),
       ty: ErlType::new_typevar(),
-    })
+    }
   }
 
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
     match self {
-      ErlAst::Lit(LiteralNode::Atom(s)) => Some(s.clone()),
+      ErlAst::Lit(_loc, LiteralNode::Atom(s)) => Some(s.clone()),
       _ => None,
     }
   }
@@ -286,22 +299,30 @@ impl ErlAst {
   /// Retrieve Some(function clause name) if AST node is a function clause
   pub fn get_fclause_name(&self) -> Option<String> {
     match self {
-      ErlAst::FClause(fc) => Some(fc.name.clone()),
+      ErlAst::FClause(_loc, fc) => Some(fc.name.clone()),
       _ => None,
     }
   }
 
   /// Given a ErlAst::NewFunction node, return a new node ErlAst::FunArity
   /// This is used to replace atom expressions in the code referring to funs in the current module
-  pub fn newfun_to_funarity(&self) -> Option<Rc<ErlAst>> {
+  pub fn newfun_to_funarity(&self) -> Option<ErlAst> {
     match self {
-      ErlAst::NewFunction(nf) => {
+      ErlAst::NewFunction(location, nf) => {
         let fa = FunArity {
           name: nf.clauses[0].name.clone(),
           arity: nf.arity,
         };
-        Some(Rc::new(ErlAst::FunArity(fa)))
+        Some(ErlAst::FunArity(*location, fa))
       }
+      _ => None,
+    }
+  }
+
+  /// Unwrap self as new function
+  pub fn as_new_function(&self) -> Option<&NewFunctionNode> {
+    match self {
+      ErlAst::NewFunction(location, nf) => Some(nf),
       _ => None,
     }
   }
@@ -309,13 +330,34 @@ impl ErlAst {
   /// Given a comma operator, unroll the comma nested tree into a vector of AST, this is used for
   /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
   /// A non-comma AST-node becomes a single result element.
-  pub fn comma_to_vec(ast: &Rc<ErlAst>, dst: &mut Vec<Rc<ErlAst>>) {
-    match ast.deref() {
+  pub fn comma_to_vec(comma_ast: ErlAst, dst: &mut Vec<ErlAst>) {
+    match comma_ast {
       ErlAst::Comma { left, right, .. } => {
-        Self::comma_to_vec(&left, dst);
-        Self::comma_to_vec(&right, dst);
+        Self::comma_to_vec(*left, dst);
+        Self::comma_to_vec(*right, dst);
       }
-      _ => dst.push(ast.clone()),
+      _ => dst.push(comma_ast),
+    }
+  }
+
+  pub fn location(&self) -> SourceLoc {
+    match self {
+      ErlAst::Comment(loc) => *loc,
+      ErlAst::Token { location: loc, .. } => *loc,
+      ErlAst::ModuleAttr { location: loc, .. } => *loc,
+      ErlAst::Comma { location: loc, .. } => *loc,
+      ErlAst::NewFunction(loc, _) => *loc,
+      ErlAst::FClause(loc, _) => *loc,
+      ErlAst::CClause(loc, _) => *loc,
+      ErlAst::FunArity(loc, _) => *loc,
+      ErlAst::Var(loc, _) => *loc,
+      ErlAst::App(loc, _) => *loc,
+      ErlAst::Let(loc, _) => *loc,
+      ErlAst::Case(loc, _) => *loc,
+      ErlAst::Lit(loc, _) => *loc,
+      ErlAst::BinaryOp(loc, _) => *loc,
+      ErlAst::UnaryOp(loc, _) => *loc,
+      _ => SourceLoc::new(),
     }
   }
 }

@@ -12,6 +12,7 @@ pub mod erl_error;
 pub mod stage;
 pub mod typing;
 mod funarity;
+mod source_loc;
 
 extern crate pest;
 #[macro_use]
@@ -23,5 +24,5 @@ extern crate thiserror;
 extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;
-extern crate enum_as_inner;
+// extern crate enum_as_inner;
 extern crate function_name;

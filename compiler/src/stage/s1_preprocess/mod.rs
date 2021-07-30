@@ -11,6 +11,7 @@ use crate::project::source_file::SourceFile;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::rc::Rc;
+use crate::source_loc::SourceLoc;
 
 enum PpCondition {
   Ifdef(String),
@@ -257,7 +258,7 @@ impl PpState {
         format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
                 ast_tree.nodes);
     Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::new(Some(source_file.file_name.clone()), None),
+      loc: ErrorLocation::new(Some(source_file.file_name.clone()), SourceLoc::new()),
       msg: err_s,
     })
   }

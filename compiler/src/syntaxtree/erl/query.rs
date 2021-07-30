@@ -10,10 +10,10 @@ use std::ops::Deref;
 pub struct FindFunResult<'a> {
   /// Reference to AST Rc pointer where the function was found. Use .clone()
   /// if you need to retain it.
-  pub ast: &'a Rc<ErlAst>,
+  pub ast: &'a ErlAst,
   /// Reference to a NewFunction struct in the AST node which was found. Use .clone() if you
   /// need to retain it.
-  pub(crate) new_function: &'a NewFunctionNode,
+  pub new_function: &'a NewFunctionNode,
 }
 
 impl ErlAst {
@@ -25,7 +25,7 @@ impl ErlAst {
       ErlAst::ModuleForms(forms) => {
         forms.into_iter()
             .find(|each_form| {
-              if let ErlAst::NewFunction(nf) = (*each_form).deref() {
+              if let ErlAst::NewFunction(_loc, nf) = (*each_form).deref() {
                 return nf.arity == arity
                     && nf.clauses[0].name == name;
               }

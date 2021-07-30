@@ -8,11 +8,11 @@ use crate::typing::erl_type::ErlType;
 #[derive(PartialEq)]
 pub struct CaseClauseNode {
   /// A match expression, matched vs. case arg
-  pub cond: Rc<ErlAst>,
+  pub cond: Box<ErlAst>,
   /// Must resolve to bool, or an exception
-  pub guard: Rc<ErlAst>,
+  pub guard: Box<ErlAst>,
   /// Case clause body expression
-  pub body: Rc<ErlAst>,
+  pub body: Box<ErlAst>,
   /// Clause body type, for type inference
   pub ty: ErlType,
 }
