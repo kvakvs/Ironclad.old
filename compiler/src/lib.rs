@@ -24,3 +24,4 @@ extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;
 extern crate enum_as_inner;
+extern crate function_name;

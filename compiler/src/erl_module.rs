@@ -1,5 +1,6 @@
 //! Defines an Erlang module ready to be compiled
 
+use ::function_name::named;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt;
@@ -100,19 +101,25 @@ impl ErlModule {
     };
 
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-    self.ast = self.postprocess_ast(self.to_ast_single_node(parse_output)?)?
-        .unwrap();
+    self.ast = {
+      // Parse tree to raw AST
+      let intermediate_ast = self.to_ast_single_node(parse_output)?;
+
+      // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
+      self.postprocess_ast(intermediate_ast)?.unwrap()
+    };
     self.unifier = Unifier::new(&self.ast).unwrap();
     Ok(())
   }
 
   /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
   /// This updates only self.ast
+  #[named]
   pub fn parse_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
-        assert!(false, "Parse str failed {}", bad);
+        assert!(false, "{}, failed {}", function_name!(), bad);
         return Err(ErlError::from(bad));
       }
     };
@@ -129,11 +136,11 @@ impl ErlModule {
     if let ErlAst::Lit(lit) = expr.deref() {
       // A single atom points to a possible existing function of `arity` in the current module
       if let LiteralNode::Atom(a) = lit {
-        let fa = FunArity{ name: a.clone(), arity };
+        let fa = FunArity { name: a.clone(), arity };
 
         match self.fun_table.entry(fa) {
-          Entry::Occupied(e) => Some(e.get()), // found!
-          Entry::Vacant(_) => None, // not found
+          Entry::Occupied(e) => return Some(e.get().clone()), // found!
+          Entry::Vacant(_) => return None, // not found
         }
       }
     }

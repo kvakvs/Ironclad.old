@@ -58,6 +58,7 @@ impl fmt::Debug for ErlAst {
       ErlAst::UnaryOp(unop) => {
         write!(f, "({:?} {:?})", unop.operator, unop.expr)
       }
+      ErlAst::FunArity(fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
     }
   }
 }

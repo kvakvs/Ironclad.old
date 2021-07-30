@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult, ErlError};
 use std::ops::Deref;
-use crate::syntaxtree::erl::node::application_node::ApplicationNode;
+use crate::syntaxtree::erl::node::t_postprocess::TPostProcess;
 
 impl ErlModule {
   /// Given a fresh parsed and processed Erlang AST, go through it once more and replace some nodes
@@ -14,7 +14,7 @@ impl ErlModule {
   /// For example:
   /// * Trying to detect function names: ErlAst::App nodes must attempt to replace their atom
   ///   expressions with local function references, or with exports from other modules.
-  pub fn postprocess_ast(&self, ast: Rc<ErlAst>) -> ErlResult<Option<Rc<ErlAst>>> {
+  pub fn postprocess_ast(&mut self, ast: Rc<ErlAst>) -> ErlResult<Option<Rc<ErlAst>>> {
     match ast.deref() {
       ErlAst::Empty => Ok(None),
       ErlAst::Comment => Ok(None),
@@ -38,7 +38,7 @@ impl ErlModule {
       // ErlAst::FClause(_) => {}
       // ErlAst::CClause(_) => {}
       // ErlAst::Var(_) => {}
-      ErlAst::App(app) => Ok(app::postprocess_ast(ast)),
+      ErlAst::App(app) => Ok(app.postprocess_ast(self, &ast)),
       // ErlAst::Let(_) => {}
       // ErlAst::Case(_) => {}
       // ErlAst::Lit(_) => {}

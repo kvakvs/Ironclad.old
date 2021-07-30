@@ -15,6 +15,7 @@ use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
 use crate::syntaxtree::erl::node::expr_node::{BinaryOperatorExprNode, UnaryOperatorExprNode};
 use crate::syntaxtree::erl::node::var_node::VarNode;
 use crate::typing::erl_type::ErlType;
+use crate::funarity::FunArity;
 
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
@@ -95,6 +96,10 @@ pub enum ErlAst {
 
   /// Case clause for a `case x of` switch
   CClause(CaseClauseNode),
+
+  /// Name/arity which refers to a function in the current module
+  FunArity(FunArity),
+  // ModFunArity()
 
   /// A named variable
   Var(VarNode),
@@ -282,6 +287,21 @@ impl ErlAst {
   pub fn get_fclause_name(&self) -> Option<String> {
     match self {
       ErlAst::FClause(fc) => Some(fc.name.clone()),
+      _ => None,
+    }
+  }
+
+  /// Given a ErlAst::NewFunction node, return a new node ErlAst::FunArity
+  /// This is used to replace atom expressions in the code referring to funs in the current module
+  pub fn newfun_to_funarity(&self) -> Option<Rc<ErlAst>> {
+    match self {
+      ErlAst::NewFunction(nf) => {
+        let fa = FunArity {
+          name: nf.clauses[0].name.clone(),
+          arity: nf.arity,
+        };
+        Some(Rc::new(ErlAst::FunArity(fa)))
+      }
       _ => None,
     }
   }

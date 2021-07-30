@@ -7,7 +7,7 @@ use crate::typing::erl_type::ErlType;
 use crate::erl_module::ErlModule;
 
 /// AST node which contains a function call
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct ApplicationNode {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Rc<ErlAst>,
@@ -46,6 +46,9 @@ impl TPostProcess for ApplicationNode {
       None => Some(ast.clone()), // no changes, return same node
       Some(found_fun) => {
         // TODO: replace self.expr with the found fun pointer
+        let mut updated_app = self.clone();
+        updated_app.expr = ErlAst::newfun_to_funarity(&found_fun).unwrap();
+        Some(Rc::new(ErlAst::App(updated_app)))
       }
     }
   }

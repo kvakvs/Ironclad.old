@@ -8,5 +8,5 @@ use crate::erl_module::ErlModule;
 pub trait TPostProcess {
   /// Possibly replace some fields in self and return new AST, or return original AST. Env arg
   /// is providing the environment access (to find functions, other modules, etc).
-  fn postprocess_ast(&self, env: &mut ErlModule, ast: Rc<ErlAst>) -> Option<Rc<ErlAst>>;
+  fn postprocess_ast(&self, env: &mut ErlModule, ast: &Rc<ErlAst>) -> Option<Rc<ErlAst>>;
 }
