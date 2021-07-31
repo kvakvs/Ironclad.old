@@ -9,6 +9,14 @@ pub struct CompilerOpts {
 
   /// Defaults to empty list. Preprocessor defs in form of "NAME" or "NAME=VALUE"
   pub defines: Vec<String>,
+
+  /// Tries to break the operations when this many errors found in 1 module
+  pub max_errors_per_module: usize,
+}
+
+impl CompilerOpts {
+  /// Default value for max errors limit. Will try to stop compilation when this count is reached.
+  pub const MAX_ERRORS_PER_MODULE: usize = 20;
 }
 
 impl Default for CompilerOpts {
@@ -16,6 +24,7 @@ impl Default for CompilerOpts {
     Self {
       include_paths: vec![],
       defines: vec![],
+      max_errors_per_module: Self::MAX_ERRORS_PER_MODULE,
     }
   }
 }
@@ -26,6 +35,7 @@ impl From<CompilerOptsConf> for CompilerOpts {
     Self {
       include_paths: opts.include_paths.unwrap_or(self_default.include_paths),
       defines: opts.defines.unwrap_or(self_default.defines),
+      max_errors_per_module: Self::MAX_ERRORS_PER_MODULE,
     }
   }
 }

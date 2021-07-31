@@ -1,13 +1,11 @@
 //! Contains all possible Erlang compiler errors
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 
 use pest::error::{LineColLocation};
 use thiserror::Error;
 
 use crate::source_loc::SourceLoc;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_parser;
 use crate::syntaxtree::pp::pp_parser;
 use crate::typing::error::TypeError;
@@ -35,6 +33,10 @@ impl ErrorLocation {
 /// Erlang compiler errors all gathered together
 #[derive(Error, Debug)]
 pub enum ErlError {
+  /// Returned when multiple errors were found, report each error
+  #[error("Multiple errors: {0:?}")]
+  Interrupted(String),
+
   /// Returned when multiple errors were found, report each error
   #[error("Multiple errors: {0:?}")]
   Multiple(Vec<ErlError>),

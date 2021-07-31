@@ -1,13 +1,14 @@
 //! Define a NewFunction struct for a new function AST node
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::typing::erl_type::ErlType;
+use crate::funarity::FunArity;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
-#[derive(PartialEq)]
+// #[derive(PartialEq)]
 pub struct NewFunctionNode {
-  /// Function arity, must be same for each clause
-  pub arity: usize,
+  /// Function name and arity, must be same for each clause (checked on clause insertion).
+  pub funarity: FunArity,
   /// Argument types where each is a union of each function clause
   pub arg_ty: Vec<ErlType>,
   /// Function clauses in order
@@ -19,9 +20,9 @@ pub struct NewFunctionNode {
 impl NewFunctionNode {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(arity: usize, clauses: Vec<FunctionClauseNode>, ret: ErlType) -> Self {
+  pub fn new(funarity: FunArity, clauses: Vec<FunctionClauseNode>, ret: ErlType) -> Self {
     let mut result = Self {
-      arity,
+      funarity,
       clauses,
       ret,
       arg_ty: vec![],
@@ -30,12 +31,17 @@ impl NewFunctionNode {
     result
   }
 
+  // /// Boxes the FunctionNode
+  // pub fn into_box(self) -> Rc<RefCell<Self>> {
+  //   Rc::new(RefCell::new(self))
+  // }
+
   /// For all clauses build a vector of type unions for the corresponding arguments
   fn get_argument_types_unions(&self) -> Vec<ErlType> {
     assert!(self.clauses.len() > 0, "Function clauses must not be empty");
     // Assuming all clauses have same arity, build unions of each arg
-    let mut arg_unions = Vec::with_capacity(self.arity);
-    for _ in 0..self.arity {
+    let mut arg_unions = Vec::with_capacity(self.funarity.arity);
+    for _ in 0..self.funarity.arity {
       arg_unions.push(ErlType::Union(vec![]));
     }
 
@@ -46,8 +52,10 @@ impl NewFunctionNode {
 
     // For each clause and for each argument in that clause, update corresponding union in arg_unions
     self.clauses.iter().for_each(|clause| {
-      for i in 0..self.arity {
-        assert_eq!(clause.arg_types.len(), self.arity, "NewFunction arity does not match clause arity");
+      for i in 0..self.funarity.arity {
+        assert_eq!(clause.arg_types.len(), self.funarity.arity,
+                   "NewFunction arity does not match clause arity");
+
         match arg_unions[i].union_add(&clause.arg_types[i]) {
           Some(updated) => arg_unions[i] = updated,
           None => {}

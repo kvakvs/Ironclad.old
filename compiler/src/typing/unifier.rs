@@ -16,7 +16,8 @@ use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock, Weak, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{RwLock, Weak};
+use std::borrow::{Borrow};
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -49,40 +50,49 @@ impl Unifier {
     let mut unifier = Self {
       equations: vec![],
       subst: Default::default(),
-      module,
+      module: module.clone(),
     };
 
-    if let m = unifier.module_read() {
-      unifier.generate_equations(&m.ast)?;
+    let mut eq = Vec::new();
+    let ast: Rc<RwLock<ErlAst>> = {
+      let mrw = module.upgrade().unwrap();
+      let m = mrw.read().unwrap();
+      m.ast.clone()
+    };
+
+    {
+      let ast_r = ast.read().unwrap();
+      unifier.generate_equations(&mut eq, &ast_r)?;
       println!("Equations: {:?}", unifier.equations);
 
-      unifier.unify_all_equations()?;
+      unifier.unify_all_equations(&ast_r)?;
       println!("Unify map: {:?}", &unifier.subst);
     }
+
 
     Ok(unifier)
   }
 
-  /// Upgrades weak pointer to module and opens RwLock for read.
-  fn module_read(&self) -> RwLockReadGuard<ErlModule> {
-    self.module.upgrade().unwrap()
-        .read().unwrap()
-  }
-
-  /// Upgrades weak pointer to module and opens RwLock for write.
-  fn module_write(&self) -> RwLockWriteGuard<ErlModule> {
-    self.module.upgrade().unwrap()
-        .write().unwrap()
-  }
+  // /// Upgrades weak pointer to module and opens RwLock for read.
+  // fn module_read(&self) -> RwLockReadGuard<ErlModule> {
+  //   self.module.upgrade().unwrap()
+  //       .read().unwrap()
+  // }
+  //
+  // /// Upgrades weak pointer to module and opens RwLock for write.
+  // fn module_write(&self) -> RwLockWriteGuard<ErlModule> {
+  //   self.module.upgrade().unwrap()
+  //       .write().unwrap()
+  // }
 
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
-  fn unify_all_equations(&mut self) -> ErlResult<()> {
+  fn unify_all_equations(&mut self, ast: &ErlAst) -> ErlResult<()> {
     let mut equations: Vec<TypeEquation> = Vec::new();
     std::mem::swap(&mut self.equations, &mut equations); // move
 
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          self.unify(&eq.left, &eq.right)
+          self.unify(ast, &eq.left, &eq.right)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -94,19 +104,20 @@ impl Unifier {
   }
 
   /// Unify for when both sides of equation are function types
-  fn unify_fun_fun(&mut self, fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
+  fn unify_fun_fun(&mut self, ast: &ErlAst,
+                   fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
     if fun1.arg_types.len() != fun2.arg_types.len() {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
     // Unify functions return types
-    self.unify(&fun1.ret_type, &fun2.ret_type)?;
+    self.unify(ast, &fun1.ret_type, &fun2.ret_type)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
     let errors: Vec<ErlError> = fun1.arg_types.iter()
         .zip(fun2.arg_types.iter())
         .map(|(t1, t2)| {
-          self.unify(&t1, &t2)
+          self.unify(ast, &t1, &t2)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -120,21 +131,21 @@ impl Unifier {
   /// Unify two types type1 and type2, with self.subst map
   /// Updates self.subst (map of name->Type) with new record which unifies type1 and type2,
   /// and returns true. Returns false if they can't be unified.
-  fn unify(&mut self, type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
+  fn unify(&mut self, ast: &ErlAst, type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
     if type1 == type2 {
       return Ok(());
     }
 
     match type1 {
       ErlType::TVar(tv1) => {
-        return self.unify_variable(tv1, type2);
+        return self.unify_variable(ast, tv1, type2);
       }
 
       ErlType::Function(fun1) => {
         match type2 {
           ErlType::Function(fun2) => {
             // match two function types
-            return self.unify_fun_fun(fun1, fun2);
+            return self.unify_fun_fun(ast, fun1, fun2);
           }
           _any_type2 => {}
         }
@@ -146,24 +157,20 @@ impl Unifier {
         match type2 {
           ErlType::Function(fun2) => {
             // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
-            let local_fun: &NewFunctionNode = {
-              if let m = self.module_write() {
-                m.ast.find_fun(&name1, *arity1).unwrap().new_function
-              } else {
-                panic!("Cannot lock self.module")
-              }
-            };
+            // if let m = self.module.upgrade().unwrap().write().unwrap() {
+            let local_fun = ast.find_fun(&name1, *arity1).unwrap().new_function;
 
             // Unify left and right as function types
             // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-            self.unify(&local_fun.ret, &type2)?;
+            self.unify(ast, &local_fun.borrow().ret, &type2)?;
 
             // Equation: Application Expr(Args...) <=> Fn.Ret
 
-            let fc = &local_fun.clauses[0];
+            let fc = &local_fun.borrow().clauses[0];
             if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
               return Ok(());
             }
+            // }
           }
           _any_type2 => {}
         }
@@ -173,7 +180,7 @@ impl Unifier {
         // Union should not be broken into subtypes, match left equation part directly vs the union
         match type2 {
           ErlType::Union(types) => {
-            if self.check_in_union(&type1, &types) {
+            if self.check_in_union(ast, &type1, &types) {
               return Ok(());
             }
           }
@@ -218,22 +225,22 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn check_in_union(&mut self, t: &ErlType, union: &Vec<ErlType>) -> bool {
+  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &Vec<ErlType>) -> bool {
     union.iter().any(|member| {
-      self.unify(&t, &member).is_ok()
+      self.unify(ast, &t, &member).is_ok()
     })
   }
 
-  fn unify_variable(&mut self, tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
+  fn unify_variable(&mut self, ast: &ErlAst, tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
     if let Entry::Occupied(entry1) = self.subst.entry(tvar.clone()) {
       let subst_entry = entry1.get().clone();
-      return self.unify(&subst_entry, &ty);
+      return self.unify(ast, &subst_entry, &ty);
     }
 
     if let ErlType::TVar { .. } = ty {
       if let Entry::Occupied(entry2) = self.subst.entry(tvar.clone()) {
         let subst_entry = entry2.get().clone();
-        return self.unify(&ErlType::TVar(tvar.clone()), &subst_entry);
+        return self.unify(ast, &ErlType::TVar(tvar.clone()), &subst_entry);
       }
     }
 
@@ -315,65 +322,60 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node NewFunction
-  fn generate_equations_newfunction(&mut self, ast: &ErlAst, nf: &NewFunctionNode) -> ErlResult<()> {
+  fn generate_equations_newfunction(&self, eq: &mut Vec<TypeEquation>, ast: &ErlAst, nf: &NewFunctionNode) -> ErlResult<()> {
     // Return type of a function is union of its clauses return types
     let ret_union_members = nf.clauses.iter()
         .map(|c| c.ret.clone())
         .collect();
     let ret_union_t = ErlType::union_of(ret_union_members);
-    self.equation(ast, nf.ret.clone(), ret_union_t);
+    Self::equation(eq, ast, nf.ret.clone(), ret_union_t);
     Ok(())
   }
 
   /// Type inference wiring
   /// Generate type equations for AST node FClause
-  fn generate_equations_fclause(&mut self, ast: &ErlAst, fc: &FunctionClauseNode) -> ErlResult<()> {
+  fn generate_equations_fclause(&self, eq: &mut Vec<TypeEquation>,
+                                ast: &ErlAst, fc: &FunctionClauseNode) -> ErlResult<()> {
     // For each fun clause its return type is matched with body expression type
-    self.equation(ast, fc.ret.clone(), fc.body.get_type());
+    Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type());
     Ok(())
   }
 
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call)
-  fn generate_equations_app(&mut self, ast: &ErlAst, app: &ApplicationNode) -> ErlResult<()> {
+  fn generate_equations_app(&self, eq: &mut Vec<TypeEquation>,
+                            ast: &ErlAst, app: &ApplicationNode) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
-    self.equation(ast, app.expr.get_type(), app.expr_type.clone());
+    Self::equation(eq, ast, app.expr.get_type(), app.expr_type.clone());
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret
     let expr_type: &FunctionType = app.expr_type.as_function();
-    self.equation(ast, app.ret_type.clone(), *(expr_type.ret_type).clone());
+    Self::equation(eq, ast, app.ret_type.clone(), *(expr_type.ret_type).clone());
 
     Ok(())
   }
 
   /// Add a type equation, shortcut
-  fn equation(&mut self, ast: &ErlAst, ty1: ErlType, ty2: ErlType) {
-    self.equations.push(TypeEquation::new(ast.location(), ty1, ty2))
+  fn equation(eq: &mut Vec<TypeEquation>, ast: &ErlAst, ty1: ErlType, ty2: ErlType) {
+    eq.push(TypeEquation::new(ast.location(), ty1, ty2))
   }
 
   /// Type inference wiring
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
-  pub fn generate_equations(&mut self, ast: &ErlAst) -> ErlResult<()> {
+  pub fn generate_equations(&self, eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    match ast.get_children() {
-      Some(c) => {
-        let (_, errors): (Vec<_>, Vec<_>) =
-            c.iter()
-                .map(|ast_node| { // drop OK results, keep errors
-                  self.generate_equations(ast_node)
-                })
-                .partition(Result::is_ok);
-        let mut errors: Vec<ErlError> = errors.into_iter().map(Result::unwrap_err).collect();
-        match errors.len() {
-          0 => (),
-          1 => return Err(errors.pop().unwrap()),
-          _ => return Err(ErlError::Multiple(errors)),
+    for nested_ast in ast.children().unwrap_or(vec![]) {
+      match self.generate_equations(eq, nested_ast) {
+        Ok(_) => {} // nothing, all good
+        Err(err) => {
+          let mrw = self.module.upgrade().unwrap();
+          let mut m = mrw.write().unwrap();
+          m.add_error(err);
         }
       }
-      None => {}
     }
 
     match ast.deref() {
@@ -382,11 +384,20 @@ impl Unifier {
       ErlAst::Comment { .. } => {}
       ErlAst::Lit(_loc, _) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
-      ErlAst::NewFunction(_loc, nf) => self.generate_equations_newfunction(ast, nf)?,
-      ErlAst::FClause(_loc, fc) => self.generate_equations_fclause(ast, fc)?,
-      ErlAst::App(_loc, app) => self.generate_equations_app(ast, app)?,
+      ErlAst::NewFunction(_loc, nf) => {
+        self.generate_equations_newfunction(eq, ast, nf)?;
+        for fc in &nf.clauses {
+          self.generate_equations_fclause(eq, ast, &fc)?
+        }
+      }
+      // ErlAst::FClause(_loc, fc) => {
+      //   self.generate_equations_fclause(eq, ast, fc)?
+      // }
+      ErlAst::App(_loc, app) => {
+        self.generate_equations_app(eq, ast, app)?
+      }
       ErlAst::Let(_loc, let_expr) => {
-        self.equation(ast, let_expr.in_ty.clone(), let_expr.in_expr.get_type());
+        Self::equation(eq, ast, let_expr.in_ty.clone(), let_expr.in_expr.get_type());
       }
       ErlAst::Case(_loc, case) => {
         // For Case expression, type of case must be union of all clause types
@@ -394,24 +405,24 @@ impl Unifier {
             .map(|c| c.get_type())
             .collect();
         let all_clauses_t = ErlType::union_of(all_clause_types);
-        self.equation(ast, case.ret.clone(), all_clauses_t);
+        Self::equation(eq, ast, case.ret.clone(), all_clauses_t);
       }
       ErlAst::CClause(_loc, clause) => {
         // Clause type must match body type
-        self.equation(ast, clause.ty.clone(), clause.body.get_type());
+        Self::equation(eq, ast, clause.ty.clone(), clause.body.get_type());
 
         // No check for clause condition, but the clause condition guard must be boolean
-        self.equation(ast, clause.guard.get_type(), ErlType::AnyBool);
+        Self::equation(eq, ast, clause.guard.get_type(), ErlType::AnyBool);
       }
       ErlAst::BinaryOp(_loc, binop) => {
         // Check result of the binary operation
-        self.equation(ast, binop.ty.clone(), binop.operator.get_result_type());
+        Self::equation(eq, ast, binop.ty.clone(), binop.operator.get_result_type());
 
         match binop.operator.get_arg_type() {
           Some(arg_type) => {
             // Both sides of a binary op must have type appropriate for that op
-            self.equation(ast, binop.left.get_type(), arg_type.clone());
-            self.equation(ast, binop.right.get_type(), arg_type);
+            Self::equation(eq, ast, binop.left.get_type(), arg_type.clone());
+            Self::equation(eq, ast, binop.right.get_type(), arg_type);
           }
           None => {}
         }
@@ -419,11 +430,11 @@ impl Unifier {
       ErlAst::UnaryOp(_loc, unop) => {
         // Equation of expression type must match either bool for logical negation,
         // or (int|float) for numerical negation
-        self.equation(ast, unop.expr.get_type(), unop.operator.get_type());
+        Self::equation(eq, ast, unop.expr.get_type(), unop.operator.get_type());
         // TODO: Match return type with inferred return typevar?
       }
       ErlAst::Comma { right, ty, .. } => {
-        self.equation(ast, ty.clone(), right.get_type());
+        Self::equation(eq, ast, ty.clone(), right.get_type());
       }
       _ => unreachable!("Can't process {:?}", ast),
     }

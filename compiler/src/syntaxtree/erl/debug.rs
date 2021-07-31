@@ -1,10 +1,11 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use std::fmt;
-use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
+use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::syntaxtree::erl::node::token::ErlToken;
 
 impl fmt::Debug for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -26,7 +27,7 @@ impl fmt::Debug for ErlAst {
         // f.debug_list().entries(exprs.iter()).finish()
       }
       ErlAst::NewFunction(_loc, nf) => {
-        write!(f, "fun/{}: ", nf.arity)?;
+        write!(f, "fun {}/{}: ", nf.funarity.name, nf.funarity.arity)?;
         let results: Vec<_> = nf.clauses.iter()
             .map(|fc| write!(f, "{:?};", fc))
             .filter(Result::is_err)
@@ -37,7 +38,7 @@ impl fmt::Debug for ErlAst {
           results[0]
         }
       }
-      ErlAst::FClause(_loc, fc) => write!(f, "{:?}", fc),
+      // ErlAst::FClause(_loc, fc) => write!(f, "{:?}", fc),
       ErlAst::CClause(_loc, clause) => {
         write!(f, "{:?} when {:?} -> {:?}", clause.cond, clause.guard, clause.body)
       }

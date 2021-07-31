@@ -295,6 +295,7 @@ impl ErlType {
     }
   }
 
+  /// Retrieve inner FunctionType value or fail
   pub fn as_function(&self) -> &FunctionType {
     match self {
       Self::Function(ft) => &ft,

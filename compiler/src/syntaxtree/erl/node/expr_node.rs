@@ -1,12 +1,10 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
-use std::rc::Rc;
-
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
-#[derive(PartialEq)]
+// #[derive(PartialEq)]
 pub struct BinaryOperatorExprNode {
   /// Left operand
   pub left: Box<ErlAst>,
@@ -19,7 +17,7 @@ pub struct BinaryOperatorExprNode {
 }
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
-#[derive(PartialEq)]
+// #[derive(PartialEq)]
 pub struct UnaryOperatorExprNode {
   /// The operand
   pub expr: Box<ErlAst>,

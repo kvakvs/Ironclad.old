@@ -1,7 +1,6 @@
 //! Query functions for Erlang AST trees
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use std::rc::Rc;
 use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
 use std::ops::Deref;
 
@@ -26,8 +25,8 @@ impl ErlAst {
         forms.into_iter()
             .find(|each_form| {
               if let ErlAst::NewFunction(_loc, nf) = (*each_form).deref() {
-                return nf.arity == arity
-                    && nf.clauses[0].name == name;
+                return nf.funarity.arity == arity
+                    && nf.funarity.name == name;
               }
               false
             })

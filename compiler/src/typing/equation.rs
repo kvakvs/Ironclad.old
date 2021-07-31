@@ -1,8 +1,6 @@
 //! Provides a TypeEquation struct for adding type equality/match constraints to the program
 
-use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
-use std::rc::Rc;
 use crate::source_loc::SourceLoc;
 
 /// Type equation, assumes matching or equal types, t1 = t2

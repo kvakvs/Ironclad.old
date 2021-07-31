@@ -1,17 +1,17 @@
 //! Processes parser output and produces ErlAst tree for the program
+use crate::funarity::FunArity;
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::erl_ast::{ErlAst, ErlToken};
+use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
-use std::rc::Rc;
-
 use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
 use std::collections::VecDeque;
+use crate::syntaxtree::erl::node::token::ErlToken;
 
 impl ErlModule {
   fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,
@@ -191,7 +191,11 @@ impl ErlModule {
             .map(|p| self.fun_clause_to_ast(p))
             .map(Result::unwrap)
             .collect();
-    Ok(ErlAst::new_fun(location, clauses))
+
+    let arity = clauses[0].arg_types.len();
+    let funarity = FunArity::new(clauses[0].name.clone(), arity);
+
+    Ok(ErlAst::new_fun(location, funarity, clauses))
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause

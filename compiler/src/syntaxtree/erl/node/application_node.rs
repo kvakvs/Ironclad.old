@@ -1,14 +1,13 @@
 //! Defines Application AST node for a function call
-use std::rc::Rc;
-
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::node::t_postprocess::TPostProcess;
 use crate::typing::erl_type::ErlType;
 use crate::erl_module::ErlModule;
 use crate::erl_error::ErlResult;
+use crate::source_loc::SourceLoc;
 
 /// AST node which contains a function call
-#[derive(PartialEq)]
+// #[derive(PartialEq)]
 pub struct ApplicationNode {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Box<ErlAst>,
@@ -50,9 +49,10 @@ impl TPostProcess for ApplicationNode {
     // Check if expr (target) points to some existing function that we know
     match env.find_function_expr_arity(&self.expr, self.args.len()) {
       None => {} // no changes, return same node
-      Some(found_fun) => {
+      Some(nf) => {
         // TODO: replace self.expr with the found fun pointer
-        self.expr = Box::new(ErlAst::newfun_to_funarity(&found_fun).unwrap());
+        self.expr = Box::new(ErlAst::FunArity(SourceLoc::new(),
+                                              nf.borrow().funarity.clone()));
       }
     }
     Ok(())

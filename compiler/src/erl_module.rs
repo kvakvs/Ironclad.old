@@ -16,9 +16,10 @@ use crate::typing::unifier::Unifier;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::source_file::SourceFile;
 use crate::syntaxtree::erl::erl_parser;
-use std::ops::Deref;
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use std::collections::hash_map::Entry;
+use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use std::cell::{RefCell};
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -31,14 +32,18 @@ pub struct ErlModule {
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: Arc<SourceFile>,
   /// AST tree of the module
-  pub ast: ErlAst,
+  pub ast: Rc<RwLock<ErlAst>>,
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
   /// Function definitions of the module
-  pub fun_table: HashMap<FunArity, ErlAst>,
+  pub fun_table: HashMap<FunArity, Rc<RefCell<NewFunctionNode>>>,
 
   /// Weak self-pointer to pass down the chain, similar to C++ smart_ptr_from_this
   pub weak_self: Weak<RwLock<ErlModule>>,
+
+  /// Accumulates found errors in this module. Tries to hard break the operations when error limit
+  /// is reached.
+  pub errors: Vec<ErlError>,
 }
 
 
@@ -48,10 +53,11 @@ impl Default for ErlModule {
       compiler_options: Default::default(),
       name_atom: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: ErlAst::Empty,
+      ast: Rc::new(RwLock::new(ErlAst::Empty)),
       unifier: Unifier::default(),
       fun_table: Default::default(),
       weak_self: Weak::new(), // null here
+      errors: vec![],
     }
   }
 }
@@ -69,10 +75,11 @@ impl ErlModule {
       compiler_options: opt,
       name_atom: String::new(), // filled during parse
       source_file,
-      ast: ErlAst::Empty, // filled after parse
+      ast: Rc::new(RwLock::new(ErlAst::Empty)), // filled after parse
       fun_table: Default::default(), // filled during parse
       unifier: Unifier::default(), // filled after parse
       weak_self: Weak::new(), // null here
+      errors: Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100),
     }
   }
 
@@ -82,11 +89,19 @@ impl ErlModule {
       compiler_options: Arc::new(Default::default()),
       name_atom: String::new(), // filled during parse
       source_file: Arc::new(SourceFile::default()),
-      ast: ErlAst::Empty, // filled after parse
+      ast: Rc::new(RwLock::new(ErlAst::Empty)), // filled after parse
       unifier: Unifier::default(), // filled after parse
       fun_table: Default::default(), // filled during parse
       weak_self: Weak::new(), // null here
+      errors: Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100),
     }
+  }
+
+  /// Adds an error to vector of errors. Returns false when error list is full and the calling code
+  /// should attempt to stop.
+  pub fn add_error(&mut self, err: ErlError) -> bool {
+    self.errors.push(err);
+    self.errors.len() < self.compiler_options.max_errors_per_module
   }
 
   /// Parse self.source_file
@@ -113,7 +128,8 @@ impl ErlModule {
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       self.postprocess_ast(&mut intermediate_ast)?;
-      intermediate_ast
+
+      Rc::new(RwLock::new(intermediate_ast))
     };
     self.unifier = Unifier::new(self.weak_self.clone()).unwrap();
     Ok(())
@@ -139,20 +155,21 @@ impl ErlModule {
 
     // Modify some AST nodes as required
     self.postprocess_ast(&mut ast0)?;
-    self.ast = ast0;
+
+    self.ast = Rc::new(RwLock::new(ast0));
     Ok(())
   }
 
   /// For an expression check whether it is a constant expression, and whether it points to some
   /// known function in this module. Arity is provided as the expression might be just an atom.
-  pub fn find_function_expr_arity(&mut self, expr: &'a ErlAst, arity: usize) -> Option<&ErlAst> {
+  pub fn find_function_expr_arity(&mut self, expr: &ErlAst, arity: usize) -> Option<Rc<RefCell<NewFunctionNode>>> {
     if let ErlAst::Lit(_loc, lit) = expr {
       // A single atom points to a possible existing function of `arity` in the current module
       if let LiteralNode::Atom(a) = lit {
         let fa = FunArity { name: a.clone(), arity };
 
         match self.fun_table.entry(fa) {
-          Entry::Occupied(e) => return Some(&e.get()), // found!
+          Entry::Occupied(e) => return Some(e.get().clone()), // found!
           Entry::Vacant(_) => return None, // not found
         }
       }
