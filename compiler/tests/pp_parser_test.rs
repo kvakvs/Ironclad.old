@@ -12,7 +12,7 @@ use std::ops::Deref;
 fn parse_define0_test() {
   let define0 = pp_parse(Rule::pp_define, "-define(AAA, true).\n").unwrap();
   if let PpAst::Define(_name, _value) = define0.deref() {} else {
-    assert!(false, "Expected PpAst::Define, received {:?}", define0);
+    panic!("Expected PpAst::Define, received {:?}", define0);
   }
 }
 
@@ -22,21 +22,21 @@ fn parse_include_test() {
   if let PpAst::Include(t) = inc1.deref() {
     assert_eq!(t, "test");
   } else {
-    assert!(false, "Expected PpAst::Include, received {:?}", inc1);
+    panic!("Expected PpAst::Include, received {:?}", inc1);
   }
 
   let inc2 = pp_parse(Rule::pp_include, "- include(\"test\"\n).\n").unwrap();
   if let PpAst::Include(t) = inc2.deref() {
     assert_eq!(t, "test");
   } else {
-    assert!(false, "Expected PpAst::Include, received {:?}", inc2);
+    panic!("Expected PpAst::Include, received {:?}", inc2);
   }
 
   let inc3 = pp_parse(Rule::pp_include, "-include\n(\"test\"\n).\n").unwrap();
   if let PpAst::Include(t) = inc3.deref() {
     assert_eq!(t, "test");
   } else {
-    assert!(false, "Expected PpAst::Include, received {:?}", inc3);
+    panic!("Expected PpAst::Include, received {:?}", inc3);
   }
 }
 
@@ -47,7 +47,7 @@ fn parse_define_test() {
     assert_eq!(name, "AAA");
     assert_eq!(val, "\"aaa\"");
   } else {
-    assert!(false, "Parsing define(AAA, \"aaa\"). failed, received {:?}", d0)
+    panic!("Parsing define(AAA, \"aaa\"). failed, received {:?}", d0)
   }
 
   let d1 = pp_parse(Rule::pp_define, "-define(BBB, 666).").unwrap();
@@ -55,7 +55,7 @@ fn parse_define_test() {
     assert_eq!(name, "BBB");
     assert_eq!(val, "666");
   } else {
-    assert!(false, "Parsing define(BBB, 666). failed, received {:?}", d1)
+    panic!("Parsing define(BBB, 666). failed, received {:?}", d1)
   }
 }
 
@@ -67,7 +67,7 @@ fn parse_define_fun_test() {
     assert_eq!(*args, vec!["X", "Y"]);
     assert_eq!(body, "\"aaa\"");
   } else {
-    assert!(false, "Parsing -define() with args must return PpAst::DefineFun, received {:?}", d0)
+    panic!("Parsing -define() with args must return PpAst::DefineFun, received {:?}", d0)
   }
 }
 
@@ -77,6 +77,6 @@ fn parse_if_test() {
   if let PpAst::If(s) = if0.deref() {
     assert_eq!(s, "10>20");
   } else {
-    assert!(false, "Parsing -if(10>20) failed, received {:?}", if0);
+    panic!("Parsing -if(10>20) failed, received {:?}", if0);
   }
 }

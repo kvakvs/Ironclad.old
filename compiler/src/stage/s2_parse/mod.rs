@@ -19,7 +19,7 @@ use crate::erl_module::ErlModule;
 pub fn run(project: &mut ErlProject,
            contents_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<Mutex<CodeCache>>> {
   // let mut ast_cache = ErlAstCache::new_empty();
-  let mut code_cache = CodeCache::new();
+  let mut code_cache = CodeCache::default();
 
   let contents_cache_r = contents_cache.lock().unwrap();
 

@@ -1,6 +1,7 @@
 //! Defines a type variable, a unique numbered unnamed variable used in the Erlang code typing
 use std::sync::atomic::{AtomicUsize, Ordering};
 use lazy_static::lazy_static;
+use std::fmt::Formatter;
 
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
@@ -20,17 +21,18 @@ impl TypeVar {
   //       .collect()
   // }
 
+}
+
+impl std::fmt::Display for TypeVar {
   /// Format typevar as a nice string (sigma 𝞼 + number)
-  pub fn to_string(&self) -> String {
-    // displayed as T₂ or 𝜎₂
-    // format!("T{}", Self::subscript(self.0))
-    format!("𝜎{}", self.0)
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "𝜎{}", self.0)
   }
 }
 
-impl TypeVar {
+impl Default for TypeVar {
   /// Create a new type variable with unique integer id (guarded by atomic usize)
-  pub fn new() -> Self {
+  fn default() -> Self {
     let new_id = TYPEVAR_NUM.fetch_add(1, Ordering::Acquire);
     Self(new_id)
   }

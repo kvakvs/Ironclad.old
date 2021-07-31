@@ -34,7 +34,7 @@ impl ApplicationNode {
 
   /// To use during the construction, from expression and arg expressions, assume that the
   /// expression must be callable and build a `fun(Args...) -> Ret` type
-  fn create_expr_type(args: &Vec<ErlAst>, ret: &ErlType) -> ErlType {
+  fn create_expr_type(args: &[ErlAst], ret: &ErlType) -> ErlType {
     ErlType::new_fun_type(
       None, // unnamed function application
       args.iter()
@@ -51,8 +51,10 @@ impl TPostProcess for ApplicationNode {
       None => {} // no changes, return same node
       Some(nf) => {
         // TODO: replace self.expr with the found fun pointer
-        self.expr = Box::new(ErlAst::FunArity(SourceLoc::new(),
-                                              nf.borrow().funarity.clone()));
+        let new_expr = ErlAst::FunArity(SourceLoc::default(),
+                                        nf.borrow().funarity.clone());
+        println!("ApplicationNode: Replacing {:?} with {:?}", self.expr, new_expr);
+        self.expr = Box::new(new_expr);
       }
     }
     Ok(())

@@ -7,7 +7,7 @@ impl ErlAst {
   /// Mut iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
-  pub fn children_mut<'a>(&'a mut self) -> Option<Vec<&'a mut ErlAst>> {
+  pub fn children_mut(&mut self) -> Option<Vec<&mut ErlAst>> {
     match self {
       ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
       | ErlAst::Var { .. } => None,

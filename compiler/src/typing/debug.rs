@@ -86,6 +86,6 @@ impl fmt::Debug for TypeVar {
 
 impl fmt::Debug for TypeEquation {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?} ↔ {:?}", self.left, self.right)
+    write!(f, "{:?} ⊆ {:?}", self.left, self.right)
   }
 }

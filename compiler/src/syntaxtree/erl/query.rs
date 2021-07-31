@@ -22,7 +22,7 @@ impl ErlAst {
   pub fn find_fun(&self, name: &str, arity: usize) -> Option<FindFunResult> {
     match self {
       ErlAst::ModuleForms(forms) => {
-        forms.into_iter()
+        forms.iter()
             .find(|each_form| {
               if let ErlAst::NewFunction(_loc, nf) = (*each_form).deref() {
                 return nf.funarity.arity == arity

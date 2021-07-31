@@ -55,6 +55,7 @@ impl Unifier {
     {
       let ast_r = ast.read().unwrap();
       unifier.generate_equations(module, &mut eq, &ast_r)?;
+      unifier.equations = eq;
       println!("Equations: {:?}", unifier.equations);
 
       unifier.unify_all_equations(&ast_r)?;
@@ -204,7 +205,7 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &Vec<ErlType>) -> bool {
+  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &[ErlType]) -> bool {
     union.iter().any(|member| {
       self.unify(ast, &t, &member).is_ok()
     })
@@ -347,7 +348,7 @@ impl Unifier {
   pub fn generate_equations(&self, module: &mut ErlModule,
                             eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    for nested_ast in ast.children().unwrap_or(vec![]) {
+    for nested_ast in ast.children().unwrap_or_default() {
       match self.generate_equations(module, eq, nested_ast) {
         Ok(_) => {} // nothing, all good
         Err(err) => { module.add_error(err); }
@@ -394,13 +395,10 @@ impl Unifier {
         // Check result of the binary operation
         Self::equation(eq, ast, binop.ty.clone(), binop.operator.get_result_type());
 
-        match binop.operator.get_arg_type() {
-          Some(arg_type) => {
-            // Both sides of a binary op must have type appropriate for that op
-            Self::equation(eq, ast, binop.left.get_type(), arg_type.clone());
-            Self::equation(eq, ast, binop.right.get_type(), arg_type);
-          }
-          None => {}
+        if let Some(arg_type) = binop.operator.get_arg_type() {
+          // Both sides of a binary op must have type appropriate for that op
+          Self::equation(eq, ast, binop.left.get_type(), arg_type.clone());
+          Self::equation(eq, ast, binop.right.get_type(), arg_type);
         }
       }
       ErlAst::UnaryOp(_loc, unop) => {

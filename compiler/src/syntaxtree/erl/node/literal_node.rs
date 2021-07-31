@@ -1,5 +1,6 @@
 //! Erlang literals, values fully known at compile time
 use crate::typing::erl_type::ErlType;
+use std::fmt::Formatter;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, PartialEq)]
@@ -44,35 +45,35 @@ pub enum LiteralNode {
 //   static ref ERLTYPE_Tuple: ErlType = ErlType::Tuple;
 // }
 
-impl LiteralNode {
+impl std::fmt::Display for LiteralNode {
   /// Print a literal nicely
-  pub fn to_string(&self) -> String {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      LiteralNode::Integer(n) => format!("{}", n),
-      LiteralNode::Float(f) => format!("{}", f),
-      LiteralNode::Atom(a) => format!("'{}'", a),
-      LiteralNode::Bool(b) => format!("{}", if *b { "'true'" } else { "'false'" }),
+      LiteralNode::Integer(n) => write!(f, "{}", n),
+      LiteralNode::Float(flt) => write!(f, "{}", flt),
+      LiteralNode::Atom(a) => write!(f, "'{}'", a),
+      LiteralNode::Bool(b) => write!(f, "{}", if *b { "'true'" } else { "'false'" }),
       // Cannot have runtime values as literals
       // ErlLit::Pid => format!("<pid>"),
       // ErlLit::Reference => format!("<ref>"),
       LiteralNode::List(items) => {
-        let items_s = items.iter()
-            .map(|i| i.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("[{}]", items_s)
+        f.debug_list().entries(items.iter()).finish()
       }
-      LiteralNode::String(s) => format!("\"{}\"", s), // TODO: Quote special characters
+      LiteralNode::String(s) => write!(f, "\"{}\"", s), // TODO: Quote special characters
       LiteralNode::Tuple(items) => {
-        let items_s = items.iter()
-            .map(|i| i.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("{{{}}}", items_s)
+        write!(f, "{{")?;
+        let mut first = true;
+        for item in items.iter() {
+          if !first { write!(f, ", ")?; } else { first = false; }
+          write!(f, "{}", item)?;
+        }
+        write!(f, "}}")
       }
     }
   }
+}
 
+impl LiteralNode {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
     match self {

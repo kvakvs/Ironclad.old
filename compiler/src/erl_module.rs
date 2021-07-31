@@ -117,8 +117,8 @@ impl ErlModule {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
-        assert!(false, "Parse failed {}", bad);
-        return Err(ErlError::from(bad));
+        panic!("Parse failed {}", bad);
+        // return Err(ErlError::from(bad));
       }
     };
 
@@ -144,8 +144,8 @@ impl ErlModule {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
-        assert!(false, "{}, failed {}", function_name!(), bad);
-        return Err(ErlError::from(bad));
+        panic!("{}, failed {}", function_name!(), bad);
+        // return Err(ErlError::from(bad));
       }
     };
 
@@ -165,15 +165,13 @@ impl ErlModule {
   /// For an expression check whether it is a constant expression, and whether it points to some
   /// known function in this module. Arity is provided as the expression might be just an atom.
   pub fn find_function_expr_arity(&mut self, expr: &ErlAst, arity: usize) -> Option<Rc<RefCell<NewFunctionNode>>> {
-    if let ErlAst::Lit(_loc, lit) = expr {
+    if let ErlAst::Lit(_loc, LiteralNode::Atom(a)) = expr {
       // A single atom points to a possible existing function of `arity` in the current module
-      if let LiteralNode::Atom(a) = lit {
-        let fa = FunArity { name: a.clone(), arity };
+      let fa = FunArity { name: a.clone(), arity };
 
-        match self.fun_table.entry(fa) {
-          Entry::Occupied(e) => return Some(e.get().clone()), // found!
-          Entry::Vacant(_) => return None, // not found
-        }
+      match self.fun_table.entry(fa) {
+        Entry::Occupied(e) => return Some(e.get().clone()), // found!
+        Entry::Vacant(_) => return None, // not found
       }
     }
     None

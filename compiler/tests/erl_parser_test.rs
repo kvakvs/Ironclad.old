@@ -20,7 +20,7 @@ fn parse_string_test() -> ErlResult<()> {
     if let ErlAst::Lit(_loc, LiteralNode::String(_value)) = ast.deref() {
       // ok
     } else {
-      assert!(false, "Expected: Literal(String) result, got {:?}", module1.ast)
+      panic!("Expected: Literal(String) result, got {:?}", module1.ast)
     }
   }
   Ok(())
@@ -37,7 +37,7 @@ fn parse_expr_flat() -> ErlResult<()> {
     if let ErlAst::BinaryOp { .. } = ast.deref() {
       // ok
     } else {
-      assert!(false, "Expected: ErlAst::BinaryOp(+), got {:?}", module1.ast);
+      panic!("Expected: ErlAst::BinaryOp(+), got {:?}", module1.ast);
     }
   }
   Ok(())
@@ -54,7 +54,7 @@ fn parse_expr_longer() -> ErlResult<()> {
     if let ErlAst::BinaryOp { .. } = ast.deref() {
       //ok
     } else {
-      assert!(false, "Expected: ErlAst::BinaryOp(+), got {:?}", module1.ast);
+      panic!("Expected: ErlAst::BinaryOp(+), got {:?}", module1.ast);
     }
   }
   Ok(())
@@ -71,7 +71,7 @@ fn parse_expr_comma() -> ErlResult<()> {
     if let ErlAst::Comma { .. } = ast.deref() {
       // ok
     } else {
-      assert!(false, "Expected: ErlAst::Comma, got {:?}", module1.ast);
+      panic!("Expected: ErlAst::Comma, got {:?}", module1.ast);
     }
   }
   Ok(())
@@ -88,7 +88,7 @@ fn parse_fn1() -> ErlResult<()> {
     if let ErlAst::NewFunction { .. } = ast.deref() {
       // ok
     } else {
-      assert!(false, "Expected: ErlAst::NewFunction, got {:?}", module1.ast);
+      panic!("Expected: ErlAst::NewFunction, got {:?}", module1.ast);
     }
   }
   Ok(())
@@ -100,36 +100,40 @@ fn parse_fn1() -> ErlResult<()> {
 fn parse_application() -> ErlResult<()> {
   let mut module1 = ErlModule::new_testing();
   module1.parse_str(Rule::expr, "a_function()")?;
-  println!("parse_application 1 parsed {:?}", module1.ast);
+  println!("parse_application 1 parsed {:?}", module1.ast.read().unwrap());
 
   {
     let ast1 = module1.ast.read().unwrap();
     if let ErlAst::App { .. } = ast1.deref() {
       // ok
     } else {
-      assert!(false, "Expected: ErlAst::App, got {:?}", module1.ast);
+      panic!("Expected: ErlAst::App, got {:?}", module1.ast.read().unwrap());
     }
   }
 
   let mut module2 = ErlModule::new_testing();
   module2.parse_str(Rule::expr, "(123 + atom)()")?;
-  println!("parse_application 2 parsed {:?}", module2.ast);
+  println!("parse_application 2 parsed {:?}", module2.ast.read().unwrap());
 
   {
     let ast2 = module2.ast.read().unwrap();
-    if let ErlAst::App { .. } = ast2.deref() {} else {
-      assert!(false, "Expected: ErlAst::App, got {:?}", module2.ast);
+    if let ErlAst::App { .. } = ast2.deref() {
+      // ok
+    } else {
+      panic!("Expected: ErlAst::App, got {:?}", module2.ast.read().unwrap());
     }
   }
 
   let mut module3 = ErlModule::new_testing();
   module3.parse_str(Rule::expr, "(F() + g())(test(), 123())")?;
-  println!("parse_application 3 parsed {:?}", module3.ast);
+  println!("parse_application 3 parsed {:?}", module3.ast.read().unwrap());
 
   {
     let ast3 = module3.ast.read().unwrap();
-    if let ErlAst::App { .. } = ast3.deref() {} else {
-      assert!(false, "Expected: ErlAst::App, got {:?}", module3.ast);
+    if let ErlAst::App { .. } = ast3.deref() {
+      // ok
+    } else {
+      panic!("Expected: ErlAst::App, got {:?}", module3.ast.read().unwrap());
     }
   }
   Ok(())

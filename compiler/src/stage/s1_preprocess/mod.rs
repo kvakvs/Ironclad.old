@@ -258,7 +258,8 @@ impl PpState {
         format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
                 ast_tree.nodes);
     Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::new(Some(source_file.file_name.clone()), SourceLoc::new()),
+      loc: ErrorLocation::new(Some(source_file.file_name.clone()),
+                              SourceLoc::default()),
       msg: err_s,
     })
   }
@@ -275,7 +276,7 @@ impl PpState {
 pub fn run(project: &mut ErlProject,
            file_cache: Arc<Mutex<FileContentsCache>>,
 ) -> ErlResult<Arc<Mutex<PpAstCache>>> {
-  let ast_cache = Arc::new(Mutex::new(PpAstCache::new()));
+  let ast_cache = Arc::new(Mutex::new(PpAstCache::default()));
 
   // Take only .erl files
   let all_files: Vec<PathBuf> = {

@@ -104,7 +104,7 @@ impl ErlAst {
       ErlAst::App(_loc, app) => app.ret_type.clone(),
       ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(_loc, case) => case.ret.clone(),
-      ErlAst::Lit(_loc, l) => l.get_type().clone(),
+      ErlAst::Lit(_loc, l) => l.get_type(),
       ErlAst::BinaryOp(_loc, binop) => binop.operator.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
@@ -116,7 +116,7 @@ impl ErlAst {
   pub fn new_fun(location: SourceLoc,
                  funarity: FunArity,
                  clauses: Vec<FunctionClauseNode>) -> Self {
-    assert_eq!(clauses.is_empty(), false, "Clauses must not be empty");
+    assert!(!clauses.is_empty(), "Clauses must not be empty");
 
     assert!(clauses.iter().all(|fc| fc.arg_types.len() == funarity.arity),
             "All clauses must have same arity");
@@ -167,7 +167,7 @@ impl ErlAst {
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
   pub fn temporary_token(t: ErlToken) -> ErlAst {
-    ErlAst::Token { location: SourceLoc::new(), token: t }
+    ErlAst::Token { location: SourceLoc::default(), token: t }
   }
 
   /// Create a new Comma operator from list of AST expressions
@@ -235,7 +235,7 @@ impl ErlAst {
       ErlAst::Lit(loc, _) => *loc,
       ErlAst::BinaryOp(loc, _) => *loc,
       ErlAst::UnaryOp(loc, _) => *loc,
-      _ => SourceLoc::new(),
+      _ => SourceLoc::default(),
     }
   }
 }

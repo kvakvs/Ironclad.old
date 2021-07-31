@@ -1,6 +1,6 @@
 //! Defines AST structure for Erlang Preprocessor
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use crate::project::ErlProject;
@@ -108,32 +108,33 @@ impl PpAst {
       PpAst::Empty => unreachable!("PpAst::Empty encountered, while it shouldn't"),
     }
   }
+}
 
+impl std::fmt::Display for PpAst {
   /// Format AST as a string
-  // TODO: Replace with fmt/Display or something that doesn't build a string in memory?
-  pub fn to_string(&self) -> String {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       PpAst::File(items) => {
-        items.into_iter()
-            .map(|node| node.to_string())
-            .collect::<Vec<String>>()
-            .join("\n")
+        for i in items.iter() {
+          writeln!(f, "{}", i)?;
+        }
+        Ok(())
       }
-      PpAst::Text(s) => s.clone(),
-      PpAst::IncludedFile(include_rc) => include_rc.nodes.to_string(),
-      PpAst::Define(name, body) => format!("-define({}, {}).", name, body),
+      PpAst::Text(s) => write!(f, "{}", s),
+      PpAst::IncludedFile(include_rc) => write!(f, "{}", include_rc.nodes),
+      PpAst::Define(name, body) => write!(f, "-define({}, {}).", name, body),
       PpAst::DefineFun { name, args, body } => {
-        format!("-define({}({:?}), {})", name, args, body)
+        write!(f, "-define({}({:?}), {})", name, args, body)
       }
-      PpAst::Ifdef(name) => format!("-ifdef({}).", name),
-      PpAst::Ifndef(name) => format!("-ifndef({}).", name),
-      PpAst::Else => "-else.".to_string(),
-      PpAst::Endif => "-endif.".to_string(),
-      PpAst::If(expr) => format!("-if({}).", expr),
-      PpAst::Elif(expr) => format!("-elif({}).", expr),
-      PpAst::Undef(name) => format!("-undef({}).", name),
-      PpAst::Error(t) => format!("-error({}).", t),
-      PpAst::Warning(t) => format!("-warning({}).", t),
+      PpAst::Ifdef(name) => write!(f, "-ifdef({}).", name),
+      PpAst::Ifndef(name) => write!(f, "-ifndef({}).", name),
+      PpAst::Else => write!(f, "-else."),
+      PpAst::Endif => write!(f, "-endif."),
+      PpAst::If(expr) => write!(f, "-if({}).", expr),
+      PpAst::Elif(expr) => write!(f, "-elif({}).", expr),
+      PpAst::Undef(name) => write!(f, "-undef({}).", name),
+      PpAst::Error(t) => write!(f, "-error({}).", t),
+      PpAst::Warning(t) => write!(f, "-warning({}).", t),
 
       _ => unreachable!("PpAst::to_string() can't process {:?}", self),
     }
@@ -147,9 +148,9 @@ pub type PpAstTree = AstTree<PpAst>;
 /// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
 pub type PpAstCache = AstCache<PpAst>;
 
-impl PpAstCache {
+impl Default for PpAstCache {
   /// Create a new empty AST cache for preprocessed files
-  pub fn new() -> Self {
+  fn default() -> Self {
     Self {
       items: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),
     }

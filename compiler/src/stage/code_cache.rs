@@ -11,9 +11,11 @@ pub struct CodeCache {
 
 impl CodeCache {
   const INITIAL_CODE_CACHE_SIZE: usize = 128;
+}
 
+impl Default for CodeCache {
   /// Creates a new empty code cache hashmap
-  pub fn new() -> Self {
+  fn default() -> Self {
     Self {
       items: HashMap::with_capacity(Self::INITIAL_CODE_CACHE_SIZE)
     }

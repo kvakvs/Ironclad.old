@@ -116,7 +116,8 @@ impl ErlError {
   /// Creates a preprocessor error from a filename and a message
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
     Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::new(Some(file_name.to_path_buf()), SourceLoc::new()),
+      loc: ErrorLocation::new(Some(file_name.to_path_buf()),
+                              SourceLoc::default()),
       msg: String::from(message),
     })
   }
@@ -179,7 +180,7 @@ impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
 
 impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
   fn from(value: pest::error::Error<erl_parser::Rule>) -> Self {
-    let msg = format!("{}", value.to_string());
+    let msg = value.to_string();
     ErlError::ErlangSyntax {
       parse_err: value,
       msg,
@@ -196,7 +197,7 @@ impl From<TypeError> for ErlError {
 impl From<ParseIntError> for ErlError {
   fn from(pie: ParseIntError) -> Self {
     ErlError::ErlangParse {
-      loc: ErrorLocation::new(None, SourceLoc::new()),
+      loc: ErrorLocation::new(None, SourceLoc::default()),
       msg: format!("Cannot parse integer: {}", pie.to_string()),
     }
   }

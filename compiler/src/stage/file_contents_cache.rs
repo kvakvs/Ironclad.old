@@ -16,15 +16,17 @@ pub struct FileContentsCache {
   pub all_files: HashMap<PathBuf, Arc<SourceFile>>,
 }
 
-impl<'a> FileContentsCache {
+impl Default for FileContentsCache {
   /// Create a new empty file cache
-  pub fn new() -> Self {
+  fn default() -> Self {
     Self {
       read_bytes_count: 0,
       all_files: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY),
     }
   }
+}
 
+impl<'a> FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
   pub(crate) fn preload_file(&mut self, file_name: &Path) -> ErlResult<()> {
     println!("Attempt to load file: {:?}", file_name);

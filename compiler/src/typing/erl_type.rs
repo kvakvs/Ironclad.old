@@ -2,6 +2,7 @@
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use std::fmt::Formatter;
 // use enum_as_inner::EnumAsInner;
 
 /// A record field definition
@@ -13,10 +14,10 @@ pub struct RecordField {
   pub ty: ErlType,
 }
 
-impl RecordField {
+impl std::fmt::Display for RecordField {
   /// String representation of a record field type
-  pub fn to_string(&self) -> String {
-    format!("{}: {}", self.name, self.ty.to_string())
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}: {}", self.name, self.ty)
   }
 }
 
@@ -29,10 +30,10 @@ pub struct MapField {
   pub ty: ErlType,
 }
 
-impl MapField {
-  /// String representation of a map constraint
-  pub fn to_string(&self) -> String {
-    format!("{} => {}", self.key.to_string(), self.ty.to_string())
+impl std::fmt::Display for MapField {
+  /// String representation of a map field
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{} => {}", self.key, self.ty)
   }
 }
 
@@ -137,7 +138,7 @@ impl ErlType {
   }
 
   /// Given vector of literals, make a union type
-  pub fn union_of_literal_types(items: &Vec<LiteralNode>) -> ErlType {
+  pub fn union_of_literal_types(items: &[LiteralNode]) -> ErlType {
     Self::union_of(
       items.iter()
           .map(|it| it.get_type())
@@ -147,7 +148,7 @@ impl ErlType {
   /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
   /// flatten them while also trying to maintain uniqueness (see to do below)
   pub fn union_of(types: Vec<ErlType>) -> Self {
-    assert!(types.len() > 0, "Can't create union of 0 types");
+    assert!(!types.is_empty(), "Can't create union of 0 types");
     if types.len() == 1 {
       return types[0].clone();
     }
@@ -188,66 +189,66 @@ impl ErlType {
 
   /// Create a new type, containing a new type variable with unique integer id
   pub fn new_typevar() -> Self {
-    ErlType::TVar(TypeVar::new())
+    ErlType::TVar(TypeVar::default())
   }
 
-  /// Return type expressed as a printable string
-  pub fn to_string(&self) -> String {
-    match self {
-      ErlType::Union(types) => {
-        types.iter().map(|t| t.to_string())
-            .collect::<Vec<String>>()
-            .join(" | ")
-      }
-      ErlType::None => String::from("none()"),
-      ErlType::Any => String::from("any()"),
-      ErlType::Number => String::from("number()"),
-      ErlType::AnyInteger => String::from("integer()"),
-      ErlType::IntegerConst(i) => format!("{}", i),
-      ErlType::Float => String::from("float()"),
-      ErlType::List(ty) => format!("list({})", ty.to_string()),
-      ErlType::Tuple(items) => {
-        let items_s = items.iter().map(|t| t.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("{{{}}}", items_s)
-      }
-      ErlType::Record { tag, fields: types } => {
-        let fields_s = types.iter().map(|t| t.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("#{}{{{}}}", tag, fields_s)
-      }
-      ErlType::Map(fields) => {
-        let fields_s = fields.iter().map(|t| t.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("#{{{}}}", fields_s)
-      }
-      ErlType::AnyAtom => String::from("atom()"),
-      ErlType::Atom(s) => format!("'{}'", s),
-
-      ErlType::AnyBool => String::from("bool()"),
-      ErlType::Pid => String::from("pid()"),
-      ErlType::Reference => String::from("reference()"),
-      ErlType::Binary => String::from("binary()"),
-      ErlType::BinaryBits => String::from("bits()"),
-      ErlType::Literal(lit) => lit.to_string(),
-      ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
-      ErlType::Function(fun_type) => {
-        let args_s = fun_type.arg_types.iter()
-            .map(|t| t.to_string())
-            .collect::<Vec<String>>()
-            .join(", ");
-        match &fun_type.name {
-          None => format!("fun(({}) -> {})", args_s, fun_type.ret_type.to_string()),
-          Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret_type.to_string()),
-        }
-      }
-      ErlType::TVar(tv) => tv.to_string(),
-      ErlType::String => format!("string()"), // a list of unicode codepoint: list(char())
-    }
-  }
+  // /// Return type expressed as a printable string
+  // pub fn to_string(&self) -> String {
+  //   match self {
+  //     ErlType::Union(types) => {
+  //       types.iter().map(|t| t.to_string())
+  //           .collect::<Vec<String>>()
+  //           .join(" | ")
+  //     }
+  //     ErlType::None => String::from("none()"),
+  //     ErlType::Any => String::from("any()"),
+  //     ErlType::Number => String::from("number()"),
+  //     ErlType::AnyInteger => String::from("integer()"),
+  //     ErlType::IntegerConst(i) => format!("{}", i),
+  //     ErlType::Float => String::from("float()"),
+  //     ErlType::List(ty) => format!("list({})", ty.to_string()),
+  //     ErlType::Tuple(items) => {
+  //       let items_s = items.iter().map(|t| t.to_string())
+  //           .collect::<Vec<String>>()
+  //           .join(", ");
+  //       format!("{{{}}}", items_s)
+  //     }
+  //     ErlType::Record { tag, fields: types } => {
+  //       let fields_s = types.iter().map(|t| t.to_string())
+  //           .collect::<Vec<String>>()
+  //           .join(", ");
+  //       format!("#{}{{{}}}", tag, fields_s)
+  //     }
+  //     ErlType::Map(fields) => {
+  //       let fields_s = fields.iter().map(|t| t.to_string())
+  //           .collect::<Vec<String>>()
+  //           .join(", ");
+  //       format!("#{{{}}}", fields_s)
+  //     }
+  //     ErlType::AnyAtom => String::from("atom()"),
+  //     ErlType::Atom(s) => format!("'{}'", s),
+  //
+  //     ErlType::AnyBool => String::from("bool()"),
+  //     ErlType::Pid => String::from("pid()"),
+  //     ErlType::Reference => String::from("reference()"),
+  //     ErlType::Binary => String::from("binary()"),
+  //     ErlType::BinaryBits => String::from("bits()"),
+  //     ErlType::Literal(lit) => lit.to_string(),
+  //     ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
+  //     ErlType::Function(fun_type) => {
+  //       let args_s = fun_type.arg_types.iter()
+  //           .map(|t| t.to_string())
+  //           .collect::<Vec<String>>()
+  //           .join(", ");
+  //       match &fun_type.name {
+  //         None => format!("fun(({}) -> {})", args_s, fun_type.ret_type.to_string()),
+  //         Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret_type.to_string()),
+  //       }
+  //     }
+  //     ErlType::TVar(tv) => tv.to_string(),
+  //     ErlType::String => "string()".to_string(), // a list of unicode codepoint: list(char())
+  //   }
+  // }
 
   /// Check whether a type denotes a simple non-nested value or a union of simple values, i.e. when
   /// the deeper type inspection is not required.
@@ -300,6 +301,79 @@ impl ErlType {
     match self {
       Self::Function(ft) => &ft,
       _ => panic!("Node {:?} is expected to be a Function type", self)
+    }
+  }
+}
+
+impl std::fmt::Display for ErlType {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      ErlType::Union(members) => {
+        let mut first = true;
+        for m in members.iter() {
+          if !first { write!(f, "|")?; } else { first = false; }
+          write!(f, "{}", m)?;
+        }
+        Ok(())
+      }
+      ErlType::None => write!(f, "none()"),
+      ErlType::Any => write!(f, "any()"),
+      ErlType::Number => write!(f, "number()"),
+      ErlType::AnyInteger => write!(f, "integer()"),
+      ErlType::IntegerConst(i) => write!(f, "{}", i),
+      ErlType::Float => write!(f, "float()"),
+      ErlType::List(ty) => write!(f, "list({})", ty.to_string()),
+      ErlType::Tuple(items) => {
+        write!(f, "{{")?;
+        let mut first = true;
+        for i in items.iter() {
+          if !first { write!(f, ", ")?; } else { first = false; }
+          write!(f, "{}", i)?;
+        }
+        write!(f, "}}")
+      }
+      ErlType::Record { tag, fields } => {
+        write!(f, "#{}{{", tag)?;
+        let mut first = true;
+        for field_def in fields.iter() {
+          if !first { write!(f, ", ")?; } else { first = false; }
+          write!(f, "{}", field_def)?;
+        }
+        write!(f, "}}")
+      }
+      ErlType::Map(fields) => {
+        write!(f, "#{{")?;
+        let mut first = true;
+        for elem in fields.iter() {
+          if !first { write!(f, ", ")?; } else { first = false; }
+          write!(f, "{}", elem)?;
+        }
+        write!(f, "}}")
+      }
+      ErlType::AnyAtom => write!(f, "atom()"),
+      ErlType::Atom(s) => write!(f, "'{}'", s),
+
+      ErlType::AnyBool => write!(f, "bool()"),
+      ErlType::Pid => write!(f, "pid()"),
+      ErlType::Reference => write!(f, "reference()"),
+      ErlType::Binary => write!(f, "binary()"),
+      ErlType::BinaryBits => write!(f, "bits()"),
+      ErlType::Literal(lit) => write!(f, "{}", lit),
+      ErlType::LocalFunction { name, arity } => write!(f, "fun {}/{}", name, arity),
+      ErlType::Function(fun_type) => {
+        match &fun_type.name {
+          None => write!(f, "fun(")?,
+          Some(n) => write!(f, "{}(", n)?,
+        }
+        let mut first = true;
+        for arg in fun_type.arg_types.iter() {
+          if !first { write!(f, ", ")?; } else { first = false; }
+          write!(f, "{}", arg)?;
+        }
+        write!(f, ") -> {}", fun_type.ret_type)
+      }
+      ErlType::TVar(tv) => write!(f, "{}", tv),
+      ErlType::String => write!(f, "string()"), // a list of unicode codepoint: list(char())
     }
   }
 }
