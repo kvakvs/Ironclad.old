@@ -112,7 +112,8 @@ impl ErlModule {
 
   /// Create a dummy sourcefile and parse it starting with the given parser rule.
   /// This updates the self.fun_table and self.ast
-  pub fn parse_and_unify_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+  pub fn parse_and_unify_str(&mut self,
+                             rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
@@ -131,7 +132,8 @@ impl ErlModule {
 
       Rc::new(RwLock::new(intermediate_ast))
     };
-    self.unifier = Unifier::new(self.weak_self.clone()).unwrap();
+
+    self.unifier = Unifier::new(self).unwrap();
     Ok(())
   }
 

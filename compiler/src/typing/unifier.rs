@@ -16,7 +16,7 @@ use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
-use std::sync::{RwLock, Weak};
+use std::sync::{RwLock};
 use std::borrow::{Borrow};
 
 type SubstMap = HashMap<TypeVar, ErlType>;
@@ -29,8 +29,6 @@ pub struct Unifier {
   equations: Vec<TypeEquation>,
   /// Substitution map containing solutions matching type variables to real types
   pub subst: SubstMap,
-  /// Root AST node for source queries, like checking whether a function exists
-  module: Weak<RwLock<ErlModule>>,
 }
 
 impl Default for Unifier {
@@ -38,7 +36,6 @@ impl Default for Unifier {
     Self {
       equations: vec![],
       subst: Default::default(),
-      module: Weak::new(),
     }
   }
 }
@@ -46,44 +43,26 @@ impl Default for Unifier {
 impl Unifier {
   /// Create a new Unifier from AST tree, and setup the equations for this code.
   /// This will scan the AST and prepare data for type inference.
-  pub fn new(module: Weak<RwLock<ErlModule>>) -> ErlResult<Self> {
+  pub fn new(module: &mut ErlModule) -> ErlResult<Self> {
     let mut unifier = Self {
       equations: vec![],
       subst: Default::default(),
-      module: module.clone(),
     };
 
     let mut eq = Vec::new();
-    let ast: Rc<RwLock<ErlAst>> = {
-      let mrw = module.upgrade().unwrap();
-      let m = mrw.read().unwrap();
-      m.ast.clone()
-    };
+    let ast: Rc<RwLock<ErlAst>> = module.ast.clone();
 
     {
       let ast_r = ast.read().unwrap();
-      unifier.generate_equations(&mut eq, &ast_r)?;
+      unifier.generate_equations(module, &mut eq, &ast_r)?;
       println!("Equations: {:?}", unifier.equations);
 
       unifier.unify_all_equations(&ast_r)?;
       println!("Unify map: {:?}", &unifier.subst);
     }
 
-
     Ok(unifier)
   }
-
-  // /// Upgrades weak pointer to module and opens RwLock for read.
-  // fn module_read(&self) -> RwLockReadGuard<ErlModule> {
-  //   self.module.upgrade().unwrap()
-  //       .read().unwrap()
-  // }
-  //
-  // /// Upgrades weak pointer to module and opens RwLock for write.
-  // fn module_write(&self) -> RwLockWriteGuard<ErlModule> {
-  //   self.module.upgrade().unwrap()
-  //       .write().unwrap()
-  // }
 
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
   fn unify_all_equations(&mut self, ast: &ErlAst) -> ErlResult<()> {
@@ -365,16 +344,13 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
-  pub fn generate_equations(&self, eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
+  pub fn generate_equations(&self, module: &mut ErlModule,
+                            eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
     for nested_ast in ast.children().unwrap_or(vec![]) {
-      match self.generate_equations(eq, nested_ast) {
+      match self.generate_equations(module, eq, nested_ast) {
         Ok(_) => {} // nothing, all good
-        Err(err) => {
-          let mrw = self.module.upgrade().unwrap();
-          let mut m = mrw.write().unwrap();
-          m.add_error(err);
-        }
+        Err(err) => { module.add_error(err); }
       }
     }
 

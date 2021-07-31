@@ -29,7 +29,7 @@ fn infer_simplemath() -> ErlResult<()> {
       }
       other1 => test_util::fail_unexpected(other1),
     }
-    println!("Parsed: {:?}", module.ast);
+    println!("Parsed: {:?}", module.ast.read().unwrap());
 
     let f_t = module.unifier.infer_ast(&ast).into_final_type();
     println!("Inferred for {:?} 🡆 {:?}", &ast, f_t);
