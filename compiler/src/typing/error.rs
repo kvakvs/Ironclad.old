@@ -2,9 +2,9 @@
 
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
+use std::fmt::Formatter;
 
 /// Raised by the type analyzer and checker
-#[derive(Debug)]
 pub enum TypeError {
   /// Error raised when two types contradict one of type equations for the AST
   TypesDontMatch {
@@ -22,4 +22,18 @@ pub enum TypeError {
     /// The type which caused the error
     ty: ErlType,
   },
+}
+
+impl std::fmt::Display for TypeError {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      TypeError::TypesDontMatch { t1, t2 } => {
+        write!(f, "Types don't match: {} <=> {}", t1, t2)
+      },
+      TypeError::FunAritiesDontMatch => write!(f, "Function arities don't match"),
+      TypeError::OccursCheckFailed { tvar, ty } => {
+        write!(f, "Recursive type {} in {}", tvar, ty)
+      },
+    }
+  }
 }

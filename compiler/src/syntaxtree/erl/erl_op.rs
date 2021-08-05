@@ -81,8 +81,10 @@ impl ErlBinaryOp {
 pub enum ErlUnaryOp {
   /// Logical negation
   Not,
-  /// Numerical sign change
-  Negate,
+  /// Numerical sign change, -X
+  Negative,
+  /// Numerical sign positive, no sign change: +X
+  Positive,
 }
 
 impl ErlUnaryOp {
@@ -90,7 +92,9 @@ impl ErlUnaryOp {
   pub fn get_type(&self) -> ErlType {
     match self {
       ErlUnaryOp::Not => ErlType::AnyBool,
-      ErlUnaryOp::Negate => ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float]),
+      ErlUnaryOp::Negative | ErlUnaryOp::Positive => {
+        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
+      },
     }
   }
 }

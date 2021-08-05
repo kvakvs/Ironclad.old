@@ -13,7 +13,7 @@ impl ErlModule {
   /// * Trying to detect function names: ErlAst::App nodes must attempt to replace their atom
   ///   expressions with local function references, or with exports from other modules.
   pub fn postprocess_ast(&mut self, ast: &mut ErlAst) -> ErlResult<()> {
-    println!("Postprocessing node... {:?}", ast);
+    println!("Postprocessing node... {}", ast);
 
     for child in ast.children_mut().unwrap_or_default() {
       self.postprocess_ast(child)?;

@@ -2,6 +2,7 @@
 
 use crate::typing::erl_type::ErlType;
 use crate::source_loc::SourceLoc;
+use std::fmt::Formatter;
 
 /// Type equation, assumes matching or equal types, t1 = t2
 pub struct TypeEquation {
@@ -11,6 +12,16 @@ pub struct TypeEquation {
   pub right: ErlType,
   /// The reference to the source code which generated this equation
   pub location: SourceLoc,
+}
+
+impl std::fmt::Debug for TypeEquation {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
+}
+
+impl std::fmt::Display for TypeEquation {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "{} ⊆ {}", self.left, self.right)
+  }
 }
 
 impl TypeEquation {

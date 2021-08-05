@@ -29,10 +29,10 @@ fn infer_simplemath() -> ErlResult<()> {
       }
       other1 => test_util::fail_unexpected(other1),
     }
-    println!("Parsed: {:?}", module.ast.read().unwrap());
+    println!("Parsed: {}", module.ast.read().unwrap());
 
     let f_t = module.unifier.infer_ast(&ast).into_final_type();
-    println!("Inferred for {:?} 🡆 {:?}", &ast, f_t);
+    println!("Inferred for {} 🡆 {}", &ast, f_t);
   }
 
   Ok(())
@@ -52,7 +52,7 @@ fn infer_funcall_test() -> ErlResult<()> {
     let ast = module.ast.read().unwrap();
     let find_result1 = ast.find_fun("add", 2).unwrap();
     let f_t1 = module.unifier.infer_ast(find_result1.ast).into_final_type();
-    println!("Inferred for {:?} 🡆 {:?}", find_result1.ast, f_t1);
+    println!("Inferred for {} 🡆 {}", find_result1.ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
     assert_eq!(f_t1, ErlType::Number, "Function add/2 must have inferred type: number()");
@@ -62,7 +62,7 @@ fn infer_funcall_test() -> ErlResult<()> {
     let ast2 = module.ast.read().unwrap();
     let find_result2 = ast2.find_fun("main", 0).unwrap();
     let f_t2 = module.unifier.infer_ast(find_result2.ast).into_final_type();
-    println!("Inferred for {:?} 🡆 {:?}", find_result2.ast, f_t2);
+    println!("Inferred for {} 🡆 {}", find_result2.ast, f_t2);
 
     // Expected: Main -> integer()
     assert_eq!(f_t2, ErlType::Number, "Function main/0 must have inferred type: number()");

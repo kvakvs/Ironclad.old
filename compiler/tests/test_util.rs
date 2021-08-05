@@ -5,7 +5,6 @@ use compiler::project::source_file::SourceFile;
 use std::path::PathBuf;
 use pest::Parser;
 use std::rc::Rc;
-use std::fmt::Debug;
 
 #[allow(dead_code)]
 pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
@@ -18,7 +17,7 @@ pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
 }
 
 #[allow(dead_code)]
-pub fn fail_unexpected<T>(val: &T) where T: Debug {
-  println!("Unexpected value: {:?}", val);
+pub fn fail_unexpected<T>(val: &T) where T: std::fmt::Display {
+  println!("Unexpected value: {}", val);
   panic!()
 }

@@ -108,7 +108,7 @@ impl ErlAst {
       ErlAst::BinaryOp(_loc, binop) => binop.operator.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
-      _ => unreachable!("Can't process {:?}", self),
+      _ => unreachable!("Can't process {}", self),
     }
   }
 

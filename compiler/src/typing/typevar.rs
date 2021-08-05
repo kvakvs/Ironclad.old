@@ -15,12 +15,6 @@ lazy_static! {
 }
 
 impl TypeVar {
-  // fn subscript(n: usize) -> String {
-  //   format!("{}", n).drain(..)
-  //       .map(|c| SUBSCRIPT_NUMERICS[c as usize - 48]) // guarantee the input is 0..9
-  //       .collect()
-  // }
-
 }
 
 impl std::fmt::Display for TypeVar {
@@ -28,6 +22,10 @@ impl std::fmt::Display for TypeVar {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "𝜎{}", self.0)
   }
+}
+
+impl std::fmt::Debug for TypeVar {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
 }
 
 impl Default for TypeVar {

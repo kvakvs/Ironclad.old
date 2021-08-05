@@ -20,7 +20,7 @@ extern crate pest_derive;
 extern crate toml;
 extern crate serde;
 extern crate serde_derive;
-extern crate thiserror;
+// extern crate thiserror;
 extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;

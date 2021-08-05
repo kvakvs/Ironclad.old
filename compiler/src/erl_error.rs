@@ -1,67 +1,31 @@
 //! Contains all possible Erlang compiler errors
+use std::fmt::Formatter;
 use std::num::ParseIntError;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
-use pest::error::{LineColLocation};
-use thiserror::Error;
+use pest::error::LineColLocation;
 
-use crate::source_loc::SourceLoc;
+use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::syntaxtree::erl::erl_parser;
 use crate::syntaxtree::pp::pp_parser;
 use crate::typing::error::TypeError;
 
-/// Shows to the user where the error was found
-#[derive(Debug)]
-pub struct ErrorLocation {
-  /// If we know the file where this happened
-  pub path: Option<PathBuf>,
-  /// If we know where in file this happened
-  pub location: SourceLoc,
-}
-
-impl ErrorLocation {
-  /// Creates a new error location for filename and possibly AST location
-  pub fn new(filename: Option<PathBuf>,
-             location: SourceLoc) -> ErrorLocation {
-    Self {
-      path: filename,
-      location,
-    }
-  }
-}
-
 /// Erlang compiler errors all gathered together
-#[derive(Error, Debug)]
 pub enum ErlError {
   /// Returned when multiple errors were found, report each error
-  #[error("Multiple errors: {0:?}")]
   Interrupted(String),
-
   /// Returned when multiple errors were found, report each error
-  #[error("Multiple errors: {0:?}")]
   Multiple(Vec<ErlError>),
-
-  // #[error("Not implemented: {explanation}")]
-  // NotImpl { explanation: String },
-
   /// Returned when file or directory read/write failed
-  #[error("File IO error: {0:?}")]
   Io(std::io::Error),
-
   /// Project errors produced when glob() scanning input files and directories
-  #[error("Directory scan error: {0:?}")]
   Glob(glob::GlobError),
-
   /// Returned when directory scan glob pattern contained an error
-  #[error("Glob pattern error: {0:?}")]
   GlobPattern(glob::PatternError),
-
   /// Project loading error produced when loading TOML
-  #[error("Configuration file syntax error: {0:?}")]
   Config(toml::de::Error),
 
   /// Returned when preprocessor parser failed
-  #[error("Preprocessor parse error: {msg} (at {loc:?})")]
   PreprocessorParse {
     /// Location where error was found
     loc: ErrorLocation,
@@ -70,14 +34,12 @@ pub enum ErlError {
   },
 
   /// Returned when preprocessor syntax is not correct
-  #[error("Preprocessor syntax parse error: {parse_err:?}")]
   PreprocessorSyntax {
     /// Error from the PEST parser
     parse_err: pest::error::Error<pp_parser::Rule>
   },
 
   /// Returned when Erlang parser failed: internal error must not occur with the user
-  #[error("Parser internal error: {msg} (at {loc:?})")]
   ParserInternal {
     /// Some hint at where the error has occured
     loc: ErrorLocation,
@@ -86,7 +48,6 @@ pub enum ErlError {
   },
 
   /// Returned when Erlang parser failed
-  #[error("Erlang parse error: {msg} (at {loc:?})")]
   ErlangParse {
     /// Some hint at where the error has occured
     loc: ErrorLocation,
@@ -95,7 +56,6 @@ pub enum ErlError {
   },
 
   /// Returned when Erlang syntax is not correct
-  #[error("Erlang syntax parse error: {msg}")]
   ErlangSyntax {
     /// Error from PEST parser
     parse_err: pest::error::Error<erl_parser::Rule>,
@@ -104,8 +64,46 @@ pub enum ErlError {
   },
 
   /// Returned when a type error or mismatching types were found
-  #[error("Type error: {0:?}")]
   TypeError(TypeError),
+}
+
+impl std::fmt::Debug for ErlError {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
+}
+
+impl std::fmt::Display for ErlError {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      ErlError::Interrupted(s) => write!(f, "Processing interrupted: {}", s),
+      ErlError::Multiple(errs) => {
+        writeln!(f, "Multiple errors:")?;
+        for err in errs.iter() {
+          writeln!(f, "{}", err)?;
+        }
+        Ok(())
+      }
+      ErlError::Io(ioerr) => write!(f, "File IO error: {}", ioerr),
+      ErlError::Glob(gerr) => write!(f, "Directory scan error: {}", gerr),
+      ErlError::GlobPattern(gperr) => write!(f, "Glob pattern error: {}", gperr),
+      ErlError::Config(cfgerr) => write!(f, "Configuration file syntax error: {}", cfgerr),
+      ErlError::PreprocessorParse { loc, msg } => {
+        write!(f, "Preprocessor parse error: {} (at {})", msg, loc)
+      }
+      ErlError::PreprocessorSyntax { parse_err } => {
+        write!(f, "Preprocessor syntax parse error: {}", parse_err)
+      }
+      ErlError::ParserInternal { loc, msg } => {
+        write!(f, "Parser internal error: {} (at {})", msg, loc)
+      }
+      ErlError::ErlangParse { loc, msg } => {
+        write!(f, "Erlang parse error: {} (at {})", msg, loc)
+      }
+      ErlError::ErlangSyntax { parse_err, msg } => {
+        write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
+      }
+      ErlError::TypeError(terr) => write!(f, "Type error: {}", terr),
+    }
+  }
 }
 
 impl ErlError {

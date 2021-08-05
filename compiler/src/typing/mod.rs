@@ -5,5 +5,5 @@ pub mod error;
 pub mod typevar;
 pub mod equation;
 pub mod unifier;
-pub mod debug;
+pub mod display;
 mod function_type;

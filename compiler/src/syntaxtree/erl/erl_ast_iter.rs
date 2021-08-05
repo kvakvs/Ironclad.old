@@ -40,7 +40,11 @@ impl ErlAst {
 
       ErlAst::Case(_loc, case) => {
         let mut r: Vec<&mut ErlAst> = vec![case.arg.borrow_mut()];
-        r.extend(case.clauses.iter_mut());
+        case.clauses.iter_mut().for_each(|cc| {
+          r.push(&mut cc.cond);
+          r.push(&mut cc.guard);
+          r.push(&mut cc.body);
+        });
         Some(r)
       }
 
@@ -57,9 +61,9 @@ impl ErlAst {
       ErlAst::Comma { left, right, .. } => {
         Some(vec![left, right])
       }
-      ErlAst::Token { .. } => panic!("Token {:?} must be eliminated in AST build phase", self),
+      ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
 
-      _ => unreachable!("Can't process {:?}", self),
+      _ => unreachable!("Can't process {}", self),
     }
   }
 
@@ -92,7 +96,11 @@ impl ErlAst {
 
       ErlAst::Case(_loc, case) => {
         let mut r: Vec<&ErlAst> = vec![&case.arg];
-        r.extend(case.clauses.iter());
+        case.clauses.iter().for_each(|cc| {
+          r.push(&cc.cond);
+          r.push(&cc.guard);
+          r.push(&cc.body);
+        });
         Some(r)
       }
 
@@ -109,9 +117,9 @@ impl ErlAst {
       ErlAst::Comma { left, right, .. } => {
         Some(vec![left, right])
       }
-      ErlAst::Token { .. } => panic!("Token {:?} must be eliminated in AST build phase", self),
+      ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
 
-      _ => unreachable!("Can't process {:?}", self),
+      _ => unreachable!("Can't process {}", self),
     }
   }
 }

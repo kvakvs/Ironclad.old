@@ -379,7 +379,7 @@ impl Unifier {
       ErlAst::Case(_loc, case) => {
         // For Case expression, type of case must be union of all clause types
         let all_clause_types = case.clauses.iter()
-            .map(|c| c.get_type())
+            .map(|c| c.body.get_type())
             .collect();
         let all_clauses_t = ErlType::union_of(all_clause_types);
         Self::equation(eq, ast, case.ret.clone(), all_clauses_t);
@@ -410,7 +410,7 @@ impl Unifier {
       ErlAst::Comma { right, ty, .. } => {
         Self::equation(eq, ast, ty.clone(), right.get_type());
       }
-      _ => unreachable!("Can't process {:?}", ast),
+      _ => unreachable!("Can't process {}", ast),
     }
     Ok(())
   }

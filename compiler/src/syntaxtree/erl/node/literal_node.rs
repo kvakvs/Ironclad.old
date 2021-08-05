@@ -1,6 +1,5 @@
 //! Erlang literals, values fully known at compile time
 use crate::typing::erl_type::ErlType;
-use std::fmt::Formatter;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, PartialEq)]
@@ -45,33 +44,33 @@ pub enum LiteralNode {
 //   static ref ERLTYPE_Tuple: ErlType = ErlType::Tuple;
 // }
 
-impl std::fmt::Display for LiteralNode {
-  /// Print a literal nicely
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      LiteralNode::Integer(n) => write!(f, "{}", n),
-      LiteralNode::Float(flt) => write!(f, "{}", flt),
-      LiteralNode::Atom(a) => write!(f, "'{}'", a),
-      LiteralNode::Bool(b) => write!(f, "{}", if *b { "'true'" } else { "'false'" }),
-      // Cannot have runtime values as literals
-      // ErlLit::Pid => format!("<pid>"),
-      // ErlLit::Reference => format!("<ref>"),
-      LiteralNode::List(items) => {
-        f.debug_list().entries(items.iter()).finish()
-      }
-      LiteralNode::String(s) => write!(f, "\"{}\"", s), // TODO: Quote special characters
-      LiteralNode::Tuple(items) => {
-        write!(f, "{{")?;
-        let mut first = true;
-        for item in items.iter() {
-          if !first { write!(f, ", ")?; } else { first = false; }
-          write!(f, "{}", item)?;
-        }
-        write!(f, "}}")
-      }
-    }
-  }
-}
+// impl std::fmt::Display for LiteralNode {
+//   /// Print a literal nicely
+//   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//     match self {
+//       LiteralNode::Integer(n) => write!(f, "{}", n),
+//       LiteralNode::Float(flt) => write!(f, "{}", flt),
+//       LiteralNode::Atom(a) => write!(f, "'{}'", a),
+//       LiteralNode::Bool(b) => write!(f, "{}", if *b { "'true'" } else { "'false'" }),
+//       // Cannot have runtime values as literals
+//       // ErlLit::Pid => format!("<pid>"),
+//       // ErlLit::Reference => format!("<ref>"),
+//       LiteralNode::List(items) => {
+//         f.debug_list().entries(items.iter()).finish()
+//       }
+//       LiteralNode::String(s) => write!(f, "\"{}\"", s), // TODO: Quote special characters
+//       LiteralNode::Tuple(items) => {
+//         write!(f, "{{")?;
+//         let mut first = true;
+//         for item in items.iter() {
+//           if !first { write!(f, ", ")?; } else { first = false; }
+//           write!(f, "{}", item)?;
+//         }
+//         write!(f, "}}")
+//       }
+//     }
+//   }
+// }
 
 impl LiteralNode {
   /// Retrieves a type of a literal

@@ -1,17 +1,18 @@
 //! Preprocess Stage - parses and interprets the Erlang source and gets rid of -if/-ifdef/-ifndef
 //! directives, substitutes HRL files contents in place of -include/-include_lib etc.
 
-use crate::erl_error::{ErlResult, ErlError, ErrorLocation};
-use crate::project::ErlProject;
-use crate::stage::file_contents_cache::FileContentsCache;
-use std::path::{PathBuf, Path};
-use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstCache, PpAstTree};
-use std::sync::{Arc, Mutex};
-use crate::project::source_file::SourceFile;
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use crate::source_loc::SourceLoc;
+use std::sync::{Arc, Mutex};
+
+use crate::erl_error::{ErlError, ErlResult};
+use crate::project::ErlProject;
+use crate::project::source_file::SourceFile;
+use crate::source_loc::{ErrorLocation, SourceLoc};
+use crate::stage::file_contents_cache::FileContentsCache;
+use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstCache, PpAstTree};
 
 enum PpCondition {
   Ifdef(String),
