@@ -1,7 +1,9 @@
 extern crate compiler;
+extern crate function_name;
 
 mod test_util;
 
+use ::function_name::named;
 use compiler::syntaxtree::erl::erl_ast::{ErlAst};
 use compiler::erl_error::ErlResult;
 use compiler::syntaxtree::erl::erl_parser::{Rule};
@@ -9,6 +11,7 @@ use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::erl_module::ErlModule;
 
+#[named]
 #[test]
 fn infer_simplemath() -> ErlResult<()> {
   let code = "myfun(A) -> (A + 1) / 2.";
@@ -32,12 +35,28 @@ fn infer_simplemath() -> ErlResult<()> {
     println!("Parsed: {}", module.ast.read().unwrap());
 
     let f_t = module.unifier.infer_ast(&ast).into_final_type();
-    println!("Inferred for {} 🡆 {}", &ast, f_t);
+    println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
   }
 
   Ok(())
 }
 
+#[named]
+#[test]
+fn infer_atoms() -> ErlResult<()> {
+  let code = "atomtest(A) -> [atom1] ++ [atom2].";
+  let mut module = ErlModule::new_testing();
+  module.parse_and_unify_str(Rule::function_def, code)?;
+  {
+    let ast = module.ast.read().unwrap();
+    let f_t = module.unifier.infer_ast(&ast).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
+    // assert!(matches!(f_t, ErlType::Atom(_atom1)), "Function atomtest() must have type 'atom1'");
+  }
+  Ok(())
+}
+
+#[named]
 #[test]
 fn infer_funcall_test() -> ErlResult<()> {
   println!("--- testing function call type inference ---");
@@ -47,12 +66,11 @@ fn infer_funcall_test() -> ErlResult<()> {
                    main() -> add(A, 4).\n";
   let mut module = ErlModule::new_testing();
   module.parse_and_unify_str(Rule::module, code)?;
-
   {
     let ast = module.ast.read().unwrap();
     let find_result1 = ast.find_fun("add", 2).unwrap();
     let f_t1 = module.unifier.infer_ast(find_result1.ast).into_final_type();
-    println!("Inferred for {} 🡆 {}", find_result1.ast, f_t1);
+    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result1.ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
     assert_eq!(f_t1, ErlType::Number, "Function add/2 must have inferred type: number()");
@@ -62,7 +80,7 @@ fn infer_funcall_test() -> ErlResult<()> {
     let ast2 = module.ast.read().unwrap();
     let find_result2 = ast2.find_fun("main", 0).unwrap();
     let f_t2 = module.unifier.infer_ast(find_result2.ast).into_final_type();
-    println!("Inferred for {} 🡆 {}", find_result2.ast, f_t2);
+    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2.ast, f_t2);
 
     // Expected: Main -> integer()
     assert_eq!(f_t2, ErlType::Number, "Function main/0 must have inferred type: number()");
