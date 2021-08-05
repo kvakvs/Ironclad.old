@@ -32,6 +32,10 @@ pub enum ErlBinaryOp {
   HardEq,
   /// Hard inequality (identity mismatch) of two any values
   HardNotEq,
+  /// Concatenate two lists ++
+  ListAppend,
+  /// Difference of two lists --
+  ListSubtract,
 }
 
 impl ErlBinaryOp {
@@ -52,6 +56,8 @@ impl ErlBinaryOp {
       | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
         None
       }
+
+      ErlBinaryOp::ListAppend | ErlBinaryOp::ListSubtract => Some(ErlType::AnyList),
     }
   }
 
@@ -72,6 +78,8 @@ impl ErlBinaryOp {
       | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
         ErlType::AnyBool
       },
+
+      ErlBinaryOp::ListAppend | ErlBinaryOp::ListSubtract => ErlType::AnyList,
     }
   }
 }
@@ -79,6 +87,8 @@ impl ErlBinaryOp {
 /// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlUnaryOp {
+  /// Prefixed by 'catch' keyword
+  Catch,
   /// Logical negation
   Not,
   /// Numerical sign change, -X
@@ -95,6 +105,7 @@ impl ErlUnaryOp {
       ErlUnaryOp::Negative | ErlUnaryOp::Positive => {
         ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
       },
+      ErlUnaryOp::Catch => ErlType::Any,
     }
   }
 }

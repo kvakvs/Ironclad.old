@@ -72,6 +72,9 @@ pub enum ErlType {
   /// 64 bit floating point, is-a(Number)
   Float,
 
+  /// A list of any type
+  AnyList,
+
   /// A list with element type, type can be union
   List(Box<ErlType>),
 
@@ -116,6 +119,9 @@ pub enum ErlType {
   /// Type for an Erlang Literal value, a data value fully known at compile time, having no type
   /// variables or references to other types or other data
   Literal(LiteralNode),
+
+  /// Any callable
+  AnyFunction,
 
   /// Named function or unnamed
   Function(FunctionType),

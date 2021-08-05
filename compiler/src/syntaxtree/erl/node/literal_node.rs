@@ -32,46 +32,6 @@ pub enum LiteralNode {
   Tuple(Vec<LiteralNode>),
 }
 
-// lazy_static! {
-//   static ref ERLTYPE_Integer: ErlType = ErlType::Integer;
-//   static ref ERLTYPE_Float: ErlType = ErlType::Float;
-//   static ref ERLTYPE_Atom: ErlType = ErlType::Atom;
-//   static ref ERLTYPE_Bool: ErlType = ErlType::Bool;
-//   static ref ERLTYPE_Pid: ErlType = ErlType::Pid;
-//   static ref ERLTYPE_Reference: ErlType = ErlType::Reference;
-//   static ref ERLTYPE_List: ErlType = ErlType::List;
-//   static ref ERLTYPE_String: ErlType = ErlType::String;
-//   static ref ERLTYPE_Tuple: ErlType = ErlType::Tuple;
-// }
-
-// impl std::fmt::Display for LiteralNode {
-//   /// Print a literal nicely
-//   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//     match self {
-//       LiteralNode::Integer(n) => write!(f, "{}", n),
-//       LiteralNode::Float(flt) => write!(f, "{}", flt),
-//       LiteralNode::Atom(a) => write!(f, "'{}'", a),
-//       LiteralNode::Bool(b) => write!(f, "{}", if *b { "'true'" } else { "'false'" }),
-//       // Cannot have runtime values as literals
-//       // ErlLit::Pid => format!("<pid>"),
-//       // ErlLit::Reference => format!("<ref>"),
-//       LiteralNode::List(items) => {
-//         f.debug_list().entries(items.iter()).finish()
-//       }
-//       LiteralNode::String(s) => write!(f, "\"{}\"", s), // TODO: Quote special characters
-//       LiteralNode::Tuple(items) => {
-//         write!(f, "{{")?;
-//         let mut first = true;
-//         for item in items.iter() {
-//           if !first { write!(f, ", ")?; } else { first = false; }
-//           write!(f, "{}", item)?;
-//         }
-//         write!(f, "}}")
-//       }
-//     }
-//   }
-// }
-
 impl LiteralNode {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {

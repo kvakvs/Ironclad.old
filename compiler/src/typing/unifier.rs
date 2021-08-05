@@ -254,10 +254,17 @@ impl Unifier {
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))
       }
+      ErlType::AnyList => false, // does not occur
+      ErlType::List(union_t) => self.occurs_check(tv, union_t),
+      ErlType::Tuple(elems) => {
+        elems.iter().any(|m| self.occurs_check(tv, m))
+      },
       // Any simple type cannot have typevar tv in it, so all false
       simple_type if simple_type.is_simple_value_type() => false,
 
-      _ => todo!("Don't know how to occurs_check on typevar {:?} and type {:?}", tv, ty)
+      _ => {
+        unimplemented!("Don't know how to occurs_check on typevar {:?} and type {:?}", tv, ty)
+      }
     }
 
     // false
@@ -410,6 +417,9 @@ impl Unifier {
       ErlAst::Comma { right, ty, .. } => {
         Self::equation(eq, ast, ty.clone(), right.get_type());
       }
+      ErlAst::List(_loc, _elems) => {}
+      ErlAst::Tuple(_loc, _elems) => {}
+
       _ => unreachable!("Can't process {}", ast),
     }
     Ok(())

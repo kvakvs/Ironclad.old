@@ -29,6 +29,10 @@ impl ErlModule {
       Rule::op_div => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Div, rhs),
       Rule::op_integer_div => ErlAst::new_binop(loc, lhs, ErlBinaryOp::IntegerDiv, rhs),
       Rule::op_comma => ErlAst::new_comma(loc, lhs, rhs),
+
+      Rule::op_list_append => ErlAst::new_binop(loc, lhs, ErlBinaryOp::ListAppend, rhs),
+      Rule::op_list_subtract => ErlAst::new_binop(loc, lhs, ErlBinaryOp::ListSubtract, rhs),
+
       _ => todo!("any_to_ast_prec_climber: Climber doesn't know how to parse: {:?}", op)
     };
     // println!("PrecC: infix -> result {:?}", &result);
@@ -54,6 +58,22 @@ impl ErlModule {
       Rule::literal | Rule::var | Rule::application => {
         self.to_ast_single_node(pair)
       }
+      Rule::list => {
+        let loc = pair.as_span().into();
+        let list_node = pair.into_inner().next().unwrap();
+        let elems_ast = self.to_ast_prec_climb(list_node, get_prec_climber())?;
+        let mut elems = Vec::new();
+        ErlAst::comma_to_vec(elems_ast, &mut elems);
+        Ok(ErlAst::new_list(loc, elems))
+      },
+      Rule::tuple => {
+        let loc = pair.as_span().into();
+        let list_node = pair.into_inner().next().unwrap();
+        let elems_ast = self.to_ast_prec_climb(list_node, get_prec_climber())?;
+        let mut elems = Vec::new();
+        ErlAst::comma_to_vec(elems_ast, &mut elems);
+        Ok(ErlAst::new_tuple(loc, elems))
+      },
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
     }
   }
@@ -227,24 +247,6 @@ impl ErlModule {
     let args: Vec<ErlAst> = nodes.into_iter().collect();
     Ok(FunctionClauseNode::new(name, args, body))
   }
-
-  // /// Parses all inner nodes to produce a stream of AST nodes, the caller is expected to make sense
-  // /// of the nodes and verify they're correct.
-  // fn parse_inner(&self, pair: Pair<Rule>) -> ErlResult<Rc<ErlAst>> {
-  //   // let pair_s = pair.as_str();
-  //   let expr_item = pair.into_inner();
-  //
-  //   let mut ast_items: Vec<Rc<ErlAst>> = expr_item
-  //       .map(|p| self.to_ast_single_node(p))
-  //       .map(Result::unwrap)
-  //       .collect();
-  //
-  //   if ast_items.len() == 1 {
-  //     Ok(ast_items.pop().unwrap())
-  //   } else {
-  //     Ok(ErlAst::new_comma(ast_items)
-  //   }
-  // }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
   /// them into a Comma AST node, otherwise return as is.

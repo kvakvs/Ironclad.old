@@ -1,11 +1,15 @@
+//! Source file locations for printing and reporting to the user
 use std::path::PathBuf;
 
 use pest::Span;
 use std::fmt::Formatter;
 
+/// Source code span with start and end
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct SourceLoc {
+  /// Where the span starts
   pub start: usize,
+  /// Where the span ends
   pub end: usize,
 }
 

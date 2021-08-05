@@ -10,6 +10,7 @@ pub struct FunArity {
 }
 
 impl FunArity {
+  /// Creates a new funarity
   pub fn new(name: String, arity: usize) -> Self {
     FunArity { name, arity }
   }

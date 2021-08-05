@@ -3,6 +3,7 @@
 use std::fmt::Formatter;
 
 use crate::typing::erl_type::{ErlType};
+use crate::display::{display_comma_separated, display_tuple};
 
 impl std::fmt::Debug for ErlType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
@@ -25,32 +26,17 @@ impl std::fmt::Display for ErlType {
       ErlType::AnyInteger => write!(f, "integer()"),
       ErlType::IntegerConst(i) => write!(f, "{}", i),
       ErlType::Float => write!(f, "float()"),
+      ErlType::AnyList => write!(f, "list()"),
       ErlType::List(ty) => write!(f, "list({})", ty.to_string()),
-      ErlType::Tuple(items) => {
-        write!(f, "{{")?;
-        let mut first = true;
-        for i in items.iter() {
-          if !first { write!(f, ", ")?; } else { first = false; }
-          write!(f, "{}", i)?;
-        }
-        write!(f, "}}")
-      }
+      ErlType::Tuple(items) => display_tuple(items, f),
       ErlType::Record { tag, fields } => {
         write!(f, "#{}{{", tag)?;
-        let mut first = true;
-        for field_def in fields.iter() {
-          if !first { write!(f, ", ")?; } else { first = false; }
-          write!(f, "{}", field_def)?;
-        }
+        display_comma_separated(fields, f)?;
         write!(f, "}}")
       }
       ErlType::Map(fields) => {
         write!(f, "#{{")?;
-        let mut first = true;
-        for elem in fields.iter() {
-          if !first { write!(f, ", ")?; } else { first = false; }
-          write!(f, "{}", elem)?;
-        }
+        display_comma_separated(fields, f)?;
         write!(f, "}}")
       }
       ErlType::AnyAtom => write!(f, "atom()"),
@@ -63,16 +49,13 @@ impl std::fmt::Display for ErlType {
       ErlType::BinaryBits => write!(f, "bits()"),
       ErlType::Literal(lit) => write!(f, "{}", lit),
       ErlType::LocalFunction { name, arity } => write!(f, "fun {}/{}", name, arity),
+      ErlType::AnyFunction => write!(f, "fun()"),
       ErlType::Function(fun_type) => {
         match &fun_type.name {
           None => write!(f, "fun(")?,
           Some(n) => write!(f, "{}(", n)?,
         }
-        let mut first = true;
-        for arg in fun_type.arg_types.iter() {
-          if !first { write!(f, ", ")?; } else { first = false; }
-          write!(f, "{}", arg)?;
-        }
+        display_comma_separated(&fun_type.arg_types, f)?;
         write!(f, ") -> {}", fun_type.ret_type)
       }
       ErlType::TVar(tv) => write!(f, "{}", tv),

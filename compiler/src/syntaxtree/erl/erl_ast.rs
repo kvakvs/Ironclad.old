@@ -1,4 +1,5 @@
 //! AST syntax structure of an Erlang file
+use ::function_name::named;
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::syntaxtree::erl::node::case_clause_node::CaseClauseNode;
@@ -90,10 +91,16 @@ pub enum ErlAst {
 
   /// Unary operation with 1 argument
   UnaryOp(SourceLoc, UnaryOperatorExprNode),
+
+  /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
+  List(SourceLoc, Vec<ErlAst>),
+  /// A tuple of some expressions, TODO: constant folding
+  Tuple(SourceLoc, Vec<ErlAst>),
 }
 
 impl ErlAst {
   /// Gets the type of an AST node
+  #[named]
   pub fn get_type(&self) -> ErlType {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
@@ -108,7 +115,14 @@ impl ErlAst {
       ErlAst::BinaryOp(_loc, binop) => binop.operator.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
-      _ => unreachable!("Can't process {}", self),
+      ErlAst::List(_loc, elems) => {
+        let union_t = ErlType::union_of(elems.iter().map(|e| e.get_type()).collect());
+        ErlType::List(Box::new(union_t))
+      },
+      ErlAst::Tuple(_loc, elems) => {
+        ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
+      },
+      _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
 
@@ -162,6 +176,18 @@ impl ErlAst {
   /// Create a new literal AST node of an atom
   pub fn new_lit_atom(location: SourceLoc, val: &str) -> ErlAst {
     ErlAst::Lit(location, LiteralNode::Atom(String::from(val)))
+  }
+
+  /// Create a new AST node for a list of some expressions
+  pub fn new_list(location: SourceLoc, elems: Vec<ErlAst>) -> ErlAst {
+    // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
+    ErlAst::List(location, elems)
+  }
+
+  /// Create a new AST node for a tuple of some expressions
+  pub fn new_tuple(location: SourceLoc, elems: Vec<ErlAst>) -> ErlAst {
+    // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
+    ErlAst::Tuple(location, elems)
   }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the

@@ -29,7 +29,9 @@ expr = {
     ( application_or_term ~ ( expr_operator ~ application_or_term )* )
 }
 application_or_term = _{ application | expr_term }
-expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal }
+expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal | list | tuple }
+list = { "[" ~ expr ~ ("," ~ expr)* ~ "]" }
+tuple = { "{" ~ expr ~ ("," ~ expr)* ~ "}" }
 
 // Attaches to the end of an expression converting it into a function call
 application = {
@@ -42,7 +44,8 @@ application0 = { "(" ~ ")" }
 applicationN = { "(" ~ expr ~ ")" }
 
 expr_operator = _{
-    op_colon | op_hash | op_unary_ | op_binary1_ | op_binary2_ | op_list_append | op_list_subtract
+    op_list_append | op_list_subtract
+    | op_colon | op_hash | op_unary_ | op_binary1_ | op_binary2_
     | op_cmp | op_andalso | op_orelse | op_assign | op_send
     | op_catch | op_comma
 }
@@ -99,8 +102,7 @@ guard_separator = _{ "," | ";" }
 // A literal is any value or constant expression whose result is fully known at compile time
 literal = {
     number_float | number_int | atom | string
-    // | list | tuple
-    }
+}
 
 // A number can be integer or float
 // Integer can be:

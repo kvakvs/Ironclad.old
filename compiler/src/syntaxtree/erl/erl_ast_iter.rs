@@ -62,7 +62,8 @@ impl ErlAst {
         Some(vec![left, right])
       }
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
-
+      ErlAst::List(_loc, elems) => Some(elems.iter_mut().collect()),
+      ErlAst::Tuple(_loc, elems) => Some(elems.iter_mut().collect()),
       _ => unreachable!("Can't process {}", self),
     }
   }
@@ -118,6 +119,8 @@ impl ErlAst {
         Some(vec![left, right])
       }
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
+      ErlAst::List(_loc, elems) => Some(elems.iter().collect()),
+      ErlAst::Tuple(_loc, elems) => Some(elems.iter().collect()),
 
       _ => unreachable!("Can't process {}", self),
     }

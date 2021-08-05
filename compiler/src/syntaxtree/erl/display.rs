@@ -1,11 +1,13 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use std::fmt;
-use crate::syntaxtree::erl::erl_ast::{ErlAst};
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use std::fmt::Formatter;
+
+use crate::display;
+use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use std::fmt::Formatter;
+use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 
 impl fmt::Display for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -42,11 +44,7 @@ impl fmt::Display for ErlAst {
 
       ErlAst::App(_loc, app) => {
         write!(f, "{}(", app.expr)?;
-        let mut first = true;
-        for arg in app.args.iter() {
-          if first { first = false; } else { write!(f, ", ")?; }
-          write!(f, "{}", arg)?;
-        }
+        display::display_comma_separated(&app.args, f)?;
         write!(f, ")")
       }
 
@@ -63,8 +61,9 @@ impl fmt::Display for ErlAst {
       ErlAst::UnaryOp(_loc, unop) => {
         write!(f, "({} {})", unop.operator, unop.expr)
       }
-
       ErlAst::FunArity(_loc, fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
+      ErlAst::List(_loc, elems) => display::display_list(elems, f),
+      ErlAst::Tuple(_loc, elems) => display::display_tuple(elems, f),
     }
   }
 }
@@ -76,25 +75,9 @@ impl std::fmt::Display for LiteralNode {
       LiteralNode::Float(flt) => write!(f, "{}", flt),
       LiteralNode::Atom(a) => write!(f, "'{}'", a),
       LiteralNode::Bool(b) => write!(f, "{}", b),
-      LiteralNode::List(lst) => {
-        write!(f, "[")?;
-        let mut first = true;
-        for entry in lst.iter() {
-          if first { first = false; } else { write!(f, ", ")?; }
-          write!(f, "{}", entry)?;
-        }
-        write!(f, "]")
-      }
+      LiteralNode::List(elems) => display::display_list(elems, f),
       LiteralNode::String(s) => write!(f, "\"{}\"", s),
-      LiteralNode::Tuple(t) => {
-        write!(f, "{{")?;
-        let mut first = true;
-        for entry in t.iter() {
-          if first { first = false; } else { write!(f, ", ")?; }
-          write!(f, "{}", entry)?;
-        }
-        write!(f, "}}")
-      }
+      LiteralNode::Tuple(t) => display::display_tuple(t, f),
     }
   }
 }
@@ -102,11 +85,7 @@ impl std::fmt::Display for LiteralNode {
 impl std::fmt::Display for FunctionClauseNode {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}(", self.name)?;
-    let mut first = true;
-    for arg in self.args.iter() {
-      if first { first = false; } else { write!(f, ", ")?; }
-      write!(f, "{}", arg)?;
-    }
+    display::display_comma_separated(&self.args, f)?;
     write!(f, ") -> {}", self.body)
   }
 }
@@ -128,6 +107,8 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::NotEq => write!(f, "≄"),
       ErlBinaryOp::HardEq => write!(f, "≡"),
       ErlBinaryOp::HardNotEq => write!(f, "≢"),
+      ErlBinaryOp::ListAppend => write!(f, "++"),
+      ErlBinaryOp::ListSubtract => write!(f, "--"),
     }
   }
 }
@@ -138,6 +119,7 @@ impl std::fmt::Display for ErlUnaryOp {
       ErlUnaryOp::Not => write!(f, "not"),
       ErlUnaryOp::Negative => write!(f, "-"),
       ErlUnaryOp::Positive => write!(f, "+"),
+      ErlUnaryOp::Catch => write!(f, "catch"),
     }
   }
 }
