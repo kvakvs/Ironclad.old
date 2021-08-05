@@ -81,6 +81,9 @@ pub enum ErlType {
   /// A list of unicode codepoints list(char())
   String,
 
+  /// A tuple of any size and any content
+  AnyTuple,
+
   /// A tuple with each element type defined
   Tuple(Vec<ErlType>),
 

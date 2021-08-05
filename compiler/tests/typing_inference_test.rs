@@ -43,7 +43,9 @@ fn infer_simplemath() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn infer_atoms() -> ErlResult<()> {
+/// Try infer type for a function which is a sum of two lists.
+/// Expected: Inferred type list(atom1|atom2)
+fn infer_atom_list_concatenation() -> ErlResult<()> {
   let code = "atomtest(A) -> [atom1] ++ [atom2].";
   let mut module = ErlModule::new_testing();
   module.parse_and_unify_str(Rule::function_def, code)?;
@@ -51,7 +53,18 @@ fn infer_atoms() -> ErlResult<()> {
     let ast = module.ast.read().unwrap();
     let f_t = module.unifier.infer_ast(&ast).into_final_type();
     println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
-    // assert!(matches!(f_t, ErlType::Atom(_atom1)), "Function atomtest() must have type 'atom1'");
+    if let ErlType::List(t) = &f_t {
+      if let ErlType::Union(elems) = t.deref() {
+        assert_eq!(elems, &vec![ErlType::Atom(String::from("atom1")),
+                                ErlType::Atom(String::from("atom2"))])
+      } else {
+        panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got [{}]",
+               function_name!(), t)
+      }
+    } else {
+      panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got {}",
+             function_name!(), f_t)
+    };
   }
   Ok(())
 }

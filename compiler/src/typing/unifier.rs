@@ -56,7 +56,9 @@ impl Unifier {
       let ast_r = ast.read().unwrap();
       unifier.generate_equations(module, &mut eq, &ast_r)?;
       unifier.equations = eq;
-      println!("Equations: {:?}", unifier.equations);
+      for eq in unifier.equations.iter() {
+        println!("Eq: {}", eq);
+      }
 
       unifier.unify_all_equations(&ast_r)?;
       println!("Unify map: {:?}", &unifier.subst);
@@ -195,6 +197,27 @@ impl Unifier {
           _any_type1 => {}
         }
       }
+      ErlType::AnyList => {
+        match type1 {
+          // Any lists will match a AnyList
+          ErlType::List(_) => return Ok(()),
+          _any_type1 => {}
+        }
+      }
+      ErlType::List(elem2) => {
+        match type1 {
+          // Any tuple will match a AnyTuple
+          ErlType::List(elem1) => return self.unify(ast, elem1, elem2),
+          _any_type1 => {}
+        }
+      }
+      ErlType::AnyTuple => {
+        match type1 {
+          // Any tuple will match a AnyTuple
+          ErlType::Tuple(_) => return Ok(()),
+          _any_type1 => {}
+        }
+      }
       _any_type2 => {}
     }
 
@@ -258,7 +281,7 @@ impl Unifier {
       ErlType::List(union_t) => self.occurs_check(tv, union_t),
       ErlType::Tuple(elems) => {
         elems.iter().any(|m| self.occurs_check(tv, m))
-      },
+      }
       // Any simple type cannot have typevar tv in it, so all false
       simple_type if simple_type.is_simple_value_type() => false,
 
@@ -315,7 +338,7 @@ impl Unifier {
         .map(|c| c.ret.clone())
         .collect();
     let ret_union_t = ErlType::union_of(ret_union_members);
-    Self::equation(eq, ast, nf.ret.clone(), ret_union_t);
+    Self::equation(eq, ast, nf.ret.clone(), ret_union_t, "Newfun");
     Ok(())
   }
 
@@ -324,7 +347,7 @@ impl Unifier {
   fn generate_equations_fclause(&self, eq: &mut Vec<TypeEquation>,
                                 ast: &ErlAst, fc: &FunctionClauseNode) -> ErlResult<()> {
     // For each fun clause its return type is matched with body expression type
-    Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type());
+    Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type(), "Fun clause");
     Ok(())
   }
 
@@ -334,19 +357,19 @@ impl Unifier {
                             ast: &ErlAst, app: &ApplicationNode) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
-    Self::equation(eq, ast, app.expr.get_type(), app.expr_type.clone());
+    Self::equation(eq, ast, app.expr.get_type(), app.expr_type.clone(), "Apply");
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret
     let expr_type: &FunctionType = app.expr_type.as_function();
-    Self::equation(eq, ast, app.ret_type.clone(), *(expr_type.ret_type).clone());
+    Self::equation(eq, ast, app.ret_type.clone(), *(expr_type.ret_type).clone(), "Apply");
 
     Ok(())
   }
 
   /// Add a type equation, shortcut
-  fn equation(eq: &mut Vec<TypeEquation>, ast: &ErlAst, ty1: ErlType, ty2: ErlType) {
-    eq.push(TypeEquation::new(ast.location(), ty1, ty2))
+  fn equation(eq: &mut Vec<TypeEquation>, ast: &ErlAst, ty1: ErlType, ty2: ErlType, annotation: &str) {
+    eq.push(TypeEquation::new(ast.location(), ty1, ty2, annotation))
   }
 
   /// Type inference wiring
@@ -381,7 +404,7 @@ impl Unifier {
         self.generate_equations_app(eq, ast, app)?
       }
       ErlAst::Let(_loc, let_expr) => {
-        Self::equation(eq, ast, let_expr.in_ty.clone(), let_expr.in_expr.get_type());
+        Self::equation(eq, ast, let_expr.in_ty.clone(), let_expr.in_expr.get_type(), "Let");
       }
       ErlAst::Case(_loc, case) => {
         // For Case expression, type of case must be union of all clause types
@@ -389,33 +412,34 @@ impl Unifier {
             .map(|c| c.body.get_type())
             .collect();
         let all_clauses_t = ErlType::union_of(all_clause_types);
-        Self::equation(eq, ast, case.ret.clone(), all_clauses_t);
+        Self::equation(eq, ast, case.ret.clone(), all_clauses_t, "Case");
       }
       ErlAst::CClause(_loc, clause) => {
         // Clause type must match body type
-        Self::equation(eq, ast, clause.ty.clone(), clause.body.get_type());
+        Self::equation(eq, ast, clause.ty.clone(), clause.body.get_type(), "Case clause");
 
         // No check for clause condition, but the clause condition guard must be boolean
-        Self::equation(eq, ast, clause.guard.get_type(), ErlType::AnyBool);
+        Self::equation(eq, ast, clause.guard.get_type(), ErlType::AnyBool, "Case clause");
       }
       ErlAst::BinaryOp(_loc, binop) => {
         // Check result of the binary operation
-        Self::equation(eq, ast, binop.ty.clone(), binop.operator.get_result_type());
+        Self::equation(eq, ast, binop.ty.clone(), binop.get_result_type(), "Binop");
 
-        if let Some(arg_type) = binop.operator.get_arg_type() {
+        if let Some(arg_type) = binop.get_arg_type() {
           // Both sides of a binary op must have type appropriate for that op
-          Self::equation(eq, ast, binop.left.get_type(), arg_type.clone());
-          Self::equation(eq, ast, binop.right.get_type(), arg_type);
+          Self::equation(eq, ast, binop.left.get_type(), arg_type.clone(), "Binop");
+          Self::equation(eq, ast, binop.right.get_type(), arg_type, "Binop");
         }
       }
       ErlAst::UnaryOp(_loc, unop) => {
         // Equation of expression type must match either bool for logical negation,
         // or (int|float) for numerical negation
-        Self::equation(eq, ast, unop.expr.get_type(), unop.operator.get_type());
+        Self::equation(eq, ast, unop.expr.get_type(), unop.get_type(),
+                       &format!("Unary op {}", ast));
         // TODO: Match return type with inferred return typevar?
       }
       ErlAst::Comma { right, ty, .. } => {
-        Self::equation(eq, ast, ty.clone(), right.get_type());
+        Self::equation(eq, ast, ty.clone(), right.get_type(), "Comma op");
       }
       ErlAst::List(_loc, _elems) => {}
       ErlAst::Tuple(_loc, _elems) => {}

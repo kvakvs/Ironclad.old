@@ -22,6 +22,8 @@ pub enum TypeError {
     /// The type which caused the error
     ty: ErlType,
   },
+  // /// Error when operation wanted a list, and received 'received'
+  // ListExpected { received: ErlType },
 }
 
 impl std::fmt::Display for TypeError {
@@ -29,11 +31,11 @@ impl std::fmt::Display for TypeError {
     match self {
       TypeError::TypesDontMatch { t1, t2 } => {
         write!(f, "Types don't match: {} <=> {}", t1, t2)
-      },
+      }
       TypeError::FunAritiesDontMatch => write!(f, "Function arities don't match"),
       TypeError::OccursCheckFailed { tvar, ty } => {
         write!(f, "Recursive type {} in {}", tvar, ty)
-      },
+      }
     }
   }
 }

@@ -112,7 +112,7 @@ impl ErlAst {
       ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(_loc, case) => case.ret.clone(),
       ErlAst::Lit(_loc, l) => l.get_type(),
-      ErlAst::BinaryOp(_loc, binop) => binop.operator.get_result_type(),
+      ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
       ErlAst::List(_loc, elems) => {

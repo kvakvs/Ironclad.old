@@ -28,6 +28,7 @@ impl std::fmt::Display for ErlType {
       ErlType::Float => write!(f, "float()"),
       ErlType::AnyList => write!(f, "list()"),
       ErlType::List(ty) => write!(f, "list({})", ty.to_string()),
+      ErlType::AnyTuple => write!(f, "tuple()"),
       ErlType::Tuple(items) => display_tuple(items, f),
       ErlType::Record { tag, fields } => {
         write!(f, "#{}{{", tag)?;

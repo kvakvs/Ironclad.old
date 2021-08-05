@@ -1,5 +1,4 @@
 //! Binary and unary operations used in type checking.
-use crate::typing::erl_type::ErlType;
 
 /// Binary operation taking two arguments
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -38,52 +37,6 @@ pub enum ErlBinaryOp {
   ListSubtract,
 }
 
-impl ErlBinaryOp {
-  /// Gets the type for a binary operation, type is widened for numeric ops (return unions of
-  /// types) which later will be constrained by the type equations solver.
-  /// Returns None if the input type is not limited to any type.
-  pub fn get_arg_type(&self) -> Option<ErlType> {
-    match self {
-      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
-        Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float]))
-      },
-
-      ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
-        Some(ErlType::AnyInteger)
-      },
-
-      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
-        None
-      }
-
-      ErlBinaryOp::ListAppend | ErlBinaryOp::ListSubtract => Some(ErlType::AnyList),
-    }
-  }
-
-  /// Gets the result type of a binary operation
-  pub fn get_result_type(&self) -> ErlType {
-    match self {
-      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
-      },
-
-      | ErlBinaryOp::Div => ErlType::Float,
-
-      ErlBinaryOp::IntegerDiv => ErlType::AnyInteger,
-
-      ErlBinaryOp::Modulo => ErlType::AnyInteger,
-
-      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
-        ErlType::AnyBool
-      },
-
-      ErlBinaryOp::ListAppend | ErlBinaryOp::ListSubtract => ErlType::AnyList,
-    }
-  }
-}
-
 /// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlUnaryOp {
@@ -95,17 +48,4 @@ pub enum ErlUnaryOp {
   Negative,
   /// Numerical sign positive, no sign change: +X
   Positive,
-}
-
-impl ErlUnaryOp {
-  /// Get the type of an unary operation. Input type is same as return type.
-  pub fn get_type(&self) -> ErlType {
-    match self {
-      ErlUnaryOp::Not => ErlType::AnyBool,
-      ErlUnaryOp::Negative | ErlUnaryOp::Positive => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
-      },
-      ErlUnaryOp::Catch => ErlType::Any,
-    }
-  }
 }
