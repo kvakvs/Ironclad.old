@@ -1,5 +1,6 @@
 //! Erlang literals, values fully known at compile time
 use crate::typing::erl_type::ErlType;
+use std::hash::{Hash, Hasher};
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, PartialEq)]
@@ -32,11 +33,52 @@ pub enum LiteralNode {
   Tuple(Vec<LiteralNode>),
 }
 
+impl Hash for LiteralNode {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      LiteralNode::Integer(n) => {
+        'i'.hash(state);
+        n.hash(state);
+      }
+      LiteralNode::Float(f) => {
+        'f'.hash(state);
+        format!("{}", f).hash(state);
+      }
+      LiteralNode::Atom(a) => {
+        'a'.hash(state);
+        a.hash(state);
+      }
+      LiteralNode::Bool(b) => {
+        'b'.hash(state);
+        b.hash(state);
+      }
+      LiteralNode::List(elements) => {
+        'L'.hash(state);
+        elements.hash(state);
+      }
+      LiteralNode::String(s) => {
+        's'.hash(state);
+        s.hash(state);
+      }
+      LiteralNode::Tuple(elements) => {
+        'T'.hash(state);
+        elements.hash(state);
+      }
+    }
+  }
+
+  fn hash_slice<H: Hasher>(data: &[Self], state: &mut H) where Self: Sized {
+    data.iter().for_each(|d| d.hash(state))
+  }
+}
+
+impl std::cmp::Eq for LiteralNode {}
+
 impl LiteralNode {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
     match self {
-      LiteralNode::Integer(i) => ErlType::IntegerConst(*i),
+      LiteralNode::Integer(i) => ErlType::Integer(*i),
       LiteralNode::Float(_) => ErlType::Float,
       LiteralNode::Atom(s) => ErlType::Atom(s.clone()),
       LiteralNode::Bool(_) => ErlType::AnyBool,

@@ -55,8 +55,8 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
     println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
     if let ErlType::List(t) = &f_t {
       if let ErlType::Union(elems) = t.deref() {
-        assert_eq!(elems, &vec![ErlType::Atom(String::from("atom1")),
-                                ErlType::Atom(String::from("atom2"))])
+        assert!(elems.contains(&ErlType::Atom(String::from("atom1"))));
+        assert!(elems.contains(&ErlType::Atom(String::from("atom2"))));
       } else {
         panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got [{}]",
                function_name!(), t)
@@ -72,7 +72,7 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
 #[named]
 #[test]
 fn infer_funcall_test() -> ErlResult<()> {
-  println!("--- testing function call type inference ---");
+  println!("{}: testing function call type inference", function_name!());
 
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\

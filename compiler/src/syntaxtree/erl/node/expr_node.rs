@@ -38,8 +38,8 @@ impl BinaryOperatorExprNode {
         // Type of ++ will be union of left and right
         if let ErlType::List(left_list_t) = self.left.get_type() {
           if let ErlType::List(right_list_t) = self.right.get_type() {
-            let union_t = ErlType::Union(vec![*left_list_t, *right_list_t]);
-            return ErlType::List(Box::new(union_t))
+            let union_t = ErlType::union_of(vec![*left_list_t, *right_list_t]);
+            return ErlType::List(Box::new(union_t));
           } else {
             // right is not a list
           }
@@ -91,9 +91,12 @@ impl UnaryOperatorExprNode {
   pub fn get_type(&self) -> ErlType {
     match self.operator {
       ErlUnaryOp::Not => ErlType::AnyBool,
-      ErlUnaryOp::Negative | ErlUnaryOp::Positive => {
+
+      ErlUnaryOp::Negative
+      | ErlUnaryOp::Positive => {
         ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
       }
+
       ErlUnaryOp::Catch => ErlType::Any,
     }
   }

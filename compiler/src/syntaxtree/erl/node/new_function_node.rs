@@ -42,7 +42,7 @@ impl NewFunctionNode {
     // Assuming all clauses have same arity, build unions of each arg
     let mut arg_unions = Vec::with_capacity(self.funarity.arity);
     for _ in 0..self.funarity.arity {
-      arg_unions.push(ErlType::Union(vec![]));
+      arg_unions.push(ErlType::union_empty());
     }
 
     // Collapse unions of 0 elements into None-type, and of 1 elements into type itself

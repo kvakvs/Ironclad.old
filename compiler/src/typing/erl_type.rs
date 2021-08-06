@@ -4,11 +4,13 @@ use std::fmt::Formatter;
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 
 // use enum_as_inner::EnumAsInner;
 
 /// A record field definition
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct RecordField {
   /// Field name, an atom stored as string
   pub name: String,
@@ -24,7 +26,7 @@ impl std::fmt::Display for RecordField {
 }
 
 /// A map field constraint
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct MapField {
   /// Key can be any literal
   pub key: LiteralNode,
@@ -40,14 +42,13 @@ impl std::fmt::Display for MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
   //-------------------------------------
   /// Multiple types together
-  // TODO: Vec replace with HashSet and impl hash for all ErlType's
-  Union(Vec<ErlType>),
+  Union(HashSet<ErlType>),
   /// No type, usually signifies a type error
   None,
   /// All types, usually signifies an unchecked or untyped type
@@ -67,7 +68,7 @@ pub enum ErlType {
   AnyInteger,
 
   /// Specific integer value
-  IntegerConst(isize),
+  Integer(isize),
 
   /// 64 bit floating point, is-a(Number)
   Float,
@@ -138,6 +139,75 @@ pub enum ErlType {
   },
 }
 
+impl Hash for ErlType {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      ErlType::Union(members) => {
+        'U'.hash(state);
+        members.iter().for_each(|m| m.hash(state));
+      }
+      ErlType::None => 'z'.hash(state),
+      ErlType::Any => '*'.hash(state),
+      ErlType::TVar(n) => {
+        't'.hash(state);
+        n.hash(state);
+      }
+      ErlType::Number => 'N'.hash(state),
+      ErlType::AnyInteger => 'I'.hash(state),
+      ErlType::Integer(i) => {
+        'i'.hash(state);
+        i.hash(state);
+      }
+      ErlType::Float => 'f'.hash(state),
+      ErlType::AnyList => 'L'.hash(state),
+      ErlType::List(ltype) => {
+        'l'.hash(state);
+        (*ltype).hash(state);
+      }
+      ErlType::String => 'S'.hash(state),
+      ErlType::AnyTuple => 'T'.hash(state),
+      ErlType::Tuple(items) => {
+        't'.hash(state);
+        items.iter().for_each(|i| i.hash(state));
+      }
+      ErlType::Record { tag, fields } => {
+        'r'.hash(state);
+        tag.hash(state);
+        fields.iter().for_each(|f| f.hash(state));
+      }
+      ErlType::Map(mf) => {
+        '#'.hash(state);
+        mf.iter().for_each(|f| f.hash(state));
+      }
+      ErlType::AnyAtom => 'A'.hash(state),
+      ErlType::Atom(s) => {
+        'a'.hash(state);
+        s.hash(state);
+      }
+      ErlType::AnyBool => 'B'.hash(state),
+      ErlType::Pid => 'p'.hash(state),
+      ErlType::Reference => 'r'.hash(state),
+      ErlType::BinaryBits => '.'.hash(state),
+      ErlType::Binary => 'b'.hash(state),
+      ErlType::Literal(lit) => lit.hash(state),
+      ErlType::AnyFunction => '>'.hash(state),
+      ErlType::Function(ft) => {
+        '<'.hash(state);
+        ft.hash(state);
+      }
+      ErlType::LocalFunction { name, arity } => {
+        '='.hash(state);
+        name.hash(state);
+        arity.hash(state);
+      }
+    }
+  }
+
+  fn hash_slice<H: Hasher>(data: &[Self], state: &mut H) where Self: Sized {
+    data.iter().for_each(|d| d.hash(state))
+  }
+}
+
 impl ErlType {
   /// If self is a TypeVar, return Any, otherwise do not change.
   /// Used after type inference was done to replace all typevars with any()
@@ -156,6 +226,11 @@ impl ErlType {
           .collect())
   }
 
+  /// Creates an empty union type, equivalent to None
+  pub fn union_empty() -> Self {
+    ErlType::Union(Default::default())
+  }
+
   /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
   /// flatten them while also trying to maintain uniqueness (see to do below)
   pub fn union_of(types: Vec<ErlType>) -> Self {
@@ -164,21 +239,30 @@ impl ErlType {
       return types[0].clone();
     }
 
-    let mut merged: Vec<ErlType> = Vec::new(); // TODO: Use BTreeSet or HashSet for uniqueness
+    let mut merged: HashSet<ErlType> = Default::default();
 
     // For every type in types, if its a Union, unfold it into member types.
     // HashSet will ensure that the types are unique
     types.into_iter().for_each(|t| {
       match t {
-        ErlType::Union(members) => {
-          members.iter().for_each(
-            |m| merged.push(m.clone())
-          )
-        }
-        _ => merged.push(t),
+        ErlType::Union(members) => merged.extend(members.iter().cloned()),
+        _ => { merged.insert(t); }
       }
     });
-    ErlType::Union(merged)
+    Self::union_promote(merged)
+  }
+
+  /// Given a hashset of erlang types try and promote combinations of simpler types to a compound
+  /// type if such type exists. This is lossless operation, types are not generalized or shrunk.
+  /// Example: integer()|float() shrink into number()
+  fn union_promote(elements: HashSet<ErlType>) -> ErlType {
+    if elements.len() == 2 {
+      // integer() | float() => number()
+      if elements.contains(&ErlType::Float) && elements.contains(&ErlType::AnyInteger) {
+        return ErlType::Number;
+      }
+    }
+    ErlType::Union(elements)
   }
 
   /// Create a new function type provided args types and return type, possibly with a name
@@ -203,64 +287,6 @@ impl ErlType {
     ErlType::TVar(TypeVar::default())
   }
 
-  // /// Return type expressed as a printable string
-  // pub fn to_string(&self) -> String {
-  //   match self {
-  //     ErlType::Union(types) => {
-  //       types.iter().map(|t| t.to_string())
-  //           .collect::<Vec<String>>()
-  //           .join(" | ")
-  //     }
-  //     ErlType::None => String::from("none()"),
-  //     ErlType::Any => String::from("any()"),
-  //     ErlType::Number => String::from("number()"),
-  //     ErlType::AnyInteger => String::from("integer()"),
-  //     ErlType::IntegerConst(i) => format!("{}", i),
-  //     ErlType::Float => String::from("float()"),
-  //     ErlType::List(ty) => format!("list({})", ty.to_string()),
-  //     ErlType::Tuple(items) => {
-  //       let items_s = items.iter().map(|t| t.to_string())
-  //           .collect::<Vec<String>>()
-  //           .join(", ");
-  //       format!("{{{}}}", items_s)
-  //     }
-  //     ErlType::Record { tag, fields: types } => {
-  //       let fields_s = types.iter().map(|t| t.to_string())
-  //           .collect::<Vec<String>>()
-  //           .join(", ");
-  //       format!("#{}{{{}}}", tag, fields_s)
-  //     }
-  //     ErlType::Map(fields) => {
-  //       let fields_s = fields.iter().map(|t| t.to_string())
-  //           .collect::<Vec<String>>()
-  //           .join(", ");
-  //       format!("#{{{}}}", fields_s)
-  //     }
-  //     ErlType::AnyAtom => String::from("atom()"),
-  //     ErlType::Atom(s) => format!("'{}'", s),
-  //
-  //     ErlType::AnyBool => String::from("bool()"),
-  //     ErlType::Pid => String::from("pid()"),
-  //     ErlType::Reference => String::from("reference()"),
-  //     ErlType::Binary => String::from("binary()"),
-  //     ErlType::BinaryBits => String::from("bits()"),
-  //     ErlType::Literal(lit) => lit.to_string(),
-  //     ErlType::LocalFunction { name, arity } => format!("fun {}/{}", name, arity),
-  //     ErlType::Function(fun_type) => {
-  //       let args_s = fun_type.arg_types.iter()
-  //           .map(|t| t.to_string())
-  //           .collect::<Vec<String>>()
-  //           .join(", ");
-  //       match &fun_type.name {
-  //         None => format!("fun(({}) -> {})", args_s, fun_type.ret_type.to_string()),
-  //         Some(n) => format!("{}({}) -> {}", n, args_s, fun_type.ret_type.to_string()),
-  //       }
-  //     }
-  //     ErlType::TVar(tv) => tv.to_string(),
-  //     ErlType::String => "string()".to_string(), // a list of unicode codepoint: list(char())
-  //   }
-  // }
-
   /// Check whether a type denotes a simple non-nested value or a union of simple values, i.e. when
   /// the deeper type inspection is not required.
   pub fn is_simple_value_type(&self) -> bool {
@@ -268,7 +294,7 @@ impl ErlType {
       ErlType::Union(members) => {
         members.iter().all(|m| m.is_simple_value_type())
       }
-      ErlType::Number | ErlType::AnyInteger | ErlType::IntegerConst(_) | ErlType::Float
+      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float
       | ErlType::AnyAtom | ErlType::Atom(_) | ErlType::AnyBool
       | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
       | ErlType::Map(_) | ErlType::Record { .. }
@@ -284,8 +310,7 @@ impl ErlType {
     match self {
       ErlType::Union(members) => {
         let mut new_members = members.clone();
-        // TODO: uniqueness check
-        new_members.push(t.clone());
+        new_members.insert(t.clone());
         Some(ErlType::Union(new_members))
       }
       _ => None,
@@ -298,7 +323,7 @@ impl ErlType {
     match self {
       ErlType::Union(members) => {
         match members.len() {
-          1 => members[0].clone(),
+          1 => members.iter().next().unwrap().clone(),
           0 => ErlType::None,
           _ => self.clone(),
         }

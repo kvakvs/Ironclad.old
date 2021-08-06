@@ -24,7 +24,7 @@ impl std::fmt::Display for ErlType {
       ErlType::Any => write!(f, "any()"),
       ErlType::Number => write!(f, "number()"),
       ErlType::AnyInteger => write!(f, "integer()"),
-      ErlType::IntegerConst(i) => write!(f, "{}", i),
+      ErlType::Integer(i) => write!(f, "{}", i),
       ErlType::Float => write!(f, "float()"),
       ErlType::AnyList => write!(f, "list()"),
       ErlType::List(ty) => write!(f, "list({})", ty.to_string()),

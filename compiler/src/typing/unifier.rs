@@ -3,7 +3,7 @@
 
 use crate::typing::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::error::TypeError;
 use crate::typing::typevar::TypeVar;
@@ -178,7 +178,7 @@ impl Unifier {
       ErlType::Number => {
         match type1 {
           // Any numbers and number sets will match a number
-          ErlType::Number | ErlType::IntegerConst(_) | ErlType::AnyInteger
+          ErlType::Number | ErlType::Integer(_) | ErlType::AnyInteger
           | ErlType::Float => return Ok(()),
           _any_type1 => {}
         }
@@ -186,14 +186,14 @@ impl Unifier {
       ErlType::AnyInteger => {
         match type1 {
           // Any numbers and number sets will match a number
-          ErlType::IntegerConst(_) | ErlType::AnyInteger => return Ok(()),
+          ErlType::Integer(_) | ErlType::AnyInteger => return Ok(()),
           _any_type1 => {}
         }
       }
-      ErlType::IntegerConst(c2) => {
+      ErlType::Integer(c2) => {
         match type1 {
           // Any numbers and number sets will match a number
-          ErlType::IntegerConst(c1) if c1 == c2 => return Ok(()),
+          ErlType::Integer(c1) if c1 == c2 => return Ok(()),
           _any_type1 => {}
         }
       }
@@ -228,7 +228,7 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &[ErlType]) -> bool {
+  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &HashSet<ErlType>) -> bool {
     union.iter().any(|member| {
       self.unify(ast, &t, &member).is_ok()
     })

@@ -1,7 +1,7 @@
 use crate::typing::erl_type::ErlType;
 
 /// ErlType variant for a function or a lambda
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct FunctionType {
   /// Name if known, for module level functions, or unnamed for anonymous funs
   pub name: Option<String>,
