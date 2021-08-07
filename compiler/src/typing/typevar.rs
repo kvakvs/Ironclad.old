@@ -5,16 +5,21 @@ use std::fmt::Formatter;
 
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
-#[derive(Clone, PartialEq, Hash, Eq)]
+#[derive(Copy, Clone, PartialEq, Hash, Eq)]
 pub struct TypeVar(usize);
+
+impl TypeVar {
+  /// Create a new type variable with unique integer id (guarded by atomic usize)
+  pub fn new() -> Self {
+    let new_id = TYPEVAR_NUM.fetch_add(1, Ordering::Acquire);
+    Self(new_id)
+  }
+}
 
 lazy_static! {
     /// Counter to create unique TypeVar names
     static ref TYPEVAR_NUM: AtomicUsize = AtomicUsize::new(0);
     static ref SUBSCRIPT_NUMERICS: Vec<char> = vec!['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
-}
-
-impl TypeVar {
 }
 
 impl std::fmt::Display for TypeVar {
@@ -29,9 +34,8 @@ impl std::fmt::Debug for TypeVar {
 }
 
 impl Default for TypeVar {
-  /// Create a new type variable with unique integer id (guarded by atomic usize)
+  /// Do not construct using Default
   fn default() -> Self {
-    let new_id = TYPEVAR_NUM.fetch_add(1, Ordering::Acquire);
-    Self(new_id)
+    unreachable!("Do not call default on typevar, construct with ::new()")
   }
 }

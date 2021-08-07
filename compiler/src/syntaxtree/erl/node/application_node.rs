@@ -5,30 +5,30 @@ use crate::typing::erl_type::ErlType;
 use crate::erl_module::ErlModule;
 use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
+use crate::typing::typevar::TypeVar;
 
 /// AST node which contains a function call
-// #[derive(PartialEq)]
 pub struct ApplicationNode {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Box<ErlAst>,
   /// Arguments. Their  inferred types are stored inside.
   pub args: Vec<ErlAst>,
   /// Inferred type of return. Always a new TypeVar().
-  pub ret_type: ErlType,
+  pub ret_ty: TypeVar,
   /// Inferred type of the expression, must be something callable
-  pub expr_type: ErlType,
+  pub expr_ty: TypeVar,
 }
 
 impl ApplicationNode {
   /// Creates a new function call (application) AST node
   pub fn new(expr: ErlAst, args: Vec<ErlAst>) -> Self {
-    let ret_ty = ErlType::new_typevar();
-    let expr_ty = Self::create_expr_type(&args, &ret_ty);
+    // let ret_ty = ErlType::new_typevar();
+    // let expr_ty = Self::create_expr_type(&args, &ret_ty);
     ApplicationNode {
       expr: Box::new(expr),
       args,
-      ret_type: ret_ty,
-      expr_type: expr_ty,
+      ret_ty: TypeVar::new(),
+      expr_ty: TypeVar::new(),
     }
   }
 

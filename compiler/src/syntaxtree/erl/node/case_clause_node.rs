@@ -1,7 +1,7 @@
 //! Declares AST node for a clause in `case of` expression
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
+use crate::typing::typevar::TypeVar;
 
 /// AST node for a clause in a `case X of` expression.
 // #[derive(PartialEq)]
@@ -13,7 +13,7 @@ pub struct CaseClauseNode {
   /// Case clause body expression
   pub body: Box<ErlAst>,
   /// Clause body type, for type inference
-  pub ty: ErlType,
+  pub ty: TypeVar,
 }
 
 impl std::fmt::Display for CaseClauseNode {

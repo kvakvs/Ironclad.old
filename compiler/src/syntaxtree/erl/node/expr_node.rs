@@ -2,6 +2,7 @@
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
+use crate::typing::typevar::TypeVar;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 // #[derive(PartialEq)]
@@ -13,7 +14,7 @@ pub struct BinaryOperatorExprNode {
   /// The operator
   pub operator: ErlBinaryOp,
   /// The return type of the operation
-  pub ty: ErlType,
+  pub ty: TypeVar,
 }
 
 impl BinaryOperatorExprNode {

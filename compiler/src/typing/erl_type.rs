@@ -284,7 +284,7 @@ impl ErlType {
 
   /// Create a new type, containing a new type variable with unique integer id
   pub fn new_typevar() -> Self {
-    ErlType::TVar(TypeVar::default())
+    ErlType::TVar(TypeVar::new())
   }
 
   /// Check whether a type denotes a simple non-nested value or a union of simple values, i.e. when
@@ -338,5 +338,11 @@ impl ErlType {
       Self::Function(ft) => &ft,
       _ => panic!("Node {} is expected to be a Function type", self)
     }
+  }
+}
+
+impl From<TypeVar> for ErlType {
+  fn from(tv: TypeVar) -> Self {
+    ErlType::TVar(tv)
   }
 }

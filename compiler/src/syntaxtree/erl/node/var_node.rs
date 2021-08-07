@@ -1,5 +1,5 @@
 //! Defines struct for a variable AST node
-use crate::typing::erl_type::ErlType;
+use crate::typing::typevar::TypeVar;
 
 /// AST node for a variable
 #[derive(PartialEq)]
@@ -7,7 +7,7 @@ pub struct VarNode {
   /// Variable name
   pub name: String,
   /// Variable type for inference
-  pub ty: ErlType,
+  pub ty: TypeVar,
 }
 
 impl VarNode {
@@ -15,7 +15,7 @@ impl VarNode {
   pub fn new(name: &str) -> Self {
     VarNode {
       name: name.to_string(),
-      ty: ErlType::new_typevar(),
+      ty: TypeVar::new(),
     }
   }
 }

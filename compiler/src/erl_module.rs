@@ -112,6 +112,7 @@ impl ErlModule {
 
   /// Create a dummy sourcefile and parse it starting with the given parser rule.
   /// This updates the self.fun_table and self.ast
+  #[named]
   pub fn parse_and_unify_str(&mut self,
                              rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
@@ -129,6 +130,8 @@ impl ErlModule {
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       self.postprocess_ast(&mut intermediate_ast)?;
+
+      println!("{}: {}", function_name!(), intermediate_ast);
 
       Rc::new(RwLock::new(intermediate_ast))
     };

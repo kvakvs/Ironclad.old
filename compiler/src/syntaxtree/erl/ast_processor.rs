@@ -15,8 +15,11 @@ impl ErlModule {
   pub fn postprocess_ast(&mut self, ast: &mut ErlAst) -> ErlResult<()> {
     // println!("Postprocessing node... {}", ast);
 
-    for child in ast.children_mut().unwrap_or_default() {
-      self.postprocess_ast(child)?;
+    match ast.children_mut() {
+      Some(children) => for child in children {
+        self.postprocess_ast(child)?;
+      },
+      None => {}
     }
 
     if let ErlAst::App(_loc, app) = ast {

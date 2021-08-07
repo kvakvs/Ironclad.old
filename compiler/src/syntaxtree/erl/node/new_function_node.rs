@@ -2,6 +2,7 @@
 use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
+use crate::typing::typevar::TypeVar;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
@@ -14,27 +15,22 @@ pub struct NewFunctionNode {
   /// Function clauses in order
   pub clauses: Vec<FunctionClauseNode>,
   /// For each clause, ret is union of each clause return type
-  pub ret: ErlType,
+  pub ret_ty: TypeVar,
 }
 
 impl NewFunctionNode {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(funarity: FunArity, clauses: Vec<FunctionClauseNode>, ret: ErlType) -> Self {
+  pub fn new(funarity: FunArity, clauses: Vec<FunctionClauseNode>) -> Self {
     let mut result = Self {
       funarity,
       clauses,
-      ret,
+      ret_ty: TypeVar::new(),
       arg_ty: vec![],
     };
     result.arg_ty = result.get_argument_types_unions();
     result
   }
-
-  // /// Boxes the FunctionNode
-  // pub fn into_box(self) -> Rc<RefCell<Self>> {
-  //   Rc::new(RefCell::new(self))
-  // }
 
   /// For all clauses build a vector of type unions for the corresponding arguments
   fn get_argument_types_unions(&self) -> Vec<ErlType> {

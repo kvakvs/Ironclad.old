@@ -15,6 +15,7 @@ use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::node::token::ErlToken;
+use crate::typing::typevar::TypeVar;
 
 /// AST node in parsed Erlang source
 // #[derive(PartialEq)]
@@ -52,16 +53,13 @@ pub enum ErlAst {
     /// Right expression
     right: Box<ErlAst>,
     /// Type for right expression, also is the type of entire comma operator
-    ty: ErlType,
+    ty: TypeVar,
   },
 
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any
   NewFunction(SourceLoc, NewFunctionNode),
-
-  // /// Function clause for a new function definition
-  // FClause(SourceLoc, FunctionClauseNode),
 
   /// Case clause for a `case x of` switch
   CClause(SourceLoc, CaseClauseNode),
@@ -94,6 +92,7 @@ pub enum ErlAst {
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
   List(SourceLoc, Vec<ErlAst>),
+
   /// A tuple of some expressions, TODO: constant folding
   Tuple(SourceLoc, Vec<ErlAst>),
 }
@@ -105,12 +104,12 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::NewFunction(_loc, nf) => nf.ret.clone(),
+      ErlAst::NewFunction(_loc, nf) => nf.ret_ty.into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
-      ErlAst::Var(_loc, v) => v.ty.clone(),
-      ErlAst::App(_loc, app) => app.ret_type.clone(),
+      ErlAst::Var(_loc, v) => v.ty.into(),
+      ErlAst::App(_loc, app) => app.ret_ty.into(),
       ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
-      ErlAst::Case(_loc, case) => case.ret.clone(),
+      ErlAst::Case(_loc, case) => case.ret_ty.into(),
       ErlAst::Lit(_loc, l) => l.get_type(),
       ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
@@ -118,10 +117,10 @@ impl ErlAst {
       ErlAst::List(_loc, elems) => {
         let union_t = ErlType::union_of(elems.iter().map(|e| e.get_type()).collect());
         ErlType::List(Box::new(union_t))
-      },
+      }
       ErlAst::Tuple(_loc, elems) => {
         ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
-      },
+      }
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
@@ -137,7 +136,7 @@ impl ErlAst {
     assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
             "All clause arg types must match in length all clauses' arguments");
 
-    let nf = NewFunctionNode::new(funarity, clauses, ErlType::new_typevar());
+    let nf = NewFunctionNode::new(funarity, clauses);
     ErlAst::NewFunction(location, nf)
   }
 
@@ -164,7 +163,7 @@ impl ErlAst {
                        left: Box::new(left),
                        right: Box::new(right),
                        operator: op,
-                       ty: ErlType::new_typevar(),
+                       ty: TypeVar::new(),
                      })
   }
 
@@ -202,7 +201,7 @@ impl ErlAst {
       location,
       left: Box::new(left),
       right: Box::new(right),
-      ty: ErlType::new_typevar(),
+      ty: TypeVar::new(),
     }
   }
 

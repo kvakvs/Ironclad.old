@@ -144,7 +144,9 @@ impl Unifier {
 
             // Unify left and right as function types
             // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-            self.unify(ast, &local_fun.borrow().ret, &type2)?;
+            self.unify(ast,
+                       &local_fun.borrow().ret_ty.into(),
+                       &type2)?;
 
             // Equation: Application Expr(Args...) <=> Fn.Ret
 
@@ -338,7 +340,9 @@ impl Unifier {
         .map(|c| c.ret.clone())
         .collect();
     let ret_union_t = ErlType::union_of(ret_union_members);
-    Self::equation(eq, ast, nf.ret.clone(), ret_union_t, "Newfun");
+    Self::equation(eq, ast,
+                   nf.ret_ty.into(),
+                   ret_union_t, "Newfun");
     Ok(())
   }
 
@@ -352,18 +356,19 @@ impl Unifier {
   }
 
   /// Type inference wiring
-  /// Generate type equations for AST node Application (a function call)
+  /// Generate type equations for AST node Application (a function call) Expr(Arg, ...)
   fn generate_equations_app(&self, eq: &mut Vec<TypeEquation>,
                             ast: &ErlAst, app: &ApplicationNode) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
-    Self::equation(eq, ast, app.expr.get_type(), app.expr_type.clone(), "Apply");
+    // TODO: Instead of AnyFunction create a functional type of the correct arity and return type?
+    Self::equation(eq, ast, app.expr.get_type(), ErlType::AnyFunction, "Apply");
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret
-    let expr_type: &FunctionType = app.expr_type.as_function();
-    Self::equation(eq, ast, app.ret_type.clone(), *(expr_type.ret_type).clone(), "Apply");
-
+    // let expr_type: &FunctionType = app.expr_ty.as_function();
+    // Self::equation(eq, ast, app.ret_ty.clone(), *(expr_type.ret_type).clone(), "Apply");
+    // todo!("Match app.ret with return type of the expr");
     Ok(())
   }
 
@@ -378,11 +383,14 @@ impl Unifier {
   pub fn generate_equations(&self, module: &mut ErlModule,
                             eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    for nested_ast in ast.children().unwrap_or_default() {
-      match self.generate_equations(module, eq, nested_ast) {
-        Ok(_) => {} // nothing, all good
-        Err(err) => { module.add_error(err); }
+    match ast.children() {
+      Some(children) => for nested_ast in children {
+        match self.generate_equations(module, eq, nested_ast) {
+          Ok(_) => {} // nothing, all good
+          Err(err) => { module.add_error(err); }
+        }
       }
+      None => {}
     }
 
     match ast.deref() {
@@ -404,7 +412,9 @@ impl Unifier {
         self.generate_equations_app(eq, ast, app)?
       }
       ErlAst::Let(_loc, let_expr) => {
-        Self::equation(eq, ast, let_expr.in_ty.clone(), let_expr.in_expr.get_type(), "Let");
+        Self::equation(eq, ast,
+                       let_expr.in_ty.into(),
+                       let_expr.in_expr.get_type(), "Let");
       }
       ErlAst::Case(_loc, case) => {
         // For Case expression, type of case must be union of all clause types
@@ -412,23 +422,34 @@ impl Unifier {
             .map(|c| c.body.get_type())
             .collect();
         let all_clauses_t = ErlType::union_of(all_clause_types);
-        Self::equation(eq, ast, case.ret.clone(), all_clauses_t, "Case");
+
+        Self::equation(eq, ast,
+                       case.ret_ty.into(),
+                       all_clauses_t, "Case");
       }
       ErlAst::CClause(_loc, clause) => {
         // Clause type must match body type
-        Self::equation(eq, ast, clause.ty.clone(), clause.body.get_type(), "Case clause");
+        Self::equation(eq, ast,
+                       clause.ty.into(),
+                       clause.body.get_type(), "Case clause");
 
         // No check for clause condition, but the clause condition guard must be boolean
-        Self::equation(eq, ast, clause.guard.get_type(), ErlType::AnyBool, "Case clause");
+        Self::equation(eq, ast,
+                       clause.guard.get_type(),
+                       ErlType::AnyBool, "Case clause");
       }
       ErlAst::BinaryOp(_loc, binop) => {
         // Check result of the binary operation
-        Self::equation(eq, ast, binop.ty.clone(), binop.get_result_type(), "Binop");
+        Self::equation(eq, ast,
+                       binop.ty.into(),
+                       binop.get_result_type(), "Binop");
 
         if let Some(arg_type) = binop.get_arg_type() {
           // Both sides of a binary op must have type appropriate for that op
-          Self::equation(eq, ast, binop.left.get_type(), arg_type.clone(), "Binop");
-          Self::equation(eq, ast, binop.right.get_type(), arg_type, "Binop");
+          Self::equation(eq, ast,
+                         binop.left.get_type(), arg_type.clone(), "Binop");
+          Self::equation(eq, ast,
+                         binop.right.get_type(), arg_type, "Binop");
         }
       }
       ErlAst::UnaryOp(_loc, unop) => {
@@ -439,7 +460,9 @@ impl Unifier {
         // TODO: Match return type with inferred return typevar?
       }
       ErlAst::Comma { right, ty, .. } => {
-        Self::equation(eq, ast, ty.clone(), right.get_type(), "Comma op");
+        Self::equation(eq, ast,
+                       (*ty).into(),
+                       right.get_type(), "Comma op");
       }
       ErlAst::List(_loc, _elems) => {}
       ErlAst::Tuple(_loc, _elems) => {}
