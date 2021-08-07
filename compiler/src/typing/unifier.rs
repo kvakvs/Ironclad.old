@@ -18,6 +18,8 @@ use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
 use std::borrow::{Borrow};
+use crate::funarity::FunArity;
+use crate::erl_module::func_registry::FunctionRegistry;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -60,7 +62,7 @@ impl Unifier {
         println!("Eq: {}", eq);
       }
 
-      unifier.unify_all_equations(&ast_r)?;
+      unifier.unify_all_equations(module, &ast_r)?;
       println!("Unify map: {:?}", &unifier.subst);
     }
 
@@ -68,44 +70,44 @@ impl Unifier {
   }
 
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
-  fn unify_all_equations(&mut self, ast: &ErlAst) -> ErlResult<()> {
+  fn unify_all_equations(&mut self, module: &ErlModule, ast: &ErlAst) -> ErlResult<()> {
     let mut equations: Vec<TypeEquation> = Vec::new();
     std::mem::swap(&mut self.equations, &mut equations); // move
 
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          self.unify(ast, &eq.left, &eq.right)
+          self.unify(module, ast, &eq.left, &eq.right)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
         .collect();
     if !errors.is_empty() {
-      return Err(ErlError::Multiple(errors));
+      return Err(ErlError::multiple(errors));
     }
     Ok(())
   }
 
   /// Unify for when both sides of equation are function types
-  fn unify_fun_fun(&mut self, ast: &ErlAst,
+  fn unify_fun_fun(&mut self, module: &ErlModule, ast: &ErlAst,
                    fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
     if fun1.arg_types.len() != fun2.arg_types.len() {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
     // Unify functions return types
-    self.unify(ast, &fun1.ret_type, &fun2.ret_type)?;
+    self.unify(module, ast, &fun1.ret_type, &fun2.ret_type)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
     let errors: Vec<ErlError> = fun1.arg_types.iter()
         .zip(fun2.arg_types.iter())
         .map(|(t1, t2)| {
-          self.unify(ast, &t1, &t2)
+          self.unify(module, ast, &t1, &t2)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
         .collect();
     if !errors.is_empty() {
-      return Err(ErlError::Multiple(errors));
+      return Err(ErlError::multiple(errors));
     }
     Ok(())
   }
@@ -113,21 +115,22 @@ impl Unifier {
   /// Unify two types type1 and type2, with self.subst map
   /// Updates self.subst (map of name->Type) with new record which unifies type1 and type2,
   /// and returns true. Returns false if they can't be unified.
-  fn unify(&mut self, ast: &ErlAst, type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
+  fn unify(&mut self, module: &ErlModule, ast: &ErlAst,
+           type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
     if type1 == type2 {
       return Ok(());
     }
 
     match type1 {
       ErlType::TVar(tv1) => {
-        return self.unify_variable(ast, tv1, type2);
+        return self.unify_variable(module, ast, tv1, type2);
       }
 
       ErlType::Function(fun1) => {
         match type2 {
           ErlType::Function(fun2) => {
             // match two function types
-            return self.unify_fun_fun(ast, fun1, fun2);
+            return self.unify_fun_fun(module, ast, fun1, fun2);
           }
           _any_type2 => {}
         }
@@ -138,23 +141,31 @@ impl Unifier {
       ErlType::LocalFunction { name: name1, arity: arity1 } => {
         match type2 {
           ErlType::Function(fun2) => {
-            // TODO: Find_fun can be cached in some dict? Or use a module struct with local fun dict
-            // if let m = self.module.upgrade().unwrap().write().unwrap() {
-            let local_fun = ast.find_fun(&name1, *arity1).unwrap().new_function;
+            let funarity = FunArity::new(name1.clone(), *arity1);
+            match module.env.functions_lookup.get(&funarity) {
+              Some(fun_index) => {
+                // Unify left and right as function types
+                // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
+                let fun_def: &NewFunctionNode = &module.env.functions[*fun_index];
+                self.unify(module, ast,
+                           &fun_def.ret_ty.into(),
+                           &type2)?;
 
-            // Unify left and right as function types
-            // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-            self.unify(ast,
-                       &local_fun.borrow().ret_ty.into(),
-                       &type2)?;
+                // Equation: Application Expr(Args...) <=> Fn.Ret
 
-            // Equation: Application Expr(Args...) <=> Fn.Ret
-
-            let fc = &local_fun.borrow().clauses[0];
-            if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
-              return Ok(());
+                let fc = &module.env.function_clauses[fun_def.start_clause];
+                if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
+                  return Ok(());
+                }
+              }
+              None => {
+                let type_err = TypeError::LocalFunctionUndef {
+                  module: module.name.clone(),
+                  funarity,
+                };
+                return Err(ErlError::from(type_err));
+              }
             }
-            // }
           }
           _any_type2 => {}
         }
@@ -164,7 +175,7 @@ impl Unifier {
         // Union should not be broken into subtypes, match left equation part directly vs the union
         match type2 {
           ErlType::Union(types) => {
-            if self.check_in_union(ast, &type1, &types) {
+            if self.check_in_union(module, ast, &type1, &types) {
               return Ok(());
             }
           }
@@ -209,7 +220,7 @@ impl Unifier {
       ErlType::List(elem2) => {
         match type1 {
           // Any tuple will match a AnyTuple
-          ErlType::List(elem1) => return self.unify(ast, elem1, elem2),
+          ErlType::List(elem1) => return self.unify(module, ast, elem1, elem2),
           _any_type1 => {}
         }
       }
@@ -230,22 +241,24 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn check_in_union(&mut self, ast: &ErlAst, t: &ErlType, union: &HashSet<ErlType>) -> bool {
+  fn check_in_union(&mut self, env: &ErlModule, ast: &ErlAst,
+                    t: &ErlType, union: &HashSet<ErlType>) -> bool {
     union.iter().any(|member| {
-      self.unify(ast, &t, &member).is_ok()
+      self.unify(env, ast, &t, &member).is_ok()
     })
   }
 
-  fn unify_variable(&mut self, ast: &ErlAst, tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
-    if let Entry::Occupied(entry1) = self.subst.entry(tvar.clone()) {
-      let subst_entry = entry1.get().clone();
-      return self.unify(ast, &subst_entry, &ty);
+  fn unify_variable(&mut self, module: &ErlModule, ast: &ErlAst,
+                    tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
+    if let Some(entry1) = self.subst.get(tvar) {
+      let entry = entry1.clone();
+      return self.unify(module, ast, &entry, &ty);
     }
 
     if let ErlType::TVar { .. } = ty {
-      if let Entry::Occupied(entry2) = self.subst.entry(tvar.clone()) {
-        let subst_entry = entry2.get().clone();
-        return self.unify(ast, &ErlType::TVar(tvar.clone()), &subst_entry);
+      if let Some(entry2_r) = self.subst.get(tvar) {
+        let entry2 = entry2_r.clone();
+        return self.unify(module, ast, &ErlType::TVar(tvar.clone()), &entry2);
       }
     }
 
@@ -305,12 +318,11 @@ impl Unifier {
     }
 
     if let ErlType::TVar(tvar) = &ty {
-      match self.subst.entry(tvar.clone()) {
-        Entry::Occupied(entry) => {
-          let entry_val = entry.get().clone();
-          return self.infer_type(entry_val);
+      match self.subst.get(tvar) {
+        Some(entry) => {
+          return self.infer_type(entry.clone());
         }
-        Entry::Vacant(_) => return ty,
+        None => return ty,
       }
     }
 
@@ -333,10 +345,13 @@ impl Unifier {
   }
 
   /// Type inference wiring
-  /// Generate type equations for AST node NewFunction
-  fn generate_equations_newfunction(&self, eq: &mut Vec<TypeEquation>, ast: &ErlAst, nf: &NewFunctionNode) -> ErlResult<()> {
+  /// Generate type equations for AST node FunctionDef
+  fn generate_equations_newfunction(&self, eq: &mut Vec<TypeEquation>,
+                                    module: &ErlModule, ast: &ErlAst,
+                                    nf: &NewFunctionNode) -> ErlResult<()> {
     // Return type of a function is union of its clauses return types
-    let ret_union_members = nf.clauses.iter()
+    let clauses = nf.get_clauses(&module.env.function_clauses);
+    let ret_union_members = clauses.iter()
         .map(|c| c.ret.clone())
         .collect();
     let ret_union_t = ErlType::union_of(ret_union_members);
@@ -399,9 +414,10 @@ impl Unifier {
       ErlAst::Comment { .. } => {}
       ErlAst::Lit(_loc, _) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
-      ErlAst::NewFunction(_loc, nf) => {
-        self.generate_equations_newfunction(eq, ast, nf)?;
-        for fc in &nf.clauses {
+      ErlAst::FunctionDef { index, .. } => {
+        let nf = &module.env.functions[*index];
+        self.generate_equations_newfunction(eq, module, ast, nf)?;
+        for fc in nf.get_clauses(&module.env.function_clauses) {
           self.generate_equations_fclause(eq, ast, &fc)?
         }
       }

@@ -33,7 +33,7 @@ pub fn run(project: &mut ErlProject,
       let mut module = ErlModule::new(compile_options, source_file.clone());
       module.parse_and_unify()?;
 
-      code_cache.items.insert(module.name_atom.clone(),
+      code_cache.items.insert(module.name.clone(),
                               Arc::new(RwLock::new(module)));
     }
   }

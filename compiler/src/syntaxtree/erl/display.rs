@@ -25,17 +25,17 @@ impl fmt::Display for ErlAst {
       ErlAst::Comma { left, right, .. } => {
         write!(f, "{}, {}", left, right)
       }
-      ErlAst::NewFunction(_loc, nf) => {
-        write!(f, "fun {}/{}: ", nf.funarity.name, nf.funarity.arity)?;
-        let results: Vec<_> = nf.clauses.iter()
-            .map(|fc| write!(f, "{};", fc))
-            .filter(Result::is_err)
-            .collect();
-        if results.is_empty() {
-          Ok(())
-        } else {
-          results[0]
-        }
+      ErlAst::FunctionDef { funarity, .. } => {
+        write!(f, "newfun {}/{}", funarity.name, funarity.arity)
+        // let results: Vec<_> = nf.clauses.iter()
+        //     .map(|fc| write!(f, "{};", fc))
+        //     .filter(Result::is_err)
+        //     .collect();
+        // if results.is_empty() {
+        //   Ok(())
+        // } else {
+        //   results[0]
+        // }
       }
       ErlAst::CClause(_loc, clause) => {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
@@ -64,6 +64,32 @@ impl fmt::Display for ErlAst {
       ErlAst::FunArity(_loc, fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
       ErlAst::List(_loc, elems) => display::display_list(elems, f),
       ErlAst::Tuple(_loc, elems) => display::display_tuple(elems, f),
+    }
+  }
+}
+
+impl fmt::Debug for ErlAst {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    match self {
+      // ErlAst::Empty => {}
+      // ErlAst::Comment(_) => {}
+      // ErlAst::Token { .. } => {}
+      // ErlAst::ModuleForms(_) => {}
+      // ErlAst::ModuleAttr { .. } => {}
+      // ErlAst::Comma { .. } => {}
+      // ErlAst::FunctionDef(_, _) => {}
+      // ErlAst::CClause(_, _) => {}
+      // ErlAst::FunArity(_, _) => {}
+      // ErlAst::Var(_, _) => {}
+      // ErlAst::App(_, _) => {}
+      // ErlAst::Let(_, _) => {}
+      // ErlAst::Case(_, _) => {}
+      // ErlAst::Lit(_, _) => {}
+      // ErlAst::BinaryOp(_, _) => {}
+      // ErlAst::UnaryOp(_, _) => {}
+      // ErlAst::List(_, _) => {}
+      // ErlAst::Tuple(_, _) => {}
+      _ => write!(f, "{}", self),
     }
   }
 }

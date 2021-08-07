@@ -3,6 +3,7 @@
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
+use crate::funarity::FunArity;
 
 /// Raised by the type analyzer and checker
 pub enum TypeError {
@@ -24,6 +25,13 @@ pub enum TypeError {
   },
   // /// Error when operation wanted a list, and received 'received'
   // ListExpected { received: ErlType },
+  /// Local function in a module is not found
+  LocalFunctionUndef {
+    /// The module name
+    module: String,
+    /// The function name and arity
+    funarity: FunArity,
+  },
 }
 
 impl std::fmt::Display for TypeError {
@@ -35,6 +43,9 @@ impl std::fmt::Display for TypeError {
       TypeError::FunAritiesDontMatch => write!(f, "Function arities don't match"),
       TypeError::OccursCheckFailed { tvar, ty } => {
         write!(f, "Recursive type {} in {}", tvar, ty)
+      }
+      TypeError::LocalFunctionUndef { module, funarity } => {
+        write!(f, "Local function {} not found in module {}", funarity, module)
       }
     }
   }

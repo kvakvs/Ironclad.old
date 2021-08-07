@@ -10,25 +10,28 @@ use compiler::syntaxtree::erl::erl_parser::{Rule};
 use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::erl_module::ErlModule;
+use compiler::funarity::FunArity;
 
 #[named]
 #[test]
 fn infer_simplemath() -> ErlResult<()> {
   let code = "myfun(A) -> (A + 1) / 2.";
-  let mut module = ErlModule::new_testing();
+  let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
 
   {
     let ast = module.ast.read().unwrap();
     match ast.deref() {
-      ErlAst::NewFunction(_loc, nf) => {
-        assert_eq!(nf.clauses.len(), 1, "NewFunction must have exact one clause");
-        assert_eq!(nf.funarity.arity, 1, "NewFunction must have arity 1");
-        assert_eq!(nf.clauses[0].name, "myfun", "FClause name must be myfun");
+      ErlAst::FunctionDef { index, .. } => {
+        let nf = &module.env.functions[*index];
+        assert_eq!(nf.clause_count, 1, "FunctionDef must have exact one clause");
+        assert_eq!(nf.funarity.arity, 1, "FunctionDef must have arity 1");
 
-        let fc = &nf.clauses[0];
-        assert_eq!(fc.args.len(), 1, "FClause must have exact one arg");
-        assert!(matches!(fc.args[0], ErlAst::Var{..}), "FClause arg must be a Var node");
+        let clause = &module.env.function_clauses[nf.start_clause];
+        assert_eq!(clause.name, "myfun", "FClause name must be myfun");
+
+        assert_eq!(clause.args.len(), 1, "FClause must have exact one arg");
+        assert!(matches!(clause.args[0], ErlAst::Var{..}), "FClause arg must be a Var node");
       }
       other1 => test_util::fail_unexpected(other1),
     }
@@ -47,7 +50,7 @@ fn infer_simplemath() -> ErlResult<()> {
 /// Expected: Inferred type list(atom1|atom2)
 fn infer_atom_list_concatenation() -> ErlResult<()> {
   let code = "atomtest(A) -> [atom1] ++ [atom2].";
-  let mut module = ErlModule::new_testing();
+  let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
   {
     let ast = module.ast.read().unwrap();
@@ -77,13 +80,14 @@ fn infer_funcall_test() -> ErlResult<()> {
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";
-  let mut module = ErlModule::new_testing();
+  let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast = module.ast.read().unwrap();
-    let find_result1 = ast.find_fun("add", 2).unwrap();
-    let f_t1 = module.unifier.infer_ast(find_result1.ast).into_final_type();
-    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result1.ast, f_t1);
+    let add_fn_index = module.env.functions_lookup.get(&FunArity::new_clone_name("add", 2)).unwrap();
+    let add_fn = &module.env.functions[*add_fn_index];
+    let f_t1 = module.unifier.infer_ast(add_fn.ast).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_index.ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
     assert_eq!(f_t1, ErlType::Number, "Function add/2 must have inferred type: number()");

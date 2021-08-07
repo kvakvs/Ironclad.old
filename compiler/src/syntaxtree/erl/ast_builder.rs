@@ -42,7 +42,7 @@ impl ErlModule {
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
   /// This time using Precedence Climber, processes children of a node.
   /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
-  pub fn to_ast_prec_climb(&self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<ErlAst> {
+  pub fn to_ast_prec_climb(&mut self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<ErlAst> {
     // println!("PrecC: in {}", pair.as_str());
 
     match pair.as_rule() {
@@ -65,7 +65,7 @@ impl ErlModule {
         let mut elems = Vec::new();
         ErlAst::comma_to_vec(elems_ast, &mut elems);
         Ok(ErlAst::new_list(loc, elems))
-      },
+      }
       Rule::tuple => {
         let loc = pair.as_span().into();
         let list_node = pair.into_inner().next().unwrap();
@@ -73,14 +73,14 @@ impl ErlModule {
         let mut elems = Vec::new();
         ErlAst::comma_to_vec(elems_ast, &mut elems);
         Ok(ErlAst::new_tuple(loc, elems))
-      },
+      }
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
     }
   }
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
   /// Processes a single node where there's no need to use precedence climber.
-  pub fn to_ast_single_node(&self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  pub fn to_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     let loc: SourceLoc = pair.as_span().into();
 
     let result: ErlAst = match pair.as_rule() {
@@ -157,7 +157,7 @@ impl ErlModule {
   /// Parsed Application tokens are converted to App AST node.
   /// The expression is analyzed if it resembles anything callable, and is then transformed to a
   /// function pointer (or an export etc).
-  fn application_to_ast(&self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn application_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     // println!("application pair {:#?}", &pair);
     let loc: SourceLoc = pair.as_span().into();
     let mut pair_inner = pair.into_inner();
@@ -192,7 +192,7 @@ impl ErlModule {
   }
 
   /// Parse all nested file elements, comments and text fragments
-  fn file_root_to_ast(&self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn file_root_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     assert_eq!(pair.as_rule(), Rule::module);
     let ast_nodes = pair.into_inner().into_iter()
         .map(|p| self.to_ast_single_node(p))
@@ -202,7 +202,7 @@ impl ErlModule {
   }
 
   /// Parse funname(arg, arg...) -> body.
-  fn function_def_to_ast(&self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn function_def_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
@@ -215,11 +215,20 @@ impl ErlModule {
     let arity = clauses[0].arg_types.len();
     let funarity = FunArity::new(clauses[0].name.clone(), arity);
 
-    Ok(ErlAst::new_fun(location, funarity, clauses))
+    // Add function clauses to global module clauses table
+    let start_clause = self.env.function_clauses.len();
+    let clause_count = clauses.len();
+    self.env.function_clauses.extend(clauses.into_iter());
+
+    let nf = ErlAst::new_fun(funarity.clone(), start_clause, clause_count,
+                             &self.env.function_clauses[start_clause..start_clause + clause_count]);
+    let ret_ty = nf.ret_ty.clone();
+    let index = self.env.add_function(nf);
+    Ok(ErlAst::FunctionDef { location, funarity, ret_ty, index })
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&self, pair: Pair<Rule>) -> ErlResult<FunctionClauseNode> {
+  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FunctionClauseNode> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);

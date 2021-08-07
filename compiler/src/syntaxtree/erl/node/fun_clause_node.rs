@@ -6,7 +6,7 @@ use crate::typing::erl_type::ErlType;
 /// a new function.
 // #[derive(PartialEq)]
 pub struct FunctionClauseNode {
-  /// Name, because it comes from AST, prefer to use funarity.name in the parent `NewFunction`
+  /// Name, because it comes from AST, prefer to use funarity.name in the parent `FunctionDef`
   pub name: String,
   /// Function clause arguments, binding/match expressions
   pub args: Vec<ErlAst>,

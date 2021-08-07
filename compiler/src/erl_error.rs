@@ -141,6 +141,14 @@ impl ErlError {
       msg,
     }
   }
+
+  pub fn multiple(mut errors: Vec<ErlError>) -> ErlError {
+    match errors.len() {
+      0 => panic!("ErlError::multiple() called with an empty error vector"),
+      1 => errors.pop().unwrap(),
+      _ => ErlError::Multiple(errors),
+    }
+  }
 }
 
 /// Used as Result<T> for all parse and compile operations

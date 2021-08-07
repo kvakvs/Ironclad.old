@@ -2,6 +2,9 @@
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use std::borrow::{BorrowMut, Borrow};
+use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::erl_module::func_registry::FunctionRegistry;
 
 impl ErlAst {
   /// Mut iterator on the AST tree
@@ -14,17 +17,16 @@ impl ErlAst {
 
       ErlAst::ModuleForms(f) => Some(f.iter_mut().collect()),
 
-      ErlAst::NewFunction(_loc, nf) => {
-        let r: Vec<&mut ErlAst> = nf.clauses.iter_mut()
-            .map(|fclause| fclause.body.borrow_mut())
-            .collect();
-        Some(r)
-      }
-
-      // ErlAst::FClause(_loc, fc) => {
-      //   // Descend into args, and the body
-      //   let mut r: Vec<&mut ErlAst> = fc.args.iter_mut().collect();
-      //   r.push(&mut fc.body)?;
+      ErlAst::FunctionDef { .. } => {
+        // To descend into function defs, iterate over ErlModule.env.function_clauses
+        None
+      },
+      // ErlAst::FunctionDef { index, .. } => {
+      //   let fn_def = &env.functions[*index];
+      //   let clauses = fn_def.get_clauses_mut(&mut env.function_clauses);
+      //   let r: Vec<&mut ErlAst> = clauses.iter_mut()
+      //       .map(|fclause| fclause.body.borrow_mut())
+      //       .collect();
       //   Some(r)
       // }
 
@@ -78,12 +80,18 @@ impl ErlAst {
 
       ErlAst::ModuleForms(f) => Some(f.iter().collect()),
 
-      ErlAst::NewFunction(_loc, nf) => {
-        let r: Vec<&ErlAst> = nf.clauses.iter()
-            .map(|fclause| fclause.body.borrow())
-            .collect();
-        Some(r)
-      }
+      ErlAst::FunctionDef { .. } => {
+        // To descend into function defs, iterate over ErlModule.env.function_clauses
+        None
+      },
+      // ErlAst::FunctionDef { index, .. } => {
+      //   let fn_def = &env.functions[*index];
+      //   let clauses = fn_def.get_clauses(&env.function_clauses);
+      //   let r: Vec<&ErlAst> = clauses.iter()
+      //       .map(|fclause| fclause.body.borrow())
+      //       .collect();
+      //   Some(r)
+      // }
 
       ErlAst::App(_loc, app) => {
         let mut r: Vec<&ErlAst> = vec![&app.expr];

@@ -58,8 +58,17 @@ pub enum ErlAst {
 
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
-  /// and a return type, initially Any
-  NewFunction(SourceLoc, NewFunctionNode),
+  /// and a return type, initially Any.
+  FunctionDef {
+    /// Source file pointer
+    location: SourceLoc,
+    /// Function name and arity
+    funarity: FunArity,
+    /// Clone of return type variable
+    ret_ty: TypeVar,
+    /// Index into `ErlModule::functions` table
+    index: usize,
+  },
 
   /// Case clause for a `case x of` switch
   CClause(SourceLoc, CaseClauseNode),
@@ -104,7 +113,7 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::NewFunction(_loc, nf) => nf.ret_ty.into(),
+      ErlAst::FunctionDef { ret_ty, .. } => ret_ty.clone().into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
       ErlAst::App(_loc, app) => app.ret_ty.into(),
@@ -125,19 +134,20 @@ impl ErlAst {
     }
   }
 
-  /// Create a new function definition node
-  pub fn new_fun(location: SourceLoc,
-                 funarity: FunArity,
-                 clauses: Vec<FunctionClauseNode>) -> Self {
-    assert!(!clauses.is_empty(), "Clauses must not be empty");
+  /// Create a new function definition node, the caller has the responsibility to store it and
+  /// to create `ErlAst::FunctionDef` with the stored index
+  pub fn new_fun(funarity: FunArity,
+                 start_clause: usize,
+                 clause_count: usize,
+                 clauses: &[FunctionClauseNode]) -> NewFunctionNode {
+    assert_ne!(clause_count, 0, "Clauses must not be empty");
 
     assert!(clauses.iter().all(|fc| fc.arg_types.len() == funarity.arity),
             "All clauses must have same arity");
     assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
             "All clause arg types must match in length all clauses' arguments");
 
-    let nf = NewFunctionNode::new(funarity, clauses);
-    ErlAst::NewFunction(location, nf)
+    NewFunctionNode::new(funarity, start_clause, clause_count)
   }
 
   /// Create a new variable AST node
@@ -221,10 +231,10 @@ impl ErlAst {
   //   }
   // }
 
-  /// Unwrap self as new function
-  pub fn as_new_function(&self) -> Option<&NewFunctionNode> {
+  /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
+  pub fn as_new_function(&self) -> Option<usize> {
     match self {
-      ErlAst::NewFunction(_location, nf) => Some(nf),
+      ErlAst::FunctionDef { index, .. } => Some(*index),
       _ => None,
     }
   }
@@ -249,7 +259,7 @@ impl ErlAst {
       ErlAst::Token { location: loc, .. } => *loc,
       ErlAst::ModuleAttr { location: loc, .. } => *loc,
       ErlAst::Comma { location: loc, .. } => *loc,
-      ErlAst::NewFunction(loc, _) => *loc,
+      ErlAst::FunctionDef { location: loc, .. } => *loc,
       // ErlAst::FClause(loc, _) => *loc,
       ErlAst::CClause(loc, _) => *loc,
       ErlAst::FunArity(loc, _) => *loc,

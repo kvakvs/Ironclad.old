@@ -1,10 +1,10 @@
 //! Defines Application AST node for a function call
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::t_postprocess::TPostProcess;
-use crate::typing::erl_type::ErlType;
-use crate::erl_module::ErlModule;
 use crate::erl_error::ErlResult;
+use crate::erl_module::ErlModule;
+use crate::erl_module::func_registry::FunctionRegistry;
 use crate::source_loc::SourceLoc;
+use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 
 /// AST node which contains a function call
@@ -42,17 +42,22 @@ impl ApplicationNode {
           .collect(),
       ret.clone())
   }
-}
 
-impl TPostProcess for ApplicationNode {
-  fn postprocess_ast(&mut self, env: &mut ErlModule) -> ErlResult<()> {
+  /// During post-parse scan try check if our expression is a reference to a known function.
+  /// If so, replace it with a pointer to that function.
+  pub fn postprocess_edit_node(&mut self, env: &mut FunctionRegistry) -> ErlResult<()> {
+    println!("Postprocessing App()... {}({:?})", self.expr, self.args);
+
     // Check if expr (target) points to some existing function that we know
-    match env.find_function_expr_arity(&self.expr, self.args.len()) {
+    match env.find_function_by_expr_arity(&self.expr, self.args.len()) {
       None => {} // no changes, return same node
-      Some(nf) => {
-        // TODO: replace self.expr with the found fun pointer
+      Some(index) => {
+        let nf = &env.functions[index];
+
+        // Replace self.expr with the found fun pointer
         let new_expr = ErlAst::FunArity(SourceLoc::default(),
-                                        nf.borrow().funarity.clone());
+                                        nf.funarity.clone());
+
         println!("ApplicationNode: Replacing {} with {}", self.expr, new_expr);
         self.expr = Box::new(new_expr);
       }
