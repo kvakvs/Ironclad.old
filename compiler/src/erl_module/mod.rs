@@ -1,8 +1,5 @@
 //! Defines an Erlang module ready to be compiled
 
-use std::cell::RefCell;
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -14,14 +11,10 @@ use pest::Parser;
 
 use func_registry::FunctionRegistry;
 use crate::erl_error::{ErlError, ErlResult};
-use crate::funarity::FunArity;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_parser;
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
-use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
 use crate::typing::unifier::Unifier;
 
 pub mod func_registry;

@@ -1,10 +1,7 @@
 //! Contains iteration helpers for ErlAst
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use std::borrow::{BorrowMut, Borrow};
-use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use crate::erl_module::func_registry::FunctionRegistry;
+use std::borrow::{BorrowMut};
 
 impl ErlAst {
   /// Mut iterator on the AST tree
@@ -20,7 +17,7 @@ impl ErlAst {
       ErlAst::FunctionDef { .. } => {
         // To descend into function defs, iterate over ErlModule.env.function_clauses
         None
-      },
+      }
       // ErlAst::FunctionDef { index, .. } => {
       //   let fn_def = &env.functions[*index];
       //   let clauses = fn_def.get_clauses_mut(&mut env.function_clauses);
@@ -83,7 +80,7 @@ impl ErlAst {
       ErlAst::FunctionDef { .. } => {
         // To descend into function defs, iterate over ErlModule.env.function_clauses
         None
-      },
+      }
       // ErlAst::FunctionDef { index, .. } => {
       //   let fn_def = &env.functions[*index];
       //   let clauses = fn_def.get_clauses(&env.function_clauses);

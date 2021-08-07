@@ -1,6 +1,5 @@
 //! Defines Application AST node for a function call
 use crate::erl_error::ErlResult;
-use crate::erl_module::ErlModule;
 use crate::erl_module::func_registry::FunctionRegistry;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;

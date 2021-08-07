@@ -142,6 +142,7 @@ impl ErlError {
     }
   }
 
+  /// Given a vector of ErlErrors, return one, multiple error, or panic if no errors were given
   pub fn multiple(mut errors: Vec<ErlError>) -> ErlError {
     match errors.len() {
       0 => panic!("ErlError::multiple() called with an empty error vector"),

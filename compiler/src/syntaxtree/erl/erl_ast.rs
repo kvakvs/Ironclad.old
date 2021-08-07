@@ -273,6 +273,19 @@ impl ErlAst {
       _ => SourceLoc::default(),
     }
   }
+
+  /// Scan forms and find a module definition AST node. For finding a function by funarity, check
+  /// function registry `ErlModule::env`
+  pub fn find_function_def(&self, fa: &FunArity) -> Option<&ErlAst> {
+    match self {
+      ErlAst::FunctionDef {funarity: fa2, ..} if fa == fa2 => Some(self),
+      ErlAst::ModuleForms(forms) => {
+        // Find first in forms for which `find_function_def` returns something
+        forms.iter().find(|&f| f.find_function_def(fa).is_some())
+      },
+      _ => None,
+    }
+  }
 }
 
 /// A tree of Erlang nodes with attached file name, and root element removed

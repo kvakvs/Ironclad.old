@@ -84,10 +84,9 @@ fn infer_funcall_test() -> ErlResult<()> {
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast = module.ast.read().unwrap();
-    let add_fn_index = module.env.functions_lookup.get(&FunArity::new_clone_name("add", 2)).unwrap();
-    let add_fn = &module.env.functions[*add_fn_index];
-    let f_t1 = module.unifier.infer_ast(add_fn.ast).into_final_type();
-    println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_index.ast, f_t1);
+    let add_fn_ast = ast.find_function_def(&FunArity::new_str("add", 2)).unwrap();
+    let f_t1 = module.unifier.infer_ast(add_fn_ast).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
     assert_eq!(f_t1, ErlType::Number, "Function add/2 must have inferred type: number()");
@@ -95,9 +94,9 @@ fn infer_funcall_test() -> ErlResult<()> {
 
   {
     let ast2 = module.ast.read().unwrap();
-    let find_result2 = ast2.find_fun("main", 0).unwrap();
-    let f_t2 = module.unifier.infer_ast(find_result2.ast).into_final_type();
-    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2.ast, f_t2);
+    let find_result2 = ast2.find_function_def(&FunArity::new_str("main", 0)).unwrap();
+    let f_t2 = module.unifier.infer_ast(find_result2).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
     // Expected: Main -> integer()
     assert_eq!(f_t2, ErlType::Number, "Function main/0 must have inferred type: number()");

@@ -24,14 +24,12 @@ impl NewFunctionNode {
   /// all argument types.
   pub fn new(funarity: FunArity, start_clause: usize, clause_count: usize) -> Self {
     assert_ne!(clause_count, 0);
-    let mut result = Self {
+    Self {
       funarity,
       start_clause,
       clause_count,
       ret_ty: TypeVar::new(),
-    };
-    // result.arg_ty = result.get_argument_types_unions();
-    result
+    }
   }
 
   /// Readonly slice access to this function's clauses

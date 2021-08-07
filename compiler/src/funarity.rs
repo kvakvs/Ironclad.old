@@ -18,7 +18,7 @@ impl FunArity {
   }
 
   /// Creates a new funarity, cloning the name
-  pub fn new_clone_name(name: &str, arity: usize) -> Self {
+  pub fn new_str(name: &str, arity: usize) -> Self {
     FunArity { name: String::from(name), arity }
   }
 }

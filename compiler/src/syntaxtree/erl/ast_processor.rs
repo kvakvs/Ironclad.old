@@ -3,8 +3,6 @@
 use crate::erl_module::ErlModule;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
-use crate::funarity::FunArity;
 use crate::erl_module::func_registry::FunctionRegistry;
 
 impl ErlModule {

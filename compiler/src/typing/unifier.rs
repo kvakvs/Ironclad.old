@@ -7,7 +7,6 @@ use std::collections::{HashMap, HashSet};
 use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::error::TypeError;
 use crate::typing::typevar::TypeVar;
-use std::collections::hash_map::Entry;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::function_type::FunctionType;
 use std::ops::Deref;
@@ -17,9 +16,7 @@ use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
-use std::borrow::{Borrow};
 use crate::funarity::FunArity;
-use crate::erl_module::func_registry::FunctionRegistry;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -312,17 +309,18 @@ impl Unifier {
   /// Returns a type where all occurrences of variables bound in subst
   /// were replaced (recursively); on failure returns None.
   /// Also known as: Apply Unifier (apply_unifier)
-  pub fn infer_type(&mut self, ty: ErlType) -> ErlType {
+  pub fn infer_type(&mut self, ty: &ErlType) -> ErlType {
     if self.subst.is_empty() || ty.is_simple_value_type() {
-      return ty;
+      return ty.clone();
     }
 
     if let ErlType::TVar(tvar) = &ty {
       match self.subst.get(tvar) {
         Some(entry) => {
-          return self.infer_type(entry.clone());
+          let entry_ = entry.clone();
+          return self.infer_type(&entry_);
         }
-        None => return ty,
+        None => return ty.clone(),
       }
     }
 
@@ -330,9 +328,9 @@ impl Unifier {
       return ErlType::Function(FunctionType {
         name: fun_type.name.clone(),
         arg_types: fun_type.arg_types.iter()
-            .map(|t| self.infer_type(t.clone()))
+            .map(|t| self.infer_type(t))
             .collect(),
-        ret_type: Box::new(self.infer_type(*fun_type.ret_type.clone())),
+        ret_type: Box::new(self.infer_type(&fun_type.ret_type)),
       });
     }
 
@@ -341,7 +339,7 @@ impl Unifier {
 
   /// Finds the type of the expression for the given substitution.
   pub fn infer_ast(&mut self, expr: &ErlAst) -> ErlType {
-    self.infer_type(expr.get_type())
+    self.infer_type(&expr.get_type())
   }
 
   /// Type inference wiring

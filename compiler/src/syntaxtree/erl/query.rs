@@ -2,7 +2,6 @@
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
-use std::ops::Deref;
 
 /// Returned from find_fun. Contains references, if you need to use them in the code and drop the
 /// borrowed parent, use .clone()
