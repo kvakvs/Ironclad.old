@@ -7,7 +7,7 @@ use crate::display;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
-use crate::syntaxtree::erl::node::literal_node::Literal;
+use crate::syntaxtree::erl::node::literal::Literal;
 
 impl fmt::Display for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -6,7 +6,7 @@ use crate::typing::typevar::TypeVar;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 // #[derive(PartialEq)]
-pub struct BinaryOperatorExprNode {
+pub struct BinaryOperatorExpr {
   /// Left operand
   pub left: Box<ErlAst>,
   /// Right operand
@@ -17,7 +17,7 @@ pub struct BinaryOperatorExprNode {
   pub ty: TypeVar,
 }
 
-impl BinaryOperatorExprNode {
+impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
   pub fn get_result_type(&self) -> ErlType {
     match self.operator {
@@ -80,14 +80,14 @@ impl BinaryOperatorExprNode {
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
 // #[derive(PartialEq)]
-pub struct UnaryOperatorExprNode {
+pub struct UnaryOperatorExpr {
   /// The operand
   pub expr: Box<ErlAst>,
   /// The operator
   pub operator: ErlUnaryOp,
 }
 
-impl UnaryOperatorExprNode {
+impl UnaryOperatorExpr {
   /// Get the type of an unary operation. Input type is same as return type.
   pub fn get_type(&self) -> ErlType {
     match self.operator {

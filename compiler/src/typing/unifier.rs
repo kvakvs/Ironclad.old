@@ -12,7 +12,7 @@ use crate::typing::function_type::FunctionType;
 use std::ops::Deref;
 use crate::syntaxtree::erl::node::function_def::FunctionDef;
 use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
-use crate::syntaxtree::erl::node::application_node::ApplicationNode;
+use crate::syntaxtree::erl::node::apply::Apply;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
@@ -387,7 +387,7 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call) Expr(Arg, ...)
   fn generate_equations_app(&self, eq: &mut Vec<TypeEquation>,
-                            ast: &ErlAst, app: &ApplicationNode) -> ErlResult<()> {
+                            ast: &ErlAst, app: &Apply) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
     // TODO: Instead of AnyFunction create a functional type of the correct arity and return type?

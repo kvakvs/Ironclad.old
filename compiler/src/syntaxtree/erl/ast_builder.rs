@@ -5,7 +5,7 @@ use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
 use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
-use crate::syntaxtree::erl::node::literal_node::Literal;
+use crate::syntaxtree::erl::node::literal::Literal;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
 use crate::erl_module::ErlModule;

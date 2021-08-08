@@ -12,10 +12,10 @@ use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 
 /// AST node which contains a function call
-pub struct ApplicationNode {
+pub struct Apply {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Box<RefCell<ErlAst>>,
-  /// Arguments. Their  inferred types are stored inside.
+  /// Arguments. Their inferred types are stored inside.
   pub args: Vec<ErlAst>,
   /// Inferred type of return. Always a new TypeVar().
   pub ret_ty: TypeVar,
@@ -23,20 +23,21 @@ pub struct ApplicationNode {
   pub expr_ty: TypeVar,
 }
 
-impl ApplicationNode {
-  /// From argument types build a new ErlType::Function() with multiple clauses
+impl Apply {
+  /// From argument types build a new ErlType::Function() with a single clause corresponding to
+  /// that specific call `Apply` would be performing
   pub fn get_function_type(&self) -> ErlType {
     let arg_types: Vec<ErlType> = self.args.iter().map(|arg| arg.get_type()).collect();
-    let clause = FunctionClauseType::new(arg_types, self.ret_ty.into());
-    let ft = FunctionType::new(None, vec![clause]);
-    ErlType::Function(ft)
+    let clause_type = FunctionClauseType::new(arg_types, self.ret_ty.into());
+    let f_type = FunctionType::new(None, vec![clause_type]);
+    ErlType::Function(f_type)
   }
 
   /// Creates a new function call (application) AST node
   pub fn new(expr: ErlAst, args: Vec<ErlAst>) -> Self {
     // let ret_ty = ErlType::new_typevar();
     // let expr_ty = Self::create_expr_type(&args, &ret_ty);
-    ApplicationNode {
+    Apply {
       expr: Box::new(RefCell::new(expr)),
       args,
       ret_ty: TypeVar::new(),

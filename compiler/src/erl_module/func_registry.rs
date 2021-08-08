@@ -1,7 +1,7 @@
 //! Stores functions and function clauses for an Erlang Module
 use crate::funarity::FunArity;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::literal_node::Literal;
+use crate::syntaxtree::erl::node::literal::Literal;
 use crate::syntaxtree::erl::node::function_def::FunctionDef;
 use crate::erl_module::ErlModule;
 

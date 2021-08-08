@@ -1,14 +1,14 @@
 //! AST syntax structure of an Erlang file
 use ::function_name::named;
 use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::node::application_node::ApplicationNode;
-use crate::syntaxtree::erl::node::case_clause_node::CaseClauseNode;
-use crate::syntaxtree::erl::node::case_expr_node::CaseExprNode;
+use crate::syntaxtree::erl::node::apply::Apply;
+use crate::syntaxtree::erl::node::case_clause::CaseClause;
+use crate::syntaxtree::erl::node::case::Case;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::node::let_expr_node::LetExprNode;
-use crate::syntaxtree::erl::node::literal_node::Literal;
-use crate::syntaxtree::erl::node::expr_node::{BinaryOperatorExprNode, UnaryOperatorExprNode};
-use crate::syntaxtree::erl::node::var_node::VarNode;
+use crate::syntaxtree::erl::node::r#let::LetExprNode;
+use crate::syntaxtree::erl::node::literal::Literal;
+use crate::syntaxtree::erl::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
+use crate::syntaxtree::erl::node::var::VarNode;
 use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
 use crate::source_loc::SourceLoc;
@@ -16,7 +16,6 @@ use crate::syntaxtree::erl::node::token::ErlToken;
 use crate::typing::typevar::TypeVar;
 
 /// AST node in parsed Erlang source
-// #[derive(PartialEq)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty
   Empty,
@@ -69,7 +68,7 @@ pub enum ErlAst {
   },
 
   /// Case clause for a `case x of` switch
-  CClause(SourceLoc, CaseClauseNode),
+  CClause(SourceLoc, CaseClause),
 
   /// Name/arity which refers to a function in the current module
   FunArity(SourceLoc, FunArity),
@@ -79,23 +78,23 @@ pub enum ErlAst {
   Var(SourceLoc, VarNode),
 
   /// Apply arguments to expression
-  App(SourceLoc, ApplicationNode),
+  App(SourceLoc, Apply),
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
   Let(SourceLoc, LetExprNode),
 
   /// Case switch containing the argument to check, and case clauses
-  Case(SourceLoc, CaseExprNode),
+  Case(SourceLoc, Case),
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(SourceLoc, Literal),
 
   /// Binary operation with two arguments
-  BinaryOp(SourceLoc, BinaryOperatorExprNode),
+  BinaryOp(SourceLoc, BinaryOperatorExpr),
 
   /// Unary operation with 1 argument
-  UnaryOp(SourceLoc, UnaryOperatorExprNode),
+  UnaryOp(SourceLoc, UnaryOperatorExpr),
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
   List(SourceLoc, Vec<ErlAst>),
@@ -165,19 +164,19 @@ impl ErlAst {
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(location: SourceLoc, expr: ErlAst, args: Vec<ErlAst>) -> ErlAst {
-    ErlAst::App(location, ApplicationNode::new(expr, args))
+    ErlAst::App(location, Apply::new(expr, args))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(location: SourceLoc, expr: ErlAst) -> ErlAst {
-    ErlAst::App(location, ApplicationNode::new(expr, vec![]))
+    ErlAst::App(location, Apply::new(expr, vec![]))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(location: SourceLoc,
                    left: ErlAst, op: ErlBinaryOp, right: ErlAst) -> ErlAst {
     ErlAst::BinaryOp(location,
-                     BinaryOperatorExprNode {
+                     BinaryOperatorExpr {
                        left: Box::new(left),
                        right: Box::new(right),
                        operator: op,

@@ -1,11 +1,11 @@
 //! Groups together AST node structs
-pub mod case_expr_node;
-pub mod let_expr_node;
-pub mod case_clause_node;
-pub mod expr_node;
-pub mod var_node;
-pub mod application_node;
+pub mod case;
+pub mod r#let;
+pub mod case_clause;
+pub mod expression;
+pub mod var;
+pub mod apply;
 pub mod function_def;
 pub mod fun_clause;
-pub mod literal_node;
+pub mod literal;
 pub mod token;
