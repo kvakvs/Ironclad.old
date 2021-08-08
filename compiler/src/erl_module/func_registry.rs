@@ -1,26 +1,13 @@
 //! Stores functions and function clauses for an Erlang Module
-use std::collections::HashMap;
-
 use crate::funarity::FunArity;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
-use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use crate::syntaxtree::erl::node::literal_node::Literal;
+use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::erl_module::ErlModule;
 
-/// Stuff necessary for function registrations and function lookups
-#[derive(Debug)]
-pub struct FunctionRegistry {
-  /// Function definitions of the module
-  pub functions: Vec<NewFunctionNode>,
-  /// Each function definition has one or more clauses
-  pub function_clauses: Vec<FunctionClauseNode>,
-  /// Lookuip by function name and arity into `Self::functions`
-  pub functions_lookup: HashMap<FunArity, usize>,
-}
-
-impl FunctionRegistry {
+impl ErlModule {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
-  pub fn add_function(&mut self, nf: NewFunctionNode) -> usize {
+  pub fn add_function(&mut self, nf: FunctionDef) -> usize {
     let index = self.functions.len();
     let funarity = nf.funarity.clone();
 
@@ -30,15 +17,10 @@ impl FunctionRegistry {
     index
   }
 
-  /// Append a function clause to the list
-  pub fn add_function_clause(&mut self, fc: FunctionClauseNode) {
-    self.function_clauses.push(fc);
-  }
-
   /// For an expression check whether it is a constant expression, and whether it points to some
   /// known function in this module. Arity is provided as the expression might be just an atom.
-  pub fn find_function_by_expr_arity(&mut self, expr: &ErlAst, arity: usize) -> Option<usize> {
-    if let ErlAst::Lit(_loc, LiteralNode::Atom(a)) = expr {
+  pub fn find_function_by_expr_arity(&self, expr: &ErlAst, arity: usize) -> Option<usize> {
+    if let ErlAst::Lit(_loc, Literal::Atom(a)) = expr {
       // A single atom points to a possible existing function of `arity` in the current module
       let fa = FunArity { name: a.clone(), arity };
       match self.functions_lookup.get(&fa) {
@@ -50,12 +32,12 @@ impl FunctionRegistry {
   }
 }
 
-impl Default for FunctionRegistry {
-  fn default() -> Self {
-    Self {
-      functions: vec![],
-      function_clauses: vec![],
-      functions_lookup: Default::default(),
-    }
-  }
-}
+// impl Default for FunctionRegistry {
+//   fn default() -> Self {
+//     Self {
+//       functions: vec![],
+//       function_clauses: vec![],
+//       functions_lookup: Default::default(),
+//     }
+//   }
+// }

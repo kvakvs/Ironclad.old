@@ -6,7 +6,7 @@ mod test_util;
 use ::function_name::named;
 use compiler::syntaxtree::erl::erl_parser::{Rule};
 use compiler::syntaxtree::erl::erl_ast::{ErlAst};
-use compiler::syntaxtree::erl::node::literal_node::LiteralNode;
+use compiler::syntaxtree::erl::node::literal_node::Literal;
 use std::ops::Deref;
 use compiler::erl_module::ErlModule;
 use compiler::erl_error::ErlResult;
@@ -20,7 +20,7 @@ fn parse_string_test() -> ErlResult<()> {
 
   {
     let ast = module1.ast.read().unwrap();
-    if let ErlAst::Lit(_loc, LiteralNode::String(_value)) = ast.deref() {
+    if let ErlAst::Lit(_loc, Literal::String(_value)) = ast.deref() {
       // ok
     } else {
       panic!("{} Expected: Literal(String) result, got {}", function_name!(), ast)

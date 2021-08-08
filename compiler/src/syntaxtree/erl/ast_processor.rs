@@ -3,27 +3,39 @@
 use crate::erl_module::ErlModule;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult};
-use crate::erl_module::func_registry::FunctionRegistry;
+use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::erl_ast_iter::AstChild;
 
 impl ErlModule {
   /// Run the post-parse analysis. Relies upon results from Self::postprocess_ast_readonly().
   /// Given a fresh parsed and processed Erlang AST, go through it once more and edit some nodes.
   /// * In function applications replace atom function names with function pointers
-  pub fn postprocess_ast(ast: &mut ErlAst, env: &mut FunctionRegistry) -> ErlResult<()> {
-    if let Some(children) = ast.children_mut() {
+  pub fn postprocess_ast(&self, ast: &ErlAst) -> ErlResult<()> {
+    if let Some(children) = ast.children(self) {
       for child in children {
-        Self::postprocess_ast(child, env)?;
+        match child {
+          AstChild::Ref(c) => self.postprocess_ast(c)?,
+          AstChild::RefCell(refc) => self.postprocess_ast(&refc)?,
+        }
       }
     }
 
-    if let ErlAst::App(_loc, app) = ast {
-      app.postprocess_edit_node(env)?;
+    match ast {
+      ErlAst::App(_loc, app) => {
+        app.postprocess_edit_node(self)?;
+      }
+      ErlAst::FunctionDef { index, .. } => {
+        let f_def: &FunctionDef = &self.functions[*index];
+
+        for fc in &f_def.clauses {
+          for arg in &fc.args {
+            self.postprocess_ast(&arg)?;
+          }
+          self.postprocess_ast(&fc.body)?;
+        }
+      }
+      _ => {}
     }
-    // if let ErlAst::App(_loc1, app) = ast {
-    //   if let ErlAst::Lit(_loc2, LiteralNode::Atom(fname)) = &*app.expr {
-    //     let funarity = FunArity::new(fname.clone(), app.args.len());
-    //   }
-    // }
 
     Ok(())
   }

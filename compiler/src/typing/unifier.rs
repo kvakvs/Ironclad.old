@@ -10,13 +10,15 @@ use crate::typing::typevar::TypeVar;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::function_type::FunctionType;
 use std::ops::Deref;
-use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
 use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
 use crate::funarity::FunArity;
+use crate::syntaxtree::erl::erl_ast_iter::AstChild;
+use std::borrow::Borrow;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -139,18 +141,18 @@ impl Unifier {
         match type2 {
           ErlType::Function(fun2) => {
             let funarity = FunArity::new(name1.clone(), *arity1);
-            match module.env.functions_lookup.get(&funarity) {
+            match module.functions_lookup.get(&funarity) {
               Some(fun_index) => {
                 // Unify left and right as function types
                 // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-                let fun_def: &NewFunctionNode = &module.env.functions[*fun_index];
+                let fun_def: &FunctionDef = &module.functions[*fun_index];
                 self.unify(module, ast,
                            &fun_def.ret_ty.into(),
                            &type2)?;
 
                 // Equation: Application Expr(Args...) <=> Fn.Ret
 
-                let fc = &module.env.function_clauses[fun_def.start_clause];
+                let fc = &fun_def.clauses[0];
                 if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
                   return Ok(());
                 }
@@ -345,11 +347,9 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node FunctionDef
   fn generate_equations_newfunction(&self, eq: &mut Vec<TypeEquation>,
-                                    module: &ErlModule, ast: &ErlAst,
-                                    nf: &NewFunctionNode) -> ErlResult<()> {
+                                    ast: &ErlAst, nf: &FunctionDef) -> ErlResult<()> {
     // Return type of a function is union of its clauses return types
-    let clauses = nf.get_clauses(&module.env.function_clauses);
-    let ret_union_members = clauses.iter()
+    let ret_union_members = nf.clauses.iter()
         .map(|c| c.ret.clone())
         .collect();
     let ret_union_t = ErlType::union_of(ret_union_members);
@@ -362,7 +362,7 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node FClause
   fn generate_equations_fclause(&self, eq: &mut Vec<TypeEquation>,
-                                ast: &ErlAst, fc: &FunctionClauseNode) -> ErlResult<()> {
+                                ast: &ErlAst, fc: &FunctionClause) -> ErlResult<()> {
     // For each fun clause its return type is matched with body expression type
     Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type(), "Fun clause");
     Ok(())
@@ -375,7 +375,8 @@ impl Unifier {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
     // TODO: Instead of AnyFunction create a functional type of the correct arity and return type?
-    Self::equation(eq, ast, app.expr.get_type(), ErlType::AnyFunction, "Apply");
+    Self::equation(eq, ast, (*app.expr).borrow().get_type(),
+                   ErlType::AnyFunction, "Apply");
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret
@@ -393,12 +394,16 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
-  pub fn generate_equations(&self, module: &mut ErlModule,
+  pub fn generate_equations(&self, module: &ErlModule,
                             eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    if let Some(children) = ast.children() {
-      for nested_ast in children {
-        match self.generate_equations(module, eq, nested_ast) {
+    if let Some(children) = ast.children(module) {
+      for child in children {
+        let gen_result = match child {
+          AstChild::Ref(c) => self.generate_equations(module, eq, c),
+          AstChild::RefCell(refc) => self.generate_equations(module, eq, refc.borrow())
+        };
+        match gen_result {
           Ok(_) => {} // nothing, all good
           Err(err) => { module.add_error(err); }
         }
@@ -412,9 +417,9 @@ impl Unifier {
       ErlAst::Lit(_loc, _) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
       ErlAst::FunctionDef { index, .. } => {
-        let nf = &module.env.functions[*index];
-        self.generate_equations_newfunction(eq, module, ast, nf)?;
-        for fc in nf.get_clauses(&module.env.function_clauses) {
+        let nf = &module.functions[*index];
+        self.generate_equations_newfunction(eq, ast, nf)?;
+        for fc in &nf.clauses {
           self.generate_equations_fclause(eq, ast, &fc)?
         }
       }

@@ -6,8 +6,8 @@ use std::fmt::Formatter;
 use crate::display;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::literal_node::Literal;
 
 impl fmt::Display for ErlAst {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -43,7 +43,7 @@ impl fmt::Display for ErlAst {
       ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
 
       ErlAst::App(_loc, app) => {
-        write!(f, "{}(", app.expr)?;
+        write!(f, "{}(", app.expr.borrow())?;
         display::display_comma_separated(&app.args, f)?;
         write!(f, ")")
       }
@@ -94,21 +94,21 @@ impl fmt::Debug for ErlAst {
   }
 }
 
-impl std::fmt::Display for LiteralNode {
+impl std::fmt::Display for Literal {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      LiteralNode::Integer(i) => write!(f, "{}", i),
-      LiteralNode::Float(flt) => write!(f, "{}", flt),
-      LiteralNode::Atom(a) => write!(f, "'{}'", a),
-      LiteralNode::Bool(b) => write!(f, "{}", b),
-      LiteralNode::List(elems) => display::display_list(elems, f),
-      LiteralNode::String(s) => write!(f, "\"{}\"", s),
-      LiteralNode::Tuple(t) => display::display_tuple(t, f),
+      Literal::Integer(i) => write!(f, "{}", i),
+      Literal::Float(flt) => write!(f, "{}", flt),
+      Literal::Atom(a) => write!(f, "'{}'", a),
+      Literal::Bool(b) => write!(f, "{}", b),
+      Literal::List(elems) => display::display_list(elems, f),
+      Literal::String(s) => write!(f, "\"{}\"", s),
+      Literal::Tuple(t) => display::display_tuple(t, f),
     }
   }
 }
 
-impl std::fmt::Display for FunctionClauseNode {
+impl std::fmt::Display for FunctionClause {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}(", self.name)?;
     display::display_comma_separated(&self.args, f)?;

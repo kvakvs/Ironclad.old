@@ -5,7 +5,7 @@ use crate::typing::erl_type::ErlType;
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
 #[derive(Debug)]
-pub struct FunctionClauseNode {
+pub struct FunctionClause {
   /// Name, because it comes from AST, prefer to use funarity.name in the parent `FunctionDef`
   pub name: String,
   /// Function clause arguments, binding/match expressions
@@ -18,13 +18,13 @@ pub struct FunctionClauseNode {
   pub ret: ErlType,
 }
 
-impl FunctionClauseNode {
+impl FunctionClause {
   /// Create a new function clause
   pub fn new(name: String, args: Vec<ErlAst>, body: ErlAst) -> Self {
     let arg_types = args.iter()
         .map(|_a| ErlType::new_typevar())
         .collect();
-    FunctionClauseNode {
+    FunctionClause {
       name,
       args,
       arg_types,

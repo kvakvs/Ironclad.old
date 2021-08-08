@@ -9,13 +9,16 @@ use std::sync::{Arc, RwLock};
 use ::function_name::named;
 use pest::Parser;
 
-use func_registry::FunctionRegistry;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_parser;
 use crate::typing::unifier::Unifier;
+use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::funarity::FunArity;
+use std::collections::HashMap;
+use std::cell::RefCell;
 
 pub mod func_registry;
 
@@ -34,12 +37,15 @@ pub struct ErlModule {
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
 
-  /// Functions and function clauses stay here
-  pub env: FunctionRegistry,
+  /// Function definitions of the module
+  pub functions: Vec<FunctionDef>,
+
+  /// Lookup by function_name/arity into `Self::functions`
+  pub functions_lookup: HashMap<FunArity, usize>,
 
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
-  pub errors: Vec<ErlError>,
+  pub errors: RefCell<Vec<ErlError>>,
 }
 
 
@@ -51,8 +57,9 @@ impl Default for ErlModule {
       source_file: Arc::new(SourceFile::default()),
       ast: Rc::new(RwLock::new(ErlAst::Empty)),
       unifier: Unifier::default(),
-      env: Default::default(),
-      errors: Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100),
+      functions: vec![],
+      functions_lookup: Default::default(),
+      errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
 }
@@ -75,9 +82,9 @@ impl ErlModule {
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
-  pub fn add_error(&mut self, err: ErlError) -> bool {
-    self.errors.push(err);
-    self.errors.len() < self.compiler_options.max_errors_per_module
+  pub fn add_error(&self, err: ErlError) -> bool {
+    self.errors.borrow_mut().push(err);
+    self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }
 
   /// Parse self.source_file
@@ -106,7 +113,7 @@ impl ErlModule {
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       // self.postprocess_ast_readonly(&ast0)?;
-      Self::postprocess_ast(&mut ast0, &mut self.env)?;
+      self.postprocess_ast(&mut ast0)?;
 
       println!("\n{}: {}", function_name!(), ast0);
 
@@ -133,11 +140,11 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
 
     // build initial AST from parse
-    let mut ast0 = self.build_ast_single_node(parse_output)?;
+    let ast0 = self.build_ast_single_node(parse_output)?;
 
     // Modify some AST nodes as required
     // self.postprocess_ast_readonly(&ast0)?;
-    Self::postprocess_ast(&mut ast0, &mut self.env)?;
+    self.postprocess_ast(&ast0)?;
 
     println!("\n{}: {}", function_name!(), ast0);
 

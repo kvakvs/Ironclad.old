@@ -5,10 +5,8 @@ use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::syntaxtree::erl::node::case_clause_node::CaseClauseNode;
 use crate::syntaxtree::erl::node::case_expr_node::CaseExprNode;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
 use crate::syntaxtree::erl::node::let_expr_node::LetExprNode;
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
-use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
+use crate::syntaxtree::erl::node::literal_node::Literal;
 use crate::syntaxtree::erl::node::expr_node::{BinaryOperatorExprNode, UnaryOperatorExprNode};
 use crate::syntaxtree::erl::node::var_node::VarNode;
 use crate::typing::erl_type::ErlType;
@@ -91,7 +89,7 @@ pub enum ErlAst {
   Case(SourceLoc, CaseExprNode),
 
   /// A literal value, constant. Type is known via literal.get_type()
-  Lit(SourceLoc, LiteralNode),
+  Lit(SourceLoc, Literal),
 
   /// Binary operation with two arguments
   BinaryOp(SourceLoc, BinaryOperatorExprNode),
@@ -107,6 +105,13 @@ pub enum ErlAst {
 }
 
 impl ErlAst {
+  /// Swaps a value and Empty AST, returns the taken value
+  pub fn take(from: &mut ErlAst) -> ErlAst {
+    let mut swap_in = ErlAst::Empty;
+    std::mem::swap(from, &mut swap_in);
+    swap_in
+  }
+
   /// Gets the type of an AST node
   #[named]
   pub fn get_type(&self) -> ErlType {
@@ -134,21 +139,21 @@ impl ErlAst {
     }
   }
 
-  /// Create a new function definition node, the caller has the responsibility to store it and
-  /// to create `ErlAst::FunctionDef` with the stored index
-  pub fn new_fun(funarity: FunArity,
-                 start_clause: usize,
-                 clause_count: usize,
-                 clauses: &[FunctionClauseNode]) -> NewFunctionNode {
-    assert_ne!(clause_count, 0, "Clauses must not be empty");
-
-    assert!(clauses.iter().all(|fc| fc.arg_types.len() == funarity.arity),
-            "All clauses must have same arity");
-    assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
-            "All clause arg types must match in length all clauses' arguments");
-
-    NewFunctionNode::new(funarity, start_clause, clause_count)
-  }
+  // /// Create a new function definition node, the caller has the responsibility to store it and
+  // /// to create `ErlAst::FunctionDef` with the stored index
+  // pub fn new_fun(funarity: FunArity,
+  //                start_clause: usize,
+  //                clause_count: usize,
+  //                clauses: &[FunctionClauseNode]) -> FunctionDefNode {
+  //   assert_ne!(clause_count, 0, "Clauses must not be empty");
+  //
+  //   assert!(clauses.iter().all(|fc| fc.arg_types.len() == funarity.arity),
+  //           "All clauses must have same arity");
+  //   assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
+  //           "All clause arg types must match in length all clauses' arguments");
+  //
+  //   FunctionDefNode::new(funarity, start_clause, clause_count)
+  // }
 
   /// Create a new variable AST node
   pub fn new_var(location: SourceLoc, name: &str) -> ErlAst {
@@ -179,12 +184,12 @@ impl ErlAst {
 
   /// Create a new literal AST node of an integer
   pub fn new_lit_int(location: SourceLoc, val: isize) -> Self {
-    ErlAst::Lit(location, LiteralNode::Integer(val))
+    ErlAst::Lit(location, Literal::Integer(val))
   }
 
   /// Create a new literal AST node of an atom
   pub fn new_lit_atom(location: SourceLoc, val: &str) -> ErlAst {
-    ErlAst::Lit(location, LiteralNode::Atom(String::from(val)))
+    ErlAst::Lit(location, Literal::Atom(String::from(val)))
   }
 
   /// Create a new AST node for a list of some expressions
@@ -218,7 +223,7 @@ impl ErlAst {
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
     match self {
-      ErlAst::Lit(_loc, LiteralNode::Atom(s)) => Some(s.clone()),
+      ErlAst::Lit(_loc, Literal::Atom(s)) => Some(s.clone()),
       _ => None,
     }
   }

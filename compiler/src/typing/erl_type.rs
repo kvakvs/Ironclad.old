@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use crate::syntaxtree::erl::node::literal_node::Literal;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 
@@ -29,7 +29,7 @@ impl std::fmt::Display for RecordField {
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub struct MapField {
   /// Key can be any literal
-  pub key: LiteralNode,
+  pub key: Literal,
   /// Value type
   pub ty: ErlType,
 }
@@ -122,7 +122,7 @@ pub enum ErlType {
 
   /// Type for an Erlang Literal value, a data value fully known at compile time, having no type
   /// variables or references to other types or other data
-  Literal(LiteralNode),
+  Literal(Literal),
 
   /// Any callable
   AnyFunction,
@@ -250,7 +250,7 @@ impl ErlType {
   }
 
   /// Given vector of literals, make a union type
-  pub fn union_of_literal_types(items: &[LiteralNode]) -> ErlType {
+  pub fn union_of_literal_types(items: &[Literal]) -> ErlType {
     Self::union_of(
       items.iter()
           .map(|it| it.get_type())

@@ -4,14 +4,15 @@ use crate::erl_error::{ErlResult};
 use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
-use crate::syntaxtree::erl::node::literal_node::LiteralNode;
+use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::literal_node::Literal;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
 use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
 use std::collections::VecDeque;
 use crate::syntaxtree::erl::node::token::ErlToken;
+use crate::syntaxtree::erl::node::function_def::FunctionDef;
 
 impl ErlModule {
   fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,
@@ -87,7 +88,7 @@ impl ErlModule {
     let result: ErlAst = match pair.as_rule() {
       Rule::module => self.file_root_to_ast(pair)?,
       Rule::string => {
-        ErlAst::Lit(loc, LiteralNode::String(String::from(pair.as_str())))
+        ErlAst::Lit(loc, Literal::String(String::from(pair.as_str())))
       }
       Rule::module_attr => {
         ErlAst::ModuleAttr {
@@ -207,30 +208,22 @@ impl ErlModule {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
-    let start_clause = self.env.function_clauses.len();
-    let clauses: Vec<FunctionClauseNode> = pair.into_inner()
+    let clauses: Vec<FunctionClause> = pair.into_inner()
         .map(|p| self.fun_clause_to_ast(p))
         .map(Result::unwrap)
         .collect();
 
     let arity = clauses[0].arg_types.len();
     let funarity = FunArity::new(clauses[0].name.clone(), arity);
-    let clause_count = clauses.len();
 
-    // Add function clauses to global module clauses table
-    self.env.function_clauses.extend(clauses.into_iter());
-
-    println!("Adding a function {}", &funarity);
-
-    let nf = ErlAst::new_fun(funarity.clone(), start_clause, clause_count,
-                             &self.env.function_clauses[start_clause..start_clause + clause_count]);
+    let nf = FunctionDef::new(funarity.clone(), clauses);
     let ret_ty = nf.ret_ty;
-    let index = self.env.add_function(nf);
+    let index = self.add_function(nf);
     Ok(ErlAst::FunctionDef { location, funarity, ret_ty, index })
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FunctionClauseNode> {
+  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FunctionClause> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);
@@ -256,7 +249,7 @@ impl ErlModule {
     };
 
     let args: Vec<ErlAst> = nodes.into_iter().collect();
-    Ok(FunctionClauseNode::new(name, args, body))
+    Ok(FunctionClause::new(name, args, body))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap

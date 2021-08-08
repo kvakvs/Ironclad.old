@@ -1,5 +1,5 @@
 //! Define a FunctionDef struct for a new function AST node
-use crate::syntaxtree::erl::node::fun_clause_node::FunctionClauseNode;
+use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
 use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
 use crate::typing::typevar::TypeVar;
@@ -7,44 +7,30 @@ use std::fmt::Formatter;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
-// #[derive(PartialEq)]
-pub struct NewFunctionNode {
+pub struct FunctionDef {
   /// Function name and arity, must be same for each clause (checked on clause insertion).
   pub funarity: FunArity,
-  /// Index of the first function clause in order, stored sequential in `ErlModule::function_clauses`
-  pub start_clause: usize,
-  /// How many function clauses (more than 0)
-  pub clause_count: usize,
+  /// Function clauses (non-empty vec)
+  pub clauses: Vec<FunctionClause>,
   /// For each clause, ret is union of each clause return type
   pub ret_ty: TypeVar,
 }
 
-impl NewFunctionNode {
+impl FunctionDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(funarity: FunArity, start_clause: usize, clause_count: usize) -> Self {
-    assert_ne!(clause_count, 0);
+  pub fn new(funarity: FunArity, clauses: Vec<FunctionClause>) -> Self {
+    assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
     Self {
       funarity,
-      start_clause,
-      clause_count,
+      clauses: vec![],
       ret_ty: TypeVar::new(),
     }
   }
 
-  /// Readonly slice access to this function's clauses
-  pub fn get_clauses<'a>(&self, clauses: &'a [FunctionClauseNode]) -> &'a [FunctionClauseNode] {
-    &clauses[self.start_clause..self.start_clause+self.clause_count]
-  }
-
-  /// Mutable slice access to this function's clauses
-  pub fn get_clauses_mut<'a>(&self, clauses: &'a mut Vec<FunctionClauseNode>) -> &'a mut [FunctionClauseNode] {
-    &mut clauses[self.start_clause..self.start_clause+self.clause_count]
-  }
-
   /// For all clauses build a vector of type unions for the corresponding arguments
-  fn get_argument_types_unions(&self, clauses: &[FunctionClauseNode]) -> Vec<ErlType> {
-    assert_ne!(self.clause_count, 0, "Function clauses must not be empty");
+  fn get_argument_types_unions(&self) -> Vec<ErlType> {
+    assert!(!self.clauses.is_empty(), "Function clauses must not be empty");
 
     // Assuming all clauses have same arity, build unions of each arg
     let mut arg_unions = Vec::with_capacity(self.funarity.arity);
@@ -58,8 +44,7 @@ impl NewFunctionNode {
         .collect();
 
     // For each clause and for each argument in that clause, update corresponding union in arg_unions
-    let own_clauses = self.get_clauses(clauses);
-    own_clauses.iter().for_each(|clause| {
+    self.clauses.iter().for_each(|clause| {
       // for i in 0..self.funarity.arity {
       for (i, item) in arg_unions.iter_mut().enumerate().take(self.funarity.arity) {
         assert_eq!(clause.arg_types.len(), self.funarity.arity,
@@ -74,7 +59,7 @@ impl NewFunctionNode {
   }
 }
 
-impl std::fmt::Debug for NewFunctionNode {
+impl std::fmt::Debug for FunctionDef {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "NewFun {:?} -> {:?}", self.funarity, self.ret_ty)
   }
