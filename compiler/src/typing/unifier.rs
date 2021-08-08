@@ -18,6 +18,7 @@ use std::rc::Rc;
 use std::sync::{RwLock};
 use crate::syntaxtree::erl::erl_ast_iter::AstChild;
 use std::borrow::Borrow;
+use crate::typing::function_clause_type::FunctionClauseType;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -108,7 +109,7 @@ impl Unifier {
     // if !errors.is_empty() {
     //   return Err(ErlError::multiple(errors));
     // }
-    Ok(())
+    // Ok(())
   }
 
   /// Unify two types type1 and type2, with self.subst map
@@ -196,25 +197,25 @@ impl Unifier {
         }
       }
       ErlType::AnyInteger => if let ErlType::Integer(_) | ErlType::AnyInteger = type1 {
-          return Ok(())
-        },
+        return Ok(());
+      },
       ErlType::Integer(c2) => match type1 {
-          // Any numbers and number sets will match a number
-          ErlType::Integer(c1) if c1 == c2 => return Ok(()),
-          _any_type1 => {}
-        },
+        // Any numbers and number sets will match a number
+        ErlType::Integer(c1) if c1 == c2 => return Ok(()),
+        _any_type1 => {}
+      },
       ErlType::AnyList => if let ErlType::List(_) = type1 {
-          return Ok(())
-        },
+        return Ok(());
+      },
       ErlType::AnyFunction => if let ErlType::Function(_) = type1 {
-          return Ok(())
-        },
+        return Ok(());
+      },
       ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
-          return self.unify(module, ast, elem1, elem2)
-        },
+        return self.unify(module, ast, elem1, elem2);
+      },
       ErlType::AnyTuple => if let ErlType::Tuple(_) = type1 {
-          return Ok(())
-        },
+        return Ok(());
+      },
       _any_type2 => {}
     }
 
@@ -259,7 +260,12 @@ impl Unifier {
     Ok(())
   }
 
-  /// Does the variable v occur anywhere inside typ?
+  fn occurs_check_fun_clause(&self, tv: &TypeVar, fc: &FunctionClauseType) -> bool {
+    fc.arg_types.iter().any(|argt| self.occurs_check(tv, argt))
+        || self.occurs_check(tv, &fc.ret_ty)
+  }
+
+  /// Does the variable v occur anywhere inside type `ty`?
   /// Variables in typ are looked up in subst and the check is applied
   ///     recursively.
   //     elif isinstance(typ, FuncType):
@@ -271,7 +277,7 @@ impl Unifier {
       ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Function(fun_type) => {
         return self.occurs_check(tv, &fun_type.ret_type)
-            || fun_type.clauses.iter().any(|a| self.occurs_check(tv, a));
+            || fun_type.clauses.iter().any(|a: &FunctionClauseType| self.occurs_check_fun_clause(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))
@@ -292,36 +298,60 @@ impl Unifier {
     // false
   }
 
-  /// Applies the unifier subst to typ.
-  /// Returns a type where all occurrences of variables bound in subst
-  /// were replaced (recursively); on failure returns None.
-  /// Also known as: Apply Unifier (apply_unifier)
+  /// Applies the unifier subst to typ. Also known as: Apply Unifier operation
+  /// Returns a type where all occurrences of variables bound in subst were replaced (recursively);
+  /// on failure returns None.
   pub fn infer_type(&mut self, ty: &ErlType) -> ErlType {
+    // A simple type or type without a substitution, will be inferred as itself
     if self.subst.is_empty() || ty.is_simple_value_type() {
       return ty.clone();
     }
 
-    if let ErlType::TVar(tvar) = &ty {
-      match self.subst.get(tvar) {
-        Some(entry) => {
-          let entry_ = entry.clone();
-          return self.infer_type(&entry_);
+    // A type variable is checked in the subst table and inference algorithm is called on it
+    match &ty {
+      ErlType::TVar(tvar) => {
+        match self.subst.get(tvar) {
+          Some(entry) => {
+            let entry_ = entry.clone();
+            return self.infer_type(&entry_);
+          }
+          None => {
+            // If the type variable is not in the subst table, just return it as is
+            return ty.clone();
+          }
         }
-        None => return ty.clone(),
       }
-    }
-
-    if let ErlType::Function(fun_type) = &ty {
-      return ErlType::Function(FunctionType {
-        name: fun_type.name.clone(),
-        clauses: fun_type.clauses.iter()
-            .map(|t| self.infer_type(t))
-            .collect(),
-        ret_type: Box::new(self.infer_type(&fun_type.ret_type)),
-      });
+      // If type is a function, infer its components if they contain any type variables
+      ErlType::Function(ftype) => {
+        return ErlType::Function(self.infer_func_type(ftype));
+      }
+      _ => {}
     }
 
     ErlType::None
+  }
+
+  /// Infer components of a function type, and nest the calls to infer each function clause
+  fn infer_func_type(&mut self, ftype: &FunctionType) -> FunctionType {
+    FunctionType {
+      name: ftype.name.clone(),
+      arity: ftype.arity,
+      clauses: ftype.clauses.iter()
+          .map(|t| self.infer_fun_clause_type(t))
+          .collect(),
+      ret_type: Box::new(self.infer_type(&ftype.ret_type)),
+    }
+  }
+
+  /// Rebuild a function clause with all components of the old function clause with `infer_type`
+  /// applied on them.
+  fn infer_fun_clause_type(&mut self, fctype: &FunctionClauseType) -> FunctionClauseType {
+    FunctionClauseType {
+      arg_types: fctype.arg_types.iter()
+          .map(|argt| self.infer_type(argt))
+          .collect(),
+      ret_ty: Box::new(self.infer_type(&fctype.ret_ty)),
+    }
   }
 
   /// Finds the type of the expression for the given substitution.

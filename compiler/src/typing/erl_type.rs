@@ -7,7 +7,6 @@ use ::function_name::named;
 
 use crate::funarity::FunArity;
 use crate::syntaxtree::erl::node::literal_node::Literal;
-use crate::typing::function_clause_type::FunctionClauseType;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 

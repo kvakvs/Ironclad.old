@@ -26,6 +26,7 @@ impl fmt::Display for ErlAst {
         write!(f, "{}, {}", left, right)
       }
       ErlAst::FunctionDef { funarity, .. } => {
+        // Cannot print function def's clauses because they are owned by the `ErlModule::functions`
         write!(f, "newfun {}/{}", funarity.name, funarity.arity)
         // let results: Vec<_> = nf.clauses.iter()
         //     .map(|fc| write!(f, "{};", fc))
