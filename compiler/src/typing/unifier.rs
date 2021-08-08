@@ -130,6 +130,7 @@ impl Unifier {
             // match two function types
             return self.unify_fun_fun(module, ast, fun1, fun2);
           }
+          ErlType::AnyFunction => return Ok(()), // good
           _any_type2 => {}
         }
       }
@@ -164,6 +165,7 @@ impl Unifier {
               }
             }
           }
+          ErlType::AnyFunction => return Ok(()), // good
           _any_type2 => {}
         }
       }
