@@ -207,19 +207,20 @@ impl ErlModule {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
-    let clauses: Vec<FunctionClauseNode> =
-        pair.into_inner()
-            .map(|p| self.fun_clause_to_ast(p))
-            .map(Result::unwrap)
-            .collect();
+    let start_clause = self.env.function_clauses.len();
+    let clauses: Vec<FunctionClauseNode> = pair.into_inner()
+        .map(|p| self.fun_clause_to_ast(p))
+        .map(Result::unwrap)
+        .collect();
 
     let arity = clauses[0].arg_types.len();
     let funarity = FunArity::new(clauses[0].name.clone(), arity);
+    let clause_count = clauses.len();
 
     // Add function clauses to global module clauses table
-    let start_clause = self.env.function_clauses.len();
-    let clause_count = clauses.len();
     self.env.function_clauses.extend(clauses.into_iter());
+
+    println!("Adding a function {}", &funarity);
 
     let nf = ErlAst::new_fun(funarity.clone(), start_clause, clause_count,
                              &self.env.function_clauses[start_clause..start_clause + clause_count]);

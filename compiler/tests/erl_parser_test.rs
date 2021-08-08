@@ -69,6 +69,7 @@ fn parse_expr_longer() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_expr_comma() -> ErlResult<()> {
+  test_util::start(function_name!());
   let mut module1 = ErlModule::default();
   module1.parse_str(Rule::expr, "A, B, 123 * C")?;
 
@@ -87,6 +88,7 @@ fn parse_expr_comma() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_fn1() -> ErlResult<()> {
+  test_util::start(function_name!());
   let mut module1 = ErlModule::default();
   module1.parse_str(Rule::function_def, "f(A) -> atom123.")?;
   {
@@ -97,6 +99,8 @@ fn parse_fn1() -> ErlResult<()> {
       panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), ast);
     }
   }
+  assert_eq!(module1.env.functions.len(), 1, "Module must have 1 function in its env");
+  assert_eq!(module1.env.function_clauses.len(), 1, "Module must have 1 function clause in its env");
   Ok(())
 }
 
@@ -105,6 +109,7 @@ fn parse_fn1() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_application1() -> ErlResult<()> {
+  test_util::start(function_name!());
   let mut module1 = ErlModule::default();
   module1.parse_str(Rule::expr, "a_function()")?;
   println!("{}: parsed {}", function_name!(), module1.ast.read().unwrap());
@@ -123,6 +128,7 @@ fn parse_application1() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_application2() -> ErlResult<()> {
+  test_util::start(function_name!());
   let mut module2 = ErlModule::default();
   module2.parse_str(Rule::expr, "(123 + atom)()")?;
   println!("{}: parsed {}", function_name!(), module2.ast.read().unwrap());
@@ -141,6 +147,7 @@ fn parse_application2() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_application3() -> ErlResult<()> {
+  test_util::start(function_name!());
   let mut module3 = ErlModule::default();
   module3.parse_str(Rule::expr, "(F() + g())(test(), 123())")?;
   println!("{} parse_application 3 parsed {}", function_name!(), module3.ast.read().unwrap());

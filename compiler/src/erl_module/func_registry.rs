@@ -8,6 +8,7 @@ use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::syntaxtree::erl::node::new_function_node::NewFunctionNode;
 
 /// Stuff necessary for function registrations and function lookups
+#[derive(Debug)]
 pub struct FunctionRegistry {
   /// Function definitions of the module
   pub functions: Vec<NewFunctionNode>,
@@ -27,6 +28,11 @@ impl FunctionRegistry {
     self.functions_lookup.insert(funarity, index);
 
     index
+  }
+
+  /// Append a function clause to the list
+  pub fn add_function_clause(&mut self, fc: FunctionClauseNode) {
+    self.function_clauses.push(fc);
   }
 
   /// For an expression check whether it is a constant expression, and whether it points to some

@@ -4,7 +4,7 @@ use crate::typing::erl_type::ErlType;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct FunctionClauseNode {
   /// Name, because it comes from AST, prefer to use funarity.name in the parent `FunctionDef`
   pub name: String,

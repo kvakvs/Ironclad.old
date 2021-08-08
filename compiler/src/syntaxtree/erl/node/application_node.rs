@@ -45,7 +45,7 @@ impl ApplicationNode {
   /// During post-parse scan try check if our expression is a reference to a known function.
   /// If so, replace it with a pointer to that function.
   pub fn postprocess_edit_node(&mut self, env: &mut FunctionRegistry) -> ErlResult<()> {
-    println!("Postprocessing App()... {}({:?})", self.expr, self.args);
+    println!("Postprocessing App()... {}({:?}) env {:?}", self.expr, self.args, env);
 
     // Check if expr (target) points to some existing function that we know
     match env.find_function_by_expr_arity(&self.expr, self.args.len()) {
