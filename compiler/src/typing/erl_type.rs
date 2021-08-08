@@ -265,11 +265,16 @@ impl ErlType {
   /// Compares two erlang types of same kind, otherwise general ordering applies
   pub fn cmp_same_type(&self, other: &ErlType) -> Ordering {
     match (self, other) {
-      (ErlType::None, _) | (ErlType::Any, _) | (ErlType::Number, _) | (ErlType::AnyInteger, _)
-      | (ErlType::Float, _) | (ErlType::AnyList, _) | (ErlType::Nil, _) | (ErlType::String, _)
-      | (ErlType::AnyTuple, _) | (ErlType::AnyAtom, _) | (ErlType::AnyBool, _) | (ErlType::Pid, _)
-      | (ErlType::Reference, _) | (ErlType::Port, _) | (ErlType::BinaryBits, _) | (ErlType::Binary, _)
-      | (ErlType::AnyFunction, _) => Ordering::Equal,
+      (ErlType::None, ErlType::None) | (ErlType::Any, ErlType::Any) | (ErlType::Number, ErlType::Number)
+      | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Float, ErlType::Float)
+      | (ErlType::AnyList, ErlType::AnyList) | (ErlType::Nil, ErlType::Nil)
+      | (ErlType::String, ErlType::String) | (ErlType::AnyTuple, ErlType::AnyTuple)
+      | (ErlType::AnyAtom, ErlType::AnyAtom) | (ErlType::AnyBool, ErlType::AnyBool)
+      | (ErlType::Pid, ErlType::Pid) | (ErlType::Reference, ErlType::Reference)
+      | (ErlType::Port, ErlType::Port) | (ErlType::BinaryBits, ErlType::BinaryBits)
+      | (ErlType::Binary, ErlType::Binary) | (ErlType::AnyFunction, ErlType::AnyFunction) => {
+        Ordering::Equal
+      }
 
       (ErlType::Union(a), ErlType::Union(b)) => a.cmp(b),
       (ErlType::TVar(TypeVar(a)), ErlType::TVar(TypeVar(b))) => a.cmp(b),
@@ -290,29 +295,43 @@ impl ErlType {
       (ErlType::Function(f1), ErlType::Function(f2)) => f1.cmp(f2),
       (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1.cmp(fa2),
 
-      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)
+      _ => unreachable!("Don't know how to compare {} vs {}, only same type allowed in this function",
+                        self, other)
     }
   }
 
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
+  /// This ordering is used for BTree construction, not
   pub fn get_order(&self) -> usize {
     match self {
       ErlType::None => 0,
       ErlType::Union(_) => 1,
       ErlType::Any => 1000,
       ErlType::TVar(_) => 0,
-      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float => 10,
-      ErlType::AnyBool | ErlType::AnyAtom | ErlType::Atom(_) => 20,
+      ErlType::Number => 10,
+      ErlType::Float => 11,
+      ErlType::AnyInteger => 12,
+      ErlType::Integer(_) => 13,
+      ErlType::AnyBool => 20,
+      ErlType::AnyAtom => 21,
+      ErlType::Atom(_) => 22,
       ErlType::Reference => 30,
-      ErlType::AnyFunction | ErlType::Function(_) | ErlType::LocalFunction(_) => 40,
+      ErlType::AnyFunction => 40,
+      ErlType::Function(_) => 41,
+      ErlType::LocalFunction(_) => 42,
       ErlType::Port => 50,
       ErlType::Pid => 60,
-      ErlType::Record { .. } | ErlType::AnyTuple | ErlType::Tuple(_) => 70,
+      ErlType::AnyTuple => 70,
+      ErlType::Tuple(_) => 71,
+      ErlType::Record { .. } => 72,
       ErlType::Map(_) => 80,
       ErlType::Nil => 90,
-      ErlType::AnyList | ErlType::List(_) | ErlType::String => 100,
-      ErlType::BinaryBits | ErlType::Binary => 110,
+      ErlType::AnyList => 100,
+      ErlType::List(_) => 101,
+      ErlType::String => 102,
+      ErlType::Binary => 110,
+      ErlType::BinaryBits => 111,
       ErlType::Literal(lit) => lit.get_type().get_order(),
     }
   }

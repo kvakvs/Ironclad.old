@@ -112,21 +112,21 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a multi-clause function");
   let code = "-module(infer_multiple_clause).\n\
                    main() -> [atom1] ++ [atom2];\n\
-                   main() -> 2 + 2.\n";
+                   main() -> 2 + 3.\n";
   let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast2 = module.ast.read().unwrap();
     let find_result2 = ast2.find_function_def(&FunArity::new_str("main", 0)).unwrap();
-    let f_t2 = module.unifier.infer_ast(find_result2).into_final_type();
-    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
+    let main_ty = module.unifier.infer_ast(find_result2).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 
     // Expected: Main -> number()|[atom1|atom2]
     let list_type = ErlType::List(Box::new(
-      ErlType::union_of(vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")],
-                        true)
+      ErlType::union_of(vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")], true)
       ));
-    assert_eq!(f_t2, ErlType::union_of(vec![ErlType::Number, list_type], true),
+    assert_eq!(main_ty,
+               ErlType::union_of(vec![ErlType::Number, list_type], true),
                "Function main/0 must have inferred type: number()|[atom1|atom2]");
   }
 
