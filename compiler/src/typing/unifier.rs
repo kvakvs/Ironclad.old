@@ -16,7 +16,6 @@ use crate::syntaxtree::erl::node::application_node::ApplicationNode;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
-use crate::funarity::FunArity;
 use crate::syntaxtree::erl::erl_ast_iter::AstChild;
 use std::borrow::Borrow;
 
@@ -137,11 +136,10 @@ impl Unifier {
 
       // Left is a LocalFunction and the right is a function type
       // Atom must be an existing local function
-      ErlType::LocalFunction { name: name1, arity: arity1 } => {
+      ErlType::LocalFunction(funarity1) => {
         match type2 {
           ErlType::Function(fun2) => {
-            let funarity = FunArity::new(name1.clone(), *arity1);
-            match module.functions_lookup.get(&funarity) {
+            match module.functions_lookup.get(funarity1) {
               Some(fun_index) => {
                 // Unify left and right as function types
                 // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
@@ -153,14 +151,14 @@ impl Unifier {
                 // Equation: Application Expr(Args...) <=> Fn.Ret
 
                 let fc = &fun_def.clauses[0];
-                if fc.args.len() == *arity1 && fun2.arg_types.len() == *arity1 {
+                if fc.args.len() == funarity1.arity && fun2.arg_types.len() == funarity1.arity {
                   return Ok(());
                 }
               }
               None => {
                 let type_err = TypeError::LocalFunctionUndef {
                   module: module.name.clone(),
-                  funarity,
+                  funarity: funarity1.clone(),
                 };
                 return Err(ErlError::from(type_err));
               }
@@ -346,15 +344,16 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node FunctionDef
-  fn generate_equations_newfunction(&self, eq: &mut Vec<TypeEquation>,
-                                    ast: &ErlAst, nf: &FunctionDef) -> ErlResult<()> {
+  fn generate_equations_fun_def(&self, eq: &mut Vec<TypeEquation>,
+                                ast: &ErlAst, f_def: &FunctionDef) -> ErlResult<()> {
+    assert!(!f_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
     // Return type of a function is union of its clauses return types
-    let ret_union_members = nf.clauses.iter()
+    let ret_union_members = f_def.clauses.iter()
         .map(|c| c.ret.clone())
         .collect();
-    let ret_union_t = ErlType::union_of(ret_union_members);
+    let ret_union_t = ErlType::union_of(ret_union_members, true);
     Self::equation(eq, ast,
-                   nf.ret_ty.into(),
+                   f_def.ret_ty.into(),
                    ret_union_t, "Newfun");
     Ok(())
   }
@@ -418,7 +417,7 @@ impl Unifier {
       ErlAst::Var { .. } => {}
       ErlAst::FunctionDef { index, .. } => {
         let nf = &module.functions[*index];
-        self.generate_equations_newfunction(eq, ast, nf)?;
+        self.generate_equations_fun_def(eq, ast, nf)?;
         for fc in &nf.clauses {
           self.generate_equations_fclause(eq, ast, &fc)?
         }
@@ -439,7 +438,7 @@ impl Unifier {
         let all_clause_types = case.clauses.iter()
             .map(|c| c.body.get_type())
             .collect();
-        let all_clauses_t = ErlType::union_of(all_clause_types);
+        let all_clauses_t = ErlType::union_of(all_clause_types, true);
 
         Self::equation(eq, ast,
                        case.ret_ty.into(),
@@ -484,6 +483,7 @@ impl Unifier {
       }
       ErlAst::List(_loc, _elems) => {}
       ErlAst::Tuple(_loc, _elems) => {}
+      ErlAst::FunArity(..) => {}
 
       _ => unreachable!("Can't process {}", ast),
     }

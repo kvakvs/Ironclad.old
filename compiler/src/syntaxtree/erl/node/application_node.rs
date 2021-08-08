@@ -50,7 +50,8 @@ impl ApplicationNode {
     println!("Postprocessing App()... {}({:?})", self.expr.borrow(), self.args);
 
     // Check if expr (target) points to some existing function that we know
-    match module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len()) {
+    let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
+    match find_result {
       None => {} // no changes, return same node
       Some(index) => {
         let nf: &FunctionDef = &module.functions[index];

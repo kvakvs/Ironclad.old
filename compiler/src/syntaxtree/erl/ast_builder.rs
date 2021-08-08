@@ -216,9 +216,9 @@ impl ErlModule {
     let arity = clauses[0].arg_types.len();
     let funarity = FunArity::new(clauses[0].name.clone(), arity);
 
-    let nf = FunctionDef::new(funarity.clone(), clauses);
-    let ret_ty = nf.ret_ty;
-    let index = self.add_function(nf);
+    let f_def = FunctionDef::new(funarity.clone(), clauses);
+    let ret_ty = f_def.ret_ty;
+    let index = self.add_function(f_def);
     Ok(ErlAst::FunctionDef { location, funarity, ret_ty, index })
   }
 

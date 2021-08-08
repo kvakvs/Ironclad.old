@@ -129,12 +129,15 @@ impl ErlAst {
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
       ErlAst::List(_loc, elems) => {
-        let union_t = ErlType::union_of(elems.iter().map(|e| e.get_type()).collect());
+        let union_t = ErlType::union_of(
+          elems.iter().map(|e| e.get_type()).collect(),
+          true);
         ErlType::List(Box::new(union_t))
       }
       ErlAst::Tuple(_loc, elems) => {
         ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
       }
+      ErlAst::FunArity(_loc, fa) => ErlType::LocalFunction(fa.clone()),
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
@@ -283,11 +286,11 @@ impl ErlAst {
   /// function registry `ErlModule::env`
   pub fn find_function_def(&self, fa: &FunArity) -> Option<&ErlAst> {
     match self {
-      ErlAst::FunctionDef {funarity: fa2, ..} if fa == fa2 => Some(self),
+      ErlAst::FunctionDef { funarity: fa2, .. } if fa == fa2 => Some(self),
       ErlAst::ModuleForms(forms) => {
         // Find first in forms for which `find_function_def` returns something
         forms.iter().find(|&f| f.find_function_def(fa).is_some())
-      },
+      }
       _ => None,
     }
   }

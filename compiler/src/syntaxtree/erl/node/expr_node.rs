@@ -22,7 +22,7 @@ impl BinaryOperatorExprNode {
   pub fn get_result_type(&self) -> ErlType {
     match self.operator {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
+        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
       }
 
       | ErlBinaryOp::Div => ErlType::Float,
@@ -39,7 +39,7 @@ impl BinaryOperatorExprNode {
         // Type of ++ will be union of left and right
         if let ErlType::List(left_list_t) = self.left.get_type() {
           if let ErlType::List(right_list_t) = self.right.get_type() {
-            let union_t = ErlType::union_of(vec![*left_list_t, *right_list_t]);
+            let union_t = ErlType::union_of(vec![*left_list_t, *right_list_t], true);
             return ErlType::List(Box::new(union_t));
           } else {
             // right is not a list
@@ -61,7 +61,7 @@ impl BinaryOperatorExprNode {
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self.operator {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
-        Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float]))
+        Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true))
       }
 
       ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
@@ -95,7 +95,7 @@ impl UnaryOperatorExprNode {
 
       ErlUnaryOp::Negative
       | ErlUnaryOp::Positive => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float])
+        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
       }
 
       ErlUnaryOp::Catch => ErlType::Any,

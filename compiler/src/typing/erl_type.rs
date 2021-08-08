@@ -2,10 +2,12 @@
 use std::collections::HashSet;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
+use ::function_name::named;
 
 use crate::syntaxtree::erl::node::literal_node::Literal;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use crate::funarity::FunArity;
 
 // use enum_as_inner::EnumAsInner;
 
@@ -131,12 +133,7 @@ pub enum ErlType {
   Function(FunctionType),
 
   /// Refers to a function in local module
-  LocalFunction {
-    /// Atom of the function name
-    name: String,
-    /// How many args
-    arity: usize,
-  },
+  LocalFunction(FunArity),
 }
 
 impl PartialEq for ErlType {
@@ -151,8 +148,7 @@ impl PartialEq for ErlType {
       | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Binary, ErlType::Binary)
       | (ErlType::AnyFunction, ErlType::AnyFunction) => true,
 
-      (ErlType::LocalFunction { name: n1, arity: a1 },
-        ErlType::LocalFunction { name: n2, arity: a2 }) => n1 == n2 && a1 == a2,
+      (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1 == fa2,
 
       (ErlType::Record { fields: f1, tag: t1, .. },
         ErlType::Record { fields: f2, tag: t2, .. }) => t1 == t2 && f1 == f2,
@@ -226,10 +222,9 @@ impl Hash for ErlType {
         '<'.hash(state);
         ft.hash(state);
       }
-      ErlType::LocalFunction { name, arity } => {
+      ErlType::LocalFunction(fa) => {
         '='.hash(state);
-        name.hash(state);
-        arity.hash(state);
+        fa.hash(state);
       }
     }
   }
@@ -254,7 +249,8 @@ impl ErlType {
     Self::union_of(
       items.iter()
           .map(|it| it.get_type())
-          .collect())
+          .collect(),
+      true)
   }
 
   /// Creates an empty union type, equivalent to None
@@ -263,9 +259,10 @@ impl ErlType {
   }
 
   /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
-  /// flatten them while also trying to maintain uniqueness (see to do below)
-  pub fn union_of(types: Vec<ErlType>) -> Self {
-    assert!(!types.is_empty(), "Can't create union of 0 types");
+  /// flatten them while also trying to maintain uniqueness (see to do below).
+  /// Param `promote` will also call promote on the resulting union, trying to merge some type
+  /// combinations into supertypes.
+  pub fn union_of(types: Vec<ErlType>, promote: bool) -> Self {
     if types.len() == 1 {
       return types[0].clone();
     }
@@ -280,13 +277,15 @@ impl ErlType {
         _ => { merged.insert(t); }
       }
     });
-    Self::union_promote(merged)
+    if promote { ErlType::union_promote(merged) } else { ErlType::Union(merged) }
   }
 
   /// Given a hashset of erlang types try and promote combinations of simpler types to a compound
   /// type if such type exists. This is lossless operation, types are not generalized or shrunk.
   /// Example: integer()|float() shrink into number()
+  #[named]
   fn union_promote(elements: HashSet<ErlType>) -> ErlType {
+    assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
     if elements.len() == 2 {
       // integer() | float() => number()
       if elements.contains(&ErlType::Float) && elements.contains(&ErlType::AnyInteger) {
@@ -294,14 +293,6 @@ impl ErlType {
       }
     }
     ErlType::Union(elements)
-  }
-
-  /// Create a new function type provided args types and return type, possibly with a name
-  pub fn new_localref(name: &str, arity: usize) -> Self {
-    ErlType::LocalFunction {
-      name: String::from(name),
-      arity,
-    }
   }
 
   /// Create a new function type provided args types and return type, possibly with a name

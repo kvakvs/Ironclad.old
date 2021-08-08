@@ -23,7 +23,7 @@ impl FunctionDef {
     assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
     Self {
       funarity,
-      clauses: vec![],
+      clauses,
       ret_ty: TypeVar::new(),
     }
   }

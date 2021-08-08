@@ -85,7 +85,7 @@ impl ErlAst {
   pub fn children<'a>(&'a self, module: &'a ErlModule) -> Option<Vec<AstChild<'a>>> {
     match self {
       ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
-      | ErlAst::Var { .. } => None,
+      | ErlAst::Var { .. } | ErlAst::FunArity(..) => None,
 
       ErlAst::ModuleForms(f) => Some(f.iter().map(AstChild::Ref).collect()),
 
