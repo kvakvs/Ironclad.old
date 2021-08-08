@@ -42,26 +42,27 @@ impl ErlModule {
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree
   /// This time using Precedence Climber, processes children of a node.
   /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
-  pub fn to_ast_prec_climb(&mut self, pair: Pair<Rule>, climber: &PrecClimber<Rule>) -> ErlResult<ErlAst> {
+  pub fn build_ast_prec_climb(&mut self, pair: Pair<Rule>,
+                              climber: &PrecClimber<Rule>) -> ErlResult<ErlAst> {
     // println!("PrecC: in {}", pair.as_str());
 
     match pair.as_rule() {
       Rule::expr => {
         let ast_items = climber.climb(
           pair.into_inner(),
-          |p| self.to_ast_prec_climb(p, climber),
+          |p| self.build_ast_prec_climb(p, climber),
           Self::prec_climb_infix_fn,
         )?;
         // println!("Climber parsed: {:?}", ast_items);
         Ok(ast_items)
       }
       Rule::literal | Rule::var | Rule::application => {
-        self.to_ast_single_node(pair)
+        self.build_ast_single_node(pair)
       }
       Rule::list => {
         let loc = pair.as_span().into();
         let list_node = pair.into_inner().next().unwrap();
-        let elems_ast = self.to_ast_prec_climb(list_node, get_prec_climber())?;
+        let elems_ast = self.build_ast_prec_climb(list_node, get_prec_climber())?;
         let mut elems = Vec::new();
         ErlAst::comma_to_vec(elems_ast, &mut elems);
         Ok(ErlAst::new_list(loc, elems))
@@ -69,7 +70,7 @@ impl ErlModule {
       Rule::tuple => {
         let loc = pair.as_span().into();
         let list_node = pair.into_inner().next().unwrap();
-        let elems_ast = self.to_ast_prec_climb(list_node, get_prec_climber())?;
+        let elems_ast = self.build_ast_prec_climb(list_node, get_prec_climber())?;
         let mut elems = Vec::new();
         ErlAst::comma_to_vec(elems_ast, &mut elems);
         Ok(ErlAst::new_tuple(loc, elems))
@@ -80,7 +81,7 @@ impl ErlModule {
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
   /// Processes a single node where there's no need to use precedence climber.
-  pub fn to_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  pub fn build_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     let loc: SourceLoc = pair.as_span().into();
 
     let result: ErlAst = match pair.as_rule() {
@@ -95,10 +96,10 @@ impl ErlModule {
         }
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
-      Rule::expr => self.to_ast_prec_climb(pair, get_prec_climber())?,
+      Rule::expr => self.build_ast_prec_climb(pair, get_prec_climber())?,
       Rule::bindable_expr => {
         // self.bindable_expr_to_ast(self.parse_inner(pair)?)?
-        self.to_ast_prec_climb(pair.into_inner().next().unwrap(), get_prec_climber())?
+        self.build_ast_prec_climb(pair.into_inner().next().unwrap(), get_prec_climber())?
         // TODO: Use prec_climber but a different grammar rule
       }
       Rule::capitalized_ident => ErlAst::new_var(loc, pair.as_str()),
@@ -163,7 +164,7 @@ impl ErlModule {
     let mut pair_inner = pair.into_inner();
 
     let expr_node = pair_inner.next().unwrap();
-    let expr = self.to_ast_prec_climb(expr_node, get_prec_climber())?;
+    let expr = self.build_ast_prec_climb(expr_node, get_prec_climber())?;
     // TODO: Attempt to convert expr node to a different callable AST node, i.e. from atom to fun/2 for example. Postprocess after parse?
 
     let app_node = pair_inner.next().unwrap();
@@ -174,7 +175,7 @@ impl ErlModule {
         // Args come as a single expression (1 arg) or as a Comma expression (multiple)
         // Comma needs to be unrolled into a vector of AST
         let args_node = app_node.into_inner().next().unwrap();
-        let args_ast = self.to_ast_prec_climb(args_node, get_prec_climber())?;
+        let args_ast = self.build_ast_prec_climb(args_node, get_prec_climber())?;
 
         // Unwrap comma operator into a vec of args, a non-comma AST node will become
         // a single vec element
@@ -195,7 +196,7 @@ impl ErlModule {
   fn file_root_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
     assert_eq!(pair.as_rule(), Rule::module);
     let ast_nodes = pair.into_inner().into_iter()
-        .map(|p| self.to_ast_single_node(p))
+        .map(|p| self.build_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
     Ok(ErlAst::ModuleForms(ast_nodes))
@@ -222,7 +223,7 @@ impl ErlModule {
 
     let nf = ErlAst::new_fun(funarity.clone(), start_clause, clause_count,
                              &self.env.function_clauses[start_clause..start_clause + clause_count]);
-    let ret_ty = nf.ret_ty.clone();
+    let ret_ty = nf.ret_ty;
     let index = self.env.add_function(nf);
     Ok(ErlAst::FunctionDef { location, funarity, ret_ty, index })
   }
@@ -234,7 +235,7 @@ impl ErlModule {
     // println!("Fun clause {:#?}", pair);
 
     let mut nodes: VecDeque<ErlAst> = pair.into_inner()
-        .map(|p| self.to_ast_single_node(p))
+        .map(|p| self.build_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
 

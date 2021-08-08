@@ -255,20 +255,20 @@ impl Unifier {
     if let ErlType::TVar { .. } = ty {
       if let Some(entry2_r) = self.subst.get(tvar) {
         let entry2 = entry2_r.clone();
-        return self.unify(module, ast, &ErlType::TVar(tvar.clone()), &entry2);
+        return self.unify(module, ast, &ErlType::TVar(*tvar), &entry2);
       }
     }
 
     if self.occurs_check(&tvar, &ty) {
       let error = TypeError::OccursCheckFailed {
-        tvar: tvar.clone(),
+        tvar: *tvar,
         ty: ty.clone(),
       };
       return Err(ErlError::from(error));
     }
 
     // tvar is not yet in subst and can't simplify the right side. Extend subst.
-    self.subst.insert(tvar.clone(), ty.clone());
+    self.subst.insert(*tvar, ty.clone());
     Ok(())
   }
 
@@ -396,14 +396,13 @@ impl Unifier {
   pub fn generate_equations(&self, module: &mut ErlModule,
                             eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    match ast.children() {
-      Some(children) => for nested_ast in children {
+    if let Some(children) = ast.children() {
+      for nested_ast in children {
         match self.generate_equations(module, eq, nested_ast) {
           Ok(_) => {} // nothing, all good
           Err(err) => { module.add_error(err); }
         }
       }
-      None => {}
     }
 
     match ast.deref() {

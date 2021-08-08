@@ -10,11 +10,10 @@ impl ErlModule {
   /// Given a fresh parsed and processed Erlang AST, go through it once more and edit some nodes.
   /// * In function applications replace atom function names with function pointers
   pub fn postprocess_ast(ast: &mut ErlAst, env: &mut FunctionRegistry) -> ErlResult<()> {
-    match ast.children_mut() {
-      Some(children) => for child in children {
+    if let Some(children) = ast.children_mut() {
+      for child in children {
         Self::postprocess_ast(child, env)?;
-      },
-      None => {}
+      }
     }
 
     if let ErlAst::App(_loc, app) = ast {

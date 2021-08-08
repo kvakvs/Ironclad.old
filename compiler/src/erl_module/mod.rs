@@ -66,10 +66,11 @@ impl Debug for ErlModule {
 impl ErlModule {
   /// Create a new empty module
   pub fn new(opt: Arc<CompilerOpts>, source_file: Arc<SourceFile>) -> Self {
-    let mut new_m = Self::default();
-    new_m.compiler_options = opt;
-    new_m.source_file = source_file;
-    new_m
+    Self {
+      compiler_options: opt,
+      source_file,
+      ..Default::default()
+    }
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
@@ -101,7 +102,7 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
     self.ast = {
       // Parse tree to raw AST
-      let mut ast0 = self.to_ast_single_node(parse_output)?;
+      let mut ast0 = self.build_ast_single_node(parse_output)?;
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       // self.postprocess_ast_readonly(&ast0)?;
@@ -132,7 +133,7 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
 
     // build initial AST from parse
-    let mut ast0 = self.to_ast_single_node(parse_output)?;
+    let mut ast0 = self.build_ast_single_node(parse_output)?;
 
     // Modify some AST nodes as required
     // self.postprocess_ast_readonly(&ast0)?;

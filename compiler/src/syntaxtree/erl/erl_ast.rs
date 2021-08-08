@@ -113,7 +113,7 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::FunctionDef { ret_ty, .. } => ret_ty.clone().into(),
+      ErlAst::FunctionDef { ret_ty, .. } => (*ret_ty).into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
       ErlAst::App(_loc, app) => app.ret_ty.into(),

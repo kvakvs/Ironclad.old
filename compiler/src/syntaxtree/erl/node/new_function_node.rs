@@ -33,7 +33,7 @@ impl NewFunctionNode {
   }
 
   /// Readonly slice access to this function's clauses
-  pub fn get_clauses<'a>(&self, clauses: &'a Vec<FunctionClauseNode>) -> &'a [FunctionClauseNode] {
+  pub fn get_clauses<'a>(&self, clauses: &'a [FunctionClauseNode]) -> &'a [FunctionClauseNode] {
     &clauses[self.start_clause..self.start_clause+self.clause_count]
   }
 
@@ -43,7 +43,7 @@ impl NewFunctionNode {
   }
 
   /// For all clauses build a vector of type unions for the corresponding arguments
-  fn get_argument_types_unions(&self, clauses: &Vec<FunctionClauseNode>) -> Vec<ErlType> {
+  fn get_argument_types_unions(&self, clauses: &[FunctionClauseNode]) -> Vec<ErlType> {
     assert_ne!(self.clause_count, 0, "Function clauses must not be empty");
 
     // Assuming all clauses have same arity, build unions of each arg

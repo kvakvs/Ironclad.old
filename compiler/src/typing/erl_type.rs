@@ -1,11 +1,11 @@
 //! Defines a type enum for any Erlang value or function
+use std::collections::HashSet;
 use std::fmt::Formatter;
+use std::hash::{Hash, Hasher};
 
 use crate::syntaxtree::erl::node::literal_node::LiteralNode;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
-use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 
 // use enum_as_inner::EnumAsInner;
 
@@ -42,7 +42,7 @@ impl std::fmt::Display for MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
@@ -137,6 +137,37 @@ pub enum ErlType {
     /// How many args
     arity: usize,
   },
+}
+
+impl PartialEq for ErlType {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (ErlType::Number, ErlType::Number) | (ErlType::None, ErlType::None)
+      | (ErlType::Any, ErlType::Any) | (ErlType::Float, ErlType::Float)
+      | (ErlType::String, ErlType::String) | (ErlType::AnyList, ErlType::AnyList)
+      | (ErlType::AnyTuple, ErlType::AnyTuple) | (ErlType::AnyAtom, ErlType::AnyAtom)
+      | (ErlType::AnyBool, ErlType::AnyBool) | (ErlType::Pid, ErlType::Pid)
+      | (ErlType::Reference, ErlType::Reference) | (ErlType::BinaryBits, ErlType::BinaryBits)
+      | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Binary, ErlType::Binary)
+      | (ErlType::AnyFunction, ErlType::AnyFunction) => true,
+
+      (ErlType::LocalFunction { name: n1, arity: a1 },
+        ErlType::LocalFunction { name: n2, arity: a2 }) => n1 == n2 && a1 == a2,
+
+      (ErlType::Record { fields: f1, tag: t1, .. },
+        ErlType::Record { fields: f2, tag: t2, .. }) => t1 == t2 && f1 == f2,
+      (ErlType::TVar(u), ErlType::TVar(v)) => u == v,
+      (ErlType::Integer(u), ErlType::Integer(v)) => u == v,
+      (ErlType::List(u), ErlType::List(v)) => u == v,
+      (ErlType::Tuple(u), ErlType::Tuple(v)) => u == v,
+      (ErlType::Map(u), ErlType::Map(v)) => u == v,
+      (ErlType::Atom(a), ErlType::Atom(b)) => a == b,
+      (ErlType::Literal(u), ErlType::Literal(v)) => u == v,
+      (ErlType::Function(fa), ErlType::Function(fb)) => fa == fb,
+      (ErlType::Union(u), ErlType::Union(v)) => u == v,
+      _ => false,
+    }
+  }
 }
 
 impl Hash for ErlType {

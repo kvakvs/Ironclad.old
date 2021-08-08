@@ -3,7 +3,7 @@ use crate::typing::erl_type::ErlType;
 use std::hash::{Hash, Hasher};
 
 /// An Erlang literal, a value fully known at compile time
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub enum LiteralNode {
   // TODO: Big integer
   /// Small enough to fit into a machine word
@@ -95,6 +95,21 @@ impl LiteralNode {
             .map(|it| it.get_type())
             .collect())
       }
+    }
+  }
+}
+
+impl PartialEq for LiteralNode {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (LiteralNode::Integer(a), LiteralNode::Integer(b)) => a == b,
+      (LiteralNode::Float(a), LiteralNode::Float(b)) => (a - b).abs() <= f64::EPSILON,
+      (LiteralNode::Atom(a), LiteralNode::Atom(b)) => a == b,
+      (LiteralNode::Bool(a), LiteralNode::Bool(b)) => a == b,
+      (LiteralNode::List(a), LiteralNode::List(b)) => a == b,
+      (LiteralNode::String(a), LiteralNode::String(b)) => a == b,
+      (LiteralNode::Tuple(a), LiteralNode::Tuple(b)) => a == b,
+      _ => false,
     }
   }
 }
