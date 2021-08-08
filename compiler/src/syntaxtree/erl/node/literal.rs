@@ -1,6 +1,7 @@
 //! Erlang literals, values fully known at compile time
 use crate::typing::erl_type::ErlType;
 use std::hash::{Hash, Hasher};
+use std::cmp::Ordering;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone)]
@@ -72,8 +73,6 @@ impl Hash for Literal {
   }
 }
 
-impl std::cmp::Eq for Literal {}
-
 impl Literal {
   /// Retrieves a type of a literal
   pub fn get_type(&self) -> ErlType {
@@ -99,6 +98,8 @@ impl Literal {
   }
 }
 
+impl Eq for Literal {}
+
 impl PartialEq for Literal {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
@@ -110,6 +111,46 @@ impl PartialEq for Literal {
       (Literal::String(a), Literal::String(b)) => a == b,
       (Literal::Tuple(a), Literal::Tuple(b)) => a == b,
       _ => false,
+    }
+  }
+}
+
+impl PartialOrd<Self> for Literal {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    Some(self.cmp(other))
+  }
+}
+
+impl Ord for Literal {
+  fn cmp(&self, other: &Self) -> Ordering {
+    let self_order = self.get_type().get_order();
+    let other_order = other.get_type().get_order();
+    let order = self_order.cmp(&other_order);
+    match order {
+      Ordering::Less | Ordering::Greater => order,
+      Ordering::Equal => self.cmp_same_type(other),
+    }
+  }
+}
+
+impl Literal {
+  /// Compares two literals of same kind, otherwise general ordering applies
+  pub fn cmp_same_type(&self, other: &Literal) -> Ordering {
+    match (self, other) {
+      (Literal::Integer(a), Literal::Integer(b)) => a.cmp(b),
+      (Literal::Float(a), Literal::Float(b)) => {
+        if (a - b).abs() <= f64::EPSILON {
+          Ordering::Equal
+        } else {
+          a.partial_cmp(b).unwrap()
+        }
+      }
+      (Literal::Atom(a), Literal::Atom(b)) => a.cmp(b),
+      (Literal::Bool(a), Literal::Bool(b)) => a.cmp(b),
+      (Literal::List(a), Literal::List(b)) => a.cmp(b),
+      (Literal::String(a), Literal::String(b)) => a.cmp(b),
+      (Literal::Tuple(a), Literal::Tuple(b)) => a.cmp(b),
+      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)
     }
   }
 }

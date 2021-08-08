@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 use crate::display::display_semicolon_separated;
 
 /// ErlType variant for a function or a lambda
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct FunctionType {
   /// Name if known, for module level functions, or unnamed for anonymous funs
   pub name: Option<String>,

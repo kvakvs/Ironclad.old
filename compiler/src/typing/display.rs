@@ -61,6 +61,8 @@ impl std::fmt::Display for ErlType {
       }
       ErlType::TVar(tv) => write!(f, "{}", tv),
       ErlType::String => write!(f, "string()"), // a list of unicode codepoint: list(char())
+      ErlType::Nil => write!(f, "[]"),
+      ErlType::Port => write!(f, "port()"),
     }
   }
 }

@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 use crate::display::display_comma_separated;
 
 /// Describes one function clause arg and return types.
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct FunctionClauseType {
   /// Argument types for this clause
   pub arg_types: Vec<ErlType>,

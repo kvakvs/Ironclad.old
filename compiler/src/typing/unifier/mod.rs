@@ -5,7 +5,7 @@ pub mod infer;
 
 use crate::typing::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, BTreeSet};
 use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::error::TypeError;
 use crate::typing::typevar::TypeVar;
@@ -224,7 +224,7 @@ impl Unifier {
 
   /// Whether any member of type union matches type t?
   fn unify_check_in_union(&mut self, env: &ErlModule, ast: &ErlAst,
-                          t: &ErlType, union: &HashSet<ErlType>) -> bool {
+                          t: &ErlType, union: &BTreeSet<ErlType>) -> bool {
     union.iter().any(|member| {
       self.unify(env, ast, &t, &member).is_ok()
     })
@@ -294,5 +294,4 @@ impl Unifier {
 
     // false
   }
-
 }

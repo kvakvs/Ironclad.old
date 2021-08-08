@@ -6,7 +6,7 @@ use std::fmt::Formatter;
 /// A type variable for not-yet-inferred types or generic types
 /// Contains a name, and the type inferred so far (starts with Any)
 #[derive(Copy, Clone, PartialEq, Hash, Eq)]
-pub struct TypeVar(usize);
+pub struct TypeVar(pub usize);
 
 impl TypeVar {
   /// Create a new type variable with unique integer id (guarded by atomic usize)

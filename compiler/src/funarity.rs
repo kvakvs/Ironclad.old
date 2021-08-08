@@ -3,7 +3,7 @@
 use std::fmt::Formatter;
 
 /// Points to a function in the current module
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct FunArity {
   /// Function name atom, as string
   pub name: String,

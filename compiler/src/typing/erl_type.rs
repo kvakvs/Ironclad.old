@@ -1,5 +1,4 @@
 //! Defines a type enum for any Erlang value or function
-use std::collections::HashSet;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 
@@ -9,11 +8,13 @@ use crate::funarity::FunArity;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use std::collections::BTreeSet;
+use std::cmp::Ordering;
 
 // use enum_as_inner::EnumAsInner;
 
 /// A record field definition
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct RecordField {
   /// Field name, an atom stored as string
   pub name: String,
@@ -29,7 +30,7 @@ impl std::fmt::Display for RecordField {
 }
 
 /// A map field constraint
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct MapField {
   /// Key can be any literal
   pub key: Literal,
@@ -51,7 +52,7 @@ pub enum ErlType {
   // Special types, groups of types, etc
   //-------------------------------------
   /// Multiple types together
-  Union(HashSet<ErlType>),
+  Union(BTreeSet<ErlType>),
   /// No type, usually signifies a type error
   None,
   /// All types, usually signifies an unchecked or untyped type
@@ -78,6 +79,9 @@ pub enum ErlType {
 
   /// A list of any type
   AnyList,
+
+  /// A list of zero size
+  Nil,
 
   /// A list with element type, type can be union
   List(Box<ErlType>),
@@ -116,6 +120,8 @@ pub enum ErlType {
 
   /// A reference value, generated at runtime
   Reference,
+  /// A port (socket, open file, etc.)
+  Port,
 
   /// A binary type containing bytes and some trailing bits (incomplete last byte)
   BinaryBits,
@@ -163,8 +169,24 @@ impl PartialEq for ErlType {
       (ErlType::Function(fa), ErlType::Function(fb)) => fa == fb,
       (ErlType::Union(u), ErlType::Union(v)) => {
         u.iter().all(|u_member| v.contains(u_member))
-      },
+      }
       _ => false,
+    }
+  }
+}
+
+impl PartialOrd<Self> for ErlType {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    Some(self.cmp(other))
+  }
+}
+
+impl Ord for ErlType {
+  fn cmp(&self, other: &Self) -> Ordering {
+    let order = self.get_order().cmp(&other.get_order());
+    match order {
+      Ordering::Less | Ordering::Greater => order,
+      Ordering::Equal => self.cmp_same_type(other),
     }
   }
 }
@@ -229,6 +251,8 @@ impl Hash for ErlType {
         '='.hash(state);
         fa.hash(state);
       }
+      ErlType::Nil => "[]".hash(state),
+      ErlType::Port => 'P'.hash(state),
     }
   }
 
@@ -238,6 +262,61 @@ impl Hash for ErlType {
 }
 
 impl ErlType {
+  /// Compares two erlang types of same kind, otherwise general ordering applies
+  pub fn cmp_same_type(&self, other: &ErlType) -> Ordering {
+    match (self, other) {
+      (ErlType::None, _) | (ErlType::Any, _) | (ErlType::Number, _) | (ErlType::AnyInteger, _)
+      | (ErlType::Float, _) | (ErlType::AnyList, _) | (ErlType::Nil, _) | (ErlType::String, _)
+      | (ErlType::AnyTuple, _) | (ErlType::AnyAtom, _) | (ErlType::AnyBool, _) | (ErlType::Pid, _)
+      | (ErlType::Reference, _) | (ErlType::Port, _) | (ErlType::BinaryBits, _) | (ErlType::Binary, _)
+      | (ErlType::AnyFunction, _) => Ordering::Equal,
+
+      (ErlType::Union(a), ErlType::Union(b)) => a.cmp(b),
+      (ErlType::TVar(TypeVar(a)), ErlType::TVar(TypeVar(b))) => a.cmp(b),
+      (ErlType::Integer(a), ErlType::Integer(b)) => a.cmp(b),
+      (ErlType::List(l1), ErlType::List(l2)) => l1.cmp(l2),
+      (ErlType::Tuple(t1), ErlType::Tuple(t2)) => t1.cmp(t2),
+      (ErlType::Record { tag: t1, fields: fields1 },
+        ErlType::Record { tag: t2, fields: fields2 }) => {
+        let mut result = t1.cmp(t2);
+        if result == Ordering::Equal { // if record tags match, fields may be different!
+          result = fields1.cmp(&fields2);
+        }
+        result
+      }
+      (ErlType::Map(m1), ErlType::Map(m2)) => m1.cmp(&m2),
+      (ErlType::Atom(a), ErlType::Atom(b)) => a.cmp(b),
+      (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(&lit2),
+      (ErlType::Function(f1), ErlType::Function(f2)) => f1.cmp(f2),
+      (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1.cmp(fa2),
+
+      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)
+    }
+  }
+
+  /// Return a number placing the type somewhere in the type ordering hierarchy
+  /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
+  pub fn get_order(&self) -> usize {
+    match self {
+      ErlType::None => 0,
+      ErlType::Union(_) => 1,
+      ErlType::Any => 1000,
+      ErlType::TVar(_) => 0,
+      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float => 10,
+      ErlType::AnyBool | ErlType::AnyAtom | ErlType::Atom(_) => 20,
+      ErlType::Reference => 30,
+      ErlType::AnyFunction | ErlType::Function(_) | ErlType::LocalFunction(_) => 40,
+      ErlType::Port => 50,
+      ErlType::Pid => 60,
+      ErlType::Record { .. } | ErlType::AnyTuple | ErlType::Tuple(_) => 70,
+      ErlType::Map(_) => 80,
+      ErlType::Nil => 90,
+      ErlType::AnyList | ErlType::List(_) | ErlType::String => 100,
+      ErlType::BinaryBits | ErlType::Binary => 110,
+      ErlType::Literal(lit) => lit.get_type().get_order(),
+    }
+  }
+
   /// If self is a TypeVar, return Any, otherwise do not change.
   /// Used after type inference was done to replace all typevars with any()
   pub fn into_final_type(self) -> Self {
@@ -270,7 +349,7 @@ impl ErlType {
       return types[0].clone();
     }
 
-    let mut merged: HashSet<ErlType> = Default::default();
+    let mut merged: BTreeSet<ErlType> = Default::default();
 
     // For every type in types, if its a Union, unfold it into member types.
     // HashSet will ensure that the types are unique
@@ -287,7 +366,7 @@ impl ErlType {
   /// type if such type exists. This is lossless operation, types are not generalized or shrunk.
   /// Example: integer()|float() shrink into number()
   #[named]
-  fn union_promote(elements: HashSet<ErlType>) -> ErlType {
+  fn union_promote(elements: BTreeSet<ErlType>) -> ErlType {
     assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
     if elements.len() == 2 {
       // integer() | float() => number()
