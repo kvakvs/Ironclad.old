@@ -23,6 +23,6 @@ pub fn fail_unexpected<T>(val: &T) where T: std::fmt::Display {
 }
 
 #[allow(dead_code)]
-pub fn start(n: &str) {
-  println!("--- {}: test start ---", n);
+pub fn start(n: &str, descr: &str) {
+  println!("--- {}: START ({}) ---", n, descr);
 }

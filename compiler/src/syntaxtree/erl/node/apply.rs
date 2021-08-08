@@ -27,7 +27,9 @@ impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing
   pub fn get_function_type(&self) -> ErlType {
-    let arg_types: Vec<ErlType> = self.args.iter().map(|arg| arg.get_type()).collect();
+    let arg_types: Vec<ErlType> = self.args.iter()
+        .map(|arg| arg.get_type())
+        .collect();
     let clause_type = FunctionClauseType::new(arg_types, self.ret_ty.into());
     let f_type = FunctionType::new(None, vec![clause_type]);
     ErlType::Function(f_type)

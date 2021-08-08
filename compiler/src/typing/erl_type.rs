@@ -161,7 +161,9 @@ impl PartialEq for ErlType {
       (ErlType::Atom(a), ErlType::Atom(b)) => a == b,
       (ErlType::Literal(u), ErlType::Literal(v)) => u == v,
       (ErlType::Function(fa), ErlType::Function(fb)) => fa == fb,
-      (ErlType::Union(u), ErlType::Union(v)) => u == v,
+      (ErlType::Union(u), ErlType::Union(v)) => {
+        u.iter().all(|u_member| v.contains(u_member))
+      },
       _ => false,
     }
   }
@@ -358,6 +360,11 @@ impl ErlType {
       Self::Function(ft) => &ft,
       _ => panic!("Node {} is expected to be a Function type", self)
     }
+  }
+
+  /// Create an atom from a string slice
+  pub fn atom_str(s: &str) -> Self {
+    ErlType::Atom(String::from(s))
   }
 }
 

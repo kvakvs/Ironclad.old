@@ -15,6 +15,7 @@ use compiler::funarity::FunArity;
 #[named]
 #[test]
 fn infer_simplemath() -> ErlResult<()> {
+  test_util::start(function_name!(), "infer type for simple expression");
   let code = "myfun(A) -> (A + 1) / 2.";
   let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
@@ -49,6 +50,7 @@ fn infer_simplemath() -> ErlResult<()> {
 /// Try infer type for a function which is a sum of two lists.
 /// Expected: Inferred type list(atom1|atom2)
 fn infer_atom_list_concatenation() -> ErlResult<()> {
+  test_util::start(function_name!(), "infer type for a sum of two lists with atoms");
   let code = "atomtest(A) -> [atom1] ++ [atom2].";
   let mut module = ErlModule::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
@@ -75,8 +77,7 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
 #[named]
 #[test]
 fn infer_funcall_test() -> ErlResult<()> {
-  println!("{}: testing function call type inference", function_name!());
-
+  test_util::start(function_name!(), "infer type for a fun which calls another fun with a sum");
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";
@@ -100,6 +101,33 @@ fn infer_funcall_test() -> ErlResult<()> {
 
     // Expected: Main -> integer()
     assert_eq!(f_t2, ErlType::Number, "Function main/0 must have inferred type: number()");
+  }
+
+  Ok(())
+}
+
+#[named]
+#[test]
+fn infer_multiple_clause_test() -> ErlResult<()> {
+  test_util::start(function_name!(), "infer type for a multi-clause function");
+  let code = "-module(infer_multiple_clause).\n\
+                   main() -> [atom1] ++ [atom2];\n\
+                   main() -> 2 + 2.\n";
+  let mut module = ErlModule::default();
+  module.parse_and_unify_str(Rule::module, code)?;
+  {
+    let ast2 = module.ast.read().unwrap();
+    let find_result2 = ast2.find_function_def(&FunArity::new_str("main", 0)).unwrap();
+    let f_t2 = module.unifier.infer_ast(find_result2).into_final_type();
+    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
+
+    // Expected: Main -> number()|[atom1|atom2]
+    let list_type = ErlType::List(Box::new(
+      ErlType::union_of(vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")],
+                        true)
+      ));
+    assert_eq!(f_t2, ErlType::union_of(vec![ErlType::Number, list_type], true),
+               "Function main/0 must have inferred type: number()|[atom1|atom2]");
   }
 
   Ok(())
