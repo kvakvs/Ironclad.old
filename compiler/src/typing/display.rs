@@ -56,7 +56,7 @@ impl std::fmt::Display for ErlType {
           None => write!(f, "fun(")?,
           Some(n) => write!(f, "{}(", n)?,
         }
-        display_comma_separated(&fun_type.arg_types, f)?;
+        display_comma_separated(&fun_type.clauses, f)?;
         write!(f, ") -> {}", fun_type.ret_type)
       }
       ErlType::TVar(tv) => write!(f, "{}", tv),

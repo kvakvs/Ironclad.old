@@ -6,4 +6,5 @@ pub mod typevar;
 pub mod equation;
 pub mod unifier;
 pub mod display;
-mod function_type;
+pub mod function_type;
+pub mod function_clause_type;

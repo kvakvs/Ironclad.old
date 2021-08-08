@@ -1,12 +1,15 @@
 //! Defines Application AST node for a function call
+use std::cell::RefCell;
+
 use crate::erl_error::ErlResult;
+use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::typing::erl_type::ErlType;
-use crate::typing::typevar::TypeVar;
-use crate::erl_module::ErlModule;
 use crate::syntaxtree::erl::node::function_def::FunctionDef;
-use std::cell::{RefCell};
+use crate::typing::erl_type::ErlType;
+use crate::typing::function_clause_type::FunctionClauseType;
+use crate::typing::function_type::FunctionType;
+use crate::typing::typevar::TypeVar;
 
 /// AST node which contains a function call
 pub struct ApplicationNode {
@@ -21,6 +24,14 @@ pub struct ApplicationNode {
 }
 
 impl ApplicationNode {
+  /// From argument types build a new ErlType::Function() with multiple clauses
+  pub fn get_function_type(&self) -> ErlType {
+    let arg_types: Vec<ErlType> = self.args.iter().map(|arg| arg.get_type()).collect();
+    let clause = FunctionClauseType::new(arg_types, self.ret_ty.into());
+    let ft = FunctionType::new(None, vec![clause]);
+    ErlType::Function(ft)
+  }
+
   /// Creates a new function call (application) AST node
   pub fn new(expr: ErlAst, args: Vec<ErlAst>) -> Self {
     // let ret_ty = ErlType::new_typevar();
@@ -36,12 +47,12 @@ impl ApplicationNode {
   /// To use during the construction, from expression and arg expressions, assume that the
   /// expression must be callable and build a `fun(Args...) -> Ret` type
   fn create_expr_type(args: &[ErlAst], ret: &ErlType) -> ErlType {
-    ErlType::new_fun_type(
-      None, // unnamed function application
-      args.iter()
-          .map(|a| a.get_type())
-          .collect(),
-      ret.clone())
+    let arg_types = args.iter()
+        .map(|a| a.get_type())
+        .collect();
+    let clause  = FunctionClauseType::new(arg_types, ret.clone());
+    // unnamed function application, None for a name
+    ErlType::Function(FunctionType::new(None, vec![clause]))
   }
 
   /// During post-parse scan try check if our expression is a reference to a known function.

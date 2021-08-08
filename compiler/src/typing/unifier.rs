@@ -88,7 +88,7 @@ impl Unifier {
   /// Unify for when both sides of equation are function types
   fn unify_fun_fun(&mut self, module: &ErlModule, ast: &ErlAst,
                    fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
-    if fun1.arg_types.len() != fun2.arg_types.len() {
+    if fun1.arity != fun2.arity {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
@@ -96,17 +96,18 @@ impl Unifier {
     self.unify(module, ast, &fun1.ret_type, &fun2.ret_type)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
-    let errors: Vec<ErlError> = fun1.arg_types.iter()
-        .zip(fun2.arg_types.iter())
-        .map(|(t1, t2)| {
-          self.unify(module, ast, &t1, &t2)
-        })
-        .filter(Result::is_err)
-        .map(Result::unwrap_err)
-        .collect();
-    if !errors.is_empty() {
-      return Err(ErlError::multiple(errors));
-    }
+    unimplemented!("Unify {} vs {}", fun1, fun2);
+    // let errors: Vec<ErlError> = fun1.clauses.iter()
+    //     .zip(fun2.clauses.iter())
+    //     .map(|(t1, t2)| {
+    //       self.unify(module, ast, t1, t2)
+    //     })
+    //     .filter(Result::is_err)
+    //     .map(Result::unwrap_err)
+    //     .collect();
+    // if !errors.is_empty() {
+    //   return Err(ErlError::multiple(errors));
+    // }
     Ok(())
   }
 
@@ -130,7 +131,6 @@ impl Unifier {
             // match two function types
             return self.unify_fun_fun(module, ast, fun1, fun2);
           }
-          ErlType::AnyFunction => return Ok(()), // good
           _any_type2 => {}
         }
       }
@@ -152,7 +152,7 @@ impl Unifier {
                 // Equation: Application Expr(Args...) <=> Fn.Ret
 
                 let fc = &fun_def.clauses[0];
-                if fc.args.len() == funarity1.arity && fun2.arg_types.len() == funarity1.arity {
+                if fc.args.len() == funarity1.arity && fun2.clauses.len() == funarity1.arity {
                   return Ok(());
                 }
               }
@@ -195,41 +195,26 @@ impl Unifier {
           _any_type1 => {}
         }
       }
-      ErlType::AnyInteger => {
-        match type1 {
-          // Any numbers and number sets will match a number
-          ErlType::Integer(_) | ErlType::AnyInteger => return Ok(()),
-          _any_type1 => {}
-        }
-      }
-      ErlType::Integer(c2) => {
-        match type1 {
+      ErlType::AnyInteger => if let ErlType::Integer(_) | ErlType::AnyInteger = type1 {
+          return Ok(())
+        },
+      ErlType::Integer(c2) => match type1 {
           // Any numbers and number sets will match a number
           ErlType::Integer(c1) if c1 == c2 => return Ok(()),
           _any_type1 => {}
-        }
-      }
-      ErlType::AnyList => {
-        match type1 {
-          // Any lists will match a AnyList
-          ErlType::List(_) => return Ok(()),
-          _any_type1 => {}
-        }
-      }
-      ErlType::List(elem2) => {
-        match type1 {
-          // Any tuple will match a AnyTuple
-          ErlType::List(elem1) => return self.unify(module, ast, elem1, elem2),
-          _any_type1 => {}
-        }
-      }
-      ErlType::AnyTuple => {
-        match type1 {
-          // Any tuple will match a AnyTuple
-          ErlType::Tuple(_) => return Ok(()),
-          _any_type1 => {}
-        }
-      }
+        },
+      ErlType::AnyList => if let ErlType::List(_) = type1 {
+          return Ok(())
+        },
+      ErlType::AnyFunction => if let ErlType::Function(_) = type1 {
+          return Ok(())
+        },
+      ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
+          return self.unify(module, ast, elem1, elem2)
+        },
+      ErlType::AnyTuple => if let ErlType::Tuple(_) = type1 {
+          return Ok(())
+        },
       _any_type2 => {}
     }
 
@@ -286,7 +271,7 @@ impl Unifier {
       ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Function(fun_type) => {
         return self.occurs_check(tv, &fun_type.ret_type)
-            || fun_type.arg_types.iter().any(|a| self.occurs_check(tv, a));
+            || fun_type.clauses.iter().any(|a| self.occurs_check(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))
@@ -329,7 +314,7 @@ impl Unifier {
     if let ErlType::Function(fun_type) = &ty {
       return ErlType::Function(FunctionType {
         name: fun_type.name.clone(),
-        arg_types: fun_type.arg_types.iter()
+        clauses: fun_type.clauses.iter()
             .map(|t| self.infer_type(t))
             .collect(),
         ret_type: Box::new(self.infer_type(&fun_type.ret_type)),
@@ -377,7 +362,7 @@ impl Unifier {
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
     // TODO: Instead of AnyFunction create a functional type of the correct arity and return type?
     Self::equation(eq, ast, (*app.expr).borrow().get_type(),
-                   ErlType::AnyFunction, "Apply");
+                   app.get_function_type(), "Apply");
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret

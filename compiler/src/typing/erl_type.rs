@@ -2,12 +2,14 @@
 use std::collections::HashSet;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
+
 use ::function_name::named;
 
+use crate::funarity::FunArity;
 use crate::syntaxtree::erl::node::literal_node::Literal;
+use crate::typing::function_clause_type::FunctionClauseType;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
-use crate::funarity::FunArity;
 
 // use enum_as_inner::EnumAsInner;
 
@@ -295,14 +297,11 @@ impl ErlType {
     ErlType::Union(elements)
   }
 
-  /// Create a new function type provided args types and return type, possibly with a name
-  pub fn new_fun_type(name: Option<String>, args: Vec<ErlType>, ret: ErlType) -> Self {
-    ErlType::Function(FunctionType {
-      name,
-      arg_types: args,
-      ret_type: Box::from(ret),
-    })
-  }
+  // /// Create a new function type provided args types and return type, possibly with a name
+  // pub fn new_fun_type(name: Option<String>, clauses: Vec<FunctionClauseType>) -> Self {
+  //   assert!(!clauses.is_empty(), "Function type with 0 function clause types is not allowed");
+  //   ErlType::Function(FunctionType::new(name, clauses))
+  // }
 
   /// Create a new type, containing a new type variable with unique integer id
   pub fn new_typevar() -> Self {
