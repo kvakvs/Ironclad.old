@@ -55,7 +55,7 @@ impl Unifier {
       unifier.generate_equations(module, &mut eq, &ast_r)?;
       unifier.equations = eq;
       for eq in unifier.equations.iter() {
-        println!("Eq: {}", eq);
+        println!("Eq: {:?}", eq);
       }
 
       unifier.unify_all_equations(module, &ast_r)?;

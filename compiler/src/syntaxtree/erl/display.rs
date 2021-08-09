@@ -42,13 +42,7 @@ impl fmt::Display for ErlAst {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
       }
       ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
-
-      ErlAst::App(_loc, app) => {
-        write!(f, "{}(", app.expr.borrow())?;
-        display::display_comma_separated(&app.args, f)?;
-        write!(f, ")")
-      }
-
+      ErlAst::App(_loc, app) => write!(f, "{}", app),
       ErlAst::Let(_loc, let_expr) => {
         write!(f, "let {} = {} in {}", let_expr.var, let_expr.value, let_expr.in_expr)
       }
@@ -58,7 +52,6 @@ impl fmt::Display for ErlAst {
       ErlAst::BinaryOp(_loc, binop) => {
         write!(f, "({} {} {})", binop.left, binop.operator, binop.right)
       }
-
       ErlAst::UnaryOp(_loc, unop) => {
         write!(f, "({} {})", unop.operator, unop.expr)
       }
@@ -78,16 +71,23 @@ impl fmt::Debug for ErlAst {
       // ErlAst::ModuleForms(_) => {}
       // ErlAst::ModuleAttr { .. } => {}
       // ErlAst::Comma { .. } => {}
-      // ErlAst::FunctionDef(_, _) => {}
+      ErlAst::FunctionDef { funarity, ret_ty, .. } => {
+        // Cannot print function def's clauses because they are owned by the `ErlModule::functions`
+        write!(f, "newfun {}/{} -> {}", funarity.name, funarity.arity, ret_ty)
+      }
       // ErlAst::CClause(_, _) => {}
       // ErlAst::FunArity(_, _) => {}
-      // ErlAst::Var(_, _) => {}
+      ErlAst::Var(_, v) => write!(f, "{}:{}", self, v.ty),
       // ErlAst::App(_, _) => {}
       // ErlAst::Let(_, _) => {}
       // ErlAst::Case(_, _) => {}
       // ErlAst::Lit(_, _) => {}
-      // ErlAst::BinaryOp(_, _) => {}
-      // ErlAst::UnaryOp(_, _) => {}
+      ErlAst::BinaryOp(_loc, binop) => {
+        write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
+      }
+      ErlAst::UnaryOp(_loc, unop) => {
+        write!(f, "({} {:?})", unop.operator, unop.expr)
+      }
       // ErlAst::List(_, _) => {}
       // ErlAst::Tuple(_, _) => {}
       _ => write!(f, "{}", self),

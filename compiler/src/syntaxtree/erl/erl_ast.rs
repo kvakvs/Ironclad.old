@@ -8,7 +8,7 @@ use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::node::r#let::LetExprNode;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::syntaxtree::erl::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
-use crate::syntaxtree::erl::node::var::VarNode;
+use crate::syntaxtree::erl::node::var::Var;
 use crate::typing::erl_type::ErlType;
 use crate::funarity::FunArity;
 use crate::source_loc::SourceLoc;
@@ -75,7 +75,7 @@ pub enum ErlAst {
   // ModFunArity()
 
   /// A named variable
-  Var(SourceLoc, VarNode),
+  Var(SourceLoc, Var),
 
   /// Apply arguments to expression
   App(SourceLoc, Apply),
@@ -159,7 +159,7 @@ impl ErlAst {
 
   /// Create a new variable AST node
   pub fn new_var(location: SourceLoc, name: &str) -> ErlAst {
-    ErlAst::Var(location, VarNode::new(name))
+    ErlAst::Var(location, Var::new(name))
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)

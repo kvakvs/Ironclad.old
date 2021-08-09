@@ -10,6 +10,8 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::function_clause_type::FunctionClauseType;
 use crate::typing::function_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use std::fmt::Formatter;
+use crate::display::display_comma_separated;
 
 /// AST node which contains a function call
 pub struct Apply {
@@ -21,6 +23,14 @@ pub struct Apply {
   pub ret_ty: TypeVar,
   /// Inferred type of the expression, must be something callable
   pub expr_ty: TypeVar,
+}
+
+impl std::fmt::Display for Apply {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}(", self.expr.borrow())?;
+    display_comma_separated(&self.args, f)?;
+    write!(f, ")")
+  }
 }
 
 impl Apply {
@@ -61,7 +71,7 @@ impl Apply {
   /// During post-parse scan try check if our expression is a reference to a known function.
   /// If so, replace it with a pointer to that function.
   pub fn postprocess_edit_node(&self, module: &ErlModule) -> ErlResult<()> {
-    println!("Postprocessing App()... {}({:?})", self.expr.borrow(), self.args);
+    println!("Postprocessing App()... {}", self);
 
     // Check if expr (target) points to some existing function that we know
     let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
