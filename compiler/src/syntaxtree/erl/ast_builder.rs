@@ -1,5 +1,5 @@
 //! Processes parser output and produces ErlAst tree for the program
-use crate::funarity::FunArity;
+use crate::mfarity::MFArity;
 use crate::erl_error::{ErlResult};
 use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
@@ -215,7 +215,7 @@ impl ErlModule {
         .collect();
 
     let arity = clauses[0].arg_types.len();
-    let funarity = FunArity::new(clauses[0].name.clone(), arity);
+    let funarity = MFArity::new_local(clauses[0].name.clone(), arity);
 
     let fn_def = Arc::new(FnDef::new(funarity.clone(), clauses));
     let ret_ty = fn_def.ret_ty;

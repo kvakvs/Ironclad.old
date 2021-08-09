@@ -3,7 +3,7 @@
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
-use crate::funarity::FunArity;
+use crate::mfarity::MFArity;
 
 /// Raised by the type analyzer and checker
 pub enum TypeError {
@@ -30,7 +30,7 @@ pub enum TypeError {
     /// The module name
     module: String,
     /// The function name and arity
-    funarity: FunArity,
+    funarity: MFArity,
   },
 }
 

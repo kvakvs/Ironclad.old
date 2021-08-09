@@ -10,7 +10,7 @@ use compiler::syntaxtree::erl::erl_parser::{Rule};
 use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::erl_module::ErlModule;
-use compiler::funarity::FunArity;
+use compiler::mfarity::MFArity;
 
 #[named]
 #[test]
@@ -25,7 +25,7 @@ fn infer_simplemath() -> ErlResult<()> {
     match ast.deref() {
       ErlAst::FunctionDef { fn_def, .. } => {
         assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-        assert_eq!(fn_def.funarity.arity, 1, "FunctionDef must have arity 1");
+        assert_eq!(fn_def.mfarity.arity, 1, "FunctionDef must have arity 1");
 
         let clause = &fn_def.clauses[0];
         assert_eq!(clause.name, "myfun", "FClause name must be myfun");
@@ -84,7 +84,7 @@ fn infer_funcall_test() -> ErlResult<()> {
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast = module.ast.read().unwrap();
-    let add_fn_ast = ast.find_function_def(&FunArity::new_str("add", 2)).unwrap();
+    let add_fn_ast = ast.find_function_def(&MFArity::new_local_str("add", 2)).unwrap();
     let f_t1 = module.unifier.infer_ast(add_fn_ast).into_final_type();
     println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_ast, f_t1);
 
@@ -94,7 +94,7 @@ fn infer_funcall_test() -> ErlResult<()> {
 
   {
     let ast2 = module.ast.read().unwrap();
-    let find_result2 = ast2.find_function_def(&FunArity::new_str("main", 0)).unwrap();
+    let find_result2 = ast2.find_function_def(&MFArity::new_local_str("main", 0)).unwrap();
     let f_t2 = module.unifier.infer_ast(find_result2).into_final_type();
     println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
@@ -116,7 +116,7 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast2 = module.ast.read().unwrap();
-    let find_result2 = ast2.find_function_def(&FunArity::new_str("main", 0)).unwrap();
+    let find_result2 = ast2.find_function_def(&MFArity::new_local_str("main", 0)).unwrap();
     let main_ty = module.unifier.infer_ast(find_result2).into_final_type();
     println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 

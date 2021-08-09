@@ -45,16 +45,16 @@ impl Unifier {
       ErlAst::Lit(..) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
       ErlAst::FunctionDef { fn_def, .. } => {
-        self.generate_equations_fun_def(eq, ast, fn_def)?;
+        self.generate_equations_fn_def(eq, ast, fn_def)?;
         for fc in &fn_def.clauses {
-          self.generate_equations_fun_clause(eq, ast, &fc)?
+          self.generate_equations_fn_clause(eq, ast, &fc)?
         }
       }
       // ErlAst::FClause(_loc, fc) => {
       //   self.generate_equations_fclause(eq, ast, fc)?
       // }
       ErlAst::Apply(_loc, app) => {
-        self.generate_equations_app(eq, ast, app)?
+        self.generate_equations_apply(eq, ast, app)?
       }
       ErlAst::Let(_loc, let_expr) => {
         Self::equation(eq, ast,
@@ -96,9 +96,9 @@ impl Unifier {
       ErlAst::Comma { right, ty, .. } => {
         Self::equation(eq, ast, (*ty).into(), right.get_type());
       }
-      ErlAst::List(_loc, _elems) => {}
-      ErlAst::Tuple(_loc, _elems) => {}
-      ErlAst::FunArity(..) => {}
+      ErlAst::List(..) => {}
+      ErlAst::Tuple(..) => {}
+      ErlAst::MFA { .. } => {}
 
       _ => unreachable!("Can't process {}", ast),
     }
@@ -108,8 +108,8 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node FunctionDef
-  fn generate_equations_fun_def(&self, eq: &mut Vec<TypeEquation>,
-                                ast: &ErlAst, f_def: &FnDef) -> ErlResult<()> {
+  fn generate_equations_fn_def(&self, eq: &mut Vec<TypeEquation>,
+                               ast: &ErlAst, f_def: &FnDef) -> ErlResult<()> {
     assert!(!f_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
     println!("Gen eq for {:?}", f_def);
 
@@ -124,9 +124,8 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node FClause
-  fn generate_equations_fun_clause(&self, eq: &mut Vec<TypeEquation>,
-                                   ast: &ErlAst, fc: &FnClause) -> ErlResult<()> {
-    println!("Gen eq for {:?}", fc);
+  fn generate_equations_fn_clause(&self, eq: &mut Vec<TypeEquation>,
+                                  ast: &ErlAst, fc: &FnClause) -> ErlResult<()> {
     // For each fun clause its return type is matched with body expression type
     Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type());
     Ok(())
@@ -134,11 +133,10 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call) Expr(Arg, ...)
-  fn generate_equations_app(&self, eq: &mut Vec<TypeEquation>,
-                            ast: &ErlAst, app: &Apply) -> ErlResult<()> {
+  fn generate_equations_apply(&self, eq: &mut Vec<TypeEquation>,
+                              ast: &ErlAst, app: &Apply) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
-    // TODO: Instead of AnyFunction create a functional type of the correct arity and return type?
     Self::equation(eq, ast, (*app.expr).borrow().get_type(), app.get_function_type());
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret

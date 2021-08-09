@@ -1,5 +1,5 @@
 //! Stores functions and function clauses for an Erlang Module
-use crate::funarity::FunArity;
+use crate::mfarity::MFArity;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::syntaxtree::erl::node::fn_def::FnDef;
@@ -10,7 +10,7 @@ impl ErlModule {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
   pub fn add_function(&mut self, nf: Arc<FnDef>) {
     let index = self.functions.len();
-    let funarity = nf.funarity.clone();
+    let funarity = nf.mfarity.clone();
 
     self.functions.push(nf);
     self.functions_lookup.insert(funarity, index);
@@ -21,10 +21,11 @@ impl ErlModule {
   pub fn find_function_by_expr_arity(&self, expr: &ErlAst, arity: usize) -> Option<usize> {
     if let ErlAst::Lit(_loc, Literal::Atom(a)) = expr {
       // A single atom points to a possible existing function of `arity` in the current module
-      let fa = FunArity { name: a.clone(), arity };
-      match self.functions_lookup.get(&fa) {
-        None => return None,
-        Some(index) => return Some(*index),
+      let mfa = MFArity { module: None, name: a.clone(), arity };
+
+      return match self.functions_lookup.get(&mfa) {
+        None => None,
+        Some(index) => Some(*index),
       }
     }
     None

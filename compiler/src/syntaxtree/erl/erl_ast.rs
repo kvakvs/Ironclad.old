@@ -10,12 +10,13 @@ use crate::syntaxtree::erl::node::literal::Literal;
 use crate::syntaxtree::erl::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
 use crate::syntaxtree::erl::node::var::Var;
 use crate::typing::erl_type::ErlType;
-use crate::funarity::FunArity;
+use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::node::token::ErlToken;
 use crate::typing::typevar::TypeVar;
 use crate::syntaxtree::erl::node::fn_def::FnDef;
 use std::sync::Arc;
+use crate::typing::fn_clause_type::FnClauseType;
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {
@@ -62,7 +63,7 @@ pub enum ErlAst {
     /// Source file pointer
     location: SourceLoc,
     /// Function name and arity
-    funarity: FunArity,
+    funarity: MFArity,
     /// Clone of return type variable
     ret_ty: TypeVar,
     /// Function definition struct with clauses. Arc to be accessible separately from function
@@ -74,8 +75,16 @@ pub enum ErlAst {
   CClause(SourceLoc, CaseClause),
 
   /// Name/arity which refers to a function in the current module
-  FunArity(SourceLoc, FunArity),
-  // ModFunArity()
+  MFA {
+    /// Code location
+    location: SourceLoc,
+    /// fun/arity in the current module, or full mod:fun/arity if external
+    mfarity: MFArity,
+    /// Known function clause types from the function name lookup, empty if not known
+    clause_types: Vec<FnClauseType>,
+    /// Unique typevar for the return type, will be matched against what we find out later
+    ret_ty: TypeVar,
+  },
 
   /// A named variable
   Var(SourceLoc, Var),
@@ -139,7 +148,7 @@ impl ErlAst {
       ErlAst::Tuple(_loc, elems) => {
         ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
       }
-      ErlAst::FunArity(_loc, fa) => ErlType::LocalFunction(fa.clone()),
+      ErlAst::MFA { mfarity: mfa, .. } => ErlType::LocalFunction(mfa.clone()),
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
@@ -272,7 +281,7 @@ impl ErlAst {
       ErlAst::FunctionDef { location: loc, .. } => *loc,
       // ErlAst::FClause(loc, _) => *loc,
       ErlAst::CClause(loc, _) => *loc,
-      ErlAst::FunArity(loc, _) => *loc,
+      ErlAst::MFA { location: loc, .. } => *loc,
       ErlAst::Var(loc, _) => *loc,
       ErlAst::Apply(loc, _) => *loc,
       ErlAst::Let(loc, _) => *loc,
@@ -286,7 +295,7 @@ impl ErlAst {
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
-  pub fn find_function_def(&self, fa: &FunArity) -> Option<&ErlAst> {
+  pub fn find_function_def(&self, fa: &MFArity) -> Option<&ErlAst> {
     match self {
       ErlAst::FunctionDef { funarity: fa2, .. } if fa == fa2 => Some(self),
       ErlAst::ModuleForms(forms) => {

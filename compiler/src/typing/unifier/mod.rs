@@ -55,10 +55,10 @@ impl Unifier {
       unifier.generate_equations(module, &mut eq, &ast_r)?;
       unifier.equations = eq;
       for eq in unifier.equations.iter() {
-        println!("Eq: {:?}", eq);
+        println!("{:?}", eq);
       }
 
-      unifier.unify_all_equations(module, &ast_r)?;
+      unifier.unify_all_equations(module)?;
       println!("Unify map: {:?}", &unifier.subst);
     }
 
@@ -66,13 +66,13 @@ impl Unifier {
   }
 
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
-  fn unify_all_equations(&mut self, module: &ErlModule, ast: &ErlAst) -> ErlResult<()> {
+  fn unify_all_equations(&mut self, module: &ErlModule) -> ErlResult<()> {
     let mut equations: Vec<TypeEquation> = Vec::new();
     std::mem::swap(&mut self.equations, &mut equations); // move
 
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          self.unify(module, ast, &eq.left, &eq.right)
+          self.unify(module, &eq.left, &eq.right)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -84,14 +84,14 @@ impl Unifier {
   }
 
   /// Unify for when both sides of equation are function types
-  fn unify_fun_fun(&mut self, module: &ErlModule, ast: &ErlAst,
+  fn unify_fun_fun(&mut self, module: &ErlModule,
                    fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
     if fun1.arity != fun2.arity {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
     // Unify functions return types
-    self.unify(module, ast, &fun1.ret_type, &fun2.ret_type)?;
+    self.unify(module, &fun1.ret_type, &fun2.ret_type)?;
 
     // Then unify each arg of function1 with corresponding arg of function2
     unimplemented!("Unify {} vs {}", fun1, fun2);
@@ -112,7 +112,7 @@ impl Unifier {
   /// Unify two types type1 and type2, with self.subst map
   /// Updates self.subst (map of name->Type) with new record which unifies type1 and type2,
   /// and returns true. Returns false if they can't be unified.
-  fn unify(&mut self, module: &ErlModule, ast: &ErlAst,
+  fn unify(&mut self, module: &ErlModule,
            type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
     if type1 == type2 {
       return Ok(());
@@ -120,14 +120,14 @@ impl Unifier {
 
     match type1 {
       ErlType::TVar(tv1) => {
-        return self.unify_variable(module, ast, tv1, type2);
+        return self.unify_variable(module, tv1, type2);
       }
 
       ErlType::Function(fun1) => {
         match type2 {
           ErlType::Function(fun2) => {
             // match two function types
-            return self.unify_fun_fun(module, ast, fun1, fun2);
+            return self.unify_fun_fun(module, fun1, fun2);
           }
           _any_type2 => {}
         }
@@ -143,9 +143,7 @@ impl Unifier {
                 // Unify left and right as function types
                 // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
                 let fun_def: &FnDef = &module.functions[*fun_index];
-                self.unify(module, ast,
-                           &fun_def.ret_ty.into(),
-                           &type2)?;
+                self.unify(module, &fun_def.ret_ty.into(), &type2)?;
 
                 // Equation: Application Expr(Args...) <=> Fn.Ret
 
@@ -172,7 +170,7 @@ impl Unifier {
         // Union should not be broken into subtypes, match left equation part directly vs the union
         match type2 {
           ErlType::Union(types) => {
-            if self.unify_check_in_union(module, ast, &type1, &types) {
+            if self.unify_check_in_union(module, &type1, &types) {
               return Ok(());
             }
           }
@@ -208,7 +206,7 @@ impl Unifier {
         return Ok(());
       },
       ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
-        return self.unify(module, ast, elem1, elem2);
+        return self.unify(module, elem1, elem2);
       },
       ErlType::AnyTuple => if let ErlType::Tuple(_) = type1 {
         return Ok(());
@@ -223,24 +221,24 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn unify_check_in_union(&mut self, env: &ErlModule, ast: &ErlAst,
+  fn unify_check_in_union(&mut self, env: &ErlModule,
                           t: &ErlType, union: &BTreeSet<ErlType>) -> bool {
     union.iter().any(|member| {
-      self.unify(env, ast, &t, &member).is_ok()
+      self.unify(env, &t, &member).is_ok()
     })
   }
 
-  fn unify_variable(&mut self, module: &ErlModule, ast: &ErlAst,
+  fn unify_variable(&mut self, module: &ErlModule,
                     tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
     if let Some(entry1) = self.subst.get(tvar) {
       let entry = entry1.clone();
-      return self.unify(module, ast, &entry, &ty);
+      return self.unify(module, &entry, &ty);
     }
 
     if let ErlType::TVar { .. } = ty {
       if let Some(entry2_r) = self.subst.get(tvar) {
         let entry2 = entry2_r.clone();
-        return self.unify(module, ast, &ErlType::TVar(*tvar), &entry2);
+        return self.unify(module, &ErlType::TVar(*tvar), &entry2);
       }
     }
 

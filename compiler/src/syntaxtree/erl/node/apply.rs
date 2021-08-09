@@ -71,7 +71,7 @@ impl Apply {
     let arg_types = args.iter()
         .map(|a| a.get_type())
         .collect();
-    let clause  = FnClauseType::new(arg_types, ret.clone());
+    let clause = FnClauseType::new(arg_types, ret.clone());
     // unnamed function application, None for a name
     ErlType::Function(FunctionType::new(None, vec![clause]))
   }
@@ -86,11 +86,15 @@ impl Apply {
     match find_result {
       None => {} // no changes, return same node
       Some(index) => {
-        let nf: &FnDef = &module.functions[index];
+        let fn_def: &FnDef = &module.functions[index];
 
         // Replace self.expr with the found fun pointer
-        let new_expr = ErlAst::FunArity(SourceLoc::default(),
-                                        nf.funarity.clone());
+        let new_expr = ErlAst::MFA {
+          location: SourceLoc::default(),
+          mfarity: fn_def.mfarity.clone(),
+          clause_types: vec![],
+          ret_ty: TypeVar::new(),
+        };
 
         println!("ApplicationNode: Replacing {} with {}", self.expr.borrow(), new_expr);
         self.expr.replace(new_expr);

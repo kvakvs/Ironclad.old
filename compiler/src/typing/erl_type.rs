@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use ::function_name::named;
 
-use crate::funarity::FunArity;
+use crate::mfarity::MFArity;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
@@ -140,7 +140,7 @@ pub enum ErlType {
   Function(FunctionType),
 
   /// Refers to a function in local module
-  LocalFunction(FunArity),
+  LocalFunction(MFArity),
 }
 
 impl PartialEq for ErlType {

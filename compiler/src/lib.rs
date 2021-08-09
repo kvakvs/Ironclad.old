@@ -11,7 +11,7 @@ pub mod erl_module;
 pub mod erl_error;
 pub mod stage;
 pub mod typing;
-pub mod funarity;
+pub mod mfarity;
 pub mod source_loc;
 pub mod display;
 
