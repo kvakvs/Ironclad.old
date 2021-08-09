@@ -1,4 +1,5 @@
-//! Provides a TypeEquation struct for adding type equality/match constraints to the program
+//! Provides a `TypeEquation` struct for adding type equality/match constraints to the program.
+//! `TypeEquation` defines a constraint: Type deduced must be a subtype or equal to the constraint.
 
 use crate::typing::erl_type::ErlType;
 use crate::source_loc::SourceLoc;
@@ -11,16 +12,18 @@ lazy_static! {
     static ref EQUATION_NUM: AtomicUsize = AtomicUsize::new(1);
 }
 
-/// Type equation, assumes matching or equal types, t1 = t2
+/// Type equation, that `type_left` is equal or a subtype of `type_right`.
 pub struct TypeEquation {
   /// Unique number of equation
   id: usize,
   /// Short explanation where this equation came from
   pub annotation: String,
   /// Left type of equation of t1 = t2, must match (be equal or subtype of) the right type
-  pub left: ErlType,
+  /// This is the type which we deduced through the other means.
+  pub type_left: ErlType,
   /// Right type of equation of t1 = t2
-  pub right: ErlType,
+  /// This is the type constraint. `type_left` must be equal or subtype of `type_right`.
+  pub type_right: ErlType,
   /// The reference to the source code which generated this equation
   pub location: SourceLoc,
 }
@@ -33,7 +36,7 @@ impl std::fmt::Debug for TypeEquation {
 
 impl std::fmt::Display for TypeEquation {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "Eq {}) {} ⊆ {}", self.id, self.left, self.right)
+    write!(f, "Eq {}) {} ⊆ {}", self.id, self.type_left, self.type_right)
   }
 }
 
@@ -43,8 +46,8 @@ impl TypeEquation {
     let new_id = EQUATION_NUM.fetch_add(1, Ordering::Acquire);
     Self {
       id: new_id,
-      left: ty1,
-      right: ty2,
+      type_left: ty1,
+      type_right: ty2,
       location,
       annotation,
     }

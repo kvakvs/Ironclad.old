@@ -16,7 +16,6 @@ use crate::syntaxtree::erl::node::token::ErlToken;
 use crate::typing::typevar::TypeVar;
 use crate::syntaxtree::erl::node::fn_def::FnDef;
 use std::sync::Arc;
-use crate::typing::fn_clause_type::FnClauseType;
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {
@@ -81,7 +80,7 @@ pub enum ErlAst {
     /// fun/arity in the current module, or full mod:fun/arity if external
     mfarity: MFArity,
     /// Known function clause types from the function name lookup, empty if not known
-    clause_types: Vec<FnClauseType>,
+    clause_types: Vec<ErlType>,
     /// Unique typevar for the return type, will be matched against what we find out later
     ret_ty: TypeVar,
   },

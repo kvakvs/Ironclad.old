@@ -1,6 +1,6 @@
 //! Contains code for generating type equations from AST in `Unifier` impl
 use crate::typing::unifier::Unifier;
-use crate::typing::equation::TypeEquation;
+use crate::typing::unifier::equation::TypeEquation;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::erl_module::ErlModule;
@@ -14,8 +14,10 @@ use crate::syntaxtree::erl::node::apply::Apply;
 
 impl Unifier {
   /// Add a type equation, shortcut
-  fn equation(eq: &mut Vec<TypeEquation>, ast: &ErlAst, ty1: ErlType, ty2: ErlType) {
-    eq.push(TypeEquation::new(ast.location(), ty1, ty2,
+  fn equation(eq: &mut Vec<TypeEquation>, ast: &ErlAst,
+              type_deduced: ErlType,
+              type_expected: ErlType) {
+    eq.push(TypeEquation::new(ast.location(), type_deduced, type_expected,
                               format!("{:?}", ast)))
   }
 

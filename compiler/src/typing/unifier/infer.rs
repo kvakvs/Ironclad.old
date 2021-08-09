@@ -30,8 +30,8 @@ impl Unifier {
         }
       }
       // If type is a function, infer its components if they contain any type variables
-      ErlType::Function(ftype) => {
-        ErlType::Function(self.infer_func_type(ftype))
+      ErlType::Fn(ftype) => {
+        ErlType::Fn(self.infer_func_type(ftype))
       }
       // For a union of types, infer every member
       ErlType::Union(members) => {

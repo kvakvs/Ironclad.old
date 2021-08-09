@@ -3,6 +3,7 @@ use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
 use crate::display;
+use crate::typing::fn_clause_type::FnClauseType;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
@@ -32,6 +33,13 @@ impl FnClause {
       body: Box::new(body),
       ret: ErlType::new_typevar(),
     }
+  }
+
+  /// Return function clause type describing this single function clause arg types and return.
+  pub fn get_type(&self) -> ErlType {
+    let fc_type = FnClauseType::new(self.arg_types.clone(),
+                                    self.ret.clone());
+    ErlType::FnClause(fc_type)
   }
 }
 

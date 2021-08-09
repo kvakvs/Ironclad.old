@@ -50,7 +50,7 @@ impl Apply {
         .collect();
     let clause_type = FnClauseType::new(arg_types, self.ret_ty.into());
     let f_type = FunctionType::new(None, vec![clause_type]);
-    ErlType::Function(f_type)
+    ErlType::Fn(f_type)
   }
 
   /// Creates a new function call (application) AST node
@@ -73,14 +73,12 @@ impl Apply {
         .collect();
     let clause = FnClauseType::new(arg_types, ret.clone());
     // unnamed function application, None for a name
-    ErlType::Function(FunctionType::new(None, vec![clause]))
+    ErlType::Fn(FunctionType::new(None, vec![clause]))
   }
 
   /// During post-parse scan try check if our expression is a reference to a known function.
   /// If so, replace it with a pointer to that function.
   pub fn postprocess_edit_node(&self, module: &ErlModule) -> ErlResult<()> {
-    println!("Postprocessing App()... {}", self);
-
     // Check if expr (target) points to some existing function that we know
     let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
     match find_result {
@@ -92,7 +90,7 @@ impl Apply {
         let new_expr = ErlAst::MFA {
           location: SourceLoc::default(),
           mfarity: fn_def.mfarity.clone(),
-          clause_types: vec![],
+          clause_types: fn_def.clauses.iter().map(|fc| fc.get_type()).collect(),
           ret_ty: TypeVar::new(),
         };
 

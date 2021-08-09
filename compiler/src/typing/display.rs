@@ -50,8 +50,8 @@ impl std::fmt::Display for ErlType {
       ErlType::BinaryBits => write!(f, "bits()"),
       ErlType::Literal(lit) => write!(f, "{}", lit),
       ErlType::LocalFunction(fa) => write!(f, "fun {}", fa),
-      ErlType::AnyFunction => write!(f, "fun()"),
-      ErlType::Function(fun_type) => {
+      ErlType::AnyFn => write!(f, "fun()"),
+      ErlType::Fn(fun_type) => {
         match &fun_type.name {
           None => write!(f, "fun(")?,
           Some(n) => write!(f, "{}(", n)?,
@@ -59,6 +59,7 @@ impl std::fmt::Display for ErlType {
         display_comma_separated(&fun_type.clauses, f)?;
         write!(f, ") -> {}", fun_type.ret_type)
       }
+      ErlType::FnClause(fc_type) => write!(f, "{}", fc_type),
       ErlType::TVar(tv) => write!(f, "{}", tv),
       ErlType::String => write!(f, "string()"), // a list of unicode codepoint: list(char())
       ErlType::Nil => write!(f, "[]"),

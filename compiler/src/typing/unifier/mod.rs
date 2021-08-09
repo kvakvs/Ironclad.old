@@ -1,21 +1,24 @@
 //! Module provides logic for unifying the type equations generated for a program's AST, and
 //! then using this data is able to infer the type of any AST piece from the same program.
+use std::collections::{BTreeSet, HashMap};
+use std::rc::Rc;
+use std::sync::RwLock;
+
+use equation::TypeEquation;
+
+use crate::erl_error::{ErlError, ErlResult};
+use crate::erl_module::ErlModule;
+use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
+use crate::typing::erl_type::ErlType;
+use crate::typing::error::TypeError;
+use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::fn_type::FunctionType;
+use crate::typing::typevar::TypeVar;
+
 pub mod gen_equations;
 pub mod infer;
-
-use crate::typing::equation::TypeEquation;
-use crate::typing::erl_type::ErlType;
-use std::collections::{HashMap, BTreeSet};
-use crate::erl_error::{ErlResult, ErlError};
-use crate::typing::error::TypeError;
-use crate::typing::typevar::TypeVar;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::typing::fn_type::FunctionType;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
-use crate::erl_module::ErlModule;
-use std::rc::Rc;
-use std::sync::{RwLock};
-use crate::typing::fn_clause_type::FnClauseType;
+pub mod equation;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -72,7 +75,7 @@ impl Unifier {
 
     let errors: Vec<ErlError> = equations.iter()
         .map(|eq| {
-          self.unify(module, &eq.left, &eq.right)
+          self.unify(module, &eq.type_left, &eq.type_right)
         })
         .filter(Result::is_err)
         .map(Result::unwrap_err)
@@ -123,9 +126,9 @@ impl Unifier {
         return self.unify_variable(module, tv1, type2);
       }
 
-      ErlType::Function(fun1) => {
+      ErlType::Fn(fun1) => {
         match type2 {
-          ErlType::Function(fun2) => {
+          ErlType::Fn(fun2) => {
             // match two function types
             return self.unify_fun_fun(module, fun1, fun2);
           }
@@ -137,7 +140,7 @@ impl Unifier {
       // Atom must be an existing local function
       ErlType::LocalFunction(funarity1) => {
         match type2 {
-          ErlType::Function(fun2) => {
+          ErlType::Fn(fun2) => {
             match module.functions_lookup.get(funarity1) {
               Some(fun_index) => {
                 // Unify left and right as function types
@@ -161,7 +164,7 @@ impl Unifier {
               }
             }
           }
-          ErlType::AnyFunction => return Ok(()), // good
+          ErlType::AnyFn => return Ok(()), // good
           _any_type2 => {}
         }
       }
@@ -202,7 +205,7 @@ impl Unifier {
       ErlType::AnyList => if let ErlType::List(_) = type1 {
         return Ok(());
       },
-      ErlType::AnyFunction => if let ErlType::Function(_) = type1 {
+      ErlType::AnyFn => if let ErlType::Fn(_) = type1 {
         return Ok(());
       },
       ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
@@ -270,7 +273,7 @@ impl Unifier {
     // if ty is a TypeVar and they're equal
     match ty {
       ErlType::TVar(ty_inner) => ty_inner == tv,
-      ErlType::Function(fun_type) => {
+      ErlType::Fn(fun_type) => {
         return self.occurs_check(tv, &fun_type.ret_type)
             || fun_type.clauses.iter().any(|a: &FnClauseType| self.occurs_check_fun_clause(tv, a));
       }

@@ -10,6 +10,7 @@ use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use std::collections::BTreeSet;
 use std::cmp::Ordering;
+use crate::typing::fn_clause_type::FnClauseType;
 
 // use enum_as_inner::EnumAsInner;
 
@@ -134,10 +135,12 @@ pub enum ErlType {
   Literal(Literal),
 
   /// Any callable
-  AnyFunction,
+  AnyFn,
 
   /// Named function or unnamed
-  Function(FunctionType),
+  Fn(FunctionType),
+  /// Unnamed function clause, just argument types and return, this should also class as a function
+  FnClause(FnClauseType),
 
   /// Refers to a function in local module
   LocalFunction(MFArity),
@@ -153,7 +156,7 @@ impl PartialEq for ErlType {
       | (ErlType::AnyBool, ErlType::AnyBool) | (ErlType::Pid, ErlType::Pid)
       | (ErlType::Reference, ErlType::Reference) | (ErlType::BinaryBits, ErlType::BinaryBits)
       | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Binary, ErlType::Binary)
-      | (ErlType::AnyFunction, ErlType::AnyFunction) => true,
+      | (ErlType::AnyFn, ErlType::AnyFn) => true,
 
       (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1 == fa2,
 
@@ -166,7 +169,7 @@ impl PartialEq for ErlType {
       (ErlType::Map(u), ErlType::Map(v)) => u == v,
       (ErlType::Atom(a), ErlType::Atom(b)) => a == b,
       (ErlType::Literal(u), ErlType::Literal(v)) => u == v,
-      (ErlType::Function(fa), ErlType::Function(fb)) => fa == fb,
+      (ErlType::Fn(fa), ErlType::Fn(fb)) => fa == fb,
       (ErlType::Union(u), ErlType::Union(v)) => {
         u.iter().all(|u_member| v.contains(u_member))
       }
@@ -242,10 +245,14 @@ impl Hash for ErlType {
       ErlType::BinaryBits => '.'.hash(state),
       ErlType::Binary => 'b'.hash(state),
       ErlType::Literal(lit) => lit.hash(state),
-      ErlType::AnyFunction => '>'.hash(state),
-      ErlType::Function(ft) => {
-        '<'.hash(state);
+      ErlType::AnyFn => "f*".hash(state),
+      ErlType::Fn(ft) => {
+        "fn".hash(state);
         ft.hash(state);
+      }
+      ErlType::FnClause(fc) => {
+        "fc".hash(state);
+        fc.hash(state);
       }
       ErlType::LocalFunction(fa) => {
         '='.hash(state);
@@ -272,7 +279,7 @@ impl ErlType {
       | (ErlType::AnyAtom, ErlType::AnyAtom) | (ErlType::AnyBool, ErlType::AnyBool)
       | (ErlType::Pid, ErlType::Pid) | (ErlType::Reference, ErlType::Reference)
       | (ErlType::Port, ErlType::Port) | (ErlType::BinaryBits, ErlType::BinaryBits)
-      | (ErlType::Binary, ErlType::Binary) | (ErlType::AnyFunction, ErlType::AnyFunction) => {
+      | (ErlType::Binary, ErlType::Binary) | (ErlType::AnyFn, ErlType::AnyFn) => {
         Ordering::Equal
       }
 
@@ -292,7 +299,7 @@ impl ErlType {
       (ErlType::Map(m1), ErlType::Map(m2)) => m1.cmp(&m2),
       (ErlType::Atom(a), ErlType::Atom(b)) => a.cmp(b),
       (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(&lit2),
-      (ErlType::Function(f1), ErlType::Function(f2)) => f1.cmp(f2),
+      (ErlType::Fn(f1), ErlType::Fn(f2)) => f1.cmp(f2),
       (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1.cmp(fa2),
 
       _ => unreachable!("Don't know how to compare {} vs {}, only same type allowed in this function",
@@ -307,31 +314,44 @@ impl ErlType {
     match self {
       ErlType::None => 0,
       ErlType::Union(_) => 1,
+      ErlType::TVar(_) => 2,
       ErlType::Any => 1000,
-      ErlType::TVar(_) => 0,
+
       ErlType::Number => 10,
       ErlType::Float => 11,
       ErlType::AnyInteger => 12,
       ErlType::Integer(_) => 13,
+
       ErlType::AnyBool => 20,
       ErlType::AnyAtom => 21,
       ErlType::Atom(_) => 22,
+
       ErlType::Reference => 30,
-      ErlType::AnyFunction => 40,
-      ErlType::Function(_) => 41,
-      ErlType::LocalFunction(_) => 42,
+
+      ErlType::AnyFn => 40,
+      ErlType::Fn(_) => 41,
+      ErlType::FnClause(_) => 42,
+      ErlType::LocalFunction(_) => 43,
+
       ErlType::Port => 50,
+
       ErlType::Pid => 60,
+
       ErlType::AnyTuple => 70,
       ErlType::Tuple(_) => 71,
       ErlType::Record { .. } => 72,
+
       ErlType::Map(_) => 80,
+
       ErlType::Nil => 90,
+
       ErlType::AnyList => 100,
       ErlType::List(_) => 101,
       ErlType::String => 102,
+
       ErlType::Binary => 110,
       ErlType::BinaryBits => 111,
+
       ErlType::Literal(lit) => lit.get_type().get_order(),
     }
   }
@@ -455,7 +475,7 @@ impl ErlType {
   /// Retrieve inner FunctionType value or fail
   pub fn as_function(&self) -> &FunctionType {
     match self {
-      Self::Function(ft) => &ft,
+      Self::Fn(ft) => &ft,
       _ => panic!("Node {} is expected to be a Function type", self)
     }
   }
