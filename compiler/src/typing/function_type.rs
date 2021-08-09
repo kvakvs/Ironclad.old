@@ -31,7 +31,7 @@ impl FunctionType {
 
   /// Merge return types from all function clauses.
   /// Call this when `self.clauses` are updated and `ret_type` needs to also be updated.
-  pub fn build_compound_ret_type(clauses: &Vec<FunctionClauseType>) -> Box<ErlType> {
+  pub fn build_compound_ret_type(clauses: &[FunctionClauseType]) -> Box<ErlType> {
     let all_ret_types = clauses.iter()
         .map(|fct| *fct.ret_ty.clone())
         .collect();

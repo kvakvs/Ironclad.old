@@ -109,11 +109,11 @@ impl ErlModule {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
     self.ast = {
       // Parse tree to raw AST
-      let mut ast0 = self.build_ast_single_node(parse_output)?;
+      let ast0 = self.build_ast_single_node(parse_output)?;
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       // self.postprocess_ast_readonly(&ast0)?;
-      self.postprocess_ast(&mut ast0)?;
+      self.postprocess_ast(&ast0)?;
 
       println!("\n{}: {}", function_name!(), ast0);
 

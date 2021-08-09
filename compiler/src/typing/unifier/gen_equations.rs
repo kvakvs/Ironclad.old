@@ -41,7 +41,7 @@ impl Unifier {
       ErlAst::ModuleForms(_) => {} // module root creates no equations
       ErlAst::ModuleAttr { .. } => {}
       ErlAst::Comment { .. } => {}
-      ErlAst::Lit(_loc, _) => {} // creates no equation, type is known
+      ErlAst::Lit(..) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
       ErlAst::FunctionDef { index, .. } => {
         let nf = &module.functions[*index];

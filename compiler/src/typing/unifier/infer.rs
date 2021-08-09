@@ -21,24 +21,24 @@ impl Unifier {
         match self.subst.get(tvar) {
           Some(entry) => {
             let entry_ = entry.clone();
-            return self.infer_type(&entry_);
+            self.infer_type(&entry_)
           }
           None => {
             // If the type variable is not in the subst table, just return it as is
-            return ty.clone();
+            ty.clone()
           }
         }
       }
       // If type is a function, infer its components if they contain any type variables
       ErlType::Function(ftype) => {
-        return ErlType::Function(self.infer_func_type(ftype));
+        ErlType::Function(self.infer_func_type(ftype))
       }
       // For a union of types, infer every member
       ErlType::Union(members) => {
-        return ErlType::union_of(members.iter()
+        ErlType::union_of(members.iter()
                                      .map(|m| self.infer_type(m))
                                      .collect(),
-                                 true);
+                                 true)
       }
       _ => {
         panic!("Don't know how to infer type {}", ty)
