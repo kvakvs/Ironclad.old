@@ -49,7 +49,7 @@ impl std::fmt::Display for ErlType {
       ErlType::Binary => write!(f, "binary()"),
       ErlType::BinaryBits => write!(f, "bits()"),
       ErlType::Literal(lit) => write!(f, "{}", lit),
-      ErlType::LocalFunction(fa) => write!(f, "fun {}", fa),
+      // ErlType::Callable(fa) => write!(f, "fun {}", fa),
       ErlType::AnyFn => write!(f, "fun()"),
       ErlType::Fn(fun_type) => {
         match &fun_type.name {

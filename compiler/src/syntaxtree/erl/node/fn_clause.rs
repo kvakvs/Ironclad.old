@@ -36,10 +36,8 @@ impl FnClause {
   }
 
   /// Return function clause type describing this single function clause arg types and return.
-  pub fn get_type(&self) -> ErlType {
-    let fc_type = FnClauseType::new(self.arg_types.clone(),
-                                    self.ret.clone());
-    ErlType::FnClause(fc_type)
+  pub fn get_type(&self) -> FnClauseType {
+    FnClauseType::new(self.arg_types.clone(), self.ret.clone())
   }
 }
 

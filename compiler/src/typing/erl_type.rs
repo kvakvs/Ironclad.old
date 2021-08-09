@@ -4,7 +4,6 @@ use std::hash::{Hash, Hasher};
 
 use ::function_name::named;
 
-use crate::mfarity::MFArity;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
@@ -141,9 +140,6 @@ pub enum ErlType {
   Fn(FunctionType),
   /// Unnamed function clause, just argument types and return, this should also class as a function
   FnClause(FnClauseType),
-
-  /// Refers to a function in local module
-  LocalFunction(MFArity),
 }
 
 impl PartialEq for ErlType {
@@ -158,7 +154,7 @@ impl PartialEq for ErlType {
       | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Binary, ErlType::Binary)
       | (ErlType::AnyFn, ErlType::AnyFn) => true,
 
-      (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1 == fa2,
+      // (ErlType::Callable(fa1), ErlType::Callable(fa2)) => fa1 == fa2,
 
       (ErlType::Record { fields: f1, tag: t1, .. },
         ErlType::Record { fields: f2, tag: t2, .. }) => t1 == t2 && f1 == f2,
@@ -254,10 +250,10 @@ impl Hash for ErlType {
         "fc".hash(state);
         fc.hash(state);
       }
-      ErlType::LocalFunction(fa) => {
-        '='.hash(state);
-        fa.hash(state);
-      }
+      // ErlType::Callable(fa) => {
+      //   '='.hash(state);
+      //   fa.hash(state);
+      // }
       ErlType::Nil => "[]".hash(state),
       ErlType::Port => 'P'.hash(state),
     }
@@ -300,7 +296,7 @@ impl ErlType {
       (ErlType::Atom(a), ErlType::Atom(b)) => a.cmp(b),
       (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(&lit2),
       (ErlType::Fn(f1), ErlType::Fn(f2)) => f1.cmp(f2),
-      (ErlType::LocalFunction(fa1), ErlType::LocalFunction(fa2)) => fa1.cmp(fa2),
+      // (ErlType::Callable(fa1), ErlType::Callable(fa2)) => fa1.cmp(fa2),
 
       _ => unreachable!("Don't know how to compare {} vs {}, only same type allowed in this function",
                         self, other)
@@ -331,7 +327,7 @@ impl ErlType {
       ErlType::AnyFn => 40,
       ErlType::Fn(_) => 41,
       ErlType::FnClause(_) => 42,
-      ErlType::LocalFunction(_) => 43,
+      // ErlType::Callable(_) => 43,
 
       ErlType::Port => 50,
 

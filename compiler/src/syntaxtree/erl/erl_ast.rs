@@ -16,6 +16,8 @@ use crate::syntaxtree::erl::node::token::ErlToken;
 use crate::typing::typevar::TypeVar;
 use crate::syntaxtree::erl::node::fn_def::FnDef;
 use std::sync::Arc;
+use crate::typing::fn_type::FunctionType;
+use crate::typing::fn_clause_type::FnClauseType;
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {
@@ -80,7 +82,7 @@ pub enum ErlAst {
     /// fun/arity in the current module, or full mod:fun/arity if external
     mfarity: MFArity,
     /// Known function clause types from the function name lookup, empty if not known
-    clause_types: Vec<ErlType>,
+    clause_types: Vec<FnClauseType>,
     /// Unique typevar for the return type, will be matched against what we find out later
     ret_ty: TypeVar,
   },
@@ -147,7 +149,10 @@ impl ErlAst {
       ErlAst::Tuple(_loc, elems) => {
         ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
       }
-      ErlAst::MFA { mfarity: mfa, .. } => ErlType::LocalFunction(mfa.clone()),
+      ErlAst::MFA { clause_types, .. } => {
+        let fn_type = FunctionType::new(None, clause_types.clone());
+        ErlType::Fn(fn_type)
+      },
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }

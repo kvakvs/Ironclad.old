@@ -9,7 +9,6 @@ use equation::TypeEquation;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::erl_module::ErlModule;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::typing::erl_type::ErlType;
 use crate::typing::error::TypeError;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -132,39 +131,6 @@ impl Unifier {
             // match two function types
             return self.unify_fun_fun(module, fun1, fun2);
           }
-          _any_type2 => {}
-        }
-      }
-
-      // Left is a LocalFunction and the right is a function type
-      // Atom must be an existing local function
-      ErlType::LocalFunction(funarity1) => {
-        match type2 {
-          ErlType::Fn(fun2) => {
-            match module.functions_lookup.get(funarity1) {
-              Some(fun_index) => {
-                // Unify left and right as function types
-                // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-                let fun_def: &FnDef = &module.functions[*fun_index];
-                self.unify(module, &fun_def.ret_ty.into(), &type2)?;
-
-                // Equation: Application Expr(Args...) <=> Fn.Ret
-
-                let fc = &fun_def.clauses[0];
-                if fc.args.len() == funarity1.arity && fun2.clauses.len() == funarity1.arity {
-                  return Ok(());
-                }
-              }
-              None => {
-                let type_err = TypeError::LocalFunctionUndef {
-                  module: module.name.clone(),
-                  funarity: funarity1.clone(),
-                };
-                return Err(ErlError::from(type_err));
-              }
-            }
-          }
-          ErlType::AnyFn => return Ok(()), // good
           _any_type2 => {}
         }
       }
