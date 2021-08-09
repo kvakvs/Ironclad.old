@@ -25,7 +25,7 @@ impl FnClauseType {
 
 impl std::fmt::Display for FnClauseType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "(")?;
+    write!(f, "clause: (")?;
     display_comma_separated(&self.arg_types, f)?;
     write!(f, ") -> {}", self.ret_ty)
   }

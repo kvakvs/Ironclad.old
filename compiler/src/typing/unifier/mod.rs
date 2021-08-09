@@ -1,6 +1,6 @@
 //! Module provides logic for unifying the type equations generated for a program's AST, and
 //! then using this data is able to infer the type of any AST piece from the same program.
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, BTreeMap};
 use std::rc::Rc;
 use std::sync::RwLock;
 
@@ -19,7 +19,7 @@ pub mod gen_equations;
 pub mod infer;
 pub mod equation;
 
-type SubstMap = HashMap<TypeVar, ErlType>;
+type SubstMap = BTreeMap<TypeVar, ErlType>;
 
 /// A program AST is analyzed and type equations are generated outside of this struct.
 /// This struct contains substitution map with found solutions for the type equations.
@@ -72,52 +72,87 @@ impl Unifier {
     let mut equations: Vec<TypeEquation> = Vec::new();
     std::mem::swap(&mut self.equations, &mut equations); // move
 
-    let errors: Vec<ErlError> = equations.iter()
-        .map(|eq| {
-          self.unify(module, &eq.type_left, &eq.type_right)
-        })
-        .filter(Result::is_err)
-        .map(Result::unwrap_err)
-        .collect();
-    if !errors.is_empty() {
-      return Err(ErlError::multiple(errors));
+    for eq in equations.iter() {
+      match self.unify(module, &eq.type_left, &eq.type_right) {
+        Ok(Some(subst)) => {
+          self.subst.extend(subst.into_iter());
+        }
+        Ok(None) => {}
+        Err(e) => return Err(e)
+      }
+      // TODO: return Err(ErlError::multiple(errors));
     }
     Ok(())
   }
 
+  /// Unify two function clauses whether left matches right
+  fn unify_fn_clause(&self, _module: &ErlModule,
+                     fc1: &FnClauseType, fc2: &FnClauseType) -> ErlResult<Option<SubstMap>> {
+    println!("Unify fn_c {} <> {}", fc1, fc2);
+    Ok(None) // TODO
+  }
+
   /// Unify for when both sides of equation are function types
-  fn unify_fun_fun(&mut self, module: &ErlModule,
-                   fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<()> {
+  fn unify_fn(&self, module: &ErlModule,
+              fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<Option<SubstMap>> {
+    // Check the arities must match
     if fun1.arity != fun2.arity {
       return Err(ErlError::from(TypeError::FunAritiesDontMatch));
     }
 
-    // Unify functions return types
-    self.unify(module, &fun1.ret_type, &fun2.ret_type)?;
+    let mut subst: SubstMap = Default::default(); // Contains successful substitutions
 
-    // Then unify each arg of function1 with corresponding arg of function2
-    unimplemented!("Unify {} vs {}", fun1, fun2);
-    // let errors: Vec<ErlError> = fun1.clauses.iter()
-    //     .zip(fun2.clauses.iter())
-    //     .map(|(t1, t2)| {
-    //       self.unify(module, ast, t1, t2)
-    //     })
-    //     .filter(Result::is_err)
-    //     .map(Result::unwrap_err)
-    //     .collect();
-    // if !errors.is_empty() {
-    //   return Err(ErlError::multiple(errors));
-    // }
-    // Ok(())
+    // Try find 1 or more substitutions to make any clause in c1 equal to any clause in c2
+    for c1 in &fun1.clauses {
+      let unify_successes: Vec<Option<SubstMap>> = fun2.clauses.iter()
+          .map(|c2| self.unify(module,
+                               &ErlType::FnClause(c1.clone()),
+                               &ErlType::FnClause(c2.clone())))
+          .filter(Result::is_ok)
+          .map(Result::unwrap)
+          .collect();
+
+      if !unify_successes.is_empty() {
+        // At least one match succeeded, means the clause c1 is compatible with some clauses in fun2
+        unify_successes.into_iter()
+            .filter(Option::is_some)
+            .map(Option::unwrap)
+            .for_each(|each_sub| subst.extend(each_sub.into_iter()));
+      }
+    }
+
+    // At least one clause in fun1 matches at least one in fun2
+    if subst.is_empty() {
+      // Report an error
+      let t_err = TypeError::TypesDontMatch {
+        t1: ErlType::Fn(fun1.clone()),
+        t2: ErlType::Fn(fun2.clone()),
+      };
+      return Err(ErlError::TypeError(t_err));
+    }
+
+    Ok(Some(subst))
+  }
+
+  /// Returns success from Unify call, when a substitution has been found. Merges it into our known
+  /// `Unifier::subst` map.
+  fn unify_commit(&mut self, subst: Option<SubstMap>) -> ErlResult<()> {
+    if let Some(subst1) = subst {
+      self.subst.extend(subst1.into_iter());
+    }
+    Ok(())
   }
 
   /// Unify two types type1 and type2, with self.subst map
-  /// Updates self.subst (map of name->Type) with new record which unifies type1 and type2,
-  /// and returns true. Returns false if they can't be unified.
-  fn unify(&mut self, module: &ErlModule,
-           type1: &ErlType, type2: &ErlType) -> ErlResult<()> {
+  /// The function will try to find a new substitution map `subst` or use existing `self.subst`
+  /// (map of name->Type) which makes type1 and type2 identical.
+  ///
+  /// Return: `Ok(None)` - types match, `Ok(Some(subst))` - types match with some new substitution
+  ///   (we merge it into `self.subst`).
+  fn unify(&self, module: &ErlModule,
+           type1: &ErlType, type2: &ErlType) -> ErlResult<Option<SubstMap>> {
     if type1 == type2 {
-      return Ok(());
+      return Ok(None); // no substitution required
     }
 
     match type1 {
@@ -126,24 +161,24 @@ impl Unifier {
       }
 
       ErlType::Fn(fun1) => {
-        match type2 {
-          ErlType::Fn(fun2) => {
-            // match two function types
-            return self.unify_fun_fun(module, fun1, fun2);
-          }
-          _any_type2 => {}
+        if let ErlType::Fn(fun2) = type2 {
+          // match two function types
+          return self.unify_fn(module, fun1, fun2);
+        }
+      }
+
+      ErlType::FnClause(fc1) => {
+        if let ErlType::FnClause(fc2) = type2 {
+          return self.unify_fn_clause(module, fc1, fc2);
         }
       }
 
       _any_type1 => {
         // Union should not be broken into subtypes, match left equation part directly vs the union
-        match type2 {
-          ErlType::Union(types) => {
-            if self.unify_check_in_union(module, &type1, &types) {
-              return Ok(());
-            }
+        if let ErlType::Union(types) = type2 {
+          if self.unify_check_in_union(module, &type1, &types) {
+            return Ok(None); // no substitution required, type is part of the union on the right
           }
-          _any_type2 => {}
         }
       }
     }
@@ -153,32 +188,29 @@ impl Unifier {
     //
     match type2 {
       ErlType::Number => {
-        match type1 {
-          // Any numbers and number sets will match a number
-          ErlType::Number | ErlType::Integer(_) | ErlType::AnyInteger
-          | ErlType::Float => return Ok(()),
-          _any_type1 => {}
+        if let ErlType::Number | ErlType::Integer(_) | ErlType::AnyInteger | ErlType::Float = type1 {
+          return Ok(None); // no substitution required
         }
       }
       ErlType::AnyInteger => if let ErlType::Integer(_) | ErlType::AnyInteger = type1 {
-        return Ok(());
+        return Ok(None); // no substitution required
       },
       ErlType::Integer(c2) => match type1 {
         // Any numbers and number sets will match a number
-        ErlType::Integer(c1) if c1 == c2 => return Ok(()),
+        ErlType::Integer(c1) if c1 == c2 => return Ok(None), // no substitution required
         _any_type1 => {}
       },
       ErlType::AnyList => if let ErlType::List(_) = type1 {
-        return Ok(());
+        return Ok(None); // no substitution required
       },
       ErlType::AnyFn => if let ErlType::Fn(_) = type1 {
-        return Ok(());
+        return Ok(None); // no substitution required
       },
       ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
         return self.unify(module, elem1, elem2);
       },
       ErlType::AnyTuple => if let ErlType::Tuple(_) = type1 {
-        return Ok(());
+        return Ok(None); // no substitution required
       },
       _any_type2 => {}
     }
@@ -190,15 +222,16 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn unify_check_in_union(&mut self, env: &ErlModule,
+  fn unify_check_in_union(&self, env: &ErlModule,
                           t: &ErlType, union: &BTreeSet<ErlType>) -> bool {
     union.iter().any(|member| {
       self.unify(env, &t, &member).is_ok()
     })
   }
 
-  fn unify_variable(&mut self, module: &ErlModule,
-                    tvar: &TypeVar, ty: &ErlType) -> ErlResult<()> {
+  /// Try find a substitution where `tvar` will be identical to `ty` on the right
+  fn unify_variable(&self, module: &ErlModule,
+                    tvar: &TypeVar, ty: &ErlType) -> ErlResult<Option<SubstMap>> {
     if let Some(entry1) = self.subst.get(tvar) {
       let entry = entry1.clone();
       return self.unify(module, &entry, &ty);
@@ -220,8 +253,9 @@ impl Unifier {
     }
 
     // tvar is not yet in subst and can't simplify the right side. Extend subst.
-    self.subst.insert(*tvar, ty.clone());
-    Ok(())
+    let mut subst: SubstMap = Default::default();
+    subst.insert(*tvar, ty.clone());
+    Ok(Some(subst))
   }
 
   fn occurs_check_fun_clause(&self, tv: &TypeVar, fc: &FnClauseType) -> bool {
