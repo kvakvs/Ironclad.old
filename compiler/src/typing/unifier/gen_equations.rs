@@ -53,7 +53,7 @@ impl Unifier {
       // ErlAst::FClause(_loc, fc) => {
       //   self.generate_equations_fclause(eq, ast, fc)?
       // }
-      ErlAst::App(_loc, app) => {
+      ErlAst::Apply(_loc, app) => {
         self.generate_equations_app(eq, ast, app)?
       }
       ErlAst::Let(_loc, let_expr) => {

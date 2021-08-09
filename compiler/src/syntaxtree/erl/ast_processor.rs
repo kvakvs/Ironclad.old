@@ -20,7 +20,7 @@ impl ErlModule {
     }
 
     match ast {
-      ErlAst::App(_loc, app) => {
+      ErlAst::Apply(_loc, app) => {
         app.postprocess_edit_node(self)?;
       }
       ErlAst::FunctionDef { fn_def, .. } => {

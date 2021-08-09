@@ -81,7 +81,7 @@ pub enum ErlAst {
   Var(SourceLoc, Var),
 
   /// Apply arguments to expression
-  App(SourceLoc, Apply),
+  Apply(SourceLoc, Apply),
 
   /// A haskell-style new variable introducing a new scope below it:
   /// let x = expr1 in expr2
@@ -123,7 +123,7 @@ impl ErlAst {
       ErlAst::FunctionDef { ret_ty, .. } => (*ret_ty).into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
-      ErlAst::App(_loc, app) => app.ret_ty.into(),
+      ErlAst::Apply(_loc, app) => app.ret_ty.into(),
       ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(_loc, case) => case.ret_ty.into(),
       ErlAst::Lit(_loc, l) => l.get_type(),
@@ -167,12 +167,12 @@ impl ErlAst {
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(location: SourceLoc, expr: ErlAst, args: Vec<ErlAst>) -> ErlAst {
-    ErlAst::App(location, Apply::new(expr, args))
+    ErlAst::Apply(location, Apply::new(expr, args))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(location: SourceLoc, expr: ErlAst) -> ErlAst {
-    ErlAst::App(location, Apply::new(expr, vec![]))
+    ErlAst::Apply(location, Apply::new(expr, vec![]))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
@@ -274,7 +274,7 @@ impl ErlAst {
       ErlAst::CClause(loc, _) => *loc,
       ErlAst::FunArity(loc, _) => *loc,
       ErlAst::Var(loc, _) => *loc,
-      ErlAst::App(loc, _) => *loc,
+      ErlAst::Apply(loc, _) => *loc,
       ErlAst::Let(loc, _) => *loc,
       ErlAst::Case(loc, _) => *loc,
       ErlAst::Lit(loc, _) => *loc,

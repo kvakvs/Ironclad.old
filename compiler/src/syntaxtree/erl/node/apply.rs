@@ -33,6 +33,14 @@ impl std::fmt::Display for Apply {
   }
 }
 
+impl std::fmt::Debug for Apply {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "apply({:?}:{}, (", self.expr.borrow(), self.expr_ty)?;
+    display_comma_separated(&self.args, f)?;
+    write!(f, ")):{}", self.ret_ty)
+  }
+}
+
 impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing

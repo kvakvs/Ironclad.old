@@ -45,6 +45,8 @@ impl std::fmt::Display for FnClause {
 
 impl std::fmt::Debug for FnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} -> {}", self, self.ret)
+    write!(f, "{}(", self.name)?;
+    display::display_comma_separated(&self.args, f)?;
+    write!(f, "):{} -> {:?}", self.ret, self.body)
   }
 }

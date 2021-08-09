@@ -96,7 +96,7 @@ impl ErlAst {
         Some(r)
       }
 
-      ErlAst::App(_loc, app) => {
+      ErlAst::Apply(_loc, app) => {
         let expr = app.expr.deref();
         let mut r: Vec<AstChild> = vec![AstChild::RefCell(expr.borrow())];
         r.extend(app.args.iter().map(AstChild::Ref));

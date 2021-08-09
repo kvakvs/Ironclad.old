@@ -33,7 +33,7 @@ impl fmt::Display for ErlAst {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
       }
       ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
-      ErlAst::App(_loc, app) => write!(f, "{}", app),
+      ErlAst::Apply(_loc, app) => write!(f, "{}", app),
       ErlAst::Let(_loc, let_expr) => {
         write!(f, "let {} = {} in {}", let_expr.var, let_expr.value, let_expr.in_expr)
       }
@@ -70,7 +70,7 @@ impl fmt::Debug for ErlAst {
       // ErlAst::CClause(_, _) => {}
       // ErlAst::FunArity(_, _) => {}
       ErlAst::Var(_, v) => write!(f, "{}:{}", self, v.ty),
-      // ErlAst::App(_, _) => {}
+      ErlAst::Apply(_loc, app) => write!(f, "{:?}", app),
       // ErlAst::Let(_, _) => {}
       // ErlAst::Case(_, _) => {}
       // ErlAst::Lit(_, _) => {}
