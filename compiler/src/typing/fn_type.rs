@@ -1,6 +1,6 @@
 //! Defines function type describing a function with clauses where each clause has arguments
 use crate::typing::erl_type::ErlType;
-use crate::typing::function_clause_type::FunctionClauseType;
+use crate::typing::fn_clause_type::FnClauseType;
 use std::fmt::Formatter;
 use crate::display::display_semicolon_separated;
 
@@ -13,14 +13,14 @@ pub struct FunctionType {
   pub arity: usize,
   /// Multiple function clauses, return type and arguments are independent, only held together by
   /// having same arity.
-  pub clauses: Vec<FunctionClauseType>,
+  pub clauses: Vec<FnClauseType>,
   /// Union of all clause return types
   pub ret_type: Box<ErlType>,
 }
 
 impl FunctionType {
   /// Create a new function type from its optional name and function clauses (min. 1 clause)
-  pub fn new(name: Option<String>, clauses: Vec<FunctionClauseType>) -> Self {
+  pub fn new(name: Option<String>, clauses: Vec<FnClauseType>) -> Self {
     assert!(!clauses.is_empty(), "Function type with 0 function clause types is not allowed");
     let arity = clauses[0].arg_types.len();
 
@@ -31,7 +31,7 @@ impl FunctionType {
 
   /// Merge return types from all function clauses.
   /// Call this when `self.clauses` are updated and `ret_type` needs to also be updated.
-  pub fn build_compound_ret_type(clauses: &[FunctionClauseType]) -> Box<ErlType> {
+  pub fn build_compound_ret_type(clauses: &[FnClauseType]) -> Box<ErlType> {
     let all_ret_types = clauses.iter()
         .map(|fct| *fct.ret_ty.clone())
         .collect();

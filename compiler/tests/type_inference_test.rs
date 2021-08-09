@@ -23,12 +23,11 @@ fn infer_simplemath() -> ErlResult<()> {
   {
     let ast = module.ast.read().unwrap();
     match ast.deref() {
-      ErlAst::FunctionDef { index, .. } => {
-        let f_def = &module.functions[*index];
-        assert_eq!(f_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-        assert_eq!(f_def.funarity.arity, 1, "FunctionDef must have arity 1");
+      ErlAst::FunctionDef { fn_def, .. } => {
+        assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
+        assert_eq!(fn_def.funarity.arity, 1, "FunctionDef must have arity 1");
 
-        let clause = &f_def.clauses[0];
+        let clause = &fn_def.clauses[0];
         assert_eq!(clause.name, "myfun", "FClause name must be myfun");
 
         assert_eq!(clause.args.len(), 1, "FClause must have exact one arg");

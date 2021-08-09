@@ -1,8 +1,8 @@
 //! Contains code for type inference in `Unifier` impl
 use crate::typing::unifier::Unifier;
 use crate::typing::erl_type::ErlType;
-use crate::typing::function_type::FunctionType;
-use crate::typing::function_clause_type::FunctionClauseType;
+use crate::typing::fn_type::FunctionType;
+use crate::typing::fn_clause_type::FnClauseType;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 
 impl Unifier {
@@ -62,8 +62,8 @@ impl Unifier {
 
   /// Rebuild a function clause with all components of the old function clause with `infer_type`
   /// applied on them.
-  fn infer_fun_clause_type(&mut self, fctype: &FunctionClauseType) -> FunctionClauseType {
-    FunctionClauseType {
+  fn infer_fun_clause_type(&mut self, fctype: &FnClauseType) -> FnClauseType {
+    FnClauseType {
       arg_types: fctype.arg_types.iter()
           .map(|argt| self.infer_type(argt))
           .collect(),

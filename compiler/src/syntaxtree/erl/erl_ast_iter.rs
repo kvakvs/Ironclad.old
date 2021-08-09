@@ -1,7 +1,6 @@
 //! Contains iteration helpers for ErlAst
 
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::erl_module::ErlModule;
 use std::ops::Deref;
 use std::cell::Ref;
 
@@ -82,15 +81,14 @@ impl ErlAst {
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
-  pub fn children<'a>(&'a self, module: &'a ErlModule) -> Option<Vec<AstChild<'a>>> {
+  pub fn children(&self) -> Option<Vec<AstChild>> {
     match self {
       ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
       | ErlAst::Var { .. } | ErlAst::FunArity(..) => None,
 
       ErlAst::ModuleForms(f) => Some(f.iter().map(AstChild::Ref).collect()),
 
-      ErlAst::FunctionDef { index, .. } => {
-        let fn_def = &module.functions[*index];
+      ErlAst::FunctionDef { fn_def, .. } => {
         let r: Vec<AstChild> = fn_def.clauses.iter()
             .map(|fclause| &*fclause.body)
             .map(AstChild::Ref)

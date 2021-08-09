@@ -2,19 +2,18 @@
 use crate::funarity::FunArity;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::node::literal::Literal;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::erl_module::ErlModule;
+use std::sync::Arc;
 
 impl ErlModule {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
-  pub fn add_function(&mut self, nf: FunctionDef) -> usize {
+  pub fn add_function(&mut self, nf: Arc<FnDef>) {
     let index = self.functions.len();
     let funarity = nf.funarity.clone();
 
     self.functions.push(nf);
     self.functions_lookup.insert(funarity, index);
-
-    index
   }
 
   /// For an expression check whether it is a constant expression, and whether it points to some

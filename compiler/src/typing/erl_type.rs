@@ -6,7 +6,7 @@ use ::function_name::named;
 
 use crate::funarity::FunArity;
 use crate::syntaxtree::erl::node::literal::Literal;
-use crate::typing::function_type::FunctionType;
+use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use std::collections::BTreeSet;
 use std::cmp::Ordering;

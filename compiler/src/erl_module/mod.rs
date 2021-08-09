@@ -15,7 +15,7 @@ use crate::project::source_file::SourceFile;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_parser;
 use crate::typing::unifier::Unifier;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::funarity::FunArity;
 use std::collections::HashMap;
 use std::cell::RefCell;
@@ -38,7 +38,7 @@ pub struct ErlModule {
   pub unifier: Unifier,
 
   /// Function definitions of the module
-  pub functions: Vec<FunctionDef>,
+  pub functions: Vec<Arc<FnDef>>,
 
   /// Lookup by function_name/arity into `Self::functions`
   pub functions_lookup: HashMap<FunArity, usize>,

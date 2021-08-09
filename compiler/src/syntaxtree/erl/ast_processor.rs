@@ -3,7 +3,6 @@
 use crate::erl_module::ErlModule;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
 use crate::syntaxtree::erl::erl_ast_iter::AstChild;
 
 impl ErlModule {
@@ -11,7 +10,7 @@ impl ErlModule {
   /// Given a fresh parsed and processed Erlang AST, go through it once more and edit some nodes.
   /// * In function applications replace atom function names with function pointers
   pub fn postprocess_ast(&self, ast: &ErlAst) -> ErlResult<()> {
-    if let Some(children) = ast.children(self) {
+    if let Some(children) = ast.children() {
       for child in children {
         match child {
           AstChild::Ref(c) => self.postprocess_ast(c)?,
@@ -24,10 +23,8 @@ impl ErlModule {
       ErlAst::App(_loc, app) => {
         app.postprocess_edit_node(self)?;
       }
-      ErlAst::FunctionDef { index, .. } => {
-        let f_def: &FunctionDef = &self.functions[*index];
-
-        for fc in &f_def.clauses {
+      ErlAst::FunctionDef { fn_def, .. } => {
+        for fc in &fn_def.clauses {
           for arg in &fc.args {
             self.postprocess_ast(&arg)?;
           }

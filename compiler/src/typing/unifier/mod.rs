@@ -10,12 +10,12 @@ use crate::erl_error::{ErlResult, ErlError};
 use crate::typing::error::TypeError;
 use crate::typing::typevar::TypeVar;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::typing::function_type::FunctionType;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::typing::fn_type::FunctionType;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::erl_module::ErlModule;
 use std::rc::Rc;
 use std::sync::{RwLock};
-use crate::typing::function_clause_type::FunctionClauseType;
+use crate::typing::fn_clause_type::FnClauseType;
 
 type SubstMap = HashMap<TypeVar, ErlType>;
 
@@ -142,7 +142,7 @@ impl Unifier {
               Some(fun_index) => {
                 // Unify left and right as function types
                 // Equation: Expr.Type <=> Fn ( Arg1.Type, Arg2.Type, ... )
-                let fun_def: &FunctionDef = &module.functions[*fun_index];
+                let fun_def: &FnDef = &module.functions[*fun_index];
                 self.unify(module, ast,
                            &fun_def.ret_ty.into(),
                            &type2)?;
@@ -257,7 +257,7 @@ impl Unifier {
     Ok(())
   }
 
-  fn occurs_check_fun_clause(&self, tv: &TypeVar, fc: &FunctionClauseType) -> bool {
+  fn occurs_check_fun_clause(&self, tv: &TypeVar, fc: &FnClauseType) -> bool {
     fc.arg_types.iter().any(|argt| self.occurs_check(tv, argt))
         || self.occurs_check(tv, &fc.ret_ty)
   }
@@ -274,7 +274,7 @@ impl Unifier {
       ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Function(fun_type) => {
         return self.occurs_check(tv, &fun_type.ret_type)
-            || fun_type.clauses.iter().any(|a: &FunctionClauseType| self.occurs_check_fun_clause(tv, a));
+            || fun_type.clauses.iter().any(|a: &FnClauseType| self.occurs_check_fun_clause(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))

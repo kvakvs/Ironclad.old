@@ -6,14 +6,14 @@ use crate::display::display_comma_separated;
 
 /// Describes one function clause arg and return types.
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct FunctionClauseType {
+pub struct FnClauseType {
   /// Argument types for this clause
   pub arg_types: Vec<ErlType>,
   /// Return type for this clause
   pub ret_ty: Box<ErlType>,
 }
 
-impl FunctionClauseType {
+impl FnClauseType {
   /// Create a new function clause type
   pub fn new(arg_types: Vec<ErlType>, ret_ty: ErlType) -> Self {
     Self {
@@ -23,7 +23,7 @@ impl FunctionClauseType {
   }
 }
 
-impl std::fmt::Display for FunctionClauseType {
+impl std::fmt::Display for FnClauseType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "(")?;
     display_comma_separated(&self.arg_types, f)?;

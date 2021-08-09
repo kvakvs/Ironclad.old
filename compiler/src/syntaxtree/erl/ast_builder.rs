@@ -4,7 +4,7 @@ use crate::erl_error::{ErlResult};
 use crate::syntaxtree::erl::erl_ast::{ErlAst};
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
 use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
-use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::fn_clause::FnClause;
 use crate::syntaxtree::erl::node::literal::Literal;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
@@ -12,7 +12,8 @@ use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
 use std::collections::VecDeque;
 use crate::syntaxtree::erl::node::token::ErlToken;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
+use std::sync::Arc;
 
 impl ErlModule {
   fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,
@@ -208,7 +209,7 @@ impl ErlModule {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
-    let clauses: Vec<FunctionClause> = pair.into_inner()
+    let clauses: Vec<FnClause> = pair.into_inner()
         .map(|p| self.fun_clause_to_ast(p))
         .map(Result::unwrap)
         .collect();
@@ -216,14 +217,14 @@ impl ErlModule {
     let arity = clauses[0].arg_types.len();
     let funarity = FunArity::new(clauses[0].name.clone(), arity);
 
-    let f_def = FunctionDef::new(funarity.clone(), clauses);
-    let ret_ty = f_def.ret_ty;
-    let index = self.add_function(f_def);
-    Ok(ErlAst::FunctionDef { location, funarity, ret_ty, index })
+    let fn_def = Arc::new(FnDef::new(funarity.clone(), clauses));
+    let ret_ty = fn_def.ret_ty;
+    self.add_function(fn_def.clone());
+    Ok(ErlAst::FunctionDef { location, funarity, ret_ty, fn_def })
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FunctionClause> {
+  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FnClause> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);
@@ -249,7 +250,7 @@ impl ErlModule {
     };
 
     let args: Vec<ErlAst> = nodes.into_iter().collect();
-    Ok(FunctionClause::new(name, args, body))
+    Ok(FnClause::new(name, args, body))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap

@@ -5,10 +5,10 @@ use crate::erl_error::ErlResult;
 use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::typing::erl_type::ErlType;
-use crate::typing::function_clause_type::FunctionClauseType;
-use crate::typing::function_type::FunctionType;
+use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
 use crate::display::display_comma_separated;
@@ -40,7 +40,7 @@ impl Apply {
     let arg_types: Vec<ErlType> = self.args.iter()
         .map(|arg| arg.get_type())
         .collect();
-    let clause_type = FunctionClauseType::new(arg_types, self.ret_ty.into());
+    let clause_type = FnClauseType::new(arg_types, self.ret_ty.into());
     let f_type = FunctionType::new(None, vec![clause_type]);
     ErlType::Function(f_type)
   }
@@ -63,7 +63,7 @@ impl Apply {
     let arg_types = args.iter()
         .map(|a| a.get_type())
         .collect();
-    let clause  = FunctionClauseType::new(arg_types, ret.clone());
+    let clause  = FnClauseType::new(arg_types, ret.clone());
     // unnamed function application, None for a name
     ErlType::Function(FunctionType::new(None, vec![clause]))
   }
@@ -78,7 +78,7 @@ impl Apply {
     match find_result {
       None => {} // no changes, return same node
       Some(index) => {
-        let nf: &FunctionDef = &module.functions[index];
+        let nf: &FnDef = &module.functions[index];
 
         // Replace self.expr with the found fun pointer
         let new_expr = ErlAst::FunArity(SourceLoc::default(),

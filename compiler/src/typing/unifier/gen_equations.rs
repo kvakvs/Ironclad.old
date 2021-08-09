@@ -8,8 +8,8 @@ use crate::erl_error::ErlResult;
 use crate::syntaxtree::erl::erl_ast_iter::AstChild;
 use std::borrow::Borrow;
 use std::ops::Deref;
-use crate::syntaxtree::erl::node::function_def::FunctionDef;
-use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
+use crate::syntaxtree::erl::node::fn_clause::FnClause;
 use crate::syntaxtree::erl::node::apply::Apply;
 
 impl Unifier {
@@ -25,7 +25,7 @@ impl Unifier {
   pub fn generate_equations(&self, module: &ErlModule,
                             eq: &mut Vec<TypeEquation>, ast: &ErlAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
-    if let Some(children) = ast.children(module) {
+    if let Some(children) = ast.children() {
       for child in children {
         let gen_result = match child {
           AstChild::Ref(c) => self.generate_equations(module, eq, c),
@@ -44,10 +44,9 @@ impl Unifier {
       ErlAst::Comment { .. } => {}
       ErlAst::Lit(..) => {} // creates no equation, type is known
       ErlAst::Var { .. } => {}
-      ErlAst::FunctionDef { index, .. } => {
-        let nf = &module.functions[*index];
-        self.generate_equations_fun_def(eq, ast, nf)?;
-        for fc in &nf.clauses {
+      ErlAst::FunctionDef { fn_def, .. } => {
+        self.generate_equations_fun_def(eq, ast, fn_def)?;
+        for fc in &fn_def.clauses {
           self.generate_equations_fun_clause(eq, ast, &fc)?
         }
       }
@@ -110,7 +109,7 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node FunctionDef
   fn generate_equations_fun_def(&self, eq: &mut Vec<TypeEquation>,
-                                ast: &ErlAst, f_def: &FunctionDef) -> ErlResult<()> {
+                                ast: &ErlAst, f_def: &FnDef) -> ErlResult<()> {
     assert!(!f_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
     println!("Gen eq for {:?}", f_def);
 
@@ -126,7 +125,7 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node FClause
   fn generate_equations_fun_clause(&self, eq: &mut Vec<TypeEquation>,
-                                   ast: &ErlAst, fc: &FunctionClause) -> ErlResult<()> {
+                                   ast: &ErlAst, fc: &FnClause) -> ErlResult<()> {
     println!("Gen eq for {:?}", fc);
     // For each fun clause its return type is matched with body expression type
     Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type());

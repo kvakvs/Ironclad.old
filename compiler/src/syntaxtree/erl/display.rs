@@ -6,7 +6,6 @@ use std::fmt::Formatter;
 use crate::display;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::syntaxtree::erl::node::fun_clause::FunctionClause;
 use crate::syntaxtree::erl::node::literal::Literal;
 
 impl fmt::Display for ErlAst {
@@ -25,18 +24,10 @@ impl fmt::Display for ErlAst {
       ErlAst::Comma { left, right, .. } => {
         write!(f, "{}, {}", left, right)
       }
-      ErlAst::FunctionDef { funarity, .. } => {
-        // Cannot print function def's clauses because they are owned by the `ErlModule::functions`
-        write!(f, "newfun {}/{}", funarity.name, funarity.arity)
-        // let results: Vec<_> = nf.clauses.iter()
-        //     .map(|fc| write!(f, "{};", fc))
-        //     .filter(Result::is_err)
-        //     .collect();
-        // if results.is_empty() {
-        //   Ok(())
-        // } else {
-        //   results[0]
-        // }
+      ErlAst::FunctionDef { funarity, fn_def, .. } => {
+        write!(f, "newfun {}/{} {{", funarity.name, funarity.arity)?;
+        for fc in fn_def.clauses.iter() { write!(f, "{};", fc)?; }
+        write!(f, "}}")
       }
       ErlAst::CClause(_loc, clause) => {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
@@ -55,7 +46,7 @@ impl fmt::Display for ErlAst {
       ErlAst::UnaryOp(_loc, unop) => {
         write!(f, "({} {})", unop.operator, unop.expr)
       }
-      ErlAst::FunArity(_loc, fa) => write!(f, "fun {}/{}", fa.name, fa.arity),
+      ErlAst::FunArity(_loc, fa) => write!(f, "(fun {}/{})", fa.name, fa.arity),
       ErlAst::List(_loc, elems) => display::display_list(elems, f),
       ErlAst::Tuple(_loc, elems) => display::display_tuple(elems, f),
     }
@@ -71,9 +62,10 @@ impl fmt::Debug for ErlAst {
       // ErlAst::ModuleForms(_) => {}
       // ErlAst::ModuleAttr { .. } => {}
       // ErlAst::Comma { .. } => {}
-      ErlAst::FunctionDef { funarity, ret_ty, .. } => {
-        // Cannot print function def's clauses because they are owned by the `ErlModule::functions`
-        write!(f, "newfun {}/{} -> {}", funarity.name, funarity.arity, ret_ty)
+      ErlAst::FunctionDef { funarity, fn_def, ret_ty, .. } => {
+        write!(f, "newfun {}/{} -> {} {{", funarity.name, funarity.arity, ret_ty)?;
+        for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
+        write!(f, "}}")
       }
       // ErlAst::CClause(_, _) => {}
       // ErlAst::FunArity(_, _) => {}
@@ -106,14 +98,6 @@ impl std::fmt::Display for Literal {
       Literal::String(s) => write!(f, "\"{}\"", s),
       Literal::Tuple(t) => display::display_tuple(t, f),
     }
-  }
-}
-
-impl std::fmt::Display for FunctionClause {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}(", self.name)?;
-    display::display_comma_separated(&self.args, f)?;
-    write!(f, ") -> {}", self.body)
   }
 }
 

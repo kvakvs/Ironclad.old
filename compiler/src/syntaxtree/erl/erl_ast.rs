@@ -14,6 +14,8 @@ use crate::funarity::FunArity;
 use crate::source_loc::SourceLoc;
 use crate::syntaxtree::erl::node::token::ErlToken;
 use crate::typing::typevar::TypeVar;
+use crate::syntaxtree::erl::node::fn_def::FnDef;
+use std::sync::Arc;
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {
@@ -63,8 +65,9 @@ pub enum ErlAst {
     funarity: FunArity,
     /// Clone of return type variable
     ret_ty: TypeVar,
-    /// Index into `ErlModule::functions` table
-    index: usize,
+    /// Function definition struct with clauses. Arc to be accessible separately from function
+    /// lookup code, also stored in the `ErlModule::functions`.
+    fn_def: Arc<FnDef>,
   },
 
   /// Case clause for a `case x of` switch
@@ -239,9 +242,9 @@ impl ErlAst {
   // }
 
   /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
-  pub fn as_new_function(&self) -> Option<usize> {
+  pub fn as_fn_def(&self) -> Option<Arc<FnDef>> {
     match self {
-      ErlAst::FunctionDef { index, .. } => Some(*index),
+      ErlAst::FunctionDef { fn_def: func_def, .. } => Some(func_def.clone()),
       _ => None,
     }
   }
