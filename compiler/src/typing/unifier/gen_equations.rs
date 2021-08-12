@@ -58,11 +58,11 @@ impl Unifier {
       ErlAst::Apply(_loc, app) => {
         self.generate_equations_apply(eq, ast, app)?
       }
-      ErlAst::Let(_loc, let_expr) => {
-        Self::equation(eq, ast,
-                       let_expr.in_ty.into(),
-                       let_expr.in_expr.get_type());
-      }
+      // ErlAst::Let(_loc, let_expr) => {
+      //   Self::equation(eq, ast,
+      //                  let_expr.in_ty.into(),
+      //                  let_expr.in_expr.get_type());
+      // }
       ErlAst::Case(_loc, case) => {
         // For Case expression, type of case must be union of all clause types
         let all_clause_types = case.clauses.iter()

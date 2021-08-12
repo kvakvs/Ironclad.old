@@ -103,11 +103,6 @@ impl ErlAst {
         Some(r)
       }
 
-      ErlAst::Let(_loc, let_expr) => {
-        Some(vec![AstChild::Ref(&let_expr.value),
-                  AstChild::Ref(&let_expr.in_expr)])
-      }
-
       ErlAst::Case(_loc, case) => {
         let mut r: Vec<AstChild> = vec![AstChild::Ref(&case.arg)];
         case.clauses.iter().for_each(|cc| {

@@ -34,9 +34,6 @@ impl fmt::Display for ErlAst {
       }
       ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
       ErlAst::Apply(_loc, app) => write!(f, "{}", app),
-      ErlAst::Let(_loc, let_expr) => {
-        write!(f, "let {} = {} in {}", let_expr.var, let_expr.value, let_expr.in_expr)
-      }
       ErlAst::Case(_loc, case) => write!(f, "{}", case),
       ErlAst::Lit(_loc, lit) => write!(f, "{}", lit),
 

@@ -5,7 +5,6 @@ use crate::syntaxtree::erl::node::apply::Apply;
 use crate::syntaxtree::erl::node::case_clause::CaseClause;
 use crate::syntaxtree::erl::node::case::Case;
 use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::node::r#let::LetExprNode;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::syntaxtree::erl::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
 use crate::syntaxtree::erl::node::var::Var;
@@ -93,10 +92,6 @@ pub enum ErlAst {
   /// Apply arguments to expression
   Apply(SourceLoc, Apply),
 
-  /// A haskell-style new variable introducing a new scope below it:
-  /// let x = expr1 in expr2
-  Let(SourceLoc, LetExprNode),
-
   /// Case switch containing the argument to check, and case clauses
   Case(SourceLoc, Case),
 
@@ -134,7 +129,6 @@ impl ErlAst {
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
       ErlAst::Apply(_loc, app) => app.ret_ty.into(),
-      ErlAst::Let(_loc, let_expr) => let_expr.in_expr.get_type(),
       ErlAst::Case(_loc, case) => case.ret_ty.into(),
       ErlAst::Lit(_loc, l) => l.get_type(),
       ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
@@ -288,7 +282,6 @@ impl ErlAst {
       ErlAst::MFA { location: loc, .. } => *loc,
       ErlAst::Var(loc, _) => *loc,
       ErlAst::Apply(loc, _) => *loc,
-      ErlAst::Let(loc, _) => *loc,
       ErlAst::Case(loc, _) => *loc,
       ErlAst::Lit(loc, _) => *loc,
       ErlAst::BinaryOp(loc, _) => *loc,
