@@ -128,8 +128,8 @@ impl ErlAst {
                   AstChild::Ref(right)])
       }
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
-      ErlAst::List(_loc, elems) => Some(elems.iter().map(AstChild::Ref).collect()),
-      ErlAst::Tuple(_loc, elems) => Some(elems.iter().map(AstChild::Ref).collect()),
+      ErlAst::List { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
+      ErlAst::Tuple { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
 
       _ => unreachable!("Can't process {}", self),
     }

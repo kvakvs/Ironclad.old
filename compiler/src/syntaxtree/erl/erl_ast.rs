@@ -105,10 +105,22 @@ pub enum ErlAst {
   UnaryOp(SourceLoc, UnaryOperatorExpr),
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
-  List(SourceLoc, Vec<ErlAst>),
+  List {
+    /// Source code location
+    location: SourceLoc,
+    /// List elements
+    elements: Vec<ErlAst>,
+    /// Optional tail element if not NIL
+    tail: Option<Box<ErlAst>>,
+  },
 
   /// A tuple of some expressions, TODO: constant folding
-  Tuple(SourceLoc, Vec<ErlAst>),
+  Tuple {
+    /// Source code location
+    location: SourceLoc,
+    /// Tuple elements
+    elements: Vec<ErlAst>,
+  },
 }
 
 impl ErlAst {
@@ -134,19 +146,20 @@ impl ErlAst {
       ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
       ErlAst::Comma { right, .. } => right.get_type(),
-      ErlAst::List(_loc, elems) => {
+      ErlAst::List { elements, tail, .. } => {
+        assert!(tail.is_none()); // todo
         let union_t = ErlType::union_of(
-          elems.iter().map(|e| e.get_type()).collect(),
+          elements.iter().map(|e| e.get_type()).collect(),
           true);
         ErlType::List(Box::new(union_t))
       }
-      ErlAst::Tuple(_loc, elems) => {
-        ErlType::Tuple(elems.iter().map(|e| e.get_type()).collect())
+      ErlAst::Tuple { elements, .. } => {
+        ErlType::Tuple(elements.iter().map(|e| e.get_type()).collect())
       }
       ErlAst::MFA { clause_types, .. } => {
         let fn_type = FunctionType::new(None, clause_types.clone());
         ErlType::Fn(fn_type)
-      },
+      }
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
@@ -205,15 +218,15 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list of some expressions
-  pub fn new_list(location: SourceLoc, elems: Vec<ErlAst>) -> ErlAst {
+  pub fn new_list(location: SourceLoc, elements: Vec<ErlAst>) -> ErlAst {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
-    ErlAst::List(location, elems)
+    ErlAst::List { location, elements, tail: None }
   }
 
   /// Create a new AST node for a tuple of some expressions
-  pub fn new_tuple(location: SourceLoc, elems: Vec<ErlAst>) -> ErlAst {
+  pub fn new_tuple(location: SourceLoc, elements: Vec<ErlAst>) -> ErlAst {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
-    ErlAst::Tuple(location, elems)
+    ErlAst::Tuple { location, elements }
   }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the

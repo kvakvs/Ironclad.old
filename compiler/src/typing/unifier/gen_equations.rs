@@ -98,8 +98,8 @@ impl Unifier {
       ErlAst::Comma { right, ty, .. } => {
         Self::equation(eq, ast, (*ty).into(), right.get_type());
       }
-      ErlAst::List(..) => {}
-      ErlAst::Tuple(..) => {}
+      ErlAst::List { .. } => {}
+      ErlAst::Tuple { .. } => {}
       ErlAst::MFA { .. } => {}
 
       _ => unreachable!("Can't process {}", ast),

@@ -25,7 +25,15 @@ pub enum Literal {
   // Reference,
 
   /// A list of literals
-  List(Vec<Literal>),
+  List {
+    /// List elements
+    elements: Vec<Literal>,
+    /// Optional tail element or None if NIL
+    tail: Option<Box<Literal>>,
+  },
+
+  /// An empty list
+  Nil,
 
   /// A list containing only unicode codepoints is-a(List)
   String(String),
@@ -53,10 +61,11 @@ impl Hash for Literal {
         'b'.hash(state);
         b.hash(state);
       }
-      Literal::List(elements) => {
+      Literal::List { elements, .. } => {
         'L'.hash(state);
         elements.hash(state);
       }
+      Literal::Nil => { "[]".hash(state); }
       Literal::String(s) => {
         's'.hash(state);
         s.hash(state);
@@ -84,10 +93,11 @@ impl Literal {
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
-      Literal::List(items) => {
+      Literal::List { elements, .. } => {
         // List type is union of all element types
-        ErlType::List(Box::new(ErlType::union_of_literal_types(items)))
+        ErlType::List(Box::new(ErlType::union_of_literal_types(elements)))
       }
+      Literal::Nil => ErlType::AnyList,
       Literal::String(_) => ErlType::String, // is-a(list(char))
       Literal::Tuple(items) => {
         ErlType::Tuple(items.iter()
@@ -107,7 +117,7 @@ impl PartialEq for Literal {
       (Literal::Float(a), Literal::Float(b)) => (a - b).abs() <= f64::EPSILON,
       (Literal::Atom(a), Literal::Atom(b)) => a == b,
       (Literal::Bool(a), Literal::Bool(b)) => a == b,
-      (Literal::List(a), Literal::List(b)) => a == b,
+      (Literal::List { elements: a, .. }, Literal::List { elements: b, .. }) => a == b,
       (Literal::String(a), Literal::String(b)) => a == b,
       (Literal::Tuple(a), Literal::Tuple(b)) => a == b,
       _ => false,
@@ -147,7 +157,7 @@ impl Literal {
       }
       (Literal::Atom(a), Literal::Atom(b)) => a.cmp(b),
       (Literal::Bool(a), Literal::Bool(b)) => a.cmp(b),
-      (Literal::List(a), Literal::List(b)) => a.cmp(b),
+      (Literal::List { elements: a, .. }, Literal::List { elements: b, .. }) => a.cmp(b),
       (Literal::String(a), Literal::String(b)) => a.cmp(b),
       (Literal::Tuple(a), Literal::Tuple(b)) => a.cmp(b),
       _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)

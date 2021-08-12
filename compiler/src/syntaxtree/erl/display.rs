@@ -48,9 +48,9 @@ impl fmt::Display for ErlAst {
           None => write!(f, "(fun {}/{})", mfa.name, mfa.arity),
           Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
         }
-      },
-      ErlAst::List(_loc, elems) => display::display_list(elems, f),
-      ErlAst::Tuple(_loc, elems) => display::display_tuple(elems, f),
+      }
+      ErlAst::List { elements, .. } => display::display_list(elements, f),
+      ErlAst::Tuple { elements, .. } => display::display_tuple(elements, f),
     }
   }
 }
@@ -96,7 +96,8 @@ impl std::fmt::Display for Literal {
       Literal::Float(flt) => write!(f, "{}", flt),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => write!(f, "{}", b),
-      Literal::List(elems) => display::display_list(elems, f),
+      Literal::List { elements, .. } => display::display_list(elements, f),
+      Literal::Nil => write!(f, "[]"),
       Literal::String(s) => write!(f, "\"{}\"", s),
       Literal::Tuple(t) => display::display_tuple(t, f),
     }

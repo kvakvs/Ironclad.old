@@ -1,6 +1,5 @@
 //! Application (a function call on an expression)
 
-use crate::mfarity::MFArity;
 use crate::syntaxtree::core_erl::core_ast::CoreAst;
 
 /// Contains a function call
