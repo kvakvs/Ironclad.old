@@ -95,9 +95,6 @@ impl Unifier {
         Self::equation(eq, ast, unop.expr.get_type(), unop.get_type());
         // TODO: Match return type with inferred return typevar?
       }
-      ErlAst::Comma { right, ty, .. } => {
-        Self::equation(eq, ast, (*ty).into(), right.get_type());
-      }
       ErlAst::List { .. } => {}
       ErlAst::Tuple { .. } => {}
       ErlAst::MFA { .. } => {}

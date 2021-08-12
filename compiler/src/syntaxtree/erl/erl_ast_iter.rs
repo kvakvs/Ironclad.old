@@ -123,10 +123,10 @@ impl ErlAst {
                   AstChild::Ref(&binop.right)])
       }
       ErlAst::UnaryOp(_loc, unop) => Some(vec![AstChild::Ref(&unop.expr)]),
-      ErlAst::Comma { left, right, .. } => {
-        Some(vec![AstChild::Ref(left),
-                  AstChild::Ref(right)])
-      }
+      // ErlAst::Comma { left, right, .. } => {
+      //   Some(vec![AstChild::Ref(left),
+      //             AstChild::Ref(right)])
+      // }
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       ErlAst::List { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
       ErlAst::Tuple { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),

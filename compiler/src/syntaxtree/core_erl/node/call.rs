@@ -2,6 +2,7 @@
 
 use crate::mfarity::MFArity;
 use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::typing::typevar::TypeVar;
 
 /// Contains a function call on a MFArity
 pub struct Call {
@@ -9,4 +10,6 @@ pub struct Call {
   pub target: MFArity,
   /// Must match arity
   pub args: Vec<CoreAst>,
+  /// The unique typevar for return type
+  pub ret_ty: TypeVar,
 }

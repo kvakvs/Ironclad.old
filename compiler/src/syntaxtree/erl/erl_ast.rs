@@ -44,17 +44,17 @@ pub enum ErlAst {
     name: String,
   },
 
-  /// Comma expression receives type of its last AST element
-  Comma {
-    /// Source file pointer
-    location: SourceLoc,
-    /// Left expression
-    left: Box<ErlAst>,
-    /// Right expression
-    right: Box<ErlAst>,
-    /// Type for right expression, also is the type of entire comma operator
-    ty: TypeVar,
-  },
+  // /// Comma expression receives type of its last AST element
+  // Comma {
+  //   /// Source file pointer
+  //   location: SourceLoc,
+  //   /// Left expression
+  //   left: Box<ErlAst>,
+  //   /// Right expression
+  //   right: Box<ErlAst>,
+  //   /// Type for right expression, also is the type of entire comma operator
+  //   ty: TypeVar,
+  // },
 
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
@@ -145,7 +145,7 @@ impl ErlAst {
       ErlAst::Lit(_loc, l) => l.get_type(),
       ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
       ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
-      ErlAst::Comma { right, .. } => right.get_type(),
+      // ErlAst::Comma { right, .. } => right.get_type(),
       ErlAst::List { elements, tail, .. } => {
         assert!(tail.is_none()); // todo
         let union_t = ErlType::union_of(
@@ -235,15 +235,15 @@ impl ErlAst {
     ErlAst::Token { location: SourceLoc::default(), token: t }
   }
 
-  /// Create a new Comma operator from list of AST expressions
-  pub fn new_comma(location: SourceLoc, left: ErlAst, right: ErlAst) -> Self {
-    ErlAst::Comma {
-      location,
-      left: Box::new(left),
-      right: Box::new(right),
-      ty: TypeVar::new(),
-    }
-  }
+  // /// Create a new Comma operator from list of AST expressions
+  // pub fn new_comma(location: SourceLoc, left: ErlAst, right: ErlAst) -> Self {
+  //   ErlAst::Comma {
+  //     location,
+  //     left: Box::new(left),
+  //     right: Box::new(right),
+  //     ty: TypeVar::new(),
+  //   }
+  // }
 
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
@@ -274,9 +274,9 @@ impl ErlAst {
   /// A non-comma AST-node becomes a single result element.
   pub fn comma_to_vec(comma_ast: ErlAst, dst: &mut Vec<ErlAst>) {
     match comma_ast {
-      ErlAst::Comma { left, right, .. } => {
-        Self::comma_to_vec(*left, dst);
-        Self::comma_to_vec(*right, dst);
+      ErlAst::BinaryOp(_loc, binexpr) if binexpr.operator == ErlBinaryOp::Comma => {
+        Self::comma_to_vec(*binexpr.left, dst);
+        Self::comma_to_vec(*binexpr.right, dst);
       }
       _ => dst.push(comma_ast),
     }
@@ -288,7 +288,7 @@ impl ErlAst {
       ErlAst::Comment(loc) => *loc,
       ErlAst::Token { location: loc, .. } => *loc,
       ErlAst::ModuleAttr { location: loc, .. } => *loc,
-      ErlAst::Comma { location: loc, .. } => *loc,
+      // ErlAst::Comma { location: loc, .. } => *loc,
       ErlAst::FunctionDef { location: loc, .. } => *loc,
       // ErlAst::FClause(loc, _) => *loc,
       ErlAst::CClause(loc, _) => *loc,

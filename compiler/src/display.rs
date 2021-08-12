@@ -26,7 +26,15 @@ pub fn display_semicolon_separated<T>(elems: &[T], f: &mut fmt::Formatter) -> fm
 }
 
 /// Print \[ <comma separated something> \]
-pub fn display_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+pub fn display_square_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  where T: std::fmt::Display {
+  write!(f, "[")?;
+  display_comma_separated(elems, f)?;
+  write!(f, "]")
+}
+
+/// Print ( <comma separated something> )
+pub fn display_paren_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
   where T: std::fmt::Display {
   write!(f, "[")?;
   display_comma_separated(elems, f)?;
@@ -34,7 +42,7 @@ pub fn display_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
 }
 
 /// Print { <comma separated something> }
-pub fn display_tuple<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+pub fn display_curly_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
   where T: std::fmt::Display {
   write!(f, "{{")?;
   display_comma_separated(elems, f)?;

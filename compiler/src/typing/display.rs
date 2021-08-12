@@ -3,7 +3,7 @@
 use std::fmt::Formatter;
 
 use crate::typing::erl_type::{ErlType};
-use crate::display::{display_comma_separated, display_tuple};
+use crate::display::{display_comma_separated, display_curly_list};
 
 impl std::fmt::Debug for ErlType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
@@ -29,7 +29,7 @@ impl std::fmt::Display for ErlType {
       ErlType::AnyList => write!(f, "list()"),
       ErlType::List(ty) => write!(f, "list({})", ty.to_string()),
       ErlType::AnyTuple => write!(f, "tuple()"),
-      ErlType::Tuple(items) => display_tuple(items, f),
+      ErlType::Tuple(items) => display_curly_list(items, f),
       ErlType::Record { tag, fields } => {
         write!(f, "#{}{{", tag)?;
         display_comma_separated(fields, f)?;

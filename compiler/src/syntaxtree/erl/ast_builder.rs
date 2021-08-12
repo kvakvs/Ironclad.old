@@ -30,7 +30,7 @@ impl ErlModule {
       Rule::op_mul => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Mul, rhs),
       Rule::op_div => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Div, rhs),
       Rule::op_integer_div => ErlAst::new_binop(loc, lhs, ErlBinaryOp::IntegerDiv, rhs),
-      Rule::op_comma => ErlAst::new_comma(loc, lhs, rhs),
+      Rule::op_comma => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Comma, rhs),
 
       Rule::op_list_append => ErlAst::new_binop(loc, lhs, ErlBinaryOp::ListAppend, rhs),
       Rule::op_list_subtract => ErlAst::new_binop(loc, lhs, ErlBinaryOp::ListSubtract, rhs),

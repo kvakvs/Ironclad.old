@@ -2,7 +2,7 @@
 
 /// Binary operation taking two arguments
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum ErlBinaryOp {
+pub enum CoreBinaryOp {
   /// Joins two expressions together, right becomes the result
   Comma,
   /// Sum of two any numbers
@@ -41,7 +41,7 @@ pub enum ErlBinaryOp {
 
 /// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ErlUnaryOp {
+pub enum CoreUnaryOp {
   /// Prefixed by 'catch' keyword
   Catch,
   /// Logical negation
@@ -50,4 +50,40 @@ pub enum ErlUnaryOp {
   Negative,
   /// Numerical sign positive, no sign change: +X
   Positive,
+}
+
+
+impl std::fmt::Display for CoreBinaryOp {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    match self {
+      CoreBinaryOp::Add => write!(f, "+"),
+      CoreBinaryOp::Sub => write!(f, "-"),
+      CoreBinaryOp::Mul => write!(f, "*"),
+      CoreBinaryOp::Div => write!(f, "/"),
+      CoreBinaryOp::IntegerDiv => write!(f, "div"),
+      CoreBinaryOp::Modulo => write!(f, "mod"),
+      CoreBinaryOp::Less => write!(f, "<"),
+      CoreBinaryOp::Greater => write!(f, ">"),
+      CoreBinaryOp::LessEq => write!(f, "⩽"),
+      CoreBinaryOp::GreaterEq => write!(f, "⩾"),
+      CoreBinaryOp::Eq => write!(f, "≃"),
+      CoreBinaryOp::NotEq => write!(f, "≄"),
+      CoreBinaryOp::HardEq => write!(f, "≡"),
+      CoreBinaryOp::HardNotEq => write!(f, "≢"),
+      CoreBinaryOp::ListAppend => write!(f, "++"),
+      CoreBinaryOp::ListSubtract => write!(f, "--"),
+      CoreBinaryOp::Comma => write!(f, ","),
+    }
+  }
+}
+
+impl std::fmt::Display for CoreUnaryOp {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      CoreUnaryOp::Not => write!(f, "not"),
+      CoreUnaryOp::Negative => write!(f, "-"),
+      CoreUnaryOp::Positive => write!(f, "+"),
+      CoreUnaryOp::Catch => write!(f, "catch"),
+    }
+  }
 }

@@ -1,41 +1,41 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
+use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::syntaxtree::core_erl::core_op::{CoreBinaryOp, CoreUnaryOp};
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 // #[derive(PartialEq)]
 pub struct BinaryOperatorExpr {
   /// Left operand
-  pub left: Box<ErlAst>,
+  pub left: Box<CoreAst>,
   /// Right operand
-  pub right: Box<ErlAst>,
+  pub right: Box<CoreAst>,
   /// The operator
-  pub operator: ErlBinaryOp,
+  pub operator: CoreBinaryOp,
   /// The return type of the operation
   pub ty: TypeVar,
 }
 
 impl BinaryOperatorExpr {
-  /// Gets the result type of a binary operation, TODO: return TypeVar for clarity
+  /// Gets the result type of a binary operation
   pub fn get_result_type(&self) -> ErlType {
     match self.operator {
-      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
+      CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
         ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
       }
 
-      | ErlBinaryOp::Div => ErlType::Float,
+      | CoreBinaryOp::Div => ErlType::Float,
 
-      ErlBinaryOp::IntegerDiv => ErlType::AnyInteger,
+      CoreBinaryOp::IntegerDiv => ErlType::AnyInteger,
 
-      ErlBinaryOp::Modulo => ErlType::AnyInteger,
+      CoreBinaryOp::Modulo => ErlType::AnyInteger,
 
-      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
+      CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
+      | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
         ErlType::AnyBool
       }
-      ErlBinaryOp::ListAppend => {
+      CoreBinaryOp::ListAppend => {
         // Type of ++ will be union of left and right
         if let ErlType::List(left_list_t) = self.left.get_type() {
           if let ErlType::List(right_list_t) = self.right.get_type() {
@@ -48,11 +48,11 @@ impl BinaryOperatorExpr {
         }
         ErlType::None // Raise TypeError::ListExpected?
       }
-      ErlBinaryOp::ListSubtract => {
+      CoreBinaryOp::ListSubtract => {
         // Type of -- will be left, probably some elements which should be missing, but how do we know?
         self.left.get_type()
       }
-      ErlBinaryOp::Comma => self.right.get_type(),
+      CoreBinaryOp::Comma => self.right.get_type(),
     }
   }
 
@@ -61,21 +61,21 @@ impl BinaryOperatorExpr {
   /// Returns None if the input type is not limited to any type.
   pub fn get_arg_type(&self) -> Option<ErlType> {
     match self.operator {
-      ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul | ErlBinaryOp::Div => {
+      CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul | CoreBinaryOp::Div => {
         Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true))
       }
 
-      ErlBinaryOp::IntegerDiv | ErlBinaryOp::Modulo => {
+      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => {
         Some(ErlType::AnyInteger)
       }
 
-      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq
-      | ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
+      CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
+      | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
         None
       }
 
-      ErlBinaryOp::ListAppend | ErlBinaryOp::ListSubtract => Some(ErlType::AnyList),
-      ErlBinaryOp::Comma => Some(ErlType::Any),
+      CoreBinaryOp::ListAppend | CoreBinaryOp::ListSubtract => Some(ErlType::AnyList),
+      CoreBinaryOp::Comma => Some(ErlType::Any)
     }
   }
 }
@@ -84,23 +84,23 @@ impl BinaryOperatorExpr {
 // #[derive(PartialEq)]
 pub struct UnaryOperatorExpr {
   /// The operand
-  pub expr: Box<ErlAst>,
+  pub expr: Box<CoreAst>,
   /// The operator
-  pub operator: ErlUnaryOp,
+  pub operator: CoreUnaryOp,
 }
 
 impl UnaryOperatorExpr {
   /// Get the type of an unary operation. Input type is same as return type.
   pub fn get_type(&self) -> ErlType {
     match self.operator {
-      ErlUnaryOp::Not => ErlType::AnyBool,
+      CoreUnaryOp::Not => ErlType::AnyBool,
 
-      ErlUnaryOp::Negative
-      | ErlUnaryOp::Positive => {
+      CoreUnaryOp::Negative
+      | CoreUnaryOp::Positive => {
         ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
       }
 
-      ErlUnaryOp::Catch => ErlType::Any,
+      CoreUnaryOp::Catch => ErlType::Any,
     }
   }
 }

@@ -1,15 +1,12 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
-use std::fmt;
-use std::fmt::Formatter;
-
 use crate::display;
 use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntaxtree::erl::node::literal::Literal;
 
-impl fmt::Display for ErlAst {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for ErlAst {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
       ErlAst::Comment { .. } => writeln!(f, "% comment"),
       ErlAst::Empty => writeln!(f, "% empty"),
@@ -21,9 +18,9 @@ impl fmt::Display for ErlAst {
         Ok(())
       }
       ErlAst::ModuleAttr { name, .. } => writeln!(f, "-module('{}').", name),
-      ErlAst::Comma { left, right, .. } => {
-        write!(f, "{}, {}", left, right)
-      }
+      // ErlAst::Comma { left, right, .. } => {
+      //   write!(f, "{}, {}", left, right)
+      // }
       ErlAst::FunctionDef { funarity, fn_def, .. } => {
         write!(f, "newfun {}/{} {{", funarity.name, funarity.arity)?;
         for fc in fn_def.clauses.iter() { write!(f, "{};", fc)?; }
@@ -49,14 +46,14 @@ impl fmt::Display for ErlAst {
           Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
         }
       }
-      ErlAst::List { elements, .. } => display::display_list(elements, f),
-      ErlAst::Tuple { elements, .. } => display::display_tuple(elements, f),
+      ErlAst::List { elements, .. } => display::display_square_list(elements, f),
+      ErlAst::Tuple { elements, .. } => display::display_curly_list(elements, f),
     }
   }
 }
 
-impl fmt::Debug for ErlAst {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+impl std::fmt::Debug for ErlAst {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       // ErlAst::Empty => {}
       // ErlAst::Comment(_) => {}
@@ -90,22 +87,22 @@ impl fmt::Debug for ErlAst {
 }
 
 impl std::fmt::Display for Literal {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
       Literal::Integer(i) => write!(f, "{}", i),
       Literal::Float(flt) => write!(f, "{}", flt),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => write!(f, "{}", b),
-      Literal::List { elements, .. } => display::display_list(elements, f),
+      Literal::List { elements, .. } => display::display_square_list(elements, f),
       Literal::Nil => write!(f, "[]"),
       Literal::String(s) => write!(f, "\"{}\"", s),
-      Literal::Tuple(t) => display::display_tuple(t, f),
+      Literal::Tuple(t) => display::display_curly_list(t, f),
     }
   }
 }
 
 impl std::fmt::Display for ErlBinaryOp {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
       ErlBinaryOp::Add => write!(f, "+"),
       ErlBinaryOp::Sub => write!(f, "-"),
@@ -123,12 +120,13 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::HardNotEq => write!(f, "≢"),
       ErlBinaryOp::ListAppend => write!(f, "++"),
       ErlBinaryOp::ListSubtract => write!(f, "--"),
+      ErlBinaryOp::Comma => write!(f, ","),
     }
   }
 }
 
 impl std::fmt::Display for ErlUnaryOp {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       ErlUnaryOp::Not => write!(f, "not"),
       ErlUnaryOp::Negative => write!(f, "-"),
