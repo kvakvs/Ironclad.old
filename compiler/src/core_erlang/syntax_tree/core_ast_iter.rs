@@ -58,6 +58,7 @@ impl CoreAst {
       CoreAst::UnOp { op, .. } => Some(vec![AstChild::Ref(&op.expr)]),
       CoreAst::List { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
       CoreAst::Tuple { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
+      CoreAst::Empty => None,
 
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }

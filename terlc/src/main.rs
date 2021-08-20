@@ -2,7 +2,7 @@ extern crate compiler;
 
 use compiler::project::ErlProject;
 use compiler::project::conf::ProjectConf;
-use compiler::erl_error::{ErlResult, ErlError};
+use compiler::erl_error::{ErlResult};
 use std::process::exit;
 
 fn main_1() -> ErlResult<()> {
@@ -22,10 +22,10 @@ fn main() {
     Ok(_) => {
       println!("...finished.");
       exit(0);
-    },
+    }
     Err(e) => {
       println!("Error occured: {}", e);
       exit(e.process_exit_code())
-    },
+    }
   }
 }

@@ -104,6 +104,7 @@ impl Unifier {
       }
       CoreAst::List { .. } => {}
       CoreAst::Tuple { .. } => {}
+      CoreAst::Empty => {}
 
       _ => unreachable!("{}: Can't process {}", function_name!(), ast),
     }
@@ -113,19 +114,19 @@ impl Unifier {
 
   /// Type inference wiring
   /// Generate type equations for AST node FunctionDef
+  #[named]
   fn generate_equations_fn_def(&self, _eq: &mut Vec<TypeEquation>,
                                _ast: &CoreAst, _fn_def: &FnDef) -> ErlResult<()> {
     // assert!(!fn_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
     // println!("Gen eq for {:?}", fn_def);
 
-    todo!("fn_def equations");
+    println!("{} TODO: fn_def", function_name!());
     // Return type of a function is union of its clauses return types
     // let ret_union_members = fn_def.clauses.iter()
     //     .map(|c| c.ret.clone())
     //     .collect();
     // let ret_union_t = ErlType::union_of(ret_union_members, true);
     // Self::equation(eq, ast, fn_def.ret_ty.into(), ret_union_t);
-
     Ok(())
   }
 
