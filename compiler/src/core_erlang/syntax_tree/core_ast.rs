@@ -17,6 +17,7 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::erlang::syntax_tree::node::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
+use std::sync::Arc;
 
 /// AST node in Core Erlang (parsed or generated)
 pub enum CoreAst {
@@ -43,6 +44,7 @@ pub enum CoreAst {
     /// The function definition struct
     fn_def: FnDef,
   },
+
   /// Branch based on whether an expression matches some conditions
   Case {
     /// Source file pointer
@@ -50,6 +52,7 @@ pub enum CoreAst {
     /// The case expression. Clauses are contained inside
     case: Case,
   },
+
   /// Create a scope by assigning 1 or more variables
   Let {
     /// Source file pointer
@@ -57,6 +60,7 @@ pub enum CoreAst {
     /// The variable set, the value expr, and the body expr
     letexpr: LetExpr,
   },
+
   /// Call an expression which has a function type
   Apply {
     /// Source file pointer
@@ -64,6 +68,7 @@ pub enum CoreAst {
     /// The apply struct with call target, return type and arguments
     app: Apply,
   },
+
   /// Call a function export mod:fun/arity, or a local fun/arity
   Call {
     /// Source file pointer
@@ -71,6 +76,7 @@ pub enum CoreAst {
     /// The call struct with call target, return type and arguments
     call: Call,
   },
+
   /// Primitive operation, such as `raise`
   PrimOp {
     /// Source file pointer
@@ -95,10 +101,11 @@ pub enum CoreAst {
     /// Source file pointer
     location: SourceLoc,
     /// The literal tree
-    value: Literal,
+    value: Arc<Literal>,
     /// Literal type
     ty: TypeVar,
   },
+
   /// An operator with 2 arguments left and right (also comma operator)
   BinOp {
     /// Source file pointer
@@ -106,6 +113,7 @@ pub enum CoreAst {
     /// The left and right operands, and the operation
     op: BinaryOperatorExpr,
   },
+
   /// A single argument operator such as -, +, not, bnot
   UnOp {
     /// Source file pointer
@@ -113,21 +121,23 @@ pub enum CoreAst {
     /// The operand and the operation
     op: UnaryOperatorExpr,
   },
+
   /// A list of some expressions
   List {
     /// Source code location
     location: SourceLoc,
     /// List elements
-    elements: Vec<CoreAst>,
+    elements: Vec<Arc<CoreAst>>,
     /// Optional tail element if not NIL
-    tail: Option<Box<CoreAst>>,
+    tail: Option<Arc<CoreAst>>,
   },
+
   /// A tuple of some expressions
   Tuple {
     /// Source code location
     location: SourceLoc,
     /// Tuple elements
-    elements: Vec<CoreAst>,
+    elements: Vec<Arc<CoreAst>>,
   },
 }
 

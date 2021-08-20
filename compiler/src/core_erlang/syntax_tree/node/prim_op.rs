@@ -1,6 +1,7 @@
 //! Defines primitive operations for BEAM assembly and BEAM VM, which are not part of Core Erlang.
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use std::sync::Arc;
 
 /// Describes an exception kind
 pub enum ExceptionType {
@@ -19,7 +20,7 @@ pub enum PrimOp {
     /// Exception kind
     exc: ExceptionType,
     /// The value to be thrown
-    expr: Box<CoreAst>,
+    expr: Arc<CoreAst>,
   },
   /// primop `exc_trace`
   ExcTrace,

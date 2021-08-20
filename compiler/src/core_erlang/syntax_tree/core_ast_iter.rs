@@ -1,18 +1,8 @@
 //! Contains iteration helpers for CoreAst
-
 use function_name::named;
-use std::ops::Deref;
-use std::cell::Ref;
-use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use std::sync::Arc;
 
-/// Wraps either a simple reference or a runtime borrow from RefCell, for access to node children.
-/// Lives as long as the parent who created this.
-pub enum AstChild<'a> {
-  /// Wraps a compile-time borrow via &
-  Ref(&'a CoreAst),
-  /// Wraps a runtime borrow via a RefCell
-  RefCell(Ref<'a, CoreAst>),
-}
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 
 impl CoreAst {
   /// Const iterator on the Core AST tree
@@ -20,46 +10,41 @@ impl CoreAst {
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
   #[named]
-  pub fn children(&self) -> Option<Vec<AstChild>> {
+  pub fn children(&self) -> Option<Vec<Arc<CoreAst>>> {
     match self {
       CoreAst::Attributes { .. } | CoreAst::Lit { .. } | CoreAst::Var { .. }
       | CoreAst::Module { .. } => None,
 
-      CoreAst::FnDef { fn_def, .. } => {
-        // let mut r: Vec<AstChild> = vec![AstChild::Ref(fn_def.body.deref())];
-        // r.extend(fn_def.args.iter().map(AstChild::Ref));
-        Some(vec![AstChild::Ref(&fn_def.body)])
-      }
+      CoreAst::FnDef { fn_def, .. } => Some(vec![fn_def.body.clone()]),
 
       CoreAst::Apply { app, .. } => {
-        let mut r: Vec<AstChild> = vec![AstChild::Ref(app.target.deref())];
-        r.extend(app.args.iter().map(AstChild::Ref));
+        let mut r: Vec<Arc<CoreAst>> = vec![app.target.clone()];
+        r.extend(app.args.iter().cloned());
         Some(r)
       }
 
       CoreAst::Case { case, .. } => {
-        let mut r: Vec<AstChild> = Vec::new();
-        r.extend(case.exprs.iter().map(|ce| AstChild::Ref(ce)));
+        let mut r: Vec<Arc<CoreAst>> = case.exprs.iter().cloned().collect();
 
         for cc in case.clauses.iter() {
           if let Some(guard_cond) = &cc.guard {
-            r.push(AstChild::Ref(guard_cond));
+            r.push(guard_cond.clone());
           }
-          r.extend(cc.match_exprs.iter().map(|me| AstChild::Ref(me)));
-          r.push(AstChild::Ref(&cc.body));
+          r.extend(cc.match_exprs.iter().cloned());
+          r.push(cc.body.clone());
         }
         Some(r)
       }
 
       CoreAst::BinOp { op, .. } => {
-        Some(vec![AstChild::Ref(&op.left),
-                  AstChild::Ref(&op.right)])
+        Some(vec![op.left.clone(),
+                  op.right.clone()])
       }
-      CoreAst::UnOp { op, .. } => Some(vec![AstChild::Ref(&op.expr)]),
-      CoreAst::List { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
-      CoreAst::Tuple { elements, .. } => Some(elements.iter().map(AstChild::Ref).collect()),
-      CoreAst::Empty => None,
+      CoreAst::UnOp { op, .. } => Some(vec![op.expr.clone()]),
+      CoreAst::List { elements, .. } => Some(elements.iter().cloned().collect()),
+      CoreAst::Tuple { elements, .. } => Some(elements.iter().cloned().collect()),
 
+      CoreAst::Empty => panic!("{}: Core AST tree is not initialized (empty node)", function_name!()),
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }

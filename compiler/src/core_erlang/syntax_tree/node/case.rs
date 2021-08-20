@@ -4,22 +4,23 @@ use crate::display;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
+use std::sync::Arc;
 
 /// Case clause checks the input expression against `match_expr` and if it matches and if the guard
 /// is true, the body will be executed.
 pub struct CaseClause {
   /// The array of match expressions, one per case condition value
-  pub match_exprs: Vec<CoreAst>,
+  pub match_exprs: Vec<Arc<CoreAst>>,
   /// One unique type variable per match expression
   pub match_expr_types: Vec<TypeVar>,
 
   /// Guard condition, None if there's no condition (always true)
-  pub guard: Option<CoreAst>,
+  pub guard: Option<Arc<CoreAst>>,
   /// Unique type variable for guard condition expression
   pub guard_ty: Vec<TypeVar>,
 
   /// Clause body
-  pub body: Box<CoreAst>,
+  pub body: Arc<CoreAst>,
   /// Case clause type
   pub ret_ty: TypeVar,
 }
@@ -42,7 +43,7 @@ impl std::fmt::Display for CaseClause {
 /// `if` operator, `try of`, and `case of`.
 pub struct Case {
   /// Case switch expressions, multiple are allowed
-  pub exprs: Vec<CoreAst>,
+  pub exprs: Vec<Arc<CoreAst>>,
   /// Case clauses in order. Each case must match every expression from `Self::exprs`
   pub clauses: Vec<CaseClause>,
   /// The unique typevar for return type, the union of clause return types

@@ -1,12 +1,12 @@
 //! Contains code for generating type equations from AST in `Unifier` impl
+use std::borrow::Borrow;
+use std::ops::Deref;
 use function_name::named;
+
 use crate::typing::unifier::Unifier;
 use crate::typing::unifier::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
 use crate::erl_error::ErlResult;
-use crate::core_erlang::syntax_tree::core_ast_iter::AstChild;
-use std::borrow::Borrow;
-use std::ops::Deref;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
@@ -34,10 +34,7 @@ impl Unifier {
     // Recursively descend into AST and visit deepest nodes first
     if let Some(children) = ast.children() {
       for child in children {
-        let gen_result = match child {
-          AstChild::Ref(c) => self.generate_equations(module, eq, c),
-          AstChild::RefCell(refc) => self.generate_equations(module, eq, refc.borrow())
-        };
+        let gen_result = self.generate_equations(module, eq, child.deref());
         match gen_result {
           Ok(_) => {} // nothing, all good
           Err(err) => { module.add_error(err); }

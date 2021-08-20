@@ -2,6 +2,7 @@
 //! then using this data is able to infer the type of any AST piece from the same program.
 use std::collections::{BTreeSet, BTreeMap};
 use std::sync::{Arc};
+use std::ops::Deref;
 
 use equation::TypeEquation;
 
@@ -52,6 +53,9 @@ impl Unifier {
 
     {
       let ast: Arc<CoreAst> = module.core_ast.read().unwrap().clone();
+      assert!(!matches!(ast.deref(), CoreAst::Empty),
+              "Must populate module.ast with CoreAST before creating an Unifier");
+
       unifier.generate_equations(module, &mut eq, &ast)?;
       unifier.equations = eq;
       for eq in unifier.equations.iter() {

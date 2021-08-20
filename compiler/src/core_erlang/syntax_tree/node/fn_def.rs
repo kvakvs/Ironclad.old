@@ -1,4 +1,6 @@
 //! Defines a new function in Core Erlang
+use std::sync::Arc;
+
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
@@ -11,7 +13,7 @@ pub struct FnDef {
   /// inside inner case as clauses, and function args are now just unique vars (typevars).
   pub args: Vec<TypeVar>,
   /// Function body AST, for multi-clause functions begins with a Case node.
-  pub body: Box<CoreAst>,
+  pub body: Arc<CoreAst>,
   /// Return type variable, the meaning is assigned by the unifier
   pub ret_ty: TypeVar,
 }

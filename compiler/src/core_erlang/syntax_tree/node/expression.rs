@@ -1,4 +1,6 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
+use std::sync::Arc;
+
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
@@ -8,9 +10,9 @@ use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
 // #[derive(PartialEq)]
 pub struct BinaryOperatorExpr {
   /// Left operand
-  pub left: Box<CoreAst>,
+  pub left: Arc<CoreAst>,
   /// Right operand
-  pub right: Box<CoreAst>,
+  pub right: Arc<CoreAst>,
   /// The operator
   pub operator: CoreBinaryOp,
   /// The return type of the operation
@@ -84,7 +86,7 @@ impl BinaryOperatorExpr {
 // #[derive(PartialEq)]
 pub struct UnaryOperatorExpr {
   /// The operand
-  pub expr: Box<CoreAst>,
+  pub expr: Arc<CoreAst>,
   /// The operator
   pub operator: CoreUnaryOp,
 }

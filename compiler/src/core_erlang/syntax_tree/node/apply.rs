@@ -7,13 +7,14 @@ use crate::display;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
+use std::sync::Arc;
 
 /// Contains a function call
 pub struct Apply {
   /// Must resolve to a callable
-  pub target: Box<CoreAst>,
+  pub target: Arc<CoreAst>,
   /// Must match arity
-  pub args: Vec<CoreAst>,
+  pub args: Vec<Arc<CoreAst>>,
   /// The unique typevar for return type
   pub ret_ty: TypeVar,
 }
