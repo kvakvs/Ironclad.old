@@ -3,7 +3,7 @@
 use function_name::named;
 use std::ops::Deref;
 use std::cell::Ref;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 
 /// Wraps either a simple reference or a runtime borrow from RefCell, for access to node children.
 /// Lives as long as the parent who created this.

@@ -1,6 +1,6 @@
 //! Defines primitive operations for BEAM assembly and BEAM VM, which are not part of Core Erlang.
 
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 
 /// Describes an exception kind
 pub enum ExceptionType {

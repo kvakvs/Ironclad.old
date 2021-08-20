@@ -5,12 +5,12 @@ use crate::typing::unifier::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
 use crate::erlang::module::ErlModule;
 use crate::erl_error::ErlResult;
-use crate::syntaxtree::core_erl::core_ast_iter::AstChild;
+use crate::core_erlang::syntax_tree::core_ast_iter::AstChild;
 use std::borrow::Borrow;
 use std::ops::Deref;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
-use crate::syntaxtree::core_erl::node::fn_def::FnDef;
-use crate::syntaxtree::core_erl::node::apply::Apply;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
+use crate::core_erlang::syntax_tree::node::apply::Apply;
 
 impl Unifier {
   /// Add a type equation, shortcut

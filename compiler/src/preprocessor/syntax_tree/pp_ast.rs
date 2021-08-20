@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use crate::project::ErlProject;
-use crate::syntaxtree::ast_cache::{AstCache, AstTree};
+use crate::ast_tree::{AstCache, AstTree};
 use std::rc::Rc;
 
 /// While preprocessing source, the text is parsed into these segments

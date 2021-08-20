@@ -1,8 +1,8 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
-use crate::syntaxtree::core_erl::core_op::{CoreBinaryOp, CoreUnaryOp};
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 // #[derive(PartialEq)]

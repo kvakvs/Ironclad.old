@@ -1,6 +1,6 @@
 //! Erlang preprocessor AST tree
-use crate::syntaxtree::pp::pp_parser::{PpParser, Rule};
-use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstTree};
+use crate::preprocessor::syntax_tree::pp_parser::{PpParser, Rule};
+use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
 use pest::iterators::{Pair};
 use pest::Parser;

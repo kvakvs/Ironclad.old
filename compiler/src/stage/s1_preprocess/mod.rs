@@ -12,7 +12,7 @@ use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::stage::file_contents_cache::FileContentsCache;
-use crate::syntaxtree::pp::pp_ast::{PpAst, PpAstCache, PpAstTree};
+use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache, PpAstTree};
 
 enum PpCondition {
   Ifdef(String),

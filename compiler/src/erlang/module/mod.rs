@@ -19,7 +19,7 @@ use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use crate::mfarity::MFArity;
 use std::collections::HashMap;
 use std::cell::RefCell;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 
 pub mod func_registry;
 

@@ -1,6 +1,6 @@
 //! Defines a new function in Core Erlang
 use crate::mfarity::MFArity;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
 
 /// Defines a new function in Core Erlang

@@ -1,7 +1,7 @@
 //! A function call to a local fn or an exported fn from another module
 
 use crate::mfarity::MFArity;
-use crate::syntaxtree::core_erl::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
 
 /// Contains a function call on a MFArity

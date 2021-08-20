@@ -16,7 +16,7 @@ use crate::typing::typevar::TypeVar;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FunctionType;
-use crate::syntaxtree::ast_cache::{AstTree, AstCache};
+use crate::ast_tree::{AstTree, AstCache};
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {

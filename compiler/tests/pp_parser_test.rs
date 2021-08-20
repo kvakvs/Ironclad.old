@@ -2,8 +2,8 @@ extern crate compiler;
 
 mod test_util;
 
-use compiler::syntaxtree::pp::pp_parser::{Rule};
-use compiler::syntaxtree::pp::pp_ast::{PpAst};
+use compiler::preprocessor::syntax_tree::pp_parser::{Rule};
+use compiler::preprocessor::syntax_tree::pp_ast::{PpAst};
 use crate::test_util::pp_parse;
 use std::ops::Deref;
 

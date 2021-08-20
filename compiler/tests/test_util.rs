@@ -1,6 +1,6 @@
-use compiler::syntaxtree::pp::pp_parser;
+use compiler::preprocessor::syntax_tree::pp_parser;
 use compiler::erl_error::{ErlResult};
-use compiler::syntaxtree::pp::pp_ast::{PpAst, PpAstTree};
+use compiler::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstTree};
 use compiler::project::source_file::SourceFile;
 use std::path::PathBuf;
 use pest::Parser;

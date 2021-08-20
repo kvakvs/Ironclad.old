@@ -2,5 +2,5 @@
 #![allow(missing_docs)]
 
 #[derive(Parser)]
-#[grammar = "syntaxtree/pp/pp_grammar.pest"]
+#[grammar = "preprocessor/syntax_tree/pp_grammar.pest"]
 pub struct PpParser;

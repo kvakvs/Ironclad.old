@@ -14,6 +14,9 @@ pub mod mfarity;
 pub mod source_loc;
 pub mod display;
 pub mod erlang;
+pub mod preprocessor;
+pub mod core_erlang;
+pub mod ast_tree;
 
 extern crate pest;
 #[macro_use]
