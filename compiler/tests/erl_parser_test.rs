@@ -8,14 +8,14 @@ use compiler::erlang::syntax_tree::erl_parser::{Rule};
 use compiler::erlang::syntax_tree::erl_ast::{ErlAst};
 use compiler::erlang::syntax_tree::node::literal::Literal;
 use std::ops::Deref;
-use compiler::erlang::::ErlModule;
 use compiler::erl_error::ErlResult;
+use compiler::project::module::Module;
 
 /// Try parse string
 #[named]
 #[test]
 fn parse_string_test() -> ErlResult<()> {
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::string, "\"abc\"").unwrap();
 
   {
@@ -33,7 +33,7 @@ fn parse_string_test() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_expr_flat() -> ErlResult<()> {
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::expr, "A + 123 + 333 + 6 + atom + Test")?;
 
   {
@@ -51,7 +51,7 @@ fn parse_expr_flat() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_expr_longer() -> ErlResult<()> {
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::expr, "123 + 1 / (2 * hello)")?;
 
   {
@@ -70,15 +70,15 @@ fn parse_expr_longer() -> ErlResult<()> {
 #[test]
 fn parse_expr_comma() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a comma separated list of expressions");
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::expr, "A, B, 123 * C")?;
 
   {
     let ast = module1.ast.read().unwrap();
-    if let ErlAst::Comma { .. } = ast.deref() {
+    if let ErlAst::BinaryOp (_loc, _expr) = ast.deref() {
       // ok
     } else {
-      panic!("{} Expected: ErlAst::Comma, got {}", function_name!(), ast);
+      panic!("{} Expected: ErlAst::BinaryOp with Comma, got {}", function_name!(), ast);
     }
   }
   Ok(())
@@ -89,7 +89,7 @@ fn parse_expr_comma() -> ErlResult<()> {
 #[test]
 fn parse_fn1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::function_def, "f(A) -> atom123.")?;
   {
     let ast = module1.ast.read().unwrap();
@@ -110,7 +110,7 @@ fn parse_fn1() -> ErlResult<()> {
 #[test]
 fn parse_apply_1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a simple apply() expr");
-  let mut module1 = ErlModule::default();
+  let mut module1 = Module::default();
   module1.parse_str(Rule::expr, "a_function()")?;
   println!("{}: parsed {}", function_name!(), module1.ast.read().unwrap());
 
@@ -129,7 +129,7 @@ fn parse_apply_1() -> ErlResult<()> {
 #[test]
 fn parse_apply_2() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an apply() expression with a fancy left side");
-  let mut module2 = ErlModule::default();
+  let mut module2 = Module::default();
   module2.parse_str(Rule::expr, "(123 + atom)()")?;
   println!("{}: parsed {}", function_name!(), module2.ast.read().unwrap());
 
@@ -148,7 +148,7 @@ fn parse_apply_2() -> ErlResult<()> {
 #[test]
 fn parse_apply_3() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a very fancy nested apply() expression");
-  let mut module3 = ErlModule::default();
+  let mut module3 = Module::default();
   module3.parse_str(Rule::expr, "(F() + g())(test(), 123())")?;
   println!("{} parse_application 3 parsed {}", function_name!(), module3.ast.read().unwrap());
 

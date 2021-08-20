@@ -3,9 +3,9 @@
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult};
 use crate::erlang::syntax_tree::erl_ast_iter::AstChild;
-use crate::erlang::module::ErlModule;
+use crate::project::module::Module;
 
-impl ErlModule {
+impl Module {
   /// Run the post-parse analysis. Relies upon results from Self::postprocess_ast_readonly().
   /// Given a fresh parsed and processed Erlang AST, go through it once more and edit some nodes.
   /// * In function applications replace atom function names with function pointers

@@ -107,9 +107,11 @@ impl std::fmt::Display for ErlError {
 }
 
 impl ErlError {
-  // pub(crate) fn not_impl<T>(what: &str) -> ErlResult<T> {
-  //   Err(ErlError::NotImpl { explanation: what.to_string() })
-  // }
+  /// Some errors might result in a non-0 exit code, list them here
+  pub fn process_exit_code(&self) -> i32 {
+    // match self {}
+    return 1;
+  }
 
   /// Creates a preprocessor error from a filename and a message
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {

@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
 use crate::stage::code_cache::CodeCache;
-use crate::erlang::module::ErlModule;
+use crate::project::module::Module;
 
 // /// Run syntax parser on an ERL or HRL source file
 // fn parse_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<ErlAstTree>> {
@@ -30,7 +30,7 @@ pub fn run(project: &mut ErlProject,
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
       let compile_options = project.get_compiler_options_for(path);
 
-      let mut module = ErlModule::new(compile_options, source_file.clone());
+      let mut module = Module::new(compile_options, source_file.clone());
       module.parse_and_unify()?;
 
       code_cache.items.insert(module.name.clone(),

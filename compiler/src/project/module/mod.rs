@@ -1,13 +1,13 @@
 //! Defines an Erlang module ready to be compiled
 
-use std::fmt;
-use std::fmt::Debug;
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::sync::{Arc, RwLock};
-
 use ::function_name::named;
 use pest::Parser;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::fmt;
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
@@ -17,8 +17,6 @@ use crate::erlang::syntax_tree::erl_parser;
 use crate::typing::unifier::Unifier;
 use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use crate::mfarity::MFArity;
-use std::collections::HashMap;
-use std::cell::RefCell;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 
 pub mod func_registry;
@@ -26,7 +24,7 @@ pub mod func_registry;
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
 /// - Compiler options used to produce this module
-pub struct ErlModule {
+pub struct Module {
   /// Options used to build this module. Possibly just a ref to the main project's options
   pub compiler_options: Arc<CompilerOpts>,
   /// Module name atom, as a string
@@ -35,9 +33,10 @@ pub struct ErlModule {
   pub source_file: Arc<SourceFile>,
 
   /// AST tree of the module
-  pub ast: Rc<RwLock<ErlAst>>,
+  pub ast: Arc<RwLock<ErlAst>>,
+
   /// Core Erlang AST tree of the module
-  pub core_ast: Rc<RwLock<CoreAst>>,
+  pub core_ast: Arc<RwLock<CoreAst>>,
 
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
@@ -54,15 +53,15 @@ pub struct ErlModule {
 }
 
 
-impl Default for ErlModule {
+impl Default for Module {
   fn default() -> Self {
     Self {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: Rc::new(RwLock::new(ErlAst::Empty)),
-      core_ast: Rc::new(RwLock::new(CoreAst::Empty)),
-      unifier: Unifier::default(),
+      ast: Arc::new(RwLock::new(ErlAst::Empty)),
+      core_ast: Arc::new(RwLock::new(CoreAst::Empty)),
+      unifier: Default::default(),
       functions: vec![],
       functions_lookup: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
@@ -70,13 +69,13 @@ impl Default for ErlModule {
   }
 }
 
-impl Debug for ErlModule {
+impl Debug for Module {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "ErlModule({})", self.name)
   }
 }
 
-impl ErlModule {
+impl Module {
   /// Create a new empty module
   pub fn new(opt: Arc<CompilerOpts>, source_file: Arc<SourceFile>) -> Self {
     Self {
@@ -123,7 +122,7 @@ impl ErlModule {
 
       println!("\n{}: {}", function_name!(), ast0);
 
-      Rc::new(RwLock::new(ast0))
+      Arc::new(RwLock::new(ast0))
     };
 
     self.unifier = Unifier::new(self).unwrap();
@@ -154,7 +153,7 @@ impl ErlModule {
 
     println!("\n{}: {}", function_name!(), ast0);
 
-    self.ast = Rc::new(RwLock::new(ast0));
+    self.ast = Arc::new(RwLock::new(ast0));
     Ok(())
   }
 }

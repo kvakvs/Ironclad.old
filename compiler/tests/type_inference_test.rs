@@ -10,14 +10,14 @@ use compiler::erlang::syntax_tree::erl_parser::{Rule};
 use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
-use compiler::erlang::module::ErlModule;
+use compiler::project::module::Module;
 
 #[named]
 #[test]
 fn infer_simplemath() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for simple expression");
   let code = "myfun(A) -> (A + 1) / 2.";
-  let mut module = ErlModule::default();
+  let mut module = Module::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
 
   {
@@ -51,7 +51,7 @@ fn infer_simplemath() -> ErlResult<()> {
 fn infer_atom_list_concatenation() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a sum of two lists with atoms");
   let code = "atomtest(A) -> [atom1] ++ [atom2].";
-  let mut module = ErlModule::default();
+  let mut module = Module::default();
   module.parse_and_unify_str(Rule::function_def, code)?;
   {
     let ast = module.ast.read().unwrap();
@@ -80,7 +80,7 @@ fn infer_funcall_test() -> ErlResult<()> {
   let code = "-module(infer_funcall).\n\
                    add(A, B) -> A + B.\n\
                    main() -> add(A, 4).\n";
-  let mut module = ErlModule::default();
+  let mut module = Module::default();
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast = module.ast.read().unwrap();
@@ -112,7 +112,7 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   let code = "-module(infer_multiple_clause).\n\
                    main() -> [atom1] ++ [atom2];\n\
                    main() -> 2 + 3.\n";
-  let mut module = ErlModule::default();
+  let mut module = Module::default();
   module.parse_and_unify_str(Rule::module, code)?;
   {
     let ast2 = module.ast.read().unwrap();

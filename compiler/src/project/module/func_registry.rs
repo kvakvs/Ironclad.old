@@ -1,12 +1,13 @@
 //! Stores functions and function clauses for an Erlang Module
+use std::sync::Arc;
+
 use crate::mfarity::MFArity;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::literal::Literal;
 use crate::erlang::syntax_tree::node::fn_def::FnDef;
-use crate::erlang::module::ErlModule;
-use std::sync::Arc;
+use crate::project::module::Module;
 
-impl ErlModule {
+impl Module {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
   pub fn add_function(&mut self, nf: Arc<FnDef>) {
     let index = self.functions.len();

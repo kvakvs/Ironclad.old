@@ -11,7 +11,7 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use crate::display::display_comma_separated;
-use crate::erlang::module::ErlModule;
+use crate::project::module::Module;
 
 /// AST node which contains a function call
 pub struct Apply {
@@ -78,7 +78,7 @@ impl Apply {
 
   /// During post-parse scan try check if our expression is a reference to a known function.
   /// If so, replace it with a pointer to that function.
-  pub fn postprocess_edit_node(&self, module: &ErlModule) -> ErlResult<()> {
+  pub fn postprocess_edit_node(&self, module: &Module) -> ErlResult<()> {
     // Check if expr (target) points to some existing function that we know
     let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
     match find_result {

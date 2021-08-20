@@ -1,20 +1,22 @@
 //! Erlang project contains all settings for input files and compiler options
+use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use glob::glob;
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
+use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
-use crate::project::conf::ErlProjectConf;
-use glob::{glob};
-use std::path::{PathBuf, Path};
-use std::collections::{HashSet, HashMap};
 use crate::stage;
-use std::sync::Arc;
 
 pub mod conf;
 pub mod compiler_opts;
 pub mod input_opts;
 pub mod source_file;
+pub mod module;
 
 /// Same as ErlProjectConf but no Option<> fields
 #[derive(Debug)]
@@ -113,8 +115,8 @@ impl ErlProject {
   }
 }
 
-impl From<ErlProjectConf> for ErlProject {
-  fn from(conf: ErlProjectConf) -> Self {
+impl From<ProjectConf> for ErlProject {
+  fn from(conf: ProjectConf) -> Self {
     Self {
       compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
       inputs: InputOpts::from(conf.inputs),

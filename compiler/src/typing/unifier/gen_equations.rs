@@ -3,7 +3,6 @@ use function_name::named;
 use crate::typing::unifier::Unifier;
 use crate::typing::unifier::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
-use crate::erlang::module::ErlModule;
 use crate::erl_error::ErlResult;
 use crate::core_erlang::syntax_tree::core_ast_iter::AstChild;
 use std::borrow::Borrow;
@@ -11,6 +10,7 @@ use std::ops::Deref;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
+use crate::project::module::Module;
 
 impl Unifier {
   /// Add a type equation, shortcut
@@ -29,7 +29,7 @@ impl Unifier {
   /// Generate type equations from node. Each type variable is opposed to some type which we know, or
   /// to Any, if we don't know.
   #[named]
-  pub fn generate_equations(&self, module: &ErlModule,
+  pub fn generate_equations(&self, module: &Module,
                             eq: &mut Vec<TypeEquation>, ast: &CoreAst) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
     if let Some(children) = ast.children() {
@@ -126,7 +126,7 @@ impl Unifier {
     // let ret_union_t = ErlType::union_of(ret_union_members, true);
     // Self::equation(eq, ast, fn_def.ret_ty.into(), ret_union_t);
 
-    // Ok(())
+    Ok(())
   }
 
   // /// Type inference wiring

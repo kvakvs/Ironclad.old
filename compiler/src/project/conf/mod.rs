@@ -15,7 +15,7 @@ pub mod input_opts;
 
 /// Defines configuration file as it is loaded by TOML and serde
 #[derive(Deserialize)]
-pub struct ErlProjectConf {
+pub struct ProjectConf {
   /// Input search paths, output paths, flags, ... etc
   pub compiler_opts: Option<CompilerOptsConf>,
 
@@ -23,7 +23,7 @@ pub struct ErlProjectConf {
   pub inputs: Option<InputOptsConf>,
 }
 
-impl ErlProjectConf {
+impl ProjectConf {
   /// Creates project struct from a TOML filename
   pub fn from_project_file(filename: &str) -> Result<Self, ErlError> {
     let config_str = fs::read_to_string(filename)?;
@@ -40,8 +40,8 @@ impl ErlProjectConf {
 }
 
 
-impl Debug for ErlProjectConf {
+impl Debug for ProjectConf {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "ErlProject({:?}, {:?})", self.inputs, self.compiler_opts)
+    write!(f, "ProjectConf({:?}, {:?})", self.inputs, self.compiler_opts)
   }
 }

@@ -10,12 +10,12 @@ use std::collections::VecDeque;
 use crate::erlang::syntax_tree::node::token::ErlToken;
 use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use std::sync::Arc;
-use crate::erlang::module::ErlModule;
+use crate::project::module::Module;
 use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
 
-impl ErlModule {
+impl Module {
   fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,
                          op: Pair<Rule>,
                          rhs0: ErlResult<ErlAst>) -> ErlResult<ErlAst> {

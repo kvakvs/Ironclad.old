@@ -1,19 +1,18 @@
 //! Module provides logic for unifying the type equations generated for a program's AST, and
 //! then using this data is able to infer the type of any AST piece from the same program.
 use std::collections::{BTreeSet, BTreeMap};
-use std::rc::Rc;
-use std::sync::RwLock;
+use std::sync::{RwLock, Arc};
 
 use equation::TypeEquation;
 
 use crate::erl_error::{ErlError, ErlResult};
-use crate::erlang::module::ErlModule;
 use crate::typing::erl_type::ErlType;
 use crate::typing::error::TypeError;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::project::module::Module;
 
 pub mod gen_equations;
 pub mod infer;
@@ -43,14 +42,14 @@ impl Default for Unifier {
 impl Unifier {
   /// Create a new Unifier from AST tree, and setup the equations for this code.
   /// This will scan the AST and prepare data for type inference.
-  pub fn new(module: &mut ErlModule) -> ErlResult<Self> {
+  pub fn new(module: &mut Module) -> ErlResult<Self> {
     let mut unifier = Self {
       equations: vec![],
       subst: Default::default(),
     };
 
     let mut eq = Vec::new();
-    let ast: Rc<RwLock<CoreAst>> = module.core_ast.clone();
+    let ast: Arc<RwLock<CoreAst>> = module.core_ast.clone();
 
     {
       let ast_r = ast.read().unwrap();
@@ -68,7 +67,7 @@ impl Unifier {
   }
 
   /// Goes through all generated type equations and applies self.unify() to arrive to a solution
-  fn unify_all_equations(&mut self, module: &ErlModule) -> ErlResult<()> {
+  fn unify_all_equations(&mut self, module: &Module) -> ErlResult<()> {
     let mut equations: Vec<TypeEquation> = Vec::new();
     std::mem::swap(&mut self.equations, &mut equations); // move
 
@@ -86,14 +85,14 @@ impl Unifier {
   }
 
   /// Unify two function clauses whether left matches right
-  fn unify_fn_clause(&self, _module: &ErlModule,
+  fn unify_fn_clause(&self, _module: &Module,
                      fc1: &FnClauseType, fc2: &FnClauseType) -> ErlResult<Option<SubstMap>> {
     println!("Unify fn_c {} <> {}", fc1, fc2);
     Ok(None) // TODO
   }
 
   /// Unify for when both sides of equation are function types
-  fn unify_fn(&self, module: &ErlModule,
+  fn unify_fn(&self, module: &Module,
               fun1: &FunctionType, fun2: &FunctionType) -> ErlResult<Option<SubstMap>> {
     // Check the arities must match
     if fun1.arity != fun2.arity {
@@ -149,7 +148,7 @@ impl Unifier {
   ///
   /// Return: `Ok(None)` - types match, `Ok(Some(subst))` - types match with some new substitution
   ///   (we merge it into `self.subst`).
-  fn unify(&self, module: &ErlModule,
+  fn unify(&self, module: &Module,
            type1: &ErlType, type2: &ErlType) -> ErlResult<Option<SubstMap>> {
     if type1 == type2 {
       return Ok(None); // no substitution required
@@ -222,7 +221,7 @@ impl Unifier {
   }
 
   /// Whether any member of type union matches type t?
-  fn unify_check_in_union(&self, env: &ErlModule,
+  fn unify_check_in_union(&self, env: &Module,
                           t: &ErlType, union: &BTreeSet<ErlType>) -> bool {
     union.iter().any(|member| {
       self.unify(env, &t, &member).is_ok()
@@ -230,7 +229,7 @@ impl Unifier {
   }
 
   /// Try find a substitution where `tvar` will be identical to `ty` on the right
-  fn unify_variable(&self, module: &ErlModule,
+  fn unify_variable(&self, module: &Module,
                     tvar: &TypeVar, ty: &ErlType) -> ErlResult<Option<SubstMap>> {
     if let Some(entry1) = self.subst.get(tvar) {
       let entry = entry1.clone();
