@@ -482,8 +482,5 @@ impl ErlType {
   }
 }
 
-impl From<TypeVar> for ErlType {
-  fn from(tv: TypeVar) -> Self {
-    ErlType::TVar(tv)
-  }
-}
+impl From<TypeVar> for ErlType { fn from(tv: TypeVar) -> Self { ErlType::TVar(tv) } }
+impl From<&TypeVar> for ErlType { fn from(tv: &TypeVar) -> Self { ErlType::TVar(tv.clone()) } }

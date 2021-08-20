@@ -4,7 +4,6 @@ pub mod erl_ast_iter;
 pub mod erl_parser;
 pub mod erl_op;
 pub mod display;
-pub mod query;
 pub mod ast_builder;
 pub mod ast_processor;
 pub mod node;

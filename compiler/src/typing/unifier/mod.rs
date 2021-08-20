@@ -8,12 +8,12 @@ use equation::TypeEquation;
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::erl_module::ErlModule;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::typing::error::TypeError;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
+use crate::syntaxtree::core_erl::core_ast::CoreAst;
 
 pub mod gen_equations;
 pub mod infer;
@@ -50,7 +50,7 @@ impl Unifier {
     };
 
     let mut eq = Vec::new();
-    let ast: Rc<RwLock<ErlAst>> = module.ast.clone();
+    let ast: Rc<RwLock<CoreAst>> = module.core_ast.clone();
 
     {
       let ast_r = ast.read().unwrap();

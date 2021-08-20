@@ -10,8 +10,14 @@ use std::fmt::Formatter;
 pub struct CaseClause {
   /// The array of match expressions, one per case condition value
   pub match_exprs: Vec<CoreAst>,
+  /// One unique type variable per match expression
+  pub match_expr_types: Vec<TypeVar>,
+
   /// Guard condition, None if there's no condition (always true)
-  pub guard_cond: Option<CoreAst>,
+  pub guard: Option<CoreAst>,
+  /// Unique type variable for guard condition expression
+  pub guard_ty: Vec<TypeVar>,
+
   /// Clause body
   pub body: Box<CoreAst>,
   /// Case clause type
@@ -23,7 +29,7 @@ impl std::fmt::Display for CaseClause {
     write!(f, "( < ")?;
     display::display_comma_separated(&self.match_exprs, f)?;
 
-    match &self.guard_cond {
+    match &self.guard {
       None => write!(f, "> when 'true' -> ")?,
       Some(cond) => write!(f, "> when {} -> ", cond)?,
     };
@@ -55,7 +61,7 @@ impl std::fmt::Display for Case {
       },
     }
     for clause in &self.clauses {
-      writeln!(f, "( {} )", clause);
+      writeln!(f, "( {} )", clause)?;
     }
     write!(f, ")")
   }

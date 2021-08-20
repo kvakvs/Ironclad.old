@@ -16,9 +16,12 @@ use crate::syntaxtree::core_erl::node::prim_op::PrimOp;
 use crate::syntaxtree::core_erl::node::var::Var;
 use crate::syntaxtree::erl::node::literal::Literal;
 use crate::typing::erl_type::ErlType;
+use crate::typing::typevar::TypeVar;
 
 /// AST node in Core Erlang (parsed or generated)
 pub enum CoreAst {
+  /// Default value for AST tree not initialized
+  Empty,
   /// Module header with the name and a collection of exported functions
   Module {
     /// Module name atom
@@ -93,6 +96,8 @@ pub enum CoreAst {
     location: SourceLoc,
     /// The literal tree
     value: Literal,
+    /// Literal type
+    ty: TypeVar,
   },
   /// An operator with 2 arguments left and right (also comma operator)
   BinOp {
@@ -156,9 +161,24 @@ impl CoreAst {
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
+
+  /// Retrieve source file location for an AST element
+  pub fn location(&self) -> SourceLoc {
+    match self {
+      CoreAst::FnDef { location: loc, .. } => *loc,
+      CoreAst::Var { location, .. } => *location,
+      CoreAst::Apply { location, .. } => *location,
+      CoreAst::Case { location, .. } => *location,
+      CoreAst::Lit { location, .. } => *location,
+      CoreAst::BinOp { location, .. } => *location,
+      CoreAst::UnOp { location, .. } => *location,
+      _ => SourceLoc::default(),
+    }
+  }
 }
 
 impl std::fmt::Display for CoreAst {
+  #[named]
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
       CoreAst::Module { name, exports } => {
@@ -168,7 +188,7 @@ impl std::fmt::Display for CoreAst {
       CoreAst::Attributes(attrs) => {
         writeln!(f, "attributes ")?;
         display::display_square_list(attrs, f)
-      },
+      }
       CoreAst::FnDef { fn_def, .. } => {
         write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
         display::display_paren_list(&fn_def.args, f)?;
@@ -179,14 +199,14 @@ impl std::fmt::Display for CoreAst {
         None => write!(f, "{}", var.ty),
         Some(n) => write!(f, "{}", n),
       },
-      CoreAst::Apply{ app, ..} => write!(f, "{}", app),
-      CoreAst::Case{ case,..} => write!(f, "{}", case),
-      CoreAst::Lit {value, ..} => write!(f, "{}", value),
+      CoreAst::Apply { app, .. } => write!(f, "{}", app),
+      CoreAst::Case { case, .. } => write!(f, "{}", case),
+      CoreAst::Lit { value, .. } => write!(f, "{}", value),
 
-      CoreAst::BinOp{op, ..} => {
+      CoreAst::BinOp { op, .. } => {
         write!(f, "({} {} {})", op.left, op.operator, op.right)
       }
-      CoreAst::UnOp{op, ..} => {
+      CoreAst::UnOp { op, .. } => {
         write!(f, "({} {})", op.operator, op.expr)
       }
       // CoreAst::MFA { mfarity: mfa, .. } => {
@@ -200,6 +220,33 @@ impl std::fmt::Display for CoreAst {
       CoreAst::Let { .. } => todo!("display(let)"),
       CoreAst::Call { .. } => todo!("display(call)"),
       CoreAst::PrimOp { .. } => todo!("display(primop)"),
+
+      other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
+    }
+  }
+}
+
+impl std::fmt::Debug for CoreAst {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      CoreAst::FnDef { fn_def, .. } => {
+        write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
+        display::display_paren_list(&fn_def.args, f)?;
+        write!(f, ":{} -> {}", fn_def.ret_ty, fn_def.body)?;
+        write!(f, "}})")
+        // write!(f, "fun {} -> {} {{", fn_def.funarity, fn_def.ret_ty)?;
+        // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
+        // write!(f, "}}")
+      }
+      CoreAst::Var { var, .. } => write!(f, "{}:{}", self, var.ty),
+      // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
+      // CoreAst::BinaryOp(_loc, binop) => {
+      //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
+      // }
+      // CoreAst::UnaryOp(_loc, unop) => {
+      //   write!(f, "({} {:?})", unop.operator, unop.expr)
+      // }
+      _ => write!(f, "{}", self),
     }
   }
 }

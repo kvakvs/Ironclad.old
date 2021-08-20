@@ -19,6 +19,7 @@ use crate::syntaxtree::erl::node::fn_def::FnDef;
 use crate::mfarity::MFArity;
 use std::collections::HashMap;
 use std::cell::RefCell;
+use crate::syntaxtree::core_erl::core_ast::CoreAst;
 
 pub mod func_registry;
 
@@ -32,8 +33,12 @@ pub struct ErlModule {
   pub name: String,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: Arc<SourceFile>,
+
   /// AST tree of the module
   pub ast: Rc<RwLock<ErlAst>>,
+  /// Core Erlang AST tree of the module
+  pub core_ast: Rc<RwLock<CoreAst>>,
+
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
 
@@ -56,6 +61,7 @@ impl Default for ErlModule {
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
       ast: Rc::new(RwLock::new(ErlAst::Empty)),
+      core_ast: Rc::new(RwLock::new(CoreAst::Empty)),
       unifier: Unifier::default(),
       functions: vec![],
       functions_lookup: Default::default(),
