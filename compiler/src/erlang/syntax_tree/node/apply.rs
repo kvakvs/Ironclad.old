@@ -1,17 +1,17 @@
 //! Defines Application AST node for a function call
 use std::cell::RefCell;
+use std::fmt::Formatter;
 
 use crate::erl_error::ErlResult;
-use crate::erl_module::ErlModule;
 use crate::source_loc::SourceLoc;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
-use std::fmt::Formatter;
 use crate::display::display_comma_separated;
+use crate::erlang::module::ErlModule;
 
 /// AST node which contains a function call
 pub struct Apply {

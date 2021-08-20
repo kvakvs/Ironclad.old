@@ -6,7 +6,7 @@ use std::path::{Path};
 use pest::error::LineColLocation;
 
 use crate::source_loc::{ErrorLocation, SourceLoc};
-use crate::syntaxtree::erl::erl_parser;
+use crate::erlang::syntax_tree::erl_parser;
 use crate::syntaxtree::pp::pp_parser;
 use crate::typing::error::TypeError;
 

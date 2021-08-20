@@ -1,22 +1,22 @@
 //! AST syntax structure of an Erlang file
 use ::function_name::named;
-use crate::syntaxtree::ast_cache::{AstCache, AstTree};
-use crate::syntaxtree::erl::node::apply::Apply;
-use crate::syntaxtree::erl::node::case_clause::CaseClause;
-use crate::syntaxtree::erl::node::case::Case;
-use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::node::literal::Literal;
-use crate::syntaxtree::erl::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
-use crate::syntaxtree::erl::node::var::Var;
-use crate::typing::erl_type::ErlType;
-use crate::mfarity::MFArity;
-use crate::source_loc::SourceLoc;
-use crate::syntaxtree::erl::node::token::ErlToken;
-use crate::typing::typevar::TypeVar;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::apply::Apply;
+use crate::erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::erlang::syntax_tree::node::case::Case;
+use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
+use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::erlang::syntax_tree::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
+use crate::erlang::syntax_tree::node::var::Var;
+use crate::erlang::syntax_tree::node::token::ErlToken;
+use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use std::sync::Arc;
-use crate::typing::fn_type::FunctionType;
+use crate::source_loc::SourceLoc;
+use crate::mfarity::MFArity;
+use crate::typing::typevar::TypeVar;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::erl_type::ErlType;
+use crate::typing::fn_type::FunctionType;
+use crate::syntaxtree::ast_cache::{AstTree, AstCache};
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {

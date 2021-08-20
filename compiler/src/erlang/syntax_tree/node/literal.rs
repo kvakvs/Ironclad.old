@@ -1,7 +1,8 @@
 //! Erlang literals, values fully known at compile time
-use crate::typing::erl_type::ErlType;
 use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
+
+use crate::typing::erl_type::ErlType;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone)]

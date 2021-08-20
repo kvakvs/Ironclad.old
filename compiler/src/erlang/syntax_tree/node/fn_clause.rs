@@ -1,7 +1,8 @@
 //! Defines a FClause struct for a new function clause AST node
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
+
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::typing::erl_type::ErlType;
 use crate::display;
 use crate::typing::fn_clause_type::FnClauseType;
 

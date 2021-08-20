@@ -7,13 +7,13 @@
 
 pub mod syntaxtree;
 pub mod project;
-pub mod erl_module;
 pub mod erl_error;
 pub mod stage;
 pub mod typing;
 pub mod mfarity;
 pub mod source_loc;
 pub mod display;
+pub mod erlang;
 
 extern crate pest;
 #[macro_use]

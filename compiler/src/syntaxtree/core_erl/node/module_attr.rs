@@ -1,6 +1,6 @@
 //! Module attribute is a generic container for erlang syntax `-name(param, param, ...)`.
 use crate::source_loc::SourceLoc;
-use crate::syntaxtree::erl::node::literal::Literal;
+use crate::erlang::syntax_tree::node::literal::Literal;
 use std::fmt::Formatter;
 use crate::display;
 

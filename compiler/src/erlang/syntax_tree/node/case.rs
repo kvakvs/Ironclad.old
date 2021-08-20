@@ -1,7 +1,7 @@
 //! Defines CaseExpr struct for `case X of` AST node
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::case_clause::CaseClause;
 use std::fmt::Formatter;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::case_clause::CaseClause;
 use crate::typing::typevar::TypeVar;
 
 /// `Case X of ... end` expression AST node

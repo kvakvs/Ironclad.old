@@ -4,11 +4,11 @@ extern crate function_name;
 mod test_util;
 
 use ::function_name::named;
-use compiler::syntaxtree::erl::erl_parser::{Rule};
-use compiler::syntaxtree::erl::erl_ast::{ErlAst};
-use compiler::syntaxtree::erl::node::literal::Literal;
+use compiler::erlang::syntax_tree::erl_parser::{Rule};
+use compiler::erlang::syntax_tree::erl_ast::{ErlAst};
+use compiler::erlang::syntax_tree::node::literal::Literal;
 use std::ops::Deref;
-use compiler::erl_module::ErlModule;
+use compiler::erlang::::ErlModule;
 use compiler::erl_error::ErlResult;
 
 /// Try parse string

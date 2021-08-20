@@ -3,7 +3,7 @@ use crate::typing::unifier::Unifier;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 impl Unifier {
   /// Applies the unifier subst to typ. Also known as: Apply Unifier operation

@@ -1,19 +1,19 @@
 //! Processes parser output and produces ErlAst tree for the program
-use crate::mfarity::MFArity;
-use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::erl_ast::{ErlAst};
-use crate::syntaxtree::erl::erl_op::ErlBinaryOp;
-use crate::syntaxtree::erl::erl_parser::{Rule, get_prec_climber};
-use crate::syntaxtree::erl::node::fn_clause::FnClause;
-use crate::syntaxtree::erl::node::literal::Literal;
+use crate::erlang::syntax_tree::erl_ast::{ErlAst};
+use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
+use crate::erlang::syntax_tree::erl_parser::{Rule, get_prec_climber};
+use crate::erlang::syntax_tree::node::fn_clause::FnClause;
+use crate::erlang::syntax_tree::node::literal::Literal;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
-use crate::erl_module::ErlModule;
-use crate::source_loc::SourceLoc;
 use std::collections::VecDeque;
-use crate::syntaxtree::erl::node::token::ErlToken;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::token::ErlToken;
+use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use std::sync::Arc;
+use crate::erlang::module::ErlModule;
+use crate::erl_error::ErlResult;
+use crate::source_loc::SourceLoc;
+use crate::mfarity::MFArity;
 
 impl ErlModule {
   fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,

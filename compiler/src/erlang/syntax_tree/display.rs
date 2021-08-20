@@ -1,9 +1,9 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::display;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::syntaxtree::erl::node::literal::Literal;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::erlang::syntax_tree::node::literal::Literal;
 
 impl std::fmt::Display for ErlAst {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

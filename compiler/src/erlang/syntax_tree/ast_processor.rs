@@ -1,9 +1,9 @@
 //! Postprocesses an AST tree. Takes a tree in, replaces some nodes, and returns a new tree.
 
-use crate::erl_module::ErlModule;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erl_error::{ErlResult};
-use crate::syntaxtree::erl::erl_ast_iter::AstChild;
+use crate::erlang::syntax_tree::erl_ast_iter::AstChild;
+use crate::erlang::module::ErlModule;
 
 impl ErlModule {
   /// Run the post-parse analysis. Relies upon results from Self::postprocess_ast_readonly().

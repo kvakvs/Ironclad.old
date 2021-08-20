@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
 use crate::stage::code_cache::CodeCache;
-use crate::erl_module::ErlModule;
+use crate::erlang::module::ErlModule;
 
 // /// Run syntax parser on an ERL or HRL source file
 // fn parse_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<ErlAstTree>> {

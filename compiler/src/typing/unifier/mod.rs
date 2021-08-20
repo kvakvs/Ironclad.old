@@ -7,7 +7,7 @@ use std::sync::RwLock;
 use equation::TypeEquation;
 
 use crate::erl_error::{ErlError, ErlResult};
-use crate::erl_module::ErlModule;
+use crate::erlang::module::ErlModule;
 use crate::typing::erl_type::ErlType;
 use crate::typing::error::TypeError;
 use crate::typing::fn_clause_type::FnClauseType;

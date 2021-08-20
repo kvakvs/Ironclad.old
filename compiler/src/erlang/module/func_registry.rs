@@ -1,9 +1,9 @@
 //! Stores functions and function clauses for an Erlang Module
 use crate::mfarity::MFArity;
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::node::literal::Literal;
-use crate::syntaxtree::erl::node::fn_def::FnDef;
-use crate::erl_module::ErlModule;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::erlang::module::ErlModule;
 use std::sync::Arc;
 
 impl ErlModule {

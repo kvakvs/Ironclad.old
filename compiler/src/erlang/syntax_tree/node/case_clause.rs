@@ -1,6 +1,6 @@
 //! Declares AST node for a clause in `case of` expression
-use crate::syntaxtree::erl::erl_ast::ErlAst;
 use std::fmt::Formatter;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::typing::typevar::TypeVar;
 
 /// AST node for a clause in a `case X of` expression.

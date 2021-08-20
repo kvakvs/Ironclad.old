@@ -1,6 +1,6 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
-use crate::syntaxtree::erl::erl_ast::ErlAst;
-use crate::syntaxtree::erl::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 

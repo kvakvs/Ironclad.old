@@ -1,9 +1,10 @@
 //! Define a FunctionDef struct for a new function AST node
-use crate::syntaxtree::erl::node::fn_clause::FnClause;
+use std::fmt::Formatter;
+
+use crate::erlang::syntax_tree::node::fn_clause::FnClause;
 use crate::typing::erl_type::ErlType;
 use crate::mfarity::MFArity;
 use crate::typing::typevar::TypeVar;
-use std::fmt::Formatter;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.

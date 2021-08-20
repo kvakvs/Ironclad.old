@@ -1,7 +1,7 @@
 //! Code cache contains compile states in a dict
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::erl_module::ErlModule;
+use crate::erlang::module::ErlModule;
 
 /// Contains cache of compile state keyed by filename
 pub struct CodeCache {

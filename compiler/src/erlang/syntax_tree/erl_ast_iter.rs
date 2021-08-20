@@ -1,6 +1,6 @@
 //! Contains iteration helpers for ErlAst
 
-use crate::syntaxtree::erl::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use std::ops::Deref;
 use std::cell::Ref;
 

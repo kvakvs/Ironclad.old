@@ -3,7 +3,7 @@ use function_name::named;
 use crate::typing::unifier::Unifier;
 use crate::typing::unifier::equation::TypeEquation;
 use crate::typing::erl_type::ErlType;
-use crate::erl_module::ErlModule;
+use crate::erlang::module::ErlModule;
 use crate::erl_error::ErlResult;
 use crate::syntaxtree::core_erl::core_ast_iter::AstChild;
 use std::borrow::Borrow;

@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use pest::prec_climber::{PrecClimber, Assoc, Operator};
 
 #[derive(Parser)]
-#[grammar = "syntaxtree/erl/erl_grammar.pest"]
+#[grammar = "erlang/syntax_tree/erl_grammar.pest"]
 pub struct ErlParser;
 
 lazy_static! {
