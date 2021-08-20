@@ -21,7 +21,7 @@ fn infer_simplemath() -> ErlResult<()> {
   module.parse_and_unify_str(Rule::function_def, code)?;
 
   {
-    let ast = module.ast.read().unwrap();
+    let ast = module.ast.read().unwrap().clone();
     match ast.deref() {
       ErlAst::FunctionDef { fn_def, .. } => {
         assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");

@@ -20,7 +20,7 @@ use crate::ast_tree::{AstTree, AstCache};
 
 /// AST node in parsed Erlang source
 pub enum ErlAst {
-  /// Default value for when AST tree is empty
+  /// Default value for when AST tree is empty. Should create error, not a valid AST node.
   Empty,
   /// Comment text eliminated.
   Comment(SourceLoc),

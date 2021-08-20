@@ -222,7 +222,7 @@ impl std::fmt::Display for CoreAst {
       CoreAst::PrimOp { .. } => todo!("display(primop)"),
       CoreAst::Empty => write!(f, "<empty ast>"),
 
-      other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
+      //other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
     }
   }
 }

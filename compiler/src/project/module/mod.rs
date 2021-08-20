@@ -32,11 +32,11 @@ pub struct Module {
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: Arc<SourceFile>,
 
-  /// AST tree of the module
-  pub ast: Arc<RwLock<ErlAst>>,
+  /// AST tree of the module.
+  pub ast: RwLock<Arc<ErlAst>>,
 
   /// Core Erlang AST tree of the module
-  pub core_ast: Arc<RwLock<CoreAst>>,
+  pub core_ast: RwLock<Arc<CoreAst>>,
 
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
@@ -59,8 +59,8 @@ impl Default for Module {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: Arc::new(RwLock::new(ErlAst::Empty)),
-      core_ast: Arc::new(RwLock::new(CoreAst::Empty)),
+      ast: RwLock::new(Arc::new(ErlAst::Empty)),
+      core_ast: RwLock::new(Arc::new(CoreAst::Empty)),
       unifier: Default::default(),
       functions: vec![],
       functions_lookup: Default::default(),
@@ -122,7 +122,7 @@ impl Module {
 
       println!("\n{}: {}", function_name!(), ast0);
 
-      Arc::new(RwLock::new(ast0))
+      RwLock::new(Arc::new(ast0))
     };
 
     self.unifier = Unifier::new(self).unwrap();
@@ -153,7 +153,7 @@ impl Module {
 
     println!("\n{}: {}", function_name!(), ast0);
 
-    self.ast = Arc::new(RwLock::new(ast0));
+    self.ast = RwLock::new(Arc::new(ast0));
     Ok(())
   }
 }

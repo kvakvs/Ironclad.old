@@ -1,7 +1,7 @@
 //! Module provides logic for unifying the type equations generated for a program's AST, and
 //! then using this data is able to infer the type of any AST piece from the same program.
 use std::collections::{BTreeSet, BTreeMap};
-use std::sync::{RwLock, Arc};
+use std::sync::{Arc};
 
 use equation::TypeEquation;
 
@@ -49,11 +49,10 @@ impl Unifier {
     };
 
     let mut eq = Vec::new();
-    let ast: Arc<RwLock<CoreAst>> = module.core_ast.clone();
 
     {
-      let ast_r = ast.read().unwrap();
-      unifier.generate_equations(module, &mut eq, &ast_r)?;
+      let ast: Arc<CoreAst> = module.core_ast.read().unwrap().clone();
+      unifier.generate_equations(module, &mut eq, &ast)?;
       unifier.equations = eq;
       for eq in unifier.equations.iter() {
         println!("{:?}", eq);

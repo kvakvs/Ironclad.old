@@ -19,7 +19,7 @@ fn parse_string_test() -> ErlResult<()> {
   module1.parse_str(Rule::string, "\"abc\"").unwrap();
 
   {
-    let ast = module1.ast.read().unwrap();
+    let ast = module1.ast.read().unwrap().clone();
     if let ErlAst::Lit(_loc, Literal::String(_value)) = ast.deref() {
       // ok
     } else {
@@ -37,7 +37,7 @@ fn parse_expr_flat() -> ErlResult<()> {
   module1.parse_str(Rule::expr, "A + 123 + 333 + 6 + atom + Test")?;
 
   {
-    let ast = module1.ast.read().unwrap();
+    let ast = module1.ast.read().unwrap().clone();
     if let ErlAst::BinaryOp { .. } = ast.deref() {
       // ok
     } else {
@@ -55,7 +55,7 @@ fn parse_expr_longer() -> ErlResult<()> {
   module1.parse_str(Rule::expr, "123 + 1 / (2 * hello)")?;
 
   {
-    let ast = module1.ast.read().unwrap();
+    let ast = module1.ast.read().unwrap().clone();
     if let ErlAst::BinaryOp { .. } = ast.deref() {
       //ok
     } else {
@@ -74,7 +74,7 @@ fn parse_expr_comma() -> ErlResult<()> {
   module1.parse_str(Rule::expr, "A, B, 123 * C")?;
 
   {
-    let ast = module1.ast.read().unwrap();
+    let ast = module1.ast.read().unwrap().clone();
     if let ErlAst::BinaryOp (_loc, _expr) = ast.deref() {
       // ok
     } else {
@@ -92,7 +92,7 @@ fn parse_fn1() -> ErlResult<()> {
   let mut module1 = Module::default();
   module1.parse_str(Rule::function_def, "f(A) -> atom123.")?;
   {
-    let ast = module1.ast.read().unwrap();
+    let ast = module1.ast.read().unwrap().clone();
     if let ErlAst::FunctionDef { .. } = ast.deref() {
       // ok
     } else {
@@ -115,7 +115,7 @@ fn parse_apply_1() -> ErlResult<()> {
   println!("{}: parsed {}", function_name!(), module1.ast.read().unwrap());
 
   {
-    let ast1 = module1.ast.read().unwrap();
+    let ast1 = module1.ast.read().unwrap().clone();
     if let ErlAst::Apply { .. } = ast1.deref() {
       // ok
     } else {
@@ -134,7 +134,7 @@ fn parse_apply_2() -> ErlResult<()> {
   println!("{}: parsed {}", function_name!(), module2.ast.read().unwrap());
 
   {
-    let ast2 = module2.ast.read().unwrap();
+    let ast2 = module2.ast.read().unwrap().clone();
     if let ErlAst::Apply { .. } = ast2.deref() {
       // ok
     } else {
@@ -153,7 +153,7 @@ fn parse_apply_3() -> ErlResult<()> {
   println!("{} parse_application 3 parsed {}", function_name!(), module3.ast.read().unwrap());
 
   {
-    let ast3 = module3.ast.read().unwrap();
+    let ast3 = module3.ast.read().unwrap().clone();
     if let ErlAst::Apply { .. } = ast3.deref() {
       // ok
     } else {

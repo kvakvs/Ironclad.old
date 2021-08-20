@@ -104,7 +104,7 @@ impl Unifier {
       }
       CoreAst::List { .. } => {}
       CoreAst::Tuple { .. } => {}
-      CoreAst::Empty => {}
+      CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
 
       _ => unreachable!("{}: Can't process {}", function_name!(), ast),
     }
