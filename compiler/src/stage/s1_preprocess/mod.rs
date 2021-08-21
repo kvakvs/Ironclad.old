@@ -260,7 +260,7 @@ impl PpState {
                 ast_tree.nodes);
     Err(ErlError::PreprocessorParse {
       loc: ErrorLocation::new(Some(source_file.file_name.clone()),
-                              SourceLoc::default()),
+                              SourceLoc::None),
       msg: err_s,
     })
   }

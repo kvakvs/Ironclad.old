@@ -59,7 +59,7 @@ pub enum ErlAst {
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.
-  FunctionDef {
+  FnDef {
     /// Source file pointer
     location: SourceLoc,
     /// Function name and arity
@@ -137,7 +137,7 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::FunctionDef { ret_ty, .. } => (*ret_ty).into(),
+      ErlAst::FnDef { ret_ty, .. } => (*ret_ty).into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
       ErlAst::Apply(_loc, app) => app.ret_ty.into(),
@@ -232,7 +232,7 @@ impl ErlAst {
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
   pub fn temporary_token(t: ErlToken) -> ErlAst {
-    ErlAst::Token { location: SourceLoc::default(), token: t }
+    ErlAst::Token { location: SourceLoc::None, token: t }
   }
 
   // /// Create a new Comma operator from list of AST expressions
@@ -264,7 +264,7 @@ impl ErlAst {
   /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
   pub fn as_fn_def(&self) -> Option<Arc<FnDef>> {
     match self {
-      ErlAst::FunctionDef { fn_def: func_def, .. } => Some(func_def.clone()),
+      ErlAst::FnDef { fn_def: func_def, .. } => Some(func_def.clone()),
       _ => None,
     }
   }
@@ -285,21 +285,22 @@ impl ErlAst {
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
     match self {
-      ErlAst::Comment(loc) => *loc,
-      ErlAst::Token { location: loc, .. } => *loc,
-      ErlAst::ModuleAttr { location: loc, .. } => *loc,
-      // ErlAst::Comma { location: loc, .. } => *loc,
-      ErlAst::FunctionDef { location: loc, .. } => *loc,
-      // ErlAst::FClause(loc, _) => *loc,
-      ErlAst::CClause(loc, _) => *loc,
-      ErlAst::MFA { location: loc, .. } => *loc,
-      ErlAst::Var(loc, _) => *loc,
-      ErlAst::Apply(loc, _) => *loc,
-      ErlAst::Case(loc, _) => *loc,
-      ErlAst::Lit(loc, _) => *loc,
-      ErlAst::BinaryOp(loc, _) => *loc,
-      ErlAst::UnaryOp(loc, _) => *loc,
-      _ => SourceLoc::default(),
+      ErlAst::Comment(loc) => loc.clone(),
+      ErlAst::Token { location: loc, .. } => loc.clone(),
+      ErlAst::ModuleAttr { location: loc, .. } => loc.clone(),
+      // ErlAst::Comma { location: loc, .. } => loc.clone(),
+      ErlAst::FnDef { location: loc, .. } => loc.clone(),
+      // ErlAst::FClause(loc, _) => loc.clone(),
+      ErlAst::CClause(loc, _) => loc.clone(),
+      ErlAst::MFA { location: loc, .. } => loc.clone(),
+      ErlAst::Var(loc, _) => loc.clone(),
+      ErlAst::Apply(loc, _) => loc.clone(),
+      ErlAst::Case(loc, _) => loc.clone(),
+      ErlAst::Lit(loc, _) => loc.clone(),
+      ErlAst::BinaryOp(loc, _) => loc.clone(),
+      ErlAst::UnaryOp(loc, _) => loc.clone(),
+
+      _ => SourceLoc::None,
     }
   }
 
@@ -307,7 +308,7 @@ impl ErlAst {
   /// function registry `ErlModule::env`
   pub fn find_function_def(&self, fa: &MFArity) -> Option<&ErlAst> {
     match self {
-      ErlAst::FunctionDef { funarity: fa2, .. } if fa == fa2 => Some(self),
+      ErlAst::FnDef { funarity: fa2, .. } if fa == fa2 => Some(self),
       ErlAst::ModuleForms(forms) => {
         // Find first in forms for which `find_function_def` returns something
         forms.iter().find(|&f| f.find_function_def(fa).is_some())

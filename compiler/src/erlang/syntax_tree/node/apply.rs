@@ -88,7 +88,7 @@ impl Apply {
 
         // Replace self.expr with the found fun pointer
         let new_expr = ErlAst::MFA {
-          location: SourceLoc::default(),
+          location: SourceLoc::None,
           mfarity: fn_def.mfarity.clone(),
           clause_types: fn_def.clauses.iter().map(|fc| fc.get_type()).collect(),
           ret_ty: TypeVar::new(),

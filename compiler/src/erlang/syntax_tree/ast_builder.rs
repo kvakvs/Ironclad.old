@@ -220,7 +220,7 @@ impl Module {
     let fn_def = Arc::new(FnDef::new(funarity.clone(), clauses));
     let ret_ty = fn_def.ret_ty;
     self.add_function(fn_def.clone());
-    Ok(ErlAst::FunctionDef { location, funarity, ret_ty, fn_def })
+    Ok(ErlAst::FnDef { location, funarity, ret_ty, fn_def })
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause

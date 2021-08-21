@@ -63,6 +63,6 @@ impl FnDef {
 
 impl std::fmt::Debug for FnDef {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "NewFun {:?} -> {:?}", self.mfarity, self.ret_ty)
+    write!(f, "FnDef {:?} -> {:?}", self.mfarity, self.ret_ty)
   }
 }

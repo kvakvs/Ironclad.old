@@ -25,7 +25,7 @@ impl ErlAst {
 
       ErlAst::ModuleForms(f) => Some(f.iter().map(AstChild::Ref).collect()),
 
-      ErlAst::FunctionDef { fn_def, .. } => {
+      ErlAst::FnDef { fn_def, .. } => {
         let r: Vec<AstChild> = fn_def.clauses.iter()
             .map(|fclause| &*fclause.body)
             .map(AstChild::Ref)

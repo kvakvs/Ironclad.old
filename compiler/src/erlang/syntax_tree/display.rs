@@ -21,8 +21,8 @@ impl std::fmt::Display for ErlAst {
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)
       // }
-      ErlAst::FunctionDef { funarity, fn_def, .. } => {
-        write!(f, "newfun {}/{} {{", funarity.name, funarity.arity)?;
+      ErlAst::FnDef { funarity, fn_def, .. } => {
+        write!(f, "def-fun {}/{} {{", funarity.name, funarity.arity)?;
         for fc in fn_def.clauses.iter() { write!(f, "{};", fc)?; }
         write!(f, "}}")
       }
@@ -61,8 +61,8 @@ impl std::fmt::Debug for ErlAst {
       // ErlAst::ModuleForms(_) => {}
       // ErlAst::ModuleAttr { .. } => {}
       // ErlAst::Comma { .. } => {}
-      ErlAst::FunctionDef { funarity, fn_def, ret_ty, .. } => {
-        write!(f, "newfun {}/{} -> {} {{", funarity.name, funarity.arity, ret_ty)?;
+      ErlAst::FnDef { funarity, fn_def, ret_ty, .. } => {
+        write!(f, "def-fun {}/{} -> {} {{", funarity.name, funarity.arity, ret_ty)?;
         for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
         write!(f, "}}")
       }

@@ -23,7 +23,7 @@ impl Module {
       ErlAst::Apply(_loc, app) => {
         app.postprocess_edit_node(self)?;
       }
-      ErlAst::FunctionDef { fn_def, .. } => {
+      ErlAst::FnDef { fn_def, .. } => {
         for fc in &fn_def.clauses {
           for arg in &fc.args {
             self.postprocess_ast(&arg)?;

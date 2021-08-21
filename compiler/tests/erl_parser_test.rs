@@ -82,7 +82,7 @@ fn parse_fn1() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_erl_str(Rule::function_def, "f(A) -> atom123.")?;
 
-  if let ErlAst::FunctionDef { .. } = module.ast.deref() {
+  if let ErlAst::FnDef { .. } = module.ast.deref() {
     // ok
   } else {
     panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), module.ast);

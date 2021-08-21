@@ -18,6 +18,7 @@ use crate::typing::unifier::Unifier;
 use crate::erlang::syntax_tree::node::fn_def::FnDef;
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 
 pub mod func_registry;
 
@@ -124,6 +125,9 @@ impl Module {
 
       Arc::new(ast0)
     };
+
+    // Rebuild Core AST from Erlang AST
+    self.core_ast = CoreAstBuilder::create_from_erl(self.ast.clone());
 
     self.unifier = Unifier::new(self).unwrap();
     Ok(())

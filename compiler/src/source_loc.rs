@@ -1,21 +1,29 @@
 //! Source file locations for printing and reporting to the user
 use std::path::PathBuf;
-
 use pest::Span;
 use std::fmt::Formatter;
+use std::sync::Weak;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 /// Source code span with start and end
-#[derive(Copy, Clone, Eq, PartialEq, Default)]
-pub struct SourceLoc {
-  /// Where the span starts
-  pub start: usize,
-  /// Where the span ends
-  pub end: usize,
+#[derive(Clone)]
+pub enum SourceLoc {
+  /// We do not know the location, or do not care
+  None,
+  /// A byte offset in the input source
+  Span {
+    /// Where the span starts
+    start: usize,
+    /// Where the span ends
+    end: usize,
+  },
+  /// Weak pointer to a subtree of Erlang AST (for nice error reporting)
+  Ast(Weak<ErlAst>),
 }
 
 impl<'i> From<pest::Span<'i>> for SourceLoc {
   fn from(sp: Span) -> Self {
-    Self {
+    Self::Span {
       start: sp.start(),
       end: sp.end(),
     }
@@ -24,7 +32,11 @@ impl<'i> From<pest::Span<'i>> for SourceLoc {
 
 impl std::fmt::Display for SourceLoc {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "bytes {}..{}", self.start, self.end)
+    match self {
+      SourceLoc::None => write!(f, "Source:?"),
+      SourceLoc::Span { start, end } => write!(f, "Source: bytes {}..{}", start, end),
+      SourceLoc::Ast(ast) => write!(f, "Source:{}", ast.upgrade().unwrap())
+    }
   }
 }
 

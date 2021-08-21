@@ -23,7 +23,7 @@ fn infer_simplemath() -> ErlResult<()> {
   {
     let ast = module.ast.clone();
     match ast.deref() {
-      ErlAst::FunctionDef { fn_def, .. } => {
+      ErlAst::FnDef { fn_def, .. } => {
         assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
         assert_eq!(fn_def.mfarity.arity, 1, "FunctionDef must have arity 1");
 

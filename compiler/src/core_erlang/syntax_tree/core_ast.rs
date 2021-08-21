@@ -1,6 +1,7 @@
 //! Defines AST tree for Core Erlang-like intermediate language. A more generalized and simplified
 //! intermediate language, allowing easier optimisations and easier code generation.
 use ::function_name::named;
+use std::sync::Arc;
 
 use crate::display;
 use crate::mfarity::MFArity;
@@ -17,7 +18,6 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::erlang::syntax_tree::node::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
-use std::sync::Arc;
 
 /// AST node in Core Erlang (parsed or generated)
 pub enum CoreAst {
@@ -175,14 +175,14 @@ impl CoreAst {
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
     match self {
-      CoreAst::FnDef { location: loc, .. } => *loc,
-      CoreAst::Var { location, .. } => *location,
-      CoreAst::Apply { location, .. } => *location,
-      CoreAst::Case { location, .. } => *location,
-      CoreAst::Lit { location, .. } => *location,
-      CoreAst::BinOp { location, .. } => *location,
-      CoreAst::UnOp { location, .. } => *location,
-      _ => SourceLoc::default(),
+      CoreAst::FnDef { location, .. } => location.clone(),
+      CoreAst::Var { location, .. } => location.clone(),
+      CoreAst::Apply { location, .. } => location.clone(),
+      CoreAst::Case { location, .. } => location.clone(),
+      CoreAst::Lit { location, .. } => location.clone(),
+      CoreAst::BinOp { location, .. } => location.clone(),
+      CoreAst::UnOp { location, .. } => location.clone(),
+      _ => SourceLoc::None,
     }
   }
 }
