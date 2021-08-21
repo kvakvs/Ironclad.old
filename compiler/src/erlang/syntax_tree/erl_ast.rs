@@ -1,14 +1,14 @@
 //! AST syntax structure of an Erlang file
 use ::function_name::named;
-use crate::erlang::syntax_tree::node::apply::Apply;
-use crate::erlang::syntax_tree::node::case_clause::CaseClause;
-use crate::erlang::syntax_tree::node::case::Case;
+use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
+use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
+use crate::erlang::syntax_tree::node::erl_case::ErlCase;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
-use crate::erlang::syntax_tree::node::literal::Literal;
-use crate::erlang::syntax_tree::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
-use crate::erlang::syntax_tree::node::var::Var;
-use crate::erlang::syntax_tree::node::token::ErlToken;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::literal::Literal;
+use crate::erlang::syntax_tree::node::erl_expression::{ErlBinaryOperatorExpr, ErlUnaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_var::ErlVar;
+use crate::erlang::syntax_tree::node::erl_token::ErlToken;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use std::sync::Arc;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
@@ -68,11 +68,11 @@ pub enum ErlAst {
     ret_ty: TypeVar,
     /// Function definition struct with clauses. Arc to be accessible separately from function
     /// lookup code, also stored in the `ErlModule::functions`.
-    fn_def: Arc<FnDef>,
+    fn_def: Arc<ErlFnDef>,
   },
 
   /// Case clause for a `case x of` switch
-  CClause(SourceLoc, CaseClause),
+  CClause(SourceLoc, ErlCaseClause),
 
   /// Name/arity which refers to a function in the current module
   MFA {
@@ -87,22 +87,22 @@ pub enum ErlAst {
   },
 
   /// A named variable
-  Var(SourceLoc, Var),
+  Var(SourceLoc, ErlVar),
 
   /// Apply arguments to expression
-  Apply(SourceLoc, Apply),
+  Apply(SourceLoc, ErlApply),
 
   /// Case switch containing the argument to check, and case clauses
-  Case(SourceLoc, Case),
+  Case(SourceLoc, ErlCase),
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit(SourceLoc, Literal),
 
   /// Binary operation with two arguments
-  BinaryOp(SourceLoc, BinaryOperatorExpr),
+  BinaryOp(SourceLoc, ErlBinaryOperatorExpr),
 
   /// Unary operation with 1 argument
-  UnaryOp(SourceLoc, UnaryOperatorExpr),
+  UnaryOp(SourceLoc, ErlUnaryOperatorExpr),
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
   List {
@@ -182,24 +182,24 @@ impl ErlAst {
 
   /// Create a new variable AST node
   pub fn new_var(location: SourceLoc, name: &str) -> ErlAst {
-    ErlAst::Var(location, Var::new(name))
+    ErlAst::Var(location, ErlVar::new(name))
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(location: SourceLoc, expr: ErlAst, args: Vec<ErlAst>) -> ErlAst {
-    ErlAst::Apply(location, Apply::new(expr, args))
+    ErlAst::Apply(location, ErlApply::new(expr, args))
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(location: SourceLoc, expr: ErlAst) -> ErlAst {
-    ErlAst::Apply(location, Apply::new(expr, vec![]))
+    ErlAst::Apply(location, ErlApply::new(expr, vec![]))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(location: SourceLoc,
                    left: ErlAst, op: ErlBinaryOp, right: ErlAst) -> ErlAst {
     ErlAst::BinaryOp(location,
-                     BinaryOperatorExpr {
+                     ErlBinaryOperatorExpr {
                        left: Box::new(left),
                        right: Box::new(right),
                        operator: op,
@@ -262,7 +262,7 @@ impl ErlAst {
   // }
 
   /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
-  pub fn as_fn_def(&self) -> Option<Arc<FnDef>> {
+  pub fn as_fn_def(&self) -> Option<Arc<ErlFnDef>> {
     match self {
       ErlAst::FnDef { fn_def: func_def, .. } => Some(func_def.clone()),
       _ => None,

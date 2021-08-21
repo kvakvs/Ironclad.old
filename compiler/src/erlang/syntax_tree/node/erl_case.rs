@@ -1,21 +1,21 @@
 //! Defines CaseExpr struct for `case X of` AST node
 use std::fmt::Formatter;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::typing::typevar::TypeVar;
 
 /// `Case X of ... end` expression AST node
 // #[derive(PartialEq)]
-pub struct Case {
+pub struct ErlCase {
   /// A union type of all case clauses, also is the return type of the case expression
   pub ret_ty: TypeVar,
   /// Argument X in `case X of`
   pub arg: Box<ErlAst>,
   /// All case clauses in order
-  pub clauses: Vec<CaseClause>,
+  pub clauses: Vec<ErlCaseClause>,
 }
 
-impl std::fmt::Display for Case {
+impl std::fmt::Display for ErlCase {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "case {} of", self.arg)?;
     let mut first = true;

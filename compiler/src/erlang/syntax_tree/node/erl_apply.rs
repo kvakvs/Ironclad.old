@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
@@ -14,7 +14,7 @@ use crate::display::display_comma_separated;
 use crate::project::module::Module;
 
 /// AST node which contains a function call
-pub struct Apply {
+pub struct ErlApply {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Box<RefCell<ErlAst>>,
   /// Arguments. Their inferred types are stored inside.
@@ -25,7 +25,7 @@ pub struct Apply {
   pub expr_ty: TypeVar,
 }
 
-impl std::fmt::Display for Apply {
+impl std::fmt::Display for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.expr.borrow())?;
     display_comma_separated(&self.args, f)?;
@@ -33,7 +33,7 @@ impl std::fmt::Display for Apply {
   }
 }
 
-impl std::fmt::Debug for Apply {
+impl std::fmt::Debug for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "apply({:?}:{}, (", self.expr.borrow(), self.expr_ty)?;
     display_comma_separated(&self.args, f)?;
@@ -41,7 +41,7 @@ impl std::fmt::Debug for Apply {
   }
 }
 
-impl Apply {
+impl ErlApply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing
   pub fn get_function_type(&self) -> ErlType {
@@ -57,7 +57,7 @@ impl Apply {
   pub fn new(expr: ErlAst, args: Vec<ErlAst>) -> Self {
     // let ret_ty = ErlType::new_typevar();
     // let expr_ty = Self::create_expr_type(&args, &ret_ty);
-    Apply {
+    ErlApply {
       expr: Box::new(RefCell::new(expr)),
       args,
       ret_ty: TypeVar::new(),
@@ -84,7 +84,7 @@ impl Apply {
     match find_result {
       None => {} // no changes, return same node
       Some(index) => {
-        let fn_def: &FnDef = &module.functions[index];
+        let fn_def: &ErlFnDef = &module.functions[index];
 
         // Replace self.expr with the found fun pointer
         let new_expr = ErlAst::MFA {

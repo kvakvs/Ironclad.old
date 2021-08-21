@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use ::function_name::named;
 
-use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::literal::Literal;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use std::collections::BTreeSet;

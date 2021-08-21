@@ -8,7 +8,7 @@ use crate::typing::fn_clause_type::FnClauseType;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
-pub struct FnClause {
+pub struct ErlFnClause {
   /// Name, because it comes from AST, prefer to use funarity.name in the parent `FunctionDef`
   pub name: String,
   /// Function clause arguments, binding/match expressions
@@ -21,13 +21,13 @@ pub struct FnClause {
   pub ret: ErlType,
 }
 
-impl FnClause {
+impl ErlFnClause {
   /// Create a new function clause
   pub fn new(name: String, args: Vec<ErlAst>, body: ErlAst) -> Self {
     let arg_types = args.iter()
         .map(|_a| ErlType::new_typevar())
         .collect();
-    FnClause {
+    ErlFnClause {
       name,
       args,
       arg_types,
@@ -42,7 +42,7 @@ impl FnClause {
   }
 }
 
-impl std::fmt::Display for FnClause {
+impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
     display::display_comma_separated(&self.args, f)?;
@@ -50,7 +50,7 @@ impl std::fmt::Display for FnClause {
   }
 }
 
-impl std::fmt::Debug for FnClause {
+impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
     display::display_comma_separated(&self.args, f)?;

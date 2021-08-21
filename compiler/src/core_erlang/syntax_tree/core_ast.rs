@@ -15,7 +15,7 @@ use crate::core_erlang::syntax_tree::node::let_expr::LetExpr;
 use crate::core_erlang::syntax_tree::node::module_attr::ModuleAttr;
 use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
 use crate::core_erlang::syntax_tree::node::var::Var;
-use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 

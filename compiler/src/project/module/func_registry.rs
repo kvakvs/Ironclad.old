@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use crate::mfarity::MFArity;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::node::literal::Literal;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::literal::Literal;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::project::module::Module;
 
 impl Module {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
-  pub fn add_function(&mut self, nf: Arc<FnDef>) {
+  pub fn add_function(&mut self, nf: Arc<ErlFnDef>) {
     let index = self.functions.len();
     let funarity = nf.mfarity.clone();
 

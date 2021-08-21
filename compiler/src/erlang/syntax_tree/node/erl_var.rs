@@ -3,17 +3,17 @@ use crate::typing::typevar::TypeVar;
 
 /// AST node for a variable
 #[derive(PartialEq)]
-pub struct Var {
+pub struct ErlVar {
   /// Variable name
   pub name: String,
   /// Variable type for inference
   pub ty: TypeVar,
 }
 
-impl Var {
+impl ErlVar {
   /// Creates a new variable node
   pub fn new(name: &str) -> Self {
-    Var {
+    ErlVar {
       name: name.to_string(),
       ty: TypeVar::new(),
     }

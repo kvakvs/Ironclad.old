@@ -1,27 +1,27 @@
-//! Define a FunctionDef struct for a new function AST node
+//! Define a ErlFnDef struct for a new function AST node
 use std::fmt::Formatter;
 
-use crate::erlang::syntax_tree::node::fn_clause::FnClause;
+use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::typing::erl_type::ErlType;
 use crate::mfarity::MFArity;
 use crate::typing::typevar::TypeVar;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
-pub struct FnDef {
+pub struct ErlFnDef {
   /// Function name and arity, must be same for each clause (checked on clause insertion).
   /// Always local (`MFArity::module` is `None`)
   pub mfarity: MFArity,
   /// Function clauses (non-empty vec)
-  pub clauses: Vec<FnClause>,
+  pub clauses: Vec<ErlFnClause>,
   /// For each clause, ret is union of each clause return type
   pub ret_ty: TypeVar,
 }
 
-impl FnDef {
+impl ErlFnDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(funarity: MFArity, clauses: Vec<FnClause>) -> Self {
+  pub fn new(funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
     assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
     Self {
       mfarity: funarity,
@@ -61,7 +61,7 @@ impl FnDef {
   }
 }
 
-impl std::fmt::Debug for FnDef {
+impl std::fmt::Debug for ErlFnDef {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "FnDef {:?} -> {:?}", self.mfarity, self.ret_ty)
   }

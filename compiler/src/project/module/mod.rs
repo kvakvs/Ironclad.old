@@ -15,7 +15,7 @@ use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_parser;
 use crate::typing::unifier::Unifier;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
@@ -43,7 +43,7 @@ pub struct Module {
   pub unifier: Unifier,
 
   /// Function definitions of the module
-  pub functions: Vec<Arc<FnDef>>,
+  pub functions: Vec<Arc<ErlFnDef>>,
 
   /// Lookup by function_name/arity into `Self::functions`
   pub functions_lookup: HashMap<MFArity, usize>,

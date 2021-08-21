@@ -3,7 +3,7 @@
 use crate::display;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::literal::Literal;
 
 impl std::fmt::Display for ErlAst {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

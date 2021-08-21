@@ -6,7 +6,7 @@ use std::ops::Deref;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::typing::typevar::TypeVar;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 
 /// Dummy struct containing building code for Core AST from Erlang AST
 pub struct CoreAstBuilder {}
@@ -45,6 +45,7 @@ impl CoreAstBuilder {
       funarity, ret_ty,
       fn_def
     } = ast.deref() {
+      // let core_fn_def = FnDef {};
       // return CoreAst::FnDef { location, core_fn_def }
     }
 

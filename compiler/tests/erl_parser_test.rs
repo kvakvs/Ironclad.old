@@ -6,7 +6,7 @@ mod test_util;
 use ::function_name::named;
 use compiler::erlang::syntax_tree::erl_parser::{Rule};
 use compiler::erlang::syntax_tree::erl_ast::{ErlAst};
-use compiler::erlang::syntax_tree::node::literal::Literal;
+use compiler::literal::Literal;
 use std::ops::Deref;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;

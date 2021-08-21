@@ -2,13 +2,13 @@
 use crate::erlang::syntax_tree::erl_ast::{ErlAst};
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use crate::erlang::syntax_tree::erl_parser::{Rule, get_prec_climber};
-use crate::erlang::syntax_tree::node::fn_clause::FnClause;
-use crate::erlang::syntax_tree::node::literal::Literal;
+use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
+use crate::literal::Literal;
 use pest::iterators::{Pair};
 use pest::prec_climber::PrecClimber;
 use std::collections::VecDeque;
-use crate::erlang::syntax_tree::node::token::ErlToken;
-use crate::erlang::syntax_tree::node::fn_def::FnDef;
+use crate::erlang::syntax_tree::node::erl_token::ErlToken;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use std::sync::Arc;
 use crate::project::module::Module;
 use crate::erl_error::ErlResult;
@@ -209,7 +209,7 @@ impl Module {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
-    let clauses: Vec<FnClause> = pair.into_inner()
+    let clauses: Vec<ErlFnClause> = pair.into_inner()
         .map(|p| self.fun_clause_to_ast(p))
         .map(Result::unwrap)
         .collect();
@@ -217,14 +217,14 @@ impl Module {
     let arity = clauses[0].arg_types.len();
     let funarity = MFArity::new_local(clauses[0].name.clone(), arity);
 
-    let fn_def = Arc::new(FnDef::new(funarity.clone(), clauses));
+    let fn_def = Arc::new(ErlFnDef::new(funarity.clone(), clauses));
     let ret_ty = fn_def.ret_ty;
     self.add_function(fn_def.clone());
     Ok(ErlAst::FnDef { location, funarity, ret_ty, fn_def })
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
-  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<FnClause> {
+  fn fun_clause_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlFnClause> {
     assert_eq!(pair.as_rule(), Rule::function_clause);
 
     // println!("Fun clause {:#?}", pair);
@@ -250,7 +250,7 @@ impl Module {
     };
 
     let args: Vec<ErlAst> = nodes.into_iter().collect();
-    Ok(FnClause::new(name, args, body))
+    Ok(ErlFnClause::new(name, args, body))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
