@@ -31,7 +31,7 @@ pub fn run(project: &mut ErlProject,
       let compile_options = project.get_compiler_options_for(path);
 
       let mut module = Module::new(compile_options, source_file.clone());
-      module.parse_and_unify()?;
+      module.parse_and_unify_erlang()?;
 
       code_cache.items.insert(module.name.clone(),
                               Arc::new(RwLock::new(module)));

@@ -52,7 +52,7 @@ impl Unifier {
     let mut eq = Vec::new();
 
     {
-      let ast: Arc<CoreAst> = module.core_ast.read().unwrap().clone();
+      let ast: Arc<CoreAst> = module.core_ast.clone();
       assert!(!matches!(ast.deref(), CoreAst::Empty),
               "Must populate module.ast with CoreAST before creating an Unifier");
 

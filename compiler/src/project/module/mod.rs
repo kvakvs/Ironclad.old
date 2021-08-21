@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc};
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
@@ -33,10 +33,10 @@ pub struct Module {
   pub source_file: Arc<SourceFile>,
 
   /// AST tree of the module.
-  pub ast: RwLock<Arc<ErlAst>>,
+  pub ast: Arc<ErlAst>,
 
   /// Core Erlang AST tree of the module
-  pub core_ast: RwLock<Arc<CoreAst>>,
+  pub core_ast: Arc<CoreAst>,
 
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
@@ -59,8 +59,8 @@ impl Default for Module {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: RwLock::new(Arc::new(ErlAst::Empty)),
-      core_ast: RwLock::new(Arc::new(CoreAst::Empty)),
+      ast: Arc::new(ErlAst::Empty),
+      core_ast: Arc::new(CoreAst::Empty),
       unifier: Default::default(),
       functions: vec![],
       functions_lookup: Default::default(),
@@ -92,17 +92,17 @@ impl Module {
     self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }
 
-  /// Parse self.source_file
-  pub fn parse_and_unify(&mut self) -> ErlResult<()> {
+  /// Parse self.source_file as Erlang syntax
+  pub fn parse_and_unify_erlang(&mut self) -> ErlResult<()> {
     let sf = self.source_file.clone(); // lure the borrow checker to letting us use text
-    self.parse_and_unify_str(erl_parser::Rule::module, &sf.text)
+    self.parse_and_unify_erl_str(erl_parser::Rule::module, &sf.text)
   }
 
   /// Create a dummy sourcefile and parse it starting with the given parser rule.
   /// This updates the self.fun_table and self.ast
   #[named]
-  pub fn parse_and_unify_str(&mut self,
-                             rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+  pub fn parse_and_unify_erl_str(&mut self,
+                                 rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
@@ -122,7 +122,7 @@ impl Module {
 
       println!("\n{}: {}", function_name!(), ast0);
 
-      RwLock::new(Arc::new(ast0))
+      Arc::new(ast0)
     };
 
     self.unifier = Unifier::new(self).unwrap();
@@ -132,7 +132,7 @@ impl Module {
   /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
   /// This updates only self.ast
   #[named]
-  pub fn parse_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+  pub fn parse_erl_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
     let parse_output = match erl_parser::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
@@ -153,7 +153,7 @@ impl Module {
 
     println!("\n{}: {}", function_name!(), ast0);
 
-    self.ast = RwLock::new(Arc::new(ast0));
+    self.ast = Arc::new(ast0);
     Ok(())
   }
 }
