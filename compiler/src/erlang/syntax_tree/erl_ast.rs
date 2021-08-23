@@ -16,9 +16,11 @@ use std::sync::Arc;
 use std::ops::Deref;
 
 /// AST node in parsed Erlang source
+#[derive(Debug)]
 pub enum ErlAst {
   /// Default value for when AST tree is empty. Should create error, not a valid AST node.
   Empty,
+
   /// Comment text eliminated.
   Comment(SourceLoc),
 

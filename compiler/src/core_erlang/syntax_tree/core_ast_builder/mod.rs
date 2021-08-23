@@ -14,11 +14,17 @@ pub struct CoreAstBuilder {}
 impl CoreAstBuilder {
   /// Rebuild Core Erlang AST from Erlang AST
   #[named]
-  pub fn build(ast: Arc<ErlAst>) -> Arc<CoreAst> {
+  pub fn build(ast: &Arc<ErlAst>) -> Arc<CoreAst> {
     match ast.deref() {
       ErlAst::Empty => CoreAst::Empty.into(),
-      // ErlAst::ModuleForms(_) => {}
-      // ErlAst::ModuleAttr { .. } => {}
+      ErlAst::ModuleAttr { name, .. } => CoreAst::Module {
+        name: name.clone(),
+        exports: vec![],
+      }.into(),
+      ErlAst::ModuleForms(forms) => {
+        let fndefs = forms.iter().map(Self::build).collect();
+        return CoreAst::FunctionDefs(fndefs).into()
+      }
       ErlAst::FnDef { .. } => Self::create_from_fndef(ast),
       // ErlAst::CClause(_, _) => {}
       // ErlAst::MFA { .. } => {}
@@ -31,7 +37,7 @@ impl CoreAstBuilder {
       // ErlAst::List { .. } => {}
       // ErlAst::Tuple { .. } => {}
 
-      other => unimplemented!("{}: Don't know how to convert ErlAst {} into CoreAst",
+      other => unimplemented!("{}: Don't know how to convert ErlAst {:?} into CoreAst",
                               function_name!(), other)
     }
   }

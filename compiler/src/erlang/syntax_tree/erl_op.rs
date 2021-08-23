@@ -1,7 +1,7 @@
 //! Binary and unary operations used in type checking.
 
 /// Binary operation taking two arguments
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ErlBinaryOp {
   /// Joins two expressions together, right becomes the result
   Comma,

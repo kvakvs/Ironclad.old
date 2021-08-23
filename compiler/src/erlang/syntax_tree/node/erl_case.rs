@@ -6,7 +6,7 @@ use crate::typing::typevar::TypeVar;
 use std::sync::Arc;
 
 /// `Case X of ... end` expression AST node
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct ErlCase {
   /// A union type of all case clauses, also is the return type of the case expression
   pub ret_ty: TypeVar,

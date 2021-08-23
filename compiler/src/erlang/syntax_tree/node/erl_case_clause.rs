@@ -6,7 +6,7 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::typing::typevar::TypeVar;
 
 /// AST node for a clause in a `case X of` expression.
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct ErlCaseClause {
   /// A match expression, matched vs. case arg
   pub cond: Arc<ErlAst>,

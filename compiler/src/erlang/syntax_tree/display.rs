@@ -52,39 +52,39 @@ impl std::fmt::Display for ErlAst {
   }
 }
 
-impl std::fmt::Debug for ErlAst {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      // ErlAst::Empty => {}
-      // ErlAst::Comment(_) => {}
-      // ErlAst::Token { .. } => {}
-      // ErlAst::ModuleForms(_) => {}
-      // ErlAst::ModuleAttr { .. } => {}
-      // ErlAst::Comma { .. } => {}
-      ErlAst::FnDef(erl_fndef) => {
-        write!(f, "def-fun {} {{", erl_fndef.funarity)?;
-        for fc in erl_fndef.clauses.iter() { write!(f, "{:?};", fc)?; }
-        write!(f, "}}")
-      }
-      // ErlAst::CClause(_, _) => {}
-      // ErlAst::FunArity(_, _) => {}
-      ErlAst::Var(var) => write!(f, "{}", var.name),
-      ErlAst::Apply(_loc, app) => write!(f, "{:?}", app),
-      // ErlAst::Let(_, _) => {}
-      // ErlAst::Case(_, _) => {}
-      // ErlAst::Lit(_, _) => {}
-      ErlAst::BinaryOp(_loc, binop) => {
-        write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
-      }
-      ErlAst::UnaryOp(_loc, unop) => {
-        write!(f, "({} {:?})", unop.operator, unop.expr)
-      }
-      // ErlAst::List(_, _) => {}
-      // ErlAst::Tuple(_, _) => {}
-      _ => write!(f, "{}", self),
-    }
-  }
-}
+// impl std::fmt::Debug for ErlAst {
+//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//     match self {
+//       // ErlAst::Empty => {}
+//       // ErlAst::Comment(_) => {}
+//       // ErlAst::Token { .. } => {}
+//       // ErlAst::ModuleForms(_) => {}
+//       // ErlAst::ModuleAttr { .. } => {}
+//       // ErlAst::Comma { .. } => {}
+//       ErlAst::FnDef(erl_fndef) => {
+//         write!(f, "def-fun {} {{", erl_fndef.funarity)?;
+//         for fc in erl_fndef.clauses.iter() { write!(f, "{:?};", fc)?; }
+//         write!(f, "}}")
+//       }
+//       // ErlAst::CClause(_, _) => {}
+//       // ErlAst::FunArity(_, _) => {}
+//       ErlAst::Var(var) => write!(f, "{}", var.name),
+//       ErlAst::Apply(_loc, app) => write!(f, "{:?}", app),
+//       // ErlAst::Let(_, _) => {}
+//       // ErlAst::Case(_, _) => {}
+//       // ErlAst::Lit(_, _) => {}
+//       ErlAst::BinaryOp(_loc, binop) => {
+//         write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
+//       }
+//       ErlAst::UnaryOp(_loc, unop) => {
+//         write!(f, "({} {:?})", unop.operator, unop.expr)
+//       }
+//       // ErlAst::List(_, _) => {}
+//       // ErlAst::Tuple(_, _) => {}
+//       _ => write!(f, "{}", self),
+//     }
+//   }
+// }
 
 impl std::fmt::Display for Literal {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

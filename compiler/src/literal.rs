@@ -6,7 +6,7 @@ use crate::typing::erl_type::ErlType;
 use std::sync::Arc;
 
 /// An Erlang literal, a value fully known at compile time
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Literal {
   // TODO: Big integer
   /// Small enough to fit into a machine word

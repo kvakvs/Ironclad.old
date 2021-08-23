@@ -6,7 +6,8 @@ use std::sync::Weak;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 /// Source code span with start and end
-#[derive(Clone)]
+#[derive(Derivative)]
+#[derivative(Clone, Debug)]
 pub enum SourceLoc {
   /// We do not know the location, or do not care
   None,

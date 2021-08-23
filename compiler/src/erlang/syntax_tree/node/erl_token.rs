@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 /// Temporary token marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
 #[allow(missing_docs)]
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ErlToken {
   Comma,
   Plus,

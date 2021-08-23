@@ -119,7 +119,7 @@ impl Module {
     println!("\n{}: {}", function_name!(), self.ast);
 
     // Rebuild Core AST from Erlang AST
-    self.core_ast = CoreAstBuilder::build(self.ast.clone());
+    self.core_ast = CoreAstBuilder::build(&self.ast);
 
     self.unifier = Unifier::new(self).unwrap();
     Ok(())

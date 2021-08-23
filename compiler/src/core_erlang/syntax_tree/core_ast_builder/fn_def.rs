@@ -27,16 +27,16 @@ impl CoreAstBuilder {
       // If all arguments are variables, we just return the code, no case wrapping
 
       // AST if the values match the expected patterns. Otherwise will raise a badarg.
-      let good_ast = Self::build(erl_clause.body.clone());
-      let cc_good = CaseClause{
-        match_exprs: erl_clause.args.iter().cloned().map(Self::build).collect(),
+      let good_ast = Self::build(&erl_clause.body);
+      let cc_good = CaseClause {
+        match_exprs: erl_clause.args.iter().map(Self::build).collect(),
         match_expr_types: vec![],
         guard: None,
         guard_ty: TypeVar::default(),
         body: good_ast.into(),
-        ret_ty: Default::default()
+        ret_ty: Default::default(),
       };
-      let cc_bad = CaseClause{
+      let cc_bad = CaseClause {
         match_exprs: iter::repeat(erl_clause.args.len())
             .map(|_| CoreAst::new_unique_var("fnarg"))
             .map(Arc::new)
@@ -45,19 +45,19 @@ impl CoreAstBuilder {
         guard: None,
         guard_ty: TypeVar::new(),
         body: CoreAst::create_badarg_primop(erl_fn_def.location.clone()).into(),
-        ret_ty: TypeVar::new()
+        ret_ty: TypeVar::new(),
       };
 
       let case = Case {
         location: erl_fn_def.location.clone(),
-        exprs: erl_clause.args.iter().cloned().map(Self::build).collect(),
+        exprs: erl_clause.args.iter().map(Self::build).collect(),
         clauses: vec![cc_good, cc_bad],
         ret_ty: TypeVar::new(),
       };
 
       CoreAst::Case(case).into()
     } else {
-      Self::build(erl_clause.body.clone())
+      Self::build(&erl_clause.body)
     }
   }
 
@@ -83,7 +83,7 @@ impl CoreAstBuilder {
   /// Given a FnDef, produce a CoreAst equivalent new function definition with an optional nested
   /// case for multiple clauses
   #[named]
-  pub(crate) fn create_from_fndef(ast: Arc<ErlAst>) -> Arc<CoreAst> {
+  pub(crate) fn create_from_fndef(ast: &Arc<ErlAst>) -> Arc<CoreAst> {
     if let ErlAst::FnDef(fn_def) = ast.deref() {
       // Based on how many function clauses are there, we might inject an additional case operator
       // matching function args for all clauses
@@ -97,7 +97,7 @@ impl CoreAstBuilder {
         body: core_body.into(),
         ret_ty: TypeVar::new(),
       };
-      return CoreAst::FnDef (core_fndef).into()
+      return CoreAst::FnDef(core_fndef).into();
     }
 
     panic!("{}: Not a ErlAst::FnDef - got {}", function_name!(), ast)

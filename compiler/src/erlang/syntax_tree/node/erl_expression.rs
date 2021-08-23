@@ -8,7 +8,7 @@ use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type_prefab::TypePrefab;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct ErlBinaryOperatorExpr {
   /// Left operand
   pub left: Arc<ErlAst>,
@@ -21,7 +21,7 @@ pub struct ErlBinaryOperatorExpr {
 }
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct ErlUnaryOperatorExpr {
   /// The operand
   pub expr: Arc<ErlAst>,
