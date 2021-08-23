@@ -288,6 +288,8 @@ impl Unifier {
       ErlType::Tuple(elems) => {
         elems.iter().any(|m| self.occurs_check(tv, m))
       }
+      ErlType::None => false, // nothing occurs in None-type
+
       // Any simple type cannot have typevar tv in it, so all false
       simple_type if simple_type.is_simple_value_type() => false,
 

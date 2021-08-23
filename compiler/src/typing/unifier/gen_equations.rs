@@ -11,6 +11,7 @@ use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
 use crate::project::module::Module;
 use std::sync::Arc;
+use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
 
 impl Unifier {
   /// Add a type equation, shortcut
@@ -106,8 +107,13 @@ impl Unifier {
       }
       CoreAst::List { .. } => {}
       CoreAst::Tuple { .. } => {}
-      CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
+      CoreAst::PrimOp { op, .. } => {
+        if let PrimOp::Raise { .. } = op {} else {
+          panic!("{}: Don't know how to process PrimOp {:?}", function_name!(), ast)
+        }
+      } // Any value can be raised, no check
 
+      CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
       _ => unreachable!("{}: Can't process {}", function_name!(), ast),
     }
     Ok(())

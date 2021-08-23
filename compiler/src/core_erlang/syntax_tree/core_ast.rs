@@ -18,6 +18,7 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use std::ops::Deref;
+use crate::typing::erl_type_prefab::TypePrefab;
 
 /// AST node in Core Erlang (parsed or generated)
 pub enum CoreAst {
@@ -151,6 +152,13 @@ impl CoreAst {
       //   let fn_type = FunctionType::new(None, clause_types.clone());
       //   ErlType::Fn(fn_type)
       // }
+      CoreAst::PrimOp { op, .. } => {
+        match op {
+          PrimOp::Raise { .. } => TypePrefab::none(),
+          PrimOp::ExcTrace => { panic!("TODO: get_type() for primop exctrace") }
+        }
+      }
+
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
@@ -228,7 +236,7 @@ impl std::fmt::Display for CoreAst {
         write!(f, " -> {}", fn_def.body)?;
         write!(f, "}})")
       }
-      CoreAst::Var (core_var) => match &core_var.name {
+      CoreAst::Var(core_var) => match &core_var.name {
         None => write!(f, "{}", core_var.ty),
         Some(n) => write!(f, "{}", n),
       },
@@ -250,9 +258,10 @@ impl std::fmt::Display for CoreAst {
       // }
       CoreAst::List { elements, .. } => display::display_square_list(elements, f),
       CoreAst::Tuple { elements, .. } => display::display_curly_list(elements, f),
+      CoreAst::PrimOp { op, .. } => write!(f, "{:?}", op),
+
       CoreAst::Let { .. } => todo!("display(let)"),
       CoreAst::Call { .. } => todo!("display(call)"),
-      CoreAst::PrimOp { .. } => todo!("display(primop)"),
       CoreAst::Empty => write!(f, "<empty ast>"),
 
       //other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
@@ -272,7 +281,7 @@ impl std::fmt::Debug for CoreAst {
         // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
         // write!(f, "}}")
       }
-      CoreAst::Var (core_var) => write!(f, "{}:{}", self, core_var.ty),
+      CoreAst::Var(core_var) => write!(f, "{}:{}", self, core_var.ty),
       // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
       // CoreAst::BinaryOp(_loc, binop) => {
       //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)

@@ -4,6 +4,7 @@ use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use std::sync::Arc;
 
 /// Describes an exception kind
+#[derive(Debug)]
 pub enum ExceptionType {
   /// `erlang:error`
   Error,
@@ -14,6 +15,7 @@ pub enum ExceptionType {
 }
 
 /// Primitive operation, not part of Core Erlang language but is useful to express Erlang constructs
+#[derive(Debug)]
 pub enum PrimOp {
   /// Raises an exception of type
   Raise {

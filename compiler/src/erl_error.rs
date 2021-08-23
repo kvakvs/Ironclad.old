@@ -47,6 +47,9 @@ pub enum ErlError {
     msg: String,
   },
 
+  /// Something unexpected like a TO-DO or assertion
+  Internal(String),
+
   /// Returned when Erlang parser failed
   ErlangParse {
     /// Some hint at where the error has occured
@@ -95,6 +98,9 @@ impl std::fmt::Display for ErlError {
       ErlError::ParserInternal { loc, msg } => {
         write!(f, "Parser internal error: {} (at {})", msg, loc)
       }
+      ErlError::Internal(msg) => {
+        write!(f, "Internal error: {}", msg)
+      }
       ErlError::ErlangParse { loc, msg } => {
         write!(f, "Erlang parse error: {} (at {})", msg, loc)
       }
@@ -111,6 +117,11 @@ impl ErlError {
   pub fn process_exit_code(&self) -> i32 {
     // match self {}
     return 1;
+  }
+
+  /// Create an internal error
+  pub fn internal<T>(message: String) -> ErlResult<T> {
+    Err(ErlError::Internal(message))
   }
 
   /// Creates a preprocessor error from a filename and a message

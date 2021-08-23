@@ -50,7 +50,13 @@ impl CoreAstBuilder {
         CoreAst::Apply(core_app).into()
       }
       // ErlAst::Case(_, _) => {}
-      // ErlAst::Lit(_, _) => {}
+      ErlAst::Lit(loc, lit) => {
+        CoreAst::Lit {
+          location: loc.clone(),
+          value: lit.clone(),
+          ty: lit.get_type()
+        }.into()
+      }
       ErlAst::BinaryOp(loc, binop) => {
         CoreAst::BinOp {
           location: loc.clone(),
@@ -63,7 +69,13 @@ impl CoreAstBuilder {
         }.into()
       }
       // ErlAst::UnaryOp(_, _) => {}
-      // ErlAst::List { .. } => {}
+      ErlAst::List { location, elements, tail } => {
+        CoreAst::List {
+          location: location.clone(),
+          elements: elements.iter().map(Self::build).collect(),
+          tail: tail.as_ref().map(|t| Self::build(&t))
+        }.into()
+      }
       // ErlAst::Tuple { .. } => {}
 
       other => unimplemented!("{}: Don't know how to convert ErlAst {:?} into CoreAst",

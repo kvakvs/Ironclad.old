@@ -1,15 +1,17 @@
 extern crate compiler;
 extern crate function_name;
 
-mod test_util;
+use std::ops::Deref;
 
 use ::function_name::named;
-use compiler::erlang::syntax_tree::erl_parser::{Rule};
-use compiler::erlang::syntax_tree::erl_ast::{ErlAst};
-use compiler::literal::Literal;
-use std::ops::Deref;
+
 use compiler::erl_error::ErlResult;
+use compiler::erlang::syntax_tree::erl_ast::ErlAst;
+use compiler::erlang::syntax_tree::erl_parser::Rule;
+use compiler::literal::Literal;
 use compiler::project::module::Module;
+
+mod test_util;
 
 /// Try parse string
 #[named]
@@ -18,13 +20,12 @@ fn parse_string_test() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_erl_str(Rule::string, "\"abc\"").unwrap();
 
-  if let ErlAst::Lit(_loc, Literal::String(_value)) = module.ast.deref() {
-    // ok
-  } else {
-    panic!("{} Expected: Literal(String) result, got {}", function_name!(), module.ast)
+  if let ErlAst::Lit(_loc, lit) = module.ast.deref() {
+    if let Literal::String(_value) = lit.deref() {
+      return Ok(())
+    }
   }
-
-  Ok(())
+  panic!("{} Expected: Literal(String) result, got {}", function_name!(), module.ast)
 }
 
 /// Try parse a flat + expression
@@ -87,6 +88,7 @@ fn parse_fn1() -> ErlResult<()> {
   } else {
     panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), module.ast);
   }
+
   assert_eq!(module.functions.len(), 1, "Module must have 1 function in its env");
   // assert_eq!(module1.function_clauses.len(), 1, "Module must have 1 function clause in its env");
   Ok(())

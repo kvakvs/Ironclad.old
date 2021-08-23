@@ -144,6 +144,8 @@ impl Module {
     self.ast = self.build_ast_single_node(parse_output)?;
     println!("\n{}: {}", function_name!(), self.ast);
 
+    self.core_ast = CoreAstBuilder::build(&self.ast);
+
     Ok(())
   }
 }

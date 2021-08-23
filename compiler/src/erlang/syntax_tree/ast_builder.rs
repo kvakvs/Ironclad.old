@@ -11,7 +11,7 @@ use crate::erlang::syntax_tree::node::erl_token::ErlToken;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use std::sync::Arc;
 use crate::project::module::Module;
-use crate::erl_error::ErlResult;
+use crate::erl_error::{ErlResult, ErlError};
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
 
@@ -95,7 +95,8 @@ impl Module {
     let result: Arc<ErlAst> = match pair.as_rule() {
       Rule::module => self.file_root_to_ast(pair)?,
       Rule::string => {
-        ErlAst::Lit(loc, Literal::String(String::from(pair.as_str())))
+        let str_lit = Literal::String(String::from(pair.as_str())).into();
+        ErlAst::Lit(loc, str_lit)
             .into()
       }
       Rule::module_attr => {
@@ -159,7 +160,7 @@ impl Module {
       Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
       Rule::COMMENT => ErlAst::Comment(pair.as_span().into()).into(),
-      other => todo!("to_ast_single_node: unknown parse node {:?}", other),
+      other => return ErlError::internal(format!("to_ast_single_node: unknown parse node {:?}", other)),
     };
     Ok(result)
   }

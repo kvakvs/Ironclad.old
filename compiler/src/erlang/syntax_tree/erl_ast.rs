@@ -70,7 +70,7 @@ pub enum ErlAst {
   Case(SourceLoc, ErlCase),
 
   /// A literal value, constant. Type is known via literal.get_type()
-  Lit(SourceLoc, Literal),
+  Lit(SourceLoc, Arc<Literal>),
 
   /// Binary operation with two arguments
   BinaryOp(SourceLoc, ErlBinaryOperatorExpr),
@@ -188,13 +188,13 @@ impl ErlAst {
 
   /// Create a new literal AST node of an integer
   pub fn new_lit_int(location: SourceLoc, val: isize) -> Arc<ErlAst> {
-    ErlAst::Lit(location, Literal::Integer(val))
+    ErlAst::Lit(location, Literal::Integer(val).into())
         .into()
   }
 
   /// Create a new literal AST node of an atom
   pub fn new_lit_atom(location: SourceLoc, val: &str) -> Arc<ErlAst> {
-    ErlAst::Lit(location, Literal::Atom(String::from(val)))
+    ErlAst::Lit(location, Literal::Atom(String::from(val)).into())
         .into()
   }
 
@@ -232,7 +232,9 @@ impl ErlAst {
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
     match self {
-      ErlAst::Lit(_loc, Literal::Atom(s)) => Some(s.clone()),
+      ErlAst::Lit(_loc, lit) => {
+        if let Literal::Atom(s) = lit.deref() { Some(s.clone()) } else { None }
+      }
       _ => None,
     }
   }

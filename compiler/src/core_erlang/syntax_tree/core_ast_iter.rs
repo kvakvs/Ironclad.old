@@ -3,6 +3,7 @@ use function_name::named;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
 
 impl CoreAst {
   /// Const iterator on the Core AST tree
@@ -45,6 +46,13 @@ impl CoreAst {
       CoreAst::Tuple { elements, .. } => Some(elements.iter().cloned().collect()),
 
       CoreAst::Empty => panic!("{}: Core AST tree is not initialized (empty node)", function_name!()),
+      CoreAst::PrimOp { op, .. } => {
+        match op {
+          PrimOp::Raise { expr, .. } => Some(vec![expr.clone()]),
+          PrimOp::ExcTrace => None,
+        }
+      }
+
       _ => unreachable!("{}: Can't process {}", function_name!(), self),
     }
   }
