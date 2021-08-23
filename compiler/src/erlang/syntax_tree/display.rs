@@ -30,7 +30,7 @@ impl std::fmt::Display for ErlAst {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
       }
       ErlAst::Var(var) => write!(f, "{}", var.name),
-      ErlAst::Apply(_loc, app) => write!(f, "{}", app),
+      ErlAst::Apply(app) => write!(f, "{}", app),
       ErlAst::Case(_loc, case) => write!(f, "{}", case),
       ErlAst::Lit(_loc, lit) => write!(f, "{}", lit),
 

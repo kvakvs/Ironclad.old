@@ -27,21 +27,36 @@ impl CoreAstBuilder {
       // If all arguments are variables, we just return the code, no case wrapping
 
       // AST if the values match the expected patterns. Otherwise will raise a badarg.
+      let arity = erl_clause.args.len();
       let good_ast = Self::build(&erl_clause.body);
+
+      // Good clause, when argument values matched the pattern
+      let good_types = iter::repeat(())
+          .take(arity)
+          .map(|_| TypeVar::new())
+          .collect();
+      let good_arg_exprs = erl_clause.args.iter().map(Self::build).collect();
       let cc_good = CaseClause {
-        match_exprs: erl_clause.args.iter().map(Self::build).collect(),
-        match_expr_types: vec![],
+        match_exprs: good_arg_exprs,
+        match_expr_types: good_types,
         guard: None,
-        guard_ty: TypeVar::default(),
+        guard_ty: TypeVar::new(),
         body: good_ast.into(),
-        ret_ty: Default::default(),
+        ret_ty: TypeVar::new(),
       };
+
+      // Bad clause, for failed arguments match
+      let bad_types = iter::repeat(())
+          .take(arity)
+          .map(|_| TypeVar::new())
+          .collect();
+      let bad_arg_exprs = iter::repeat(())
+          .take(arity)
+          .map(|_| CoreAst::new_unique_var("Arg"))
+          .collect();
       let cc_bad = CaseClause {
-        match_exprs: iter::repeat(erl_clause.args.len())
-            .map(|_| CoreAst::new_unique_var("fnarg"))
-            .map(Arc::new)
-            .collect(),
-        match_expr_types: vec![],
+        match_exprs: bad_arg_exprs,
+        match_expr_types: bad_types,
         guard: None,
         guard_ty: TypeVar::new(),
         body: CoreAst::create_badarg_primop(erl_fn_def.location.clone()).into(),
@@ -65,7 +80,7 @@ impl CoreAstBuilder {
   /// from each clause into Core case clauses.
   #[named]
   fn create_fnbody_from_fnclauses(erl_fn_def: &ErlFnDef) -> Arc<CoreAst> {
-    assert!(erl_fn_def.clauses.len() > 1,
+    assert!(erl_fn_def.clauses.len() > 0,
             "{}: Zero clause function is not acceptable", function_name!());
     if erl_fn_def.clauses.len() == 1 {
       Self::create_fnbody_from_single_fnclause(erl_fn_def, &erl_fn_def.clauses[0])
@@ -74,7 +89,7 @@ impl CoreAstBuilder {
         location: erl_fn_def.location.clone(),
         exprs: vec![],
         clauses: vec![],
-        ret_ty: Default::default(),
+        ret_ty: TypeVar::new(),
       };
       CoreAst::Case(case).into()
     }
@@ -91,7 +106,8 @@ impl CoreAstBuilder {
       let core_fndef = FnDef {
         location: fn_def.location.clone(),
         funarity: fn_def.funarity.clone(),
-        args: iter::repeat(fn_def.funarity.arity)
+        args: iter::repeat(())
+            .take(fn_def.funarity.arity)
             .map(|_| TypeVar::new())
             .collect(),
         body: core_body.into(),
@@ -100,6 +116,6 @@ impl CoreAstBuilder {
       return CoreAst::FnDef(core_fndef).into();
     }
 
-    panic!("{}: Not a ErlAst::FnDef - got {}", function_name!(), ast)
+    panic!("{}: Not a ErlAst::FnDef - got {:?}", function_name!(), ast)
   }
 }

@@ -67,12 +67,8 @@ pub enum CoreAst {
   //
 
   /// A variable with optional name and assigned unique numbered typevar
-  Var {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The variable name and typevar bundle
-    var: Var,
-  },
+  Var(Var),
+
   /// A literal value (fully known at compile time)
   Lit {
     /// Source file pointer
@@ -134,7 +130,7 @@ impl CoreAst {
   pub fn get_type(&self) -> Arc<ErlType> {
     match self {
       CoreAst::FnDef(fn_def) => ErlType::TVar(fn_def.ret_ty).into(),
-      CoreAst::Var { var: v, .. } => ErlType::TVar(v.ty).into(),
+      CoreAst::Var(core_var) => ErlType::TVar(core_var.ty).into(),
       CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
       CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
       CoreAst::Lit { value: l, .. } => l.get_type(),
@@ -163,7 +159,7 @@ impl CoreAst {
   pub fn location(&self) -> SourceLoc {
     match self {
       CoreAst::FnDef(fndef) => fndef.location.clone(),
-      CoreAst::Var { location, .. } => location.clone(),
+      CoreAst::Var(core_var) => core_var.location.clone(),
       CoreAst::Apply(app) => app.location.clone(),
       CoreAst::Case(case) => case.location.clone(),
       CoreAst::Lit { location, .. } => location.clone(),
@@ -174,11 +170,9 @@ impl CoreAst {
   }
 
   /// Create a new named variable with unique number id and a small text prefix
-  pub fn new_unique_var(prefix: &str) -> Self {
-    CoreAst::Var {
-      location: SourceLoc::None,
-      var: Var::new_unique(prefix),
-    }
+  pub fn new_unique_var(prefix: &str) -> Arc<CoreAst> {
+    CoreAst::Var(Var::new_unique(SourceLoc::None, prefix))
+        .into()
   }
 
   /// Creates a primop raising badarg atom
@@ -234,8 +228,8 @@ impl std::fmt::Display for CoreAst {
         write!(f, " -> {}", fn_def.body)?;
         write!(f, "}})")
       }
-      CoreAst::Var { var, .. } => match &var.name {
-        None => write!(f, "{}", var.ty),
+      CoreAst::Var (core_var) => match &core_var.name {
+        None => write!(f, "{}", core_var.ty),
         Some(n) => write!(f, "{}", n),
       },
       CoreAst::Apply(app) => write!(f, "{}", app),
@@ -278,7 +272,7 @@ impl std::fmt::Debug for CoreAst {
         // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
         // write!(f, "}}")
       }
-      CoreAst::Var { var, .. } => write!(f, "{}:{}", self, var.ty),
+      CoreAst::Var (core_var) => write!(f, "{}:{}", self, core_var.ty),
       // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
       // CoreAst::BinaryOp(_loc, binop) => {
       //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)

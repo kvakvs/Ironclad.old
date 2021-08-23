@@ -1,5 +1,7 @@
 //! Binary and unary operations used in type checking.
 
+use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
+
 /// Binary operation taking two arguments
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum CoreBinaryOp {
@@ -37,6 +39,30 @@ pub enum CoreBinaryOp {
   ListAppend,
   /// Difference of two lists --
   ListSubtract,
+}
+
+impl From<ErlBinaryOp> for CoreBinaryOp {
+  fn from(erlop: ErlBinaryOp) -> Self {
+    match erlop {
+      ErlBinaryOp::Comma => CoreBinaryOp::Comma,
+      ErlBinaryOp::Add => CoreBinaryOp::Add,
+      ErlBinaryOp::Sub => CoreBinaryOp::Sub,
+      ErlBinaryOp::Mul => CoreBinaryOp::Mul,
+      ErlBinaryOp::Div => CoreBinaryOp::Div,
+      ErlBinaryOp::IntegerDiv => CoreBinaryOp::IntegerDiv,
+      ErlBinaryOp::Modulo => CoreBinaryOp::Modulo,
+      ErlBinaryOp::Less => CoreBinaryOp::Less,
+      ErlBinaryOp::Greater => CoreBinaryOp::Greater,
+      ErlBinaryOp::LessEq => CoreBinaryOp::LessEq,
+      ErlBinaryOp::GreaterEq => CoreBinaryOp::GreaterEq,
+      ErlBinaryOp::Eq => CoreBinaryOp::Eq,
+      ErlBinaryOp::NotEq => CoreBinaryOp::NotEq,
+      ErlBinaryOp::HardEq => CoreBinaryOp::HardEq,
+      ErlBinaryOp::HardNotEq => CoreBinaryOp::HardNotEq,
+      ErlBinaryOp::ListAppend => CoreBinaryOp::ListAppend,
+      ErlBinaryOp::ListSubtract => CoreBinaryOp::ListSubtract,
+    }
+  }
 }
 
 /// Unary operation takes 1 argument of bool or number, and returns same type

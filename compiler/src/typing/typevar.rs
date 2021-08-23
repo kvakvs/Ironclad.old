@@ -33,9 +33,9 @@ impl std::fmt::Debug for TypeVar {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
 }
 
-impl Default for TypeVar {
-  /// Do not construct using Default
-  fn default() -> Self {
-    unreachable!("Do not call default on typevar, construct with ::new()")
-  }
-}
+// impl Default for TypeVar {
+//   /// Do not construct using Default
+//   fn default() -> Self {
+//     unreachable!("Do not call default on typevar, construct with ::new()")
+//   }
+// }

@@ -4,7 +4,6 @@ use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
-use crate::typing::typevar::TypeVar;
 use crate::typing::erl_type_prefab::TypePrefab;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
@@ -16,8 +15,6 @@ pub struct ErlBinaryOperatorExpr {
   pub right: Arc<ErlAst>,
   /// The operator
   pub operator: ErlBinaryOp,
-  /// The return type of the operation
-  pub ty: TypeVar,
 }
 
 /// Unary operator is right-associative operation such as `not A` or `+A`

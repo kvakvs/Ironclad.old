@@ -10,7 +10,6 @@ use crate::erlang::syntax_tree::node::erl_token::ErlToken;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
-use crate::typing::typevar::TypeVar;
 use crate::ast_tree::{AstTree, AstCache};
 use std::sync::Arc;
 use std::ops::Deref;
@@ -65,7 +64,7 @@ pub enum ErlAst {
   Var(ErlVar),
 
   /// Apply arguments to expression
-  Apply(SourceLoc, ErlApply),
+  Apply(ErlApply),
 
   /// Case switch containing the argument to check, and case clauses
   Case(SourceLoc, ErlCase),
@@ -168,13 +167,13 @@ impl ErlAst {
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
   pub fn new_application(location: SourceLoc, expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
-    ErlAst::Apply(location, ErlApply::new(expr, args))
+    ErlAst::Apply(ErlApply::new(location, expr, args))
         .into()
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
   pub fn new_application0(location: SourceLoc, expr: Arc<ErlAst>) -> Arc<ErlAst> {
-    ErlAst::Apply(location, ErlApply::new(expr, vec![]))
+    ErlAst::Apply(ErlApply::new(location, expr, vec![]))
         .into()
   }
 
@@ -183,7 +182,7 @@ impl ErlAst {
                    left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Arc<ErlAst> {
     ErlAst::BinaryOp(
       location,
-      ErlBinaryOperatorExpr { left, right, operator: op, ty: TypeVar::new() },
+      ErlBinaryOperatorExpr { left, right, operator: op },
     ).into()
   }
 
@@ -279,7 +278,7 @@ impl ErlAst {
       ErlAst::CClause(loc, _) => loc.clone(),
       ErlAst::MFA { location: loc, .. } => loc.clone(),
       ErlAst::Var(var) => var.location.clone(),
-      ErlAst::Apply(loc, _) => loc.clone(),
+      ErlAst::Apply(app) => app.location.clone(),
       ErlAst::Case(loc, _) => loc.clone(),
       ErlAst::Lit(loc, _) => loc.clone(),
       ErlAst::BinaryOp(loc, _) => loc.clone(),

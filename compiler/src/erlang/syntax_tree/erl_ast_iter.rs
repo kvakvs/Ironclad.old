@@ -22,7 +22,7 @@ impl ErlAst {
         Some(r)
       }
 
-      ErlAst::Apply(_loc, app) => {
+      ErlAst::Apply(app) => {
         let mut r: Vec<Arc<ErlAst>> = vec![app.expr.clone()];
         r.extend(app.args.iter().cloned());
         Some(r)

@@ -1,12 +1,15 @@
 //! Defines Application AST node for a function call
 use std::fmt::Formatter;
+use std::sync::Arc;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::display::display_comma_separated;
-use std::sync::Arc;
+use crate::source_loc::SourceLoc;
 
 /// AST node which contains a function call
 pub struct ErlApply {
+  /// Code location in the Erlang AST
+  pub location: SourceLoc,
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
   pub expr: Arc<ErlAst>,
   /// Function application arguments, list of expressions
@@ -42,8 +45,8 @@ impl ErlApply {
   // }
 
   /// Creates a new function call (application) AST node
-  pub fn new(expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Self {
-    ErlApply { expr, args }
+  pub fn new(location: SourceLoc, expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Self {
+    ErlApply { location, expr, args }
   }
 
   // /// To use during the construction, from expression and arg expressions, assume that the
