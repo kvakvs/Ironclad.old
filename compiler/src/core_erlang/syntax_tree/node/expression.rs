@@ -5,6 +5,8 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
+use crate::typing::erl_type_prefab::TypePrefab;
+use std::ops::Deref;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 // #[derive(PartialEq)]
@@ -21,34 +23,37 @@ pub struct BinaryOperatorExpr {
 
 impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
-  pub fn get_result_type(&self) -> ErlType {
+  pub fn get_result_type(&self) -> Arc<ErlType> {
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
+        ErlType::union_of(vec![TypePrefab::any_integer(),
+                               TypePrefab::float()], true)
       }
 
-      | CoreBinaryOp::Div => ErlType::Float,
+      CoreBinaryOp::Div => TypePrefab::float(),
 
-      CoreBinaryOp::IntegerDiv => ErlType::AnyInteger,
+      CoreBinaryOp::IntegerDiv => TypePrefab::any_integer(),
 
-      CoreBinaryOp::Modulo => ErlType::AnyInteger,
+      CoreBinaryOp::Modulo => TypePrefab::any_integer(),
 
       CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
       | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
-        ErlType::AnyBool
+        TypePrefab::any_bool()
       }
       CoreBinaryOp::ListAppend => {
         // Type of ++ will be union of left and right
-        if let ErlType::List(left_list_t) = self.left.get_type() {
-          if let ErlType::List(right_list_t) = self.right.get_type() {
-            let union_t = ErlType::union_of(vec![*left_list_t, *right_list_t], true);
-            return ErlType::List(Box::new(union_t));
+        if let ErlType::List(left_list_t) = self.left.get_type().deref() {
+          if let ErlType::List(right_list_t) = self.right.get_type().deref() {
+            let union_t = ErlType::union_of(
+              vec![left_list_t.clone(), right_list_t.clone()],
+              true);
+            return ErlType::List(union_t).into();
           } else {
             // right is not a list
           }
           // left is not a list
         }
-        ErlType::None // Raise TypeError::ListExpected?
+        TypePrefab::none() // Raise TypeError::ListExpected?
       }
       CoreBinaryOp::ListSubtract => {
         // Type of -- will be left, probably some elements which should be missing, but how do we know?
@@ -61,23 +66,22 @@ impl BinaryOperatorExpr {
   /// Gets the type for a binary operation, type is widened for numeric ops (return unions of
   /// types) which later will be constrained by the type equations solver.
   /// Returns None if the input type is not limited to any type.
-  pub fn get_arg_type(&self) -> Option<ErlType> {
+  pub fn get_arg_type(&self) -> Option<Arc<ErlType>> {
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul | CoreBinaryOp::Div => {
-        Some(ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true))
+        Some(ErlType::union_of(vec![TypePrefab::any_integer(), TypePrefab::float()],
+                               true))
       }
 
-      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => {
-        Some(ErlType::AnyInteger)
-      }
+      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => Some(TypePrefab::any_integer()),
 
       CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
       | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
         None
       }
 
-      CoreBinaryOp::ListAppend | CoreBinaryOp::ListSubtract => Some(ErlType::AnyList),
-      CoreBinaryOp::Comma => Some(ErlType::Any)
+      CoreBinaryOp::ListAppend | CoreBinaryOp::ListSubtract => Some(TypePrefab::any_list()),
+      CoreBinaryOp::Comma => Some(TypePrefab::any())
     }
   }
 }
@@ -93,16 +97,16 @@ pub struct UnaryOperatorExpr {
 
 impl UnaryOperatorExpr {
   /// Get the type of an unary operation. Input type is same as return type.
-  pub fn get_type(&self) -> ErlType {
+  pub fn get_type(&self) -> Arc<ErlType> {
     match self.operator {
-      CoreUnaryOp::Not => ErlType::AnyBool,
+      CoreUnaryOp::Not => TypePrefab::any_bool(),
 
       CoreUnaryOp::Negative
       | CoreUnaryOp::Positive => {
-        ErlType::union_of(vec![ErlType::AnyInteger, ErlType::Float], true)
+        ErlType::union_of(vec![TypePrefab::any_integer(), TypePrefab::float()], true)
       }
 
-      CoreUnaryOp::Catch => ErlType::Any,
+      CoreUnaryOp::Catch => TypePrefab::any(),
     }
   }
 }

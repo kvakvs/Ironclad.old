@@ -1,33 +1,21 @@
 //! Defines Application AST node for a function call
-use std::cell::RefCell;
 use std::fmt::Formatter;
 
-use crate::erl_error::ErlResult;
-use crate::source_loc::SourceLoc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
-use crate::typing::erl_type::ErlType;
-use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::fn_type::FunctionType;
-use crate::typing::typevar::TypeVar;
 use crate::display::display_comma_separated;
-use crate::project::module::Module;
+use std::sync::Arc;
 
 /// AST node which contains a function call
 pub struct ErlApply {
   /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
-  pub expr: Box<RefCell<ErlAst>>,
-  /// Arguments. Their inferred types are stored inside.
-  pub args: Vec<ErlAst>,
-  /// Inferred type of return. Always a new TypeVar().
-  pub ret_ty: TypeVar,
-  /// Inferred type of the expression, must be something callable
-  pub expr_ty: TypeVar,
+  pub expr: Arc<ErlAst>,
+  /// Function application arguments, list of expressions
+  pub args: Vec<Arc<ErlAst>>,
 }
 
 impl std::fmt::Display for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}(", self.expr.borrow())?;
+    write!(f, "{}(", self.expr)?;
     display_comma_separated(&self.args, f)?;
     write!(f, ")")
   }
@@ -35,46 +23,39 @@ impl std::fmt::Display for ErlApply {
 
 impl std::fmt::Debug for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "apply({:?}:{}, (", self.expr.borrow(), self.expr_ty)?;
+    write!(f, "apply({:?}, (", self.expr)?;
     display_comma_separated(&self.args, f)?;
-    write!(f, ")):{}", self.ret_ty)
+    write!(f, "))")
   }
 }
 
 impl ErlApply {
-  /// From argument types build a new ErlType::Function() with a single clause corresponding to
-  /// that specific call `Apply` would be performing
-  pub fn get_function_type(&self) -> ErlType {
-    let arg_types: Vec<ErlType> = self.args.iter()
-        .map(|arg| arg.get_type())
-        .collect();
-    let clause_type = FnClauseType::new(arg_types, self.ret_ty.into());
-    let f_type = FunctionType::new(None, vec![clause_type]);
-    ErlType::Fn(f_type)
-  }
+  // /// From argument types build a new ErlType::Function() with a single clause corresponding to
+  // /// that specific call `Apply` would be performing
+  // pub fn get_function_type(&self) -> ErlType {
+  //   let arg_types: Vec<ErlType> = self.args.iter()
+  //       .map(|arg| arg.get_type())
+  //       .collect();
+  //   let clause_type = FnClauseType::new(arg_types, self.ret_ty.into());
+  //   let f_type = FunctionType::new(None, vec![clause_type]);
+  //   ErlType::Fn(f_type)
+  // }
 
   /// Creates a new function call (application) AST node
-  pub fn new(expr: ErlAst, args: Vec<ErlAst>) -> Self {
-    // let ret_ty = ErlType::new_typevar();
-    // let expr_ty = Self::create_expr_type(&args, &ret_ty);
-    ErlApply {
-      expr: Box::new(RefCell::new(expr)),
-      args,
-      ret_ty: TypeVar::new(),
-      expr_ty: TypeVar::new(),
-    }
+  pub fn new(expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Self {
+    ErlApply { expr, args }
   }
 
-  /// To use during the construction, from expression and arg expressions, assume that the
-  /// expression must be callable and build a `fun(Args...) -> Ret` type
-  fn create_expr_type(args: &[ErlAst], ret: &ErlType) -> ErlType {
-    let arg_types = args.iter()
-        .map(|a| a.get_type())
-        .collect();
-    let clause = FnClauseType::new(arg_types, ret.clone());
-    // unnamed function application, None for a name
-    ErlType::Fn(FunctionType::new(None, vec![clause]))
-  }
+  // /// To use during the construction, from expression and arg expressions, assume that the
+  // /// expression must be callable and build a `fun(Args...) -> Ret` type
+  // fn create_expr_type(args: &[ErlAst], ret: &ErlType) -> ErlType {
+  //   let arg_types = args.iter()
+  //       .map(|a| a.get_type())
+  //       .collect();
+  //   let clause = FnClauseType::new(arg_types, ret.clone());
+  //   // unnamed function application, None for a name
+  //   ErlType::Fn(FunctionType::new(None, vec![clause]))
+  // }
 
   // /// During post-parse scan try check if our expression is a reference to a known function.
   // /// If so, replace it with a pointer to that function.

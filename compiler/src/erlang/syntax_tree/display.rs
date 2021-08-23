@@ -29,7 +29,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::CClause(_loc, clause) => {
         write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
       }
-      ErlAst::Var(_loc, v) => write!(f, "{}", v.name),
+      ErlAst::Var(var) => write!(f, "{}", var.name),
       ErlAst::Apply(_loc, app) => write!(f, "{}", app),
       ErlAst::Case(_loc, case) => write!(f, "{}", case),
       ErlAst::Lit(_loc, lit) => write!(f, "{}", lit),
@@ -62,13 +62,13 @@ impl std::fmt::Debug for ErlAst {
       // ErlAst::ModuleAttr { .. } => {}
       // ErlAst::Comma { .. } => {}
       ErlAst::FnDef(erl_fndef) => {
-        write!(f, "def-fun {} -> {} {{", erl_fndef.funarity, erl_fndef.ret_ty)?;
+        write!(f, "def-fun {} {{", erl_fndef.funarity)?;
         for fc in erl_fndef.clauses.iter() { write!(f, "{:?};", fc)?; }
         write!(f, "}}")
       }
       // ErlAst::CClause(_, _) => {}
       // ErlAst::FunArity(_, _) => {}
-      ErlAst::Var(_, v) => write!(f, "{}:{}", self, v.ty),
+      ErlAst::Var(var) => write!(f, "{}", var.name),
       ErlAst::Apply(_loc, app) => write!(f, "{:?}", app),
       // ErlAst::Let(_, _) => {}
       // ErlAst::Case(_, _) => {}

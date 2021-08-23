@@ -1,6 +1,7 @@
 //! Collection of type inference and check facilities
 
 pub mod erl_type;
+pub mod erl_type_prefab;
 pub mod error;
 pub mod typevar;
 pub mod unifier;

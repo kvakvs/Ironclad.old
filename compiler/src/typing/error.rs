@@ -4,15 +4,16 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
 use crate::mfarity::MFArity;
+use std::sync::Arc;
 
 /// Raised by the type analyzer and checker
 pub enum TypeError {
   /// Error raised when two types contradict one of type equations for the AST
   TypesDontMatch {
     /// First type not matching t2
-    t1: ErlType,
+    t1: Arc<ErlType>,
     /// The second type not matching t1
-    t2: ErlType,
+    t2: Arc<ErlType>,
   },
   /// Error raised when two functions of different arity are asserted to have equal types
   FunAritiesDontMatch,
@@ -21,7 +22,7 @@ pub enum TypeError {
     /// The type variable which was checked
     tvar: TypeVar,
     /// The type which caused the error
-    ty: ErlType,
+    ty: Arc<ErlType>,
   },
   // /// Error when operation wanted a list, and received 'received'
   // ListExpected { received: ErlType },

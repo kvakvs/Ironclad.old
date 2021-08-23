@@ -16,15 +16,15 @@ use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
 
 impl Module {
-  fn prec_climb_infix_fn(lhs0: ErlResult<ErlAst>,
+  fn prec_climb_infix_fn(lhs0: ErlResult<Arc<ErlAst>>,
                          op: Pair<Rule>,
-                         rhs0: ErlResult<ErlAst>) -> ErlResult<ErlAst> {
+                         rhs0: ErlResult<Arc<ErlAst>>) -> ErlResult<Arc<ErlAst>> {
     let lhs = lhs0?;
     let rhs = rhs0?;
 
     // println!("PrecC: infix({:?} ⋄ {} ⋄ {:?}) ->", lhs, op, rhs);
     let loc: SourceLoc = op.as_span().into();
-    let result: ErlAst = match op.as_rule() {
+    let result: Arc<ErlAst> = match op.as_rule() {
       Rule::op_plus => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Add, rhs),
       Rule::op_minus => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Sub, rhs),
       Rule::op_mul => ErlAst::new_binop(loc, lhs, ErlBinaryOp::Mul, rhs),
@@ -45,7 +45,7 @@ impl Module {
   /// This time using Precedence Climber, processes children of a node.
   /// This should only be used for Rule::expr subtrees where operator precedence makes sense.
   pub fn build_ast_prec_climb(&mut self, pair: Pair<Rule>,
-                              climber: &PrecClimber<Rule>) -> ErlResult<ErlAst> {
+                              climber: &PrecClimber<Rule>) -> ErlResult<Arc<ErlAst>> {
     // println!("PrecC: in {}", pair.as_str());
 
     match pair.as_rule() {
@@ -65,16 +65,22 @@ impl Module {
         let loc = pair.as_span().into();
         let list_node = pair.into_inner().next().unwrap();
         let elems_ast = self.build_ast_prec_climb(list_node, get_prec_climber())?;
+
+        // Unfold comma-tree into a vector of expressions
         let mut elems = Vec::new();
-        ErlAst::comma_to_vec(elems_ast, &mut elems);
+        ErlAst::comma_to_vec(&elems_ast, &mut elems);
+
         Ok(ErlAst::new_list(loc, elems))
       }
       Rule::tuple => {
         let loc = pair.as_span().into();
         let list_node = pair.into_inner().next().unwrap();
         let elems_ast = self.build_ast_prec_climb(list_node, get_prec_climber())?;
+
+        // Unfold comma-tree into a vector of expressions
         let mut elems = Vec::new();
-        ErlAst::comma_to_vec(elems_ast, &mut elems);
+        ErlAst::comma_to_vec(&elems_ast, &mut elems);
+
         Ok(ErlAst::new_tuple(loc, elems))
       }
       _other => unreachable!("Climber doesn't know how to handle {} (type {:?})", pair.as_str(), pair.as_rule())
@@ -83,19 +89,20 @@ impl Module {
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
   /// Processes a single node where there's no need to use precedence climber.
-  pub fn build_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  pub fn build_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     let loc: SourceLoc = pair.as_span().into();
 
-    let result: ErlAst = match pair.as_rule() {
+    let result: Arc<ErlAst> = match pair.as_rule() {
       Rule::module => self.file_root_to_ast(pair)?,
       Rule::string => {
         ErlAst::Lit(loc, Literal::String(String::from(pair.as_str())))
+            .into()
       }
       Rule::module_attr => {
         ErlAst::ModuleAttr {
           location: loc,
           name: String::from(pair.into_inner().as_str()),
-        }
+        }.into()
       }
       Rule::function_def => self.function_def_to_ast(pair)?,
       Rule::expr => self.build_ast_prec_climb(pair, get_prec_climber())?,
@@ -151,7 +158,7 @@ impl Module {
       Rule::op_catch => ErlAst::temporary_token(ErlToken::Catch),
       Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
-      Rule::COMMENT => ErlAst::Comment(pair.as_span().into()),
+      Rule::COMMENT => ErlAst::Comment(pair.as_span().into()).into(),
       other => todo!("to_ast_single_node: unknown parse node {:?}", other),
     };
     Ok(result)
@@ -160,7 +167,7 @@ impl Module {
   /// Parsed Application tokens are converted to App AST node.
   /// The expression is analyzed if it resembles anything callable, and is then transformed to a
   /// function pointer (or an export etc).
-  fn application_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn application_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     // println!("application pair {:#?}", &pair);
     let loc: SourceLoc = pair.as_span().into();
     let mut pair_inner = pair.into_inner();
@@ -182,7 +189,7 @@ impl Module {
         // Unwrap comma operator into a vec of args, a non-comma AST node will become
         // a single vec element
         let mut args = Vec::new();
-        ErlAst::comma_to_vec(args_ast, &mut args);
+        ErlAst::comma_to_vec(&args_ast, &mut args);
 
         ErlAst::new_application(loc, expr, args)
       }
@@ -195,17 +202,17 @@ impl Module {
   }
 
   /// Parse all nested file elements, comments and text fragments
-  fn file_root_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn file_root_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     assert_eq!(pair.as_rule(), Rule::module);
     let ast_nodes = pair.into_inner().into_iter()
         .map(|p| self.build_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
-    Ok(ErlAst::ModuleForms(ast_nodes))
+    Ok(ErlAst::ModuleForms(ast_nodes).into())
   }
 
   /// Parse funname(arg, arg...) -> body.
-  fn function_def_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn function_def_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     let location = pair.as_span().into();
     assert_eq!(pair.as_rule(), Rule::function_def);
 
@@ -214,13 +221,13 @@ impl Module {
         .map(Result::unwrap)
         .collect();
 
-    let arity = clauses[0].arg_types.len();
+    let arity = clauses[0].args.len();
     let funarity = MFArity::new_local(clauses[0].name.clone(), arity);
 
     //self.add_function(fn_def.clone());
 
     let fn_def = ErlFnDef::new(location, funarity.clone(), clauses);
-    Ok(ErlAst::FnDef(fn_def))
+    Ok(ErlAst::FnDef(fn_def).into())
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
@@ -229,7 +236,7 @@ impl Module {
 
     // println!("Fun clause {:#?}", pair);
 
-    let mut nodes: VecDeque<ErlAst> = pair.into_inner()
+    let mut nodes: VecDeque<Arc<ErlAst>> = pair.into_inner()
         .map(|p| self.build_ast_single_node(p))
         .map(Result::unwrap)
         .collect();
@@ -249,29 +256,27 @@ impl Module {
       self.expr_to_ast(body_nodes)?
     };
 
-    let args: Vec<Arc<ErlAst>> = nodes.into_iter()
-        .map(Arc::new)
-        .collect();
+    let args: Vec<Arc<ErlAst>> = nodes.into_iter().collect();
     Ok(ErlFnClause::new(name, args, body))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap
   /// them into a Comma AST node, otherwise return as is.
-  fn expr_to_ast(&self, ast: ErlAst) -> ErlResult<ErlAst> {
+  fn expr_to_ast(&self, ast: Arc<ErlAst>) -> ErlResult<Arc<ErlAst>> {
     Ok(ast)
   }
 
   /// Parse a generic bindable expression, this is used as function arguments, in matching and
   /// variable assignments.
-  fn bindable_expr_to_ast(&self, ast: ErlAst) -> ErlResult<ErlAst> {
+  fn bindable_expr_to_ast(&self, ast: Arc<ErlAst>) -> ErlResult<Arc<ErlAst>> {
     Ok(ast)
   }
 
   /// Given some token from literal pest parse hierarchy, try and get a literal value out of it
-  fn parse_literal(&self, pair: Pair<Rule>) -> ErlResult<ErlAst> {
+  fn parse_literal(&self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     let pair_s = pair.as_str(); // use for reporting erroneous text
 
-    let result: ErlAst = match pair.as_rule() {
+    let result: Arc<ErlAst> = match pair.as_rule() {
       Rule::number_int => {
         let val = pair_s.parse::<isize>()?;
         ErlAst::new_lit_int(pair.as_span().into(), val)

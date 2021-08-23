@@ -3,15 +3,16 @@ use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 
 use ::function_name::named;
+use std::sync::Arc;
+use std::ops::Deref;
+use std::collections::BTreeSet;
+use std::cmp::Ordering;
 
 use crate::literal::Literal;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
-use std::collections::BTreeSet;
-use std::cmp::Ordering;
 use crate::typing::fn_clause_type::FnClauseType;
-
-// use enum_as_inner::EnumAsInner;
+use crate::typing::erl_type_prefab::TypePrefab;
 
 /// A record field definition
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -52,7 +53,9 @@ pub enum ErlType {
   // Special types, groups of types, etc
   //-------------------------------------
   /// Multiple types together
-  Union(BTreeSet<ErlType>),
+  // TODO: Move out into a new Union struct and file
+  Union(BTreeSet<Arc<ErlType>>),
+
   /// No type, usually signifies a type error
   None,
   /// All types, usually signifies an unchecked or untyped type
@@ -84,7 +87,7 @@ pub enum ErlType {
   Nil,
 
   /// A list with element type, type can be union
-  List(Box<ErlType>),
+  List(Arc<ErlType>),
 
   /// A list of unicode codepoints list(char())
   String,
@@ -93,7 +96,7 @@ pub enum ErlType {
   AnyTuple,
 
   /// A tuple with each element type defined
-  Tuple(Vec<ErlType>),
+  Tuple(Vec<Arc<ErlType>>),
 
   /// Special case of a tagged tuple where we know a record definition exists. is-a(Tuple)
   Record {
@@ -354,15 +357,15 @@ impl ErlType {
 
   /// If self is a TypeVar, return Any, otherwise do not change.
   /// Used after type inference was done to replace all typevars with any()
-  pub fn into_final_type(self) -> Self {
-    match self {
-      ErlType::TVar(_) => ErlType::Any,
-      other => other,
+  pub fn final_type(this: Arc<ErlType>) -> Arc<ErlType> {
+    match this.deref() {
+      ErlType::TVar(_) => TypePrefab::any(),
+      _other => this,
     }
   }
 
   /// Given vector of literals, make a union type
-  pub fn union_of_literal_types(items: &[Literal]) -> ErlType {
+  pub fn union_of_literal_types(items: &[Literal]) -> Arc<ErlType> {
     Self::union_of(
       items.iter()
           .map(|it| it.get_type())
@@ -379,37 +382,37 @@ impl ErlType {
   /// flatten them while also trying to maintain uniqueness (see to do below).
   /// Param `promote` will also call promote on the resulting union, trying to merge some type
   /// combinations into supertypes.
-  pub fn union_of(types: Vec<ErlType>, promote: bool) -> Self {
+  pub fn union_of(types: Vec<Arc<ErlType>>, promote: bool) -> Arc<ErlType> {
     if types.len() == 1 {
       return types[0].clone();
     }
 
-    let mut merged: BTreeSet<ErlType> = Default::default();
+    let mut merged: BTreeSet<Arc<ErlType>> = Default::default();
 
     // For every type in types, if its a Union, unfold it into member types.
     // HashSet will ensure that the types are unique
     types.into_iter().for_each(|t| {
-      match t {
+      match t.deref() {
         ErlType::Union(members) => merged.extend(members.iter().cloned()),
         _ => { merged.insert(t); }
       }
     });
-    if promote { ErlType::union_promote(merged) } else { ErlType::Union(merged) }
+    if promote { ErlType::union_promote(merged) } else { ErlType::Union(merged).into() }
   }
 
   /// Given a hashset of erlang types try and promote combinations of simpler types to a compound
   /// type if such type exists. This is lossless operation, types are not generalized or shrunk.
   /// Example: integer()|float() shrink into number()
   #[named]
-  fn union_promote(elements: BTreeSet<ErlType>) -> ErlType {
+  fn union_promote(elements: BTreeSet<Arc<ErlType>>) -> Arc<ErlType> {
     assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
     if elements.len() == 2 {
       // integer() | float() => number()
       if elements.contains(&ErlType::Float) && elements.contains(&ErlType::AnyInteger) {
-        return ErlType::Number;
+        return ErlType::Number.into();
       }
     }
-    ErlType::Union(elements)
+    ErlType::Union(elements).into()
   }
 
   // /// Create a new function type provided args types and return type, possibly with a name
@@ -442,7 +445,7 @@ impl ErlType {
 
   /// Given a union type, add t to the union, with uniqueness check
   /// Returns Some() if the union was modified, None if no update has happened
-  pub fn union_add(&self, t: &ErlType) -> Option<Self> {
+  pub fn union_add(&self, t: Arc<ErlType>) -> Option<Self> {
     match self {
       ErlType::Union(members) => {
         let mut new_members = members.clone();
@@ -455,13 +458,13 @@ impl ErlType {
 
   /// For Union type, if it contains empty set, collapses into None, if contains one type - will
   /// collapse into that type.
-  pub fn union_collapse(&self) -> Self {
-    match self {
+  pub fn union_collapse(this: &Arc<ErlType>) -> Arc<ErlType> {
+    match this.deref() {
       ErlType::Union(members) => {
         match members.len() {
           1 => members.iter().next().unwrap().clone(),
-          0 => ErlType::None,
-          _ => self.clone(),
+          0 => ErlType::None.into(),
+          _ => this.clone(),
         }
       }
       _ => unreachable!("ErlType::union_collapse called on not-a-Union type")
@@ -477,8 +480,8 @@ impl ErlType {
   }
 
   /// Create an atom from a string slice
-  pub fn atom_str(s: &str) -> Self {
-    ErlType::Atom(String::from(s))
+  pub fn atom_str(s: &str) -> Arc<ErlType> {
+    ErlType::Atom(String::from(s)).into()
   }
 }
 

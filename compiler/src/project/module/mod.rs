@@ -15,7 +15,6 @@ use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_parser;
 use crate::typing::unifier::Unifier;
-use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
@@ -114,18 +113,10 @@ impl Module {
     };
 
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-    self.ast = {
-      // Parse tree to raw AST
-      let ast0 = self.build_ast_single_node(parse_output)?;
 
-      // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
-      // self.postprocess_ast_readonly(&ast0)?;
-      // self.postprocess_ast(&ast0)?;
-
-      println!("\n{}: {}", function_name!(), ast0);
-
-      Arc::new(ast0)
-    };
+    // Parse tree to raw AST
+    self.ast = self.build_ast_single_node(parse_output)?;
+    println!("\n{}: {}", function_name!(), self.ast);
 
     // Rebuild Core AST from Erlang AST
     self.core_ast = CoreAstBuilder::build(self.ast.clone());
@@ -150,15 +141,9 @@ impl Module {
     self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
 
     // build initial AST from parse
-    let ast0 = self.build_ast_single_node(parse_output)?;
+    self.ast = self.build_ast_single_node(parse_output)?;
+    println!("\n{}: {}", function_name!(), self.ast);
 
-    // Modify some AST nodes as required
-    // self.postprocess_ast_readonly(&ast0)?;
-    // self.postprocess_ast(&ast0)?;
-
-    println!("\n{}: {}", function_name!(), ast0);
-
-    self.ast = Arc::new(ast0);
     Ok(())
   }
 }

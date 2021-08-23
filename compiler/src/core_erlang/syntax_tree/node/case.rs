@@ -18,7 +18,7 @@ pub struct CaseClause {
   /// Guard condition, None if there's no condition (always true)
   pub guard: Option<Arc<CoreAst>>,
   /// Unique type variable for guard condition expression
-  pub guard_ty: Vec<TypeVar>,
+  pub guard_ty: TypeVar,
 
   /// Clause body
   pub body: Arc<CoreAst>,

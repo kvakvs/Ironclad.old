@@ -24,9 +24,9 @@ extern crate pest_derive;
 extern crate toml;
 extern crate serde;
 extern crate serde_derive;
-// extern crate thiserror;
 extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;
-// extern crate enum_as_inner;
 extern crate function_name;
+#[macro_use]
+extern crate derivative;

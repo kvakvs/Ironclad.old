@@ -4,13 +4,14 @@ extern crate function_name;
 mod test_util;
 
 use ::function_name::named;
-use compiler::erlang::syntax_tree::erl_ast::{ErlAst};
 use compiler::erl_error::ErlResult;
 use compiler::erlang::syntax_tree::erl_parser::{Rule};
 use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
 use compiler::project::module::Module;
+use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
+use compiler::typing::erl_type_prefab::TypePrefab;
 
 #[named]
 #[test]
@@ -20,26 +21,22 @@ fn infer_simplemath() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_and_unify_erl_str(Rule::function_def, code)?;
 
-  {
-    let ast = module.ast.clone();
-    match ast.deref() {
-      ErlAst::FnDef(fn_def) => {
-        assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-        assert_eq!(fn_def.funarity.arity, 1, "FunctionDef must have arity 1");
+  let ast = module.core_ast.clone();
 
-        let clause = &fn_def.clauses[0];
-        assert_eq!(clause.name, "myfun", "FClause name must be myfun");
-
-        assert_eq!(clause.args.len(), 1, "FClause must have exact one arg");
-        assert!(matches!(clause.args[0].deref(), ErlAst::Var{..}), "FClause arg must be a Var node");
-      }
-      other1 => test_util::fail_unexpected(other1),
+  match ast.deref() {
+    CoreAst::FnDef(fn_def) => {
+      // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
+      assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
+      assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
+      assert_eq!(fn_def.args.len(), 1, "FnDef must have exact one arg");
+      // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
     }
-    println!("Parsed: {}", module.ast);
-
-    let f_t = module.unifier.infer_ast(&ast).into_final_type();
-    println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
+    other1 => test_util::fail_unexpected(other1),
   }
+  println!("Parsed: {}", module.ast);
+
+  let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
 
   Ok(())
 }
@@ -54,10 +51,10 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_and_unify_erl_str(Rule::function_def, code)?;
 
-  let f_t = module.unifier.infer_ast(&module.ast).into_final_type();
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, f_t);
+  let f_t = ErlType::final_type(module.unifier.infer_ast(&module.core_ast));
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, f_t);
 
-  if let ErlType::List(t) = &f_t {
+  if let ErlType::List(t) = f_t.deref() {
     if let ErlType::Union(elems) = t.deref() {
       assert!(elems.contains(&ErlType::Atom(String::from("atom1"))));
       assert!(elems.contains(&ErlType::Atom(String::from("atom2"))));
@@ -84,21 +81,27 @@ fn infer_funcall_test() -> ErlResult<()> {
   module.parse_and_unify_erl_str(Rule::module, code)?;
 
   {
-    let add_fn_ast = module.ast.find_function_def(&MFArity::new_local_str("add", 2)).unwrap();
-    let f_t1 = module.unifier.infer_ast(add_fn_ast).into_final_type();
+    let add_fn_ast = CoreAst::find_function_def(
+      &module.core_ast, &MFArity::new_local_str("add", 2),
+    ).unwrap();
+
+    let f_t1 = ErlType::final_type(module.unifier.infer_ast(add_fn_ast.deref()));
     println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
-    assert_eq!(f_t1, ErlType::Number, "Function add/2 must have inferred type: number()");
+    assert_eq!(f_t1, TypePrefab::number(), "Function add/2 must have inferred type: number()");
   }
 
   {
-    let find_result2 = module.ast.find_function_def(&MFArity::new_local_str("main", 0)).unwrap();
-    let f_t2 = module.unifier.infer_ast(find_result2).into_final_type();
+    let find_result2 = CoreAst::find_function_def(
+      &module.core_ast, &MFArity::new_local_str("main", 0)
+    ).unwrap();
+
+    let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
     println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
     // Expected: Main -> integer()
-    assert_eq!(f_t2, ErlType::Number, "Function main/0 must have inferred type: number()");
+    assert_eq!(f_t2, TypePrefab::number(), "Function main/0 must have inferred type: number()");
   }
 
   Ok(())
@@ -114,16 +117,21 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_and_unify_erl_str(Rule::module, code)?;
 
-  let find_result2 = module.ast.find_function_def(&MFArity::new_local_str("main", 0)).unwrap();
-  let main_ty = module.unifier.infer_ast(find_result2).into_final_type();
+  let find_result2 = CoreAst::find_function_def(
+    &module.core_ast, &MFArity::new_local_str("main", 0)
+  ).unwrap();
+
+  let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
   println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 
   // Expected: Main -> number()|[atom1|atom2]
-  let list_type = ErlType::List(Box::new(
-    ErlType::union_of(vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")], true)
-  ));
+  let list_type = ErlType::List(
+    ErlType::union_of(
+      vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")],
+      true)
+  ).into();
   assert_eq!(main_ty,
-             ErlType::union_of(vec![ErlType::Number, list_type], true),
+             ErlType::union_of(vec![TypePrefab::number(), list_type], true),
              "Function main/0 must have inferred type: number()|[atom1|atom2]");
 
   Ok(())

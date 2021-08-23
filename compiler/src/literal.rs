@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
 
 use crate::typing::erl_type::ErlType;
+use std::sync::Arc;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone)]
@@ -85,25 +86,27 @@ impl Hash for Literal {
 
 impl Literal {
   /// Retrieves a type of a literal
-  pub fn get_type(&self) -> ErlType {
+  pub fn get_type(&self) -> Arc<ErlType> {
     match self {
-      Literal::Integer(i) => ErlType::Integer(*i),
-      Literal::Float(_) => ErlType::Float,
-      Literal::Atom(s) => ErlType::Atom(s.clone()),
-      Literal::Bool(_) => ErlType::AnyBool,
+      Literal::Integer(i) => ErlType::Integer(*i).into(),
+      Literal::Float(_) => ErlType::Float.into(),
+      Literal::Atom(s) => ErlType::Atom(s.clone()).into(),
+      Literal::Bool(_) => ErlType::AnyBool.into(),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
       Literal::List { elements, .. } => {
         // List type is union of all element types
-        ErlType::List(Box::new(ErlType::union_of_literal_types(elements)))
+        ErlType::List(ErlType::union_of_literal_types(elements))
+            .into()
       }
-      Literal::Nil => ErlType::AnyList,
-      Literal::String(_) => ErlType::String, // is-a(list(char))
+      Literal::Nil => ErlType::AnyList.into(),
+      Literal::String(_) => ErlType::String.into(), // is-a(list(char))
       Literal::Tuple(items) => {
-        ErlType::Tuple(items.iter()
+        let t_type = ErlType::Tuple(items.iter()
             .map(|it| it.get_type())
-            .collect())
+            .collect());
+        t_type.into()
       }
     }
   }

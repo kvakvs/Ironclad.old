@@ -9,17 +9,17 @@ use equation::TypeEquation;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::typing::erl_type::ErlType;
 use crate::typing::error::TypeError;
-use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::project::module::Module;
+use crate::typing::fn_clause_type::FnClauseType;
 
 pub mod gen_equations;
 pub mod infer;
 pub mod equation;
 
-type SubstMap = BTreeMap<TypeVar, ErlType>;
+type SubstMap = BTreeMap<TypeVar, Arc<ErlType>>;
 
 /// A program AST is analyzed and type equations are generated outside of this struct.
 /// This struct contains substitution map with found solutions for the type equations.
@@ -107,9 +107,11 @@ impl Unifier {
     // Try find 1 or more substitutions to make any clause in c1 equal to any clause in c2
     for c1 in &fun1.clauses {
       let unify_successes: Vec<Option<SubstMap>> = fun2.clauses.iter()
-          .map(|c2| self.unify(module,
-                               &ErlType::FnClause(c1.clone()),
-                               &ErlType::FnClause(c2.clone())))
+          .map(|c2| {
+            let clause1 = ErlType::FnClause(c1.clone()).into();
+            let clause2 = ErlType::FnClause(c2.clone()).into();
+            return self.unify(module, &clause1, &clause2);
+          })
           .filter(Result::is_ok)
           .map(Result::unwrap)
           .collect();
@@ -127,8 +129,8 @@ impl Unifier {
     if subst.is_empty() {
       // Report an error
       let t_err = TypeError::TypesDontMatch {
-        t1: ErlType::Fn(fun1.clone()),
-        t2: ErlType::Fn(fun2.clone()),
+        t1: ErlType::Fn(fun1.clone()).into(),
+        t2: ErlType::Fn(fun2.clone()).into(),
       };
       return Err(ErlError::TypeError(t_err));
     }
@@ -152,33 +154,33 @@ impl Unifier {
   /// Return: `Ok(None)` - types match, `Ok(Some(subst))` - types match with some new substitution
   ///   (we merge it into `self.subst`).
   fn unify(&self, module: &Module,
-           type1: &ErlType, type2: &ErlType) -> ErlResult<Option<SubstMap>> {
+           type1: &Arc<ErlType>, type2: &Arc<ErlType>) -> ErlResult<Option<SubstMap>> {
     if type1 == type2 {
       return Ok(None); // no substitution required
     }
 
-    match type1 {
+    match type1.deref() {
       ErlType::TVar(tv1) => {
         return self.unify_variable(module, tv1, type2);
       }
 
       ErlType::Fn(fun1) => {
-        if let ErlType::Fn(fun2) = type2 {
+        if let ErlType::Fn(fun2) = type2.deref() {
           // match two function types
           return self.unify_fn(module, fun1, fun2);
         }
       }
 
       ErlType::FnClause(fc1) => {
-        if let ErlType::FnClause(fc2) = type2 {
+        if let ErlType::FnClause(fc2) = type2.deref() {
           return self.unify_fn_clause(module, fc1, fc2);
         }
       }
 
       _any_type1 => {
         // Union should not be broken into subtypes, match left equation part directly vs the union
-        if let ErlType::Union(types) = type2 {
-          if self.unify_check_in_union(module, &type1, &types) {
+        if let ErlType::Union(types) = type2.deref() {
+          if self.unify_check_in_union(module, type1, &types) {
             return Ok(None); // no substitution required, type is part of the union on the right
           }
         }
@@ -188,30 +190,31 @@ impl Unifier {
     //
     // Reverse rules type2 then type1
     //
-    match type2 {
+    match type2.deref() {
       ErlType::Number => {
-        if let ErlType::Number | ErlType::Integer(_) | ErlType::AnyInteger | ErlType::Float = type1 {
+        if let ErlType::Number | ErlType::Integer(_) | ErlType::AnyInteger
+        | ErlType::Float = type1.deref() {
           return Ok(None); // no substitution required
         }
       }
-      ErlType::AnyInteger => if let ErlType::Integer(_) | ErlType::AnyInteger = type1 {
+      ErlType::AnyInteger => if let ErlType::Integer(_) | ErlType::AnyInteger = type1.deref() {
         return Ok(None); // no substitution required
       },
-      ErlType::Integer(c2) => match type1 {
+      ErlType::Integer(c2) => match type1.deref() {
         // Any numbers and number sets will match a number
         ErlType::Integer(c1) if c1 == c2 => return Ok(None), // no substitution required
         _any_type1 => {}
       },
-      ErlType::AnyList => if let ErlType::List(_) = type1 {
+      ErlType::AnyList => if let ErlType::List(_) = type1.deref() {
         return Ok(None); // no substitution required
       },
-      ErlType::AnyFn => if let ErlType::Fn(_) = type1 {
+      ErlType::AnyFn => if let ErlType::Fn(_) = type1.deref() {
         return Ok(None); // no substitution required
       },
-      ErlType::List(elem2) => if let ErlType::List(elem1) = type1 {
+      ErlType::List(elem2) => if let ErlType::List(elem1) = type1.deref() {
         return self.unify(module, elem1, elem2);
       },
-      ErlType::AnyTuple => if let ErlType::Tuple(_) = type1 {
+      ErlType::AnyTuple => if let ErlType::Tuple(_) = type1.deref() {
         return Ok(None); // no substitution required
       },
       _any_type2 => {}
@@ -225,24 +228,22 @@ impl Unifier {
 
   /// Whether any member of type union matches type t?
   fn unify_check_in_union(&self, env: &Module,
-                          t: &ErlType, union: &BTreeSet<ErlType>) -> bool {
+                          t: &Arc<ErlType>, union: &BTreeSet<Arc<ErlType>>) -> bool {
     union.iter().any(|member| {
-      self.unify(env, &t, &member).is_ok()
+      self.unify(env, t, member).is_ok()
     })
   }
 
   /// Try find a substitution where `tvar` will be identical to `ty` on the right
   fn unify_variable(&self, module: &Module,
-                    tvar: &TypeVar, ty: &ErlType) -> ErlResult<Option<SubstMap>> {
+                    tvar: &TypeVar, ty: &Arc<ErlType>) -> ErlResult<Option<SubstMap>> {
     if let Some(entry1) = self.subst.get(tvar) {
-      let entry = entry1.clone();
-      return self.unify(module, &entry, &ty);
+      return self.unify(module, entry1, ty);
     }
 
-    if let ErlType::TVar { .. } = ty {
-      if let Some(entry2_r) = self.subst.get(tvar) {
-        let entry2 = entry2_r.clone();
-        return self.unify(module, &ErlType::TVar(*tvar), &entry2);
+    if let ErlType::TVar(_) = ty.deref() {
+      if let Some(entry2) = self.subst.get(tvar) {
+        return self.unify(module, ty, entry2);
       }
     }
 
@@ -271,13 +272,13 @@ impl Unifier {
   //     elif isinstance(typ, FuncType):
   //         return (occurs_check(v, typ.rettype, subst) or
   //                 any(occurs_check(v, arg, subst) for arg in typ.argtypes))
-  fn occurs_check(&self, tv: &TypeVar, ty: &ErlType) -> bool {
+  fn occurs_check(&self, tv: &TypeVar, ty: &Arc<ErlType>) -> bool {
     // if ty is a TypeVar and they're equal
-    match ty {
+    match ty.deref() {
       ErlType::TVar(ty_inner) => ty_inner == tv,
       ErlType::Fn(fun_type) => {
-        return self.occurs_check(tv, &fun_type.ret_type)
-            || fun_type.clauses.iter().any(|a: &FnClauseType| self.occurs_check_fun_clause(tv, a));
+        return // self.occurs_check(tv, &fun_type.ret_type) ||
+            fun_type.clauses.iter().any(|a: &FnClauseType| self.occurs_check_fun_clause(tv, a));
       }
       ErlType::Union(members) => {
         members.iter().any(|m| self.occurs_check(tv, m))

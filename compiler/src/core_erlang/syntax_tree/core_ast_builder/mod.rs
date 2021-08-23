@@ -5,12 +5,6 @@ use std::ops::Deref;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::typing::typevar::TypeVar;
-use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
-use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
-use std::iter;
-use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
-use crate::core_erlang::syntax_tree::node::case::Case;
 
 mod fn_def;
 

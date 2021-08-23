@@ -1,7 +1,9 @@
 //! Defines function type describing a function with clauses where each clause has arguments
+use std::fmt::Formatter;
+use std::sync::Arc;
+
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
-use std::fmt::Formatter;
 use crate::display::display_semicolon_separated;
 
 /// ErlType variant for a function or a lambda
@@ -15,7 +17,7 @@ pub struct FunctionType {
   /// having same arity.
   pub clauses: Vec<FnClauseType>,
   /// Union of all clause return types
-  pub ret_type: Box<ErlType>,
+  pub ret_type: Arc<ErlType>,
 }
 
 impl FunctionType {
@@ -31,11 +33,11 @@ impl FunctionType {
 
   /// Merge return types from all function clauses.
   /// Call this when `self.clauses` are updated and `ret_type` needs to also be updated.
-  pub fn build_compound_ret_type(clauses: &[FnClauseType]) -> Box<ErlType> {
+  pub fn build_compound_ret_type(clauses: &[FnClauseType]) -> Arc<ErlType> {
     let all_ret_types = clauses.iter()
-        .map(|fct| *fct.ret_ty.clone())
+        .map(|fct| fct.ret_ty.clone())
         .collect();
-    Box::new(ErlType::union_of(all_ret_types, true))
+    ErlType::union_of(all_ret_types, true)
   }
 }
 

@@ -13,11 +13,11 @@ use crate::core_erlang::syntax_tree::node::expression::{BinaryOperatorExpr, Unar
 use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use crate::core_erlang::syntax_tree::node::let_expr::LetExpr;
 use crate::core_erlang::syntax_tree::node::module_attr::ModuleAttr;
-use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
+use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
-use crate::typing::typevar::TypeVar;
+use std::ops::Deref;
 
 /// AST node in Core Erlang (parsed or generated)
 pub enum CoreAst {
@@ -32,6 +32,8 @@ pub enum CoreAst {
   },
   /// Module attributes collection, grouped all together
   Attributes(Vec<ModuleAttr>),
+  /// Collection of new function definitions following the module header, exports and attrs
+  FunctionDefs(Vec<Arc<CoreAst>>),
 
   //
   // Execution and branching AST nodes
@@ -77,8 +79,8 @@ pub enum CoreAst {
     location: SourceLoc,
     /// The literal tree
     value: Arc<Literal>,
-    /// Literal type
-    ty: TypeVar,
+    /// This literal's type
+    ty: Arc<ErlType>,
   },
 
   /// An operator with 2 arguments left and right (also comma operator)
@@ -117,15 +119,24 @@ pub enum CoreAst {
 }
 
 impl CoreAst {
+  /// Creates a new atom literal, and marks its type
+  pub fn new_atom(name: &str) -> Self {
+    let name_s = name.to_string();
+    CoreAst::Lit {
+      location: SourceLoc::None,
+      value: Arc::new(Literal::Atom(name_s.clone())),
+      ty: ErlType::Atom(name_s).into(),
+    }
+  }
+
   /// Gets the type of an AST node
   #[named]
-  pub fn get_type(&self) -> ErlType {
+  pub fn get_type(&self) -> Arc<ErlType> {
     match self {
-      // CoreAst::Attributes { .. } => ErlType::Any,
-      CoreAst::FnDef(fn_def) => fn_def.ret_ty.into(),
-      CoreAst::Var { var: v, .. } => v.ty.into(),
-      CoreAst::Apply(app) => app.ret_ty.into(),
-      CoreAst::Case(case) => case.ret_ty.into(),
+      CoreAst::FnDef(fn_def) => ErlType::TVar(fn_def.ret_ty).into(),
+      CoreAst::Var { var: v, .. } => ErlType::TVar(v.ty).into(),
+      CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
+      CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
       CoreAst::Lit { value: l, .. } => l.get_type(),
       CoreAst::BinOp { op, .. } => op.get_result_type(),
       CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
@@ -134,10 +145,11 @@ impl CoreAst {
         let union_t = ErlType::union_of(
           elements.iter().map(|e| e.get_type()).collect(),
           true);
-        ErlType::List(Box::new(union_t))
+        ErlType::List(union_t).into()
       }
       CoreAst::Tuple { elements, .. } => {
         ErlType::Tuple(elements.iter().map(|e| e.get_type()).collect())
+            .into()
       }
       // CoreAst::MFA { clause_types, .. } => {
       //   let fn_type = FunctionType::new(None, clause_types.clone());
@@ -160,6 +172,41 @@ impl CoreAst {
       _ => SourceLoc::None,
     }
   }
+
+  /// Create a new named variable with unique number id and a small text prefix
+  pub fn new_unique_var(prefix: &str) -> Self {
+    CoreAst::Var {
+      location: SourceLoc::None,
+      var: Var::new_unique(prefix),
+    }
+  }
+
+  /// Creates a primop raising badarg atom
+  // TODO: Expand this to return better error information, see that it is compatible with how OTP erlc does this
+  pub fn create_badarg_primop(location: SourceLoc) -> Self {
+    CoreAst::PrimOp {
+      location,
+      op: PrimOp::Raise {
+        exc: ExceptionType::Error,
+        expr: CoreAst::new_atom("badarg").into(),
+      },
+    }
+  }
+
+  /// Scan forms and find a module definition AST node. For finding a function by funarity, check
+  /// function registry `ErlModule::env`
+  pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> Option<Arc<CoreAst>> {
+    match this.deref() {
+      CoreAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => Some(this.clone()),
+      CoreAst::FunctionDefs(fndefs) => {
+        // Find first in forms for which `find_function_def` returns something
+        fndefs.iter()
+            .find(|&each_fndef| CoreAst::find_function_def(each_fndef, funarity).is_some())
+            .cloned()
+      }
+      _ => None,
+    }
+  }
 }
 
 impl std::fmt::Display for CoreAst {
@@ -174,6 +221,13 @@ impl std::fmt::Display for CoreAst {
         writeln!(f, "attributes ")?;
         display::display_square_list(attrs, f)
       }
+      CoreAst::FunctionDefs(fndefs) => {
+        for fndef in fndefs.iter() {
+          writeln!(f, "{}", fndef)?;
+        }
+        Ok(())
+      }
+
       CoreAst::FnDef(fn_def) => {
         write!(f, "{} = (fun ", fn_def.funarity)?;
         display::display_paren_list(&fn_def.args, f)?;

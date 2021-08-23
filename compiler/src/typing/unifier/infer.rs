@@ -3,20 +3,22 @@ use crate::typing::unifier::Unifier;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FunctionType;
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use std::sync::Arc;
+use std::ops::Deref;
 
 impl Unifier {
   /// Applies the unifier subst to typ. Also known as: Apply Unifier operation
   /// Returns a type where all occurrences of variables bound in subst were replaced (recursively);
   /// on failure returns None.
-  pub fn infer_type(&mut self, ty: &ErlType) -> ErlType {
+  pub fn infer_type(&mut self, ty: &Arc<ErlType>) -> Arc<ErlType> {
     // A simple type or type without a substitution, will be inferred as itself
     if self.subst.is_empty() || ty.is_simple_value_type() {
       return ty.clone();
     }
 
     // A type variable is checked in the subst table and inference algorithm is called on it
-    match &ty {
+    match ty.deref() {
       ErlType::TVar(tvar) => {
         match self.subst.get(tvar) {
           Some(entry) => {
@@ -31,7 +33,7 @@ impl Unifier {
       }
       // If type is a function, infer its components if they contain any type variables
       ErlType::Fn(ftype) => {
-        ErlType::Fn(self.infer_func_type(ftype))
+        ErlType::Fn(self.infer_func_type(ftype)).into()
       }
       // For a union of types, infer every member
       ErlType::Union(members) => {
@@ -56,7 +58,8 @@ impl Unifier {
       clauses: ftype.clauses.iter()
           .map(|t| self.infer_fun_clause_type(t))
           .collect(),
-      ret_type: Box::new(self.infer_type(&ftype.ret_type)),
+      // ret_type: self.infer_type(&ftype.ret_type),
+      ret_type: ftype.ret_type.clone(),
     }
   }
 
@@ -67,12 +70,12 @@ impl Unifier {
       arg_types: fctype.arg_types.iter()
           .map(|argt| self.infer_type(argt))
           .collect(),
-      ret_ty: Box::new(self.infer_type(&fctype.ret_ty)),
+      ret_ty: self.infer_type(&fctype.ret_ty),
     }
   }
 
   /// Finds the type of the expression for the given substitution.
-  pub fn infer_ast(&mut self, expr: &ErlAst) -> ErlType {
+  pub fn infer_ast(&mut self, expr: &CoreAst) -> Arc<ErlType> {
     self.infer_type(&expr.get_type())
   }
 }

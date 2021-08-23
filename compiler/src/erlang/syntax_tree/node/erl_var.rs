@@ -1,21 +1,24 @@
 //! Defines struct for a variable AST node
-use crate::typing::typevar::TypeVar;
+use crate::source_loc::SourceLoc;
 
 /// AST node for a variable
-#[derive(PartialEq)]
+#[derive(Derivative)]
+#[derivative(PartialEq)]
 pub struct ErlVar {
+  /// Source code pointer
+  #[derivative(PartialEq="ignore")]
+  pub location: SourceLoc,
+
   /// Variable name
   pub name: String,
-  /// Variable type for inference
-  pub ty: TypeVar,
 }
 
 impl ErlVar {
   /// Creates a new variable node
-  pub fn new(name: &str) -> Self {
+  pub fn new(location: SourceLoc, name: &str) -> Self {
     ErlVar {
+      location,
       name: name.to_string(),
-      ty: TypeVar::new(),
     }
   }
 }

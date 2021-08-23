@@ -1,8 +1,5 @@
 //! Postprocesses an AST tree. Takes a tree in, replaces some nodes, and returns a new tree.
 
-use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erl_error::{ErlResult};
-use crate::erlang::syntax_tree::erl_ast_iter::AstChild;
 use crate::project::module::Module;
 
 impl Module {
