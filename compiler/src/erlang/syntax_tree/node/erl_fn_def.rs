@@ -5,13 +5,16 @@ use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::typing::erl_type::ErlType;
 use crate::mfarity::MFArity;
 use crate::typing::typevar::TypeVar;
+use crate::source_loc::SourceLoc;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
 pub struct ErlFnDef {
+  /// Source file pointer
+  pub location: SourceLoc,
   /// Function name and arity, must be same for each clause (checked on clause insertion).
   /// Always local (`MFArity::module` is `None`)
-  pub mfarity: MFArity,
+  pub funarity: MFArity,
   /// Function clauses (non-empty vec)
   pub clauses: Vec<ErlFnClause>,
   /// For each clause, ret is union of each clause return type
@@ -21,10 +24,11 @@ pub struct ErlFnDef {
 impl ErlFnDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
+  pub fn new(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
     assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
     Self {
-      mfarity: funarity,
+      location,
+      funarity,
       clauses,
       ret_ty: TypeVar::new(),
     }
@@ -35,8 +39,8 @@ impl ErlFnDef {
     assert!(!self.clauses.is_empty(), "Function clauses must not be empty");
 
     // Assuming all clauses have same arity, build unions of each arg
-    let mut arg_unions = Vec::with_capacity(self.mfarity.arity);
-    for _ in 0..self.mfarity.arity {
+    let mut arg_unions = Vec::with_capacity(self.funarity.arity);
+    for _ in 0..self.funarity.arity {
       arg_unions.push(ErlType::union_empty());
     }
 
@@ -48,8 +52,8 @@ impl ErlFnDef {
     // For each clause and for each argument in that clause, update corresponding union in arg_unions
     self.clauses.iter().for_each(|clause| {
       // for i in 0..self.funarity.arity {
-      for (i, item) in arg_unions.iter_mut().enumerate().take(self.mfarity.arity) {
-        assert_eq!(clause.arg_types.len(), self.mfarity.arity,
+      for (i, item) in arg_unions.iter_mut().enumerate().take(self.funarity.arity) {
+        assert_eq!(clause.arg_types.len(), self.funarity.arity,
                    "FunctionDef arity does not match clause arity");
         if let Some(updated) = item.union_add(&clause.arg_types[i]) {
           *item = updated;
@@ -63,6 +67,6 @@ impl ErlFnDef {
 
 impl std::fmt::Debug for ErlFnDef {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "FnDef {:?} -> {:?}", self.mfarity, self.ret_ty)
+    write!(f, "FnDef {:?} -> {:?}", self.funarity, self.ret_ty)
   }
 }

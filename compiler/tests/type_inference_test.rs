@@ -23,15 +23,15 @@ fn infer_simplemath() -> ErlResult<()> {
   {
     let ast = module.ast.clone();
     match ast.deref() {
-      ErlAst::FnDef { fn_def, .. } => {
+      ErlAst::FnDef(fn_def) => {
         assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-        assert_eq!(fn_def.mfarity.arity, 1, "FunctionDef must have arity 1");
+        assert_eq!(fn_def.funarity.arity, 1, "FunctionDef must have arity 1");
 
         let clause = &fn_def.clauses[0];
         assert_eq!(clause.name, "myfun", "FClause name must be myfun");
 
         assert_eq!(clause.args.len(), 1, "FClause must have exact one arg");
-        assert!(matches!(clause.args[0], ErlAst::Var{..}), "FClause arg must be a Var node");
+        assert!(matches!(clause.args[0].deref(), ErlAst::Var{..}), "FClause arg must be a Var node");
       }
       other1 => test_util::fail_unexpected(other1),
     }

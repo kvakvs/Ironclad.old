@@ -59,17 +59,7 @@ pub enum ErlAst {
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.
-  FnDef {
-    /// Source file pointer
-    location: SourceLoc,
-    /// Function name and arity
-    funarity: MFArity,
-    /// Clone of return type variable
-    ret_ty: TypeVar,
-    /// Function definition struct with clauses. Arc to be accessible separately from function
-    /// lookup code, also stored in the `ErlModule::functions`.
-    fn_def: Arc<ErlFnDef>,
-  },
+  FnDef(ErlFnDef),
 
   /// Case clause for a `case x of` switch
   CClause(SourceLoc, ErlCaseClause),
@@ -124,6 +114,11 @@ pub enum ErlAst {
 }
 
 impl ErlAst {
+  /// Returns true for ErlAst::Var
+  pub fn is_var(&self) -> bool {
+    if let ErlAst::Var(..) = self { true } else { false }
+  }
+
   /// Swaps a value and Empty AST, returns the taken value
   pub fn take(from: &mut ErlAst) -> ErlAst {
     let mut swap_in = ErlAst::Empty;
@@ -137,7 +132,7 @@ impl ErlAst {
     match self {
       ErlAst::ModuleForms(_) => ErlType::Any,
       ErlAst::ModuleAttr { .. } => ErlType::Any,
-      ErlAst::FnDef { ret_ty, .. } => (*ret_ty).into(),
+      ErlAst::FnDef(erl_fn_def) => (erl_fn_def.ret_ty).into(),
       ErlAst::CClause(_loc, clause) => clause.body.get_type(),
       ErlAst::Var(_loc, v) => v.ty.into(),
       ErlAst::Apply(_loc, app) => app.ret_ty.into(),
@@ -262,9 +257,9 @@ impl ErlAst {
   // }
 
   /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
-  pub fn as_fn_def(&self) -> Option<Arc<ErlFnDef>> {
+  pub fn as_fn_def(&self) -> Option<&ErlFnDef> {
     match self {
-      ErlAst::FnDef { fn_def: func_def, .. } => Some(func_def.clone()),
+      ErlAst::FnDef(func_def) => Some(func_def),
       _ => None,
     }
   }
@@ -289,7 +284,7 @@ impl ErlAst {
       ErlAst::Token { location: loc, .. } => loc.clone(),
       ErlAst::ModuleAttr { location: loc, .. } => loc.clone(),
       // ErlAst::Comma { location: loc, .. } => loc.clone(),
-      ErlAst::FnDef { location: loc, .. } => loc.clone(),
+      ErlAst::FnDef(erl_fndef) => erl_fndef.location.clone(),
       // ErlAst::FClause(loc, _) => loc.clone(),
       ErlAst::CClause(loc, _) => loc.clone(),
       ErlAst::MFA { location: loc, .. } => loc.clone(),
@@ -308,7 +303,7 @@ impl ErlAst {
   /// function registry `ErlModule::env`
   pub fn find_function_def(&self, fa: &MFArity) -> Option<&ErlAst> {
     match self {
-      ErlAst::FnDef { funarity: fa2, .. } if fa == fa2 => Some(self),
+      ErlAst::FnDef(erl_fndef) if *fa == erl_fndef.funarity => Some(self),
       ErlAst::ModuleForms(forms) => {
         // Find first in forms for which `find_function_def` returns something
         forms.iter().find(|&f| f.find_function_def(fa).is_some())

@@ -19,6 +19,7 @@ use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
+use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 
 pub mod func_registry;
 
@@ -43,7 +44,7 @@ pub struct Module {
   pub unifier: Unifier,
 
   /// Function definitions of the module
-  pub functions: Vec<Arc<ErlFnDef>>,
+  pub functions: Vec<Arc<FnDef>>,
 
   /// Lookup by function_name/arity into `Self::functions`
   pub functions_lookup: HashMap<MFArity, usize>,
@@ -119,7 +120,7 @@ impl Module {
 
       // Process raw AST to a cleaned AST with some fields edited  and some nodes replaced
       // self.postprocess_ast_readonly(&ast0)?;
-      self.postprocess_ast(&ast0)?;
+      // self.postprocess_ast(&ast0)?;
 
       println!("\n{}: {}", function_name!(), ast0);
 
@@ -127,7 +128,7 @@ impl Module {
     };
 
     // Rebuild Core AST from Erlang AST
-    self.core_ast = CoreAstBuilder::create_from_erl(self.ast.clone());
+    self.core_ast = CoreAstBuilder::build(self.ast.clone());
 
     self.unifier = Unifier::new(self).unwrap();
     Ok(())
@@ -153,7 +154,7 @@ impl Module {
 
     // Modify some AST nodes as required
     // self.postprocess_ast_readonly(&ast0)?;
-    self.postprocess_ast(&ast0)?;
+    // self.postprocess_ast(&ast0)?;
 
     println!("\n{}: {}", function_name!(), ast0);
 

@@ -6,12 +6,13 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::literal::Literal;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::project::module::Module;
+use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 
 impl Module {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
-  pub fn add_function(&mut self, nf: Arc<ErlFnDef>) {
+  pub fn add_function(&mut self, nf: Arc<FnDef>) {
     let index = self.functions.len();
-    let funarity = nf.mfarity.clone();
+    let funarity = nf.funarity.clone();
 
     self.functions.push(nf);
     self.functions_lookup.insert(funarity, index);

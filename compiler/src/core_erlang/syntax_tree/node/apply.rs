@@ -1,16 +1,19 @@
 //! Application (a function call on an expression)
+use std::fmt::Formatter;
+use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
-use std::fmt::Formatter;
 use crate::display;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FunctionType;
-use std::sync::Arc;
+use crate::source_loc::SourceLoc;
 
 /// Contains a function call
 pub struct Apply {
+  /// Source file pointer
+  pub location: SourceLoc,
   /// Must resolve to a callable
   pub target: Arc<CoreAst>,
   /// Must match arity

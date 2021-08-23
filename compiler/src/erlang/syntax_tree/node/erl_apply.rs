@@ -76,28 +76,28 @@ impl ErlApply {
     ErlType::Fn(FunctionType::new(None, vec![clause]))
   }
 
-  /// During post-parse scan try check if our expression is a reference to a known function.
-  /// If so, replace it with a pointer to that function.
-  pub fn postprocess_edit_node(&self, module: &Module) -> ErlResult<()> {
-    // Check if expr (target) points to some existing function that we know
-    let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
-    match find_result {
-      None => {} // no changes, return same node
-      Some(index) => {
-        let fn_def: &ErlFnDef = &module.functions[index];
-
-        // Replace self.expr with the found fun pointer
-        let new_expr = ErlAst::MFA {
-          location: SourceLoc::None,
-          mfarity: fn_def.mfarity.clone(),
-          clause_types: fn_def.clauses.iter().map(|fc| fc.get_type()).collect(),
-          ret_ty: TypeVar::new(),
-        };
-
-        println!("ApplicationNode: Replacing {} with {}", self.expr.borrow(), new_expr);
-        self.expr.replace(new_expr);
-      }
-    }
-    Ok(())
-  }
+  // /// During post-parse scan try check if our expression is a reference to a known function.
+  // /// If so, replace it with a pointer to that function.
+  // pub fn postprocess_edit_node(&self, module: &Module) -> ErlResult<()> {
+  //   // Check if expr (target) points to some existing function that we know
+  //   let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
+  //   match find_result {
+  //     None => {} // no changes, return same node
+  //     Some(index) => {
+  //       let fn_def: &ErlFnDef = &module.functions[index];
+  //
+  //       // Replace self.expr with the found fun pointer
+  //       let new_expr = ErlAst::MFA {
+  //         location: SourceLoc::None,
+  //         mfarity: fn_def.mfarity.clone(),
+  //         clause_types: fn_def.clauses.iter().map(|fc| fc.get_type()).collect(),
+  //         ret_ty: TypeVar::new(),
+  //       };
+  //
+  //       println!("ApplicationNode: Replacing {} with {}", self.expr.borrow(), new_expr);
+  //       self.expr.replace(new_expr);
+  //     }
+  //   }
+  //   Ok(())
+  // }
 }

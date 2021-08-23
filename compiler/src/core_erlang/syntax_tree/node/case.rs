@@ -5,6 +5,7 @@ use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
 use std::sync::Arc;
+use crate::source_loc::SourceLoc;
 
 /// Case clause checks the input expression against `match_expr` and if it matches and if the guard
 /// is true, the body will be executed.
@@ -42,6 +43,8 @@ impl std::fmt::Display for CaseClause {
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.
 pub struct Case {
+  /// Source file pointer
+  pub location: SourceLoc,
   /// Case switch expressions, multiple are allowed
   pub exprs: Vec<Arc<CoreAst>>,
   /// Case clauses in order. Each case must match every expression from `Self::exprs`

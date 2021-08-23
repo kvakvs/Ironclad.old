@@ -38,44 +38,19 @@ pub enum CoreAst {
   //
 
   /// Define a function with 1 clause (multiple clauses handled by a `case Args of`)
-  FnDef {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The function definition struct
-    fn_def: FnDef,
-  },
+  FnDef(FnDef),
 
   /// Branch based on whether an expression matches some conditions
-  Case {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The case expression. Clauses are contained inside
-    case: Case,
-  },
+  Case(Case),
 
   /// Create a scope by assigning 1 or more variables
-  Let {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The variable set, the value expr, and the body expr
-    letexpr: LetExpr,
-  },
+  Let(LetExpr),
 
   /// Call an expression which has a function type
-  Apply {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The apply struct with call target, return type and arguments
-    app: Apply,
-  },
+  Apply(Apply),
 
   /// Call a function export mod:fun/arity, or a local fun/arity
-  Call {
-    /// Source file pointer
-    location: SourceLoc,
-    /// The call struct with call target, return type and arguments
-    call: Call,
-  },
+  Call(Call),
 
   /// Primitive operation, such as `raise`
   PrimOp {
@@ -147,10 +122,10 @@ impl CoreAst {
   pub fn get_type(&self) -> ErlType {
     match self {
       // CoreAst::Attributes { .. } => ErlType::Any,
-      CoreAst::FnDef { fn_def, .. } => fn_def.ret_ty.into(),
+      CoreAst::FnDef(fn_def) => fn_def.ret_ty.into(),
       CoreAst::Var { var: v, .. } => v.ty.into(),
-      CoreAst::Apply { app, .. } => app.ret_ty.into(),
-      CoreAst::Case { case, .. } => case.ret_ty.into(),
+      CoreAst::Apply(app) => app.ret_ty.into(),
+      CoreAst::Case(case) => case.ret_ty.into(),
       CoreAst::Lit { value: l, .. } => l.get_type(),
       CoreAst::BinOp { op, .. } => op.get_result_type(),
       CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
@@ -175,10 +150,10 @@ impl CoreAst {
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
     match self {
-      CoreAst::FnDef { location, .. } => location.clone(),
+      CoreAst::FnDef(fndef) => fndef.location.clone(),
       CoreAst::Var { location, .. } => location.clone(),
-      CoreAst::Apply { location, .. } => location.clone(),
-      CoreAst::Case { location, .. } => location.clone(),
+      CoreAst::Apply(app) => app.location.clone(),
+      CoreAst::Case(case) => case.location.clone(),
       CoreAst::Lit { location, .. } => location.clone(),
       CoreAst::BinOp { location, .. } => location.clone(),
       CoreAst::UnOp { location, .. } => location.clone(),
@@ -199,8 +174,8 @@ impl std::fmt::Display for CoreAst {
         writeln!(f, "attributes ")?;
         display::display_square_list(attrs, f)
       }
-      CoreAst::FnDef { fn_def, .. } => {
-        write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
+      CoreAst::FnDef(fn_def) => {
+        write!(f, "{} = (fun ", fn_def.funarity)?;
         display::display_paren_list(&fn_def.args, f)?;
         write!(f, " -> {}", fn_def.body)?;
         write!(f, "}})")
@@ -209,8 +184,8 @@ impl std::fmt::Display for CoreAst {
         None => write!(f, "{}", var.ty),
         Some(n) => write!(f, "{}", n),
       },
-      CoreAst::Apply { app, .. } => write!(f, "{}", app),
-      CoreAst::Case { case, .. } => write!(f, "{}", case),
+      CoreAst::Apply(app) => write!(f, "{}", app),
+      CoreAst::Case(case) => write!(f, "{}", case),
       CoreAst::Lit { value, .. } => write!(f, "{}", value),
 
       CoreAst::BinOp { op, .. } => {
@@ -240,7 +215,7 @@ impl std::fmt::Display for CoreAst {
 impl std::fmt::Debug for CoreAst {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      CoreAst::FnDef { fn_def, .. } => {
+      CoreAst::FnDef(fn_def) => {
         write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
         display::display_paren_list(&fn_def.args, f)?;
         write!(f, ":{} -> {}", fn_def.ret_ty, fn_def.body)?;

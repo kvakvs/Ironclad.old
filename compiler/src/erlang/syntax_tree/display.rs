@@ -21,9 +21,9 @@ impl std::fmt::Display for ErlAst {
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)
       // }
-      ErlAst::FnDef { funarity, fn_def, .. } => {
-        write!(f, "def-fun {}/{} {{", funarity.name, funarity.arity)?;
-        for fc in fn_def.clauses.iter() { write!(f, "{};", fc)?; }
+      ErlAst::FnDef(erl_fndef) => {
+        write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
+        for fc in erl_fndef.clauses.iter() { write!(f, "{};", fc)?; }
         write!(f, "}}")
       }
       ErlAst::CClause(_loc, clause) => {
@@ -61,9 +61,9 @@ impl std::fmt::Debug for ErlAst {
       // ErlAst::ModuleForms(_) => {}
       // ErlAst::ModuleAttr { .. } => {}
       // ErlAst::Comma { .. } => {}
-      ErlAst::FnDef { funarity, fn_def, ret_ty, .. } => {
-        write!(f, "def-fun {}/{} -> {} {{", funarity.name, funarity.arity, ret_ty)?;
-        for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
+      ErlAst::FnDef(erl_fndef) => {
+        write!(f, "def-fun {} -> {} {{", erl_fndef.funarity, erl_fndef.ret_ty)?;
+        for fc in erl_fndef.clauses.iter() { write!(f, "{:?};", fc)?; }
         write!(f, "}}")
       }
       // ErlAst::CClause(_, _) => {}

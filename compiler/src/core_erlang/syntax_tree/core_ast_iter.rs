@@ -15,15 +15,15 @@ impl CoreAst {
       CoreAst::Attributes { .. } | CoreAst::Lit { .. } | CoreAst::Var { .. }
       | CoreAst::Module { .. } => None,
 
-      CoreAst::FnDef { fn_def, .. } => Some(vec![fn_def.body.clone()]),
+      CoreAst::FnDef(fn_def) => Some(vec![fn_def.body.clone()]),
 
-      CoreAst::Apply { app, .. } => {
+      CoreAst::Apply(app) => {
         let mut r: Vec<Arc<CoreAst>> = vec![app.target.clone()];
         r.extend(app.args.iter().cloned());
         Some(r)
       }
 
-      CoreAst::Case { case, .. } => {
+      CoreAst::Case(case) => {
         let mut r: Vec<Arc<CoreAst>> = case.exprs.iter().cloned().collect();
 
         for cc in case.clauses.iter() {

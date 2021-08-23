@@ -49,22 +49,22 @@ impl Unifier {
         Self::equation(eq, ast, ty.into(), value.get_type());
       }
       CoreAst::Var { .. } => {}
-      CoreAst::FnDef { fn_def, .. } => {
+      CoreAst::FnDef (fn_def) => {
         self.generate_equations_fn_def(eq, ast, fn_def)?;
         // no clauses, functions are single clause, using `case` to branch
         // for fc in &fn_def.clauses {
         //   self.generate_equations_fn_clause(eq, ast, &fc)?
         // }
       }
-      CoreAst::Apply { app, .. } => {
+      CoreAst::Apply(app) => {
         self.generate_equations_apply(eq, ast, app)?
       }
-      CoreAst::Let { letexpr, .. } => {
+      CoreAst::Let(letexpr) => {
         Self::equation(eq, ast,
                        letexpr.ret_ty.into(),
                        letexpr.in_expr.get_type());
       }
-      CoreAst::Case { case, .. } => {
+      CoreAst::Case(case) => {
         // For Case expression, type of case must be union of all clause types
         let all_clause_types = case.clauses.iter()
             .map(|c| c.body.get_type())

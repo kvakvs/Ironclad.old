@@ -4,9 +4,12 @@ use std::sync::Arc;
 use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::typing::typevar::TypeVar;
+use crate::source_loc::SourceLoc;
 
 /// Defines a new function in Core Erlang
 pub struct FnDef {
+  /// Source file pointer
+  pub location: SourceLoc,
   /// Function name/arity, module is always None
   pub funarity: MFArity,
   /// Function arguments AST, same size as arity. Arg names and pattern matching on them are moved

@@ -217,10 +217,10 @@ impl Module {
     let arity = clauses[0].arg_types.len();
     let funarity = MFArity::new_local(clauses[0].name.clone(), arity);
 
-    let fn_def = Arc::new(ErlFnDef::new(funarity.clone(), clauses));
-    let ret_ty = fn_def.ret_ty;
-    self.add_function(fn_def.clone());
-    Ok(ErlAst::FnDef { location, funarity, ret_ty, fn_def })
+    //self.add_function(fn_def.clone());
+
+    let fn_def = ErlFnDef::new(location, funarity.clone(), clauses);
+    Ok(ErlAst::FnDef(fn_def))
   }
 
   /// Takes a Rule::function_clause and returns ErlAst::FClause
@@ -249,7 +249,9 @@ impl Module {
       self.expr_to_ast(body_nodes)?
     };
 
-    let args: Vec<ErlAst> = nodes.into_iter().collect();
+    let args: Vec<Arc<ErlAst>> = nodes.into_iter()
+        .map(Arc::new)
+        .collect();
     Ok(ErlFnClause::new(name, args, body))
   }
 
