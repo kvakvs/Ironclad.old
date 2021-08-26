@@ -1,3 +1,4 @@
+//! Type inference wiring.
 //! Contains code for generating type equations from AST in `Unifier` impl
 use std::ops::Deref;
 use function_name::named;
@@ -12,14 +13,15 @@ use crate::core_erlang::syntax_tree::node::apply::Apply;
 use crate::project::module::Module;
 use std::sync::Arc;
 use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
+use crate::core_erlang::syntax_tree::node::case::Case;
 
 impl Unifier {
   /// Add a type equation, shortcut
-  fn equation(eq: &mut Vec<TypeEquation>, ast: &CoreAst,
+  fn equation(eq: &mut Vec<TypeEquation>, ast: &Arc<CoreAst>,
               type_deduced: &Arc<ErlType>,
               type_expected: &Arc<ErlType>) {
     eq.push(
-      TypeEquation::new(ast.location(),
+      TypeEquation::new(Arc::downgrade(ast),
                         type_deduced.clone(),
                         type_expected.clone(),
                         format!("{:?}", ast))
@@ -31,11 +33,11 @@ impl Unifier {
   /// to Any, if we don't know.
   #[named]
   pub fn generate_equations(&self, module: &Module,
-                            eq: &mut Vec<TypeEquation>, ast: &CoreAst) -> ErlResult<()> {
+                            eq: &mut Vec<TypeEquation>, ast: &Arc<CoreAst>) -> ErlResult<()> {
     // Recursively descend into AST and visit deepest nodes first
     if let Some(children) = ast.children() {
       for child in children {
-        let gen_result = self.generate_equations(module, eq, child.deref());
+        let gen_result = self.generate_equations(module, eq, &child);
         match gen_result {
           Ok(_) => {} // nothing, all good
           Err(err) => { module.add_error(err); }
@@ -52,7 +54,7 @@ impl Unifier {
       }
       CoreAst::Var { .. } => {}
       CoreAst::FnDef(fn_def) => {
-        self.generate_equations_fn_def(eq, ast, fn_def)?;
+        self.generate_equations_fndef(eq, ast, fn_def)?;
         // no clauses, functions are single clause, using `case` to branch
         // for fc in &fn_def.clauses {
         //   self.generate_equations_fn_clause(eq, ast, &fc)?
@@ -67,26 +69,7 @@ impl Unifier {
                        &letexpr.in_expr.get_type());
       }
       CoreAst::Case(case) => {
-        // For Case expression, type of case must be union of all clause types
-        let all_clause_types = case.clauses.iter()
-            .map(|c| c.body.get_type())
-            .collect();
-        let all_clauses_t = ErlType::union_of(all_clause_types, true);
-
-        for clause in case.clauses.iter() {
-          // Clause type must match body type
-          Self::equation(eq, ast, &ErlType::TVar(clause.ret_ty).into(),
-                         &clause.body.get_type());
-
-          // No check for clause condition, but the clause condition guard must be boolean
-          if let Some(guard) = &clause.guard {
-            Self::equation(eq, ast, &guard.get_type(),
-                           &ErlType::AnyBool.into());
-          }
-        }
-
-        Self::equation(eq, ast, &ErlType::TVar(case.ret_ty).into(),
-                       &&all_clauses_t);
+        self.generate_equations_case(eq, ast, case)?;
       }
       CoreAst::BinOp { op: binop, .. } => {
         // Check result of the binary operation
@@ -108,7 +91,9 @@ impl Unifier {
       CoreAst::List { .. } => {}
       CoreAst::Tuple { .. } => {}
       CoreAst::PrimOp { op, .. } => {
-        if let PrimOp::Raise { .. } = op {} else {
+        if let PrimOp::Raise { .. } = op {
+          println!("TODO: generate equations for primop::Raise")
+        } else {
           panic!("{}: Don't know how to process PrimOp {:?}", function_name!(), ast)
         }
       } // Any value can be raised, no check
@@ -120,11 +105,37 @@ impl Unifier {
   }
 
 
-  /// Type inference wiring
-  /// Generate type equations for AST node FunctionDef
+  /// Generate type equations for Case and its clauses
   #[named]
-  fn generate_equations_fn_def(&self, _eq: &mut Vec<TypeEquation>,
-                               _ast: &CoreAst, _fn_def: &FnDef) -> ErlResult<()> {
+  fn generate_equations_case(&self, eq: &mut Vec<TypeEquation>,
+                               ast: &Arc<CoreAst>, case: &Case) -> ErlResult<()> {
+    // For Case expression, type of case must be union of all clause types
+    let all_clause_types = case.clauses.iter()
+        .map(|c| c.body.get_type())
+        .collect();
+    let all_clauses_t = ErlType::union_of(all_clause_types, true);
+
+    for clause in case.clauses.iter() {
+      // Clause type must match body type
+      Self::equation(eq, ast, &ErlType::TVar(clause.ret_ty).into(),
+                     &clause.body.get_type());
+
+      // No check for clause condition, but the clause condition guard must be boolean
+      if let Some(guard) = &clause.guard {
+        Self::equation(eq, ast, &guard.get_type(),
+                       &ErlType::AnyBool.into());
+      }
+    }
+
+    Self::equation(eq, ast, &ErlType::TVar(case.ret_ty).into(),
+                   &&all_clauses_t);
+    Ok(())
+  }
+
+  /// Generate type equations for a function definition
+  #[named]
+  fn generate_equations_fndef(&self, _eq: &mut Vec<TypeEquation>,
+                              _ast: &CoreAst, _fn_def: &FnDef) -> ErlResult<()> {
     // assert!(!fn_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
     // println!("Gen eq for {:?}", fn_def);
 
@@ -150,7 +161,7 @@ impl Unifier {
   /// Type inference wiring
   /// Generate type equations for AST node Application (a function call) Expr(Arg, ...)
   fn generate_equations_apply(&self, eq: &mut Vec<TypeEquation>,
-                              ast: &CoreAst, app: &Apply) -> ErlResult<()> {
+                              ast: &Arc<CoreAst>, app: &Apply) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
     Self::equation(eq, ast,

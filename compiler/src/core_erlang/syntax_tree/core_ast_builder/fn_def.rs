@@ -24,6 +24,9 @@ impl CoreAstBuilder {
     let all_variables_args = erl_clause.args.iter().all(|a| a.is_var());
 
     if all_variables_args {
+      // Simple approach, we do not need a case expr
+      Self::build(&erl_clause.body)
+    } else {
       // If all arguments are variables, we just return the code, no case wrapping
 
       // AST if the values match the expected patterns. Otherwise will raise a badarg.
@@ -71,8 +74,6 @@ impl CoreAstBuilder {
       };
 
       CoreAst::Case(case).into()
-    } else {
-      Self::build(&erl_clause.body)
     }
   }
 

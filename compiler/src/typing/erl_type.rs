@@ -393,6 +393,7 @@ impl ErlType {
     // HashSet will ensure that the types are unique
     types.into_iter().for_each(|t| {
       match t.deref() {
+        ErlType::None => {} // ignore None-type it doesn't merge with anything
         ErlType::Union(members) => merged.extend(members.iter().cloned()),
         _ => { merged.insert(t); }
       }

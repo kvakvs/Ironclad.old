@@ -28,11 +28,11 @@ pub struct CaseClause {
 
 impl std::fmt::Display for CaseClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "( < ")?;
+    write!(f, "( <")?;
     display::display_comma_separated(&self.match_exprs, f)?;
 
     match &self.guard {
-      None => write!(f, "> when 'true' -> ")?,
+      None => write!(f, "> -> ")?,
       Some(cond) => write!(f, "> when {} -> ", cond)?,
     };
 
