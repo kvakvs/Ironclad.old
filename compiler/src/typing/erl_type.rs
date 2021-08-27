@@ -407,12 +407,24 @@ impl ErlType {
   #[named]
   fn union_promote(elements: BTreeSet<Arc<ErlType>>) -> Arc<ErlType> {
     assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
-    if elements.len() == 2 {
-      // integer() | float() => number()
-      if elements.contains(&ErlType::Float) && elements.contains(&ErlType::AnyInteger) {
-        return ErlType::Number.into();
+
+    // integer() | float() => number()
+    if elements.len() >= 2 {
+      if elements.contains(&TypePrefab::float()) && elements.contains(&TypePrefab::any_integer()) {
+        let mut elements2 = elements.clone();
+
+        // Remove integer() and float() from the union types
+        elements2.remove(&TypePrefab::float());
+        elements2.remove(&TypePrefab::any_integer());
+
+        // Insert the number() type
+        elements2.insert(TypePrefab::number());
+
+        // return ErlType::Union(elements2).into();
+        return Self::union_promote(elements2);
       }
     }
+
     ErlType::Union(elements).into()
   }
 
@@ -487,4 +499,5 @@ impl ErlType {
 }
 
 impl From<TypeVar> for ErlType { fn from(tv: TypeVar) -> Self { ErlType::TVar(tv) } }
+
 impl From<&TypeVar> for ErlType { fn from(tv: &TypeVar) -> Self { ErlType::TVar(tv.clone()) } }
