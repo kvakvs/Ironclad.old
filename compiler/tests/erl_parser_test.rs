@@ -89,7 +89,12 @@ fn parse_fn1() -> ErlResult<()> {
     panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), module.ast);
   }
 
-  assert_eq!(module.functions.len(), 1, "Module must have 1 function in its env");
+  let func_count = if let Ok(registry) = module.registry.read() {
+    registry.functions.len()
+  } else {
+    panic!()
+  };
+  assert_eq!(func_count, 1, "Module must have 1 function in its env");
   // assert_eq!(module1.function_clauses.len(), 1, "Module must have 1 function clause in its env");
   Ok(())
 }

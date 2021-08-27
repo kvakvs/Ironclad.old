@@ -41,7 +41,7 @@ pub enum CoreAst {
   //
 
   /// Define a function with 1 clause (multiple clauses handled by a `case Args of`)
-  FnDef(FnDef),
+  FnDef(Arc<FnDef>),
 
   /// Branch based on whether an expression matches some conditions
   Case(Case),

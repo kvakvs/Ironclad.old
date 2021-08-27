@@ -16,6 +16,7 @@ use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
 use crate::typing::typevar::TypeVar;
+use crate::project::module::Module;
 
 // Conversion of Erlang function with clauses into Core function with case switch.
 impl CoreAstBuilder {
@@ -58,17 +59,17 @@ impl CoreAstBuilder {
   // TODO: Check the situation with "clause X covers remaining inputs"
   // TODO: Check the situation with "Not all inputs were covered"
   #[named]
-  fn create_fnbody_from_multiple_fnclauses(erl_fndef: &ErlFnDef) -> Arc<CoreAst> {
+  fn create_fnbody_from_multiple_fnclauses(env: &Module, erl_fndef: &ErlFnDef) -> Arc<CoreAst> {
     let arity = erl_fndef.funarity.arity;
     let mut clauses: Vec<CaseClause> = erl_fndef.clauses.iter()
         .map(|each_clause| {
           // AST if the values match the expected patterns. Otherwise will raise a badarg.
           assert_eq!(each_clause.args.len(), arity,
                      "Arity for all clauses must match function arity: {:?}", erl_fndef);
-          let good_ast = Self::build(&each_clause.body);
+          let good_ast = Self::build(env, &each_clause.body);
 
           // Good clause, when argument values matched the pattern
-          Self::create_case_clause_for_fnclause(arity, each_clause, good_ast)
+          Self::create_case_clause_for_fnclause(env, arity, each_clause, good_ast)
         })
         .collect();
 
@@ -90,14 +91,18 @@ impl CoreAstBuilder {
   }
 
   /// Creates a case clause for a certain ErlFnClause
-  fn create_case_clause_for_fnclause(arity: usize, clause: &ErlFnClause, ast: Arc<CoreAst>) -> CaseClause {
+  fn create_case_clause_for_fnclause(env: &Module,
+                                     arity: usize, clause: &ErlFnClause,
+                                     ast: Arc<CoreAst>) -> CaseClause {
     let good_types = iter::repeat(())
         .take(arity)
         .map(|_| TypeVar::new())
         .collect();
 
     // Build a set of argument match expressions from args
-    let good_arg_exprs = clause.args.iter().map(Self::build).collect();
+    let good_arg_exprs = clause.args.iter()
+        .map(|each_arg| Self::build(env, each_arg))
+        .collect();
 
     CaseClause::new(ast.location(), good_arg_exprs, good_types, ast)
   }
@@ -131,12 +136,12 @@ impl CoreAstBuilder {
   /// Given a FnDef, produce a CoreAst equivalent new function definition with an optional nested
   /// case for multiple clauses
   #[named]
-  pub(crate) fn create_from_fndef(ast: &Arc<ErlAst>) -> Arc<CoreAst> {
+  pub(crate) fn create_from_fndef(env: &Module, ast: &Arc<ErlAst>) -> Arc<CoreAst> {
     if let ErlAst::FnDef(fn_def) = ast.deref() {
       // Based on how many function clauses are there, we might inject an additional case operator
       // matching function args for all clauses
-      let core_body = Self::create_fnbody_from_multiple_fnclauses(&fn_def);
-      let core_fndef = FnDef {
+      let core_body = Self::create_fnbody_from_multiple_fnclauses(env, &fn_def);
+      let core_fndef = Arc::new(FnDef {
         location: fn_def.location.clone(),
         funarity: fn_def.funarity.clone(),
         args: iter::repeat(())
@@ -145,7 +150,11 @@ impl CoreAstBuilder {
             .collect(),
         body: core_body.into(),
         ret_ty: TypeVar::new(),
-      };
+      });
+
+      if let Ok(mut registry) = env.registry.write() {
+        registry.add_function(core_fndef.clone());
+      }
       return CoreAst::FnDef(core_fndef).into();
     }
 

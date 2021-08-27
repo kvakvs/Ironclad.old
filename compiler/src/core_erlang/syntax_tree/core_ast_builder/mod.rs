@@ -9,6 +9,7 @@ use crate::core_erlang::syntax_tree::node::expression::BinaryOperatorExpr;
 use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
+use crate::project::module::Module;
 
 mod fn_def;
 
@@ -18,7 +19,7 @@ pub struct CoreAstBuilder {}
 impl CoreAstBuilder {
   /// Rebuild Core Erlang AST from Erlang AST
   #[named]
-  pub fn build(ast: &Arc<ErlAst>) -> Arc<CoreAst> {
+  pub fn build(env: &Module, ast: &Arc<ErlAst>) -> Arc<CoreAst> {
     match ast.deref() {
       ErlAst::Empty => CoreAst::Empty.into(),
       ErlAst::ModuleAttr { name, .. } => CoreAst::Module {
@@ -26,10 +27,12 @@ impl CoreAstBuilder {
         exports: vec![],
       }.into(),
       ErlAst::ModuleForms(forms) => {
-        let fndefs = forms.iter().map(Self::build).collect();
+        let fndefs = forms.iter()
+            .map(|each_form| Self::build(env, each_form))
+            .collect();
         return CoreAst::FunctionDefs(fndefs).into();
       }
-      ErlAst::FnDef { .. } => Self::create_from_fndef(ast),
+      ErlAst::FnDef { .. } => Self::create_from_fndef(env, ast),
       // ErlAst::CClause(_, _) => {}
       // ErlAst::MFA { .. } => {}
       ErlAst::Var(erl_var) => {
@@ -43,8 +46,10 @@ impl CoreAstBuilder {
       ErlAst::Apply(app) => {
         let core_app = Apply {
           location: app.location.clone(),
-          target: Self::build(&app.expr),
-          args: app.args.iter().map(Self::build).collect(),
+          target: Self::build(env, &app.expr),
+          args: app.args.iter()
+              .map(|each_arg| Self::build(env, each_arg))
+              .collect(),
           ret_ty: TypeVar::new()
         };
         CoreAst::Apply(core_app).into()
@@ -61,8 +66,8 @@ impl CoreAstBuilder {
         CoreAst::BinOp {
           location: loc.clone(),
           op: BinaryOperatorExpr {
-            left: Self::build(&binop.left),
-            right: Self::build(&binop.right),
+            left: Self::build(env, &binop.left),
+            right: Self::build(env, &binop.right),
             operator: binop.operator.into(),
             ty: TypeVar::new(),
           },
@@ -72,8 +77,10 @@ impl CoreAstBuilder {
       ErlAst::List { location, elements, tail } => {
         CoreAst::List {
           location: location.clone(),
-          elements: elements.iter().map(Self::build).collect(),
-          tail: tail.as_ref().map(|t| Self::build(&t))
+          elements: elements.iter()
+              .map(|each_el| Self::build(env, each_el))
+              .collect(),
+          tail: tail.as_ref().map(|t| Self::build(env, &t))
         }.into()
       }
       // ErlAst::Tuple { .. } => {}

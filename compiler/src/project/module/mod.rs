@@ -3,11 +3,10 @@
 use ::function_name::named;
 use pest::Parser;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt;
 use std::path::PathBuf;
-use std::sync::{Arc};
+use std::sync::{Arc, RwLock};
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
@@ -15,10 +14,9 @@ use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_parser;
 use crate::typing::unifier::Unifier;
-use crate::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
-use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
+use crate::project::module::func_registry::FuncRegistry;
 
 pub mod func_registry;
 
@@ -42,11 +40,8 @@ pub struct Module {
   /// Type inference and typechecking engine, builds on the parsed AST
   pub unifier: Unifier,
 
-  /// Function definitions of the module
-  pub functions: Vec<Arc<FnDef>>,
-
-  /// Lookup by function_name/arity into `Self::functions`
-  pub functions_lookup: HashMap<MFArity, usize>,
+  /// Collection of module functions and a lookup table
+  pub registry: RwLock<FuncRegistry>,
 
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
@@ -63,8 +58,7 @@ impl Default for Module {
       ast: Arc::new(ErlAst::Empty),
       core_ast: Arc::new(CoreAst::Empty),
       unifier: Default::default(),
-      functions: vec![],
-      functions_lookup: Default::default(),
+      registry: RwLock::new(FuncRegistry::default()),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
@@ -119,7 +113,7 @@ impl Module {
     println!("\n{}: {}", function_name!(), self.ast);
 
     // Rebuild Core AST from Erlang AST
-    self.core_ast = CoreAstBuilder::build(&self.ast);
+    self.core_ast = CoreAstBuilder::build(self, &self.ast);
 
     self.unifier = Unifier::new(self).unwrap();
     Ok(())
@@ -144,7 +138,7 @@ impl Module {
     self.ast = self.build_ast_single_node(parse_output)?;
     println!("\n{}: {}", function_name!(), self.ast);
 
-    self.core_ast = CoreAstBuilder::build(&self.ast);
+    self.core_ast = CoreAstBuilder::build(self, &self.ast);
 
     Ok(())
   }

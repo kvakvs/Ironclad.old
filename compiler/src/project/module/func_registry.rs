@@ -4,11 +4,29 @@ use std::sync::Arc;
 use crate::mfarity::MFArity;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::literal::Literal;
-use crate::project::module::Module;
 use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use std::ops::Deref;
+use std::collections::HashMap;
 
-impl Module {
+/// Collection of module functions and a lookup table
+pub struct FuncRegistry {
+  /// Function definitions of the module
+  pub functions: Vec<Arc<FnDef>>,
+
+  /// Lookup by function_name/arity into `Self::functions`
+  pub functions_lookup: HashMap<MFArity, usize>,
+}
+
+impl Default for FuncRegistry {
+  fn default() -> Self {
+    FuncRegistry {
+      functions: vec![],
+      functions_lookup: Default::default(),
+    }
+  }
+}
+
+impl FuncRegistry {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
   pub fn add_function(&mut self, nf: Arc<FnDef>) {
     let index = self.functions.len();
@@ -35,13 +53,3 @@ impl Module {
     None
   }
 }
-
-// impl Default for FunctionRegistry {
-//   fn default() -> Self {
-//     Self {
-//       functions: vec![],
-//       function_clauses: vec![],
-//       functions_lookup: Default::default(),
-//     }
-//   }
-// }
