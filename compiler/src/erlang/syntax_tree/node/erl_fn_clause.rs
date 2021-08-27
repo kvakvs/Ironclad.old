@@ -22,6 +22,11 @@ impl ErlFnClause {
     ErlFnClause { name, args, body }
   }
 
+  /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
+  pub fn is_all_variable_args(&self) -> bool {
+    self.args.iter().all(|a| a.is_var())
+  }
+
   // /// Return function clause type describing this single function clause arg types and return.
   // pub fn get_type(&self) -> FnClauseType {
   //   FnClauseType::new(self.arg_types.clone(), self.ret.clone())

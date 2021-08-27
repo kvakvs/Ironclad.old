@@ -1,56 +1,37 @@
 //! Defines a case switch in Core Erlang
 
-use crate::display;
-use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::typing::typevar::TypeVar;
 use std::fmt::Formatter;
 use std::sync::Arc;
+
+use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::display;
 use crate::source_loc::SourceLoc;
-
-/// Case clause checks the input expression against `match_expr` and if it matches and if the guard
-/// is true, the body will be executed.
-pub struct CaseClause {
-  /// The array of match expressions, one per case condition value
-  pub match_exprs: Vec<Arc<CoreAst>>,
-  /// One unique type variable per match expression
-  pub match_expr_types: Vec<TypeVar>,
-
-  /// Guard condition, None if there's no condition (always true)
-  pub guard: Option<Arc<CoreAst>>,
-  /// Unique type variable for guard condition expression
-  pub guard_ty: TypeVar,
-
-  /// Clause body
-  pub body: Arc<CoreAst>,
-  /// Case clause type
-  pub ret_ty: TypeVar,
-}
-
-impl std::fmt::Display for CaseClause {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "( <")?;
-    display::display_comma_separated(&self.match_exprs, f)?;
-
-    match &self.guard {
-      None => write!(f, "> -> ")?,
-      Some(cond) => write!(f, "> when {} -> ", cond)?,
-    };
-
-    write!(f, "{} )", self.body)
-  }
-}
+use crate::typing::typevar::TypeVar;
 
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.
 pub struct Case {
   /// Source file pointer
-  pub location: SourceLoc,
+  pub(crate) location: SourceLoc,
   /// Case switch expressions, multiple are allowed
-  pub exprs: Vec<Arc<CoreAst>>,
+  pub(crate) exprs: Vec<Arc<CoreAst>>,
   /// Case clauses in order. Each case must match every expression from `Self::exprs`
-  pub clauses: Vec<CaseClause>,
+  pub(crate) clauses: Vec<CaseClause>,
   /// The unique typevar for return type, the union of clause return types
-  pub ret_ty: TypeVar,
+  pub(crate) ret_ty: TypeVar,
+}
+
+impl Case {
+  /// Create a case struct, member of `CoreAst::Case`
+  pub fn new(location: SourceLoc, exprs: Vec<Arc<CoreAst>>, clauses: Vec<CaseClause>) -> Case {
+    Case {
+      location,
+      exprs,
+      clauses,
+      ret_ty: TypeVar::new()
+    }
+  }
 }
 
 impl std::fmt::Display for Case {

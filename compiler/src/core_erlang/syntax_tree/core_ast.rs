@@ -195,6 +195,18 @@ impl CoreAst {
     }
   }
 
+  /// Creates a primop raising case clause error
+  // TODO: Expand this to return better error information, see that it is compatible with how OTP erlc does this
+  pub fn create_caseclause_primop(location: SourceLoc) -> Self {
+    CoreAst::PrimOp {
+      location,
+      op: PrimOp::Raise {
+        exc: ExceptionType::Error,
+        expr: CoreAst::new_atom("case_clause").into(),
+      },
+    }
+  }
+
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
   pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> Option<Arc<CoreAst>> {

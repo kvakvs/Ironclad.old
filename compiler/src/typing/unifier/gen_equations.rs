@@ -146,6 +146,9 @@ impl Unifier {
     //     .collect();
     // let ret_union_t = ErlType::union_of(ret_union_members, true);
     // Self::equation(eq, ast, fn_def.ret_ty.into(), ret_union_t);
+
+    // TODO: Exhaustive pattern analysis for function args - in the case statement
+
     Ok(())
   }
 

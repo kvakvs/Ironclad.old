@@ -8,3 +8,4 @@ pub mod apply;
 pub mod call;
 pub mod expression;
 pub mod module_attr;
+pub mod case_clause;
