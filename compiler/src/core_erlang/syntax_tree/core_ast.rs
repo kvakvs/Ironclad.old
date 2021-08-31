@@ -77,7 +77,7 @@ pub enum CoreAst {
     /// The literal tree
     value: Arc<Literal>,
     /// This literal's type
-    ty: Arc<ErlType>,
+    lit_type: Arc<ErlType>,
   },
 
   /// An operator with 2 arguments left and right (also comma operator)
@@ -122,7 +122,7 @@ impl CoreAst {
     CoreAst::Lit {
       location: SourceLoc::None,
       value: Arc::new(Literal::Atom(name_s.clone())),
-      ty: ErlType::Atom(name_s).into(),
+      lit_type: ErlType::Atom(name_s).into(),
     }
   }
 

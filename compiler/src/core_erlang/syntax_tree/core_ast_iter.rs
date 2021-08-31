@@ -25,7 +25,7 @@ impl CoreAst {
       }
 
       CoreAst::Case(case) => {
-        let mut r: Vec<Arc<CoreAst>> = case.exprs.iter().cloned().collect();
+        let mut r: Vec<Arc<CoreAst>> = case.exprs.to_vec();
 
         for cc in case.clauses.iter() {
           if let Some(guard_cond) = &cc.guard {
@@ -42,8 +42,8 @@ impl CoreAst {
                   op.right.clone()])
       }
       CoreAst::UnOp { op, .. } => Some(vec![op.expr.clone()]),
-      CoreAst::List { elements, .. } => Some(elements.iter().cloned().collect()),
-      CoreAst::Tuple { elements, .. } => Some(elements.iter().cloned().collect()),
+      CoreAst::List { elements, .. } => Some(elements.to_vec()),
+      CoreAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
       CoreAst::Empty => panic!("{}: Core AST tree is not initialized (empty node)", function_name!()),
       CoreAst::PrimOp { op, .. } => {
@@ -53,7 +53,10 @@ impl CoreAst {
         }
       }
 
-      _ => unreachable!("{}: Can't process {}", function_name!(), self),
+      _ => {
+        println!("{}: Can't process {}", function_name!(), self);
+        unreachable!()
+      },
     }
   }
 }

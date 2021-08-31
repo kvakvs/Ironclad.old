@@ -13,7 +13,7 @@ impl ErlAst {
       ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
       | ErlAst::Var { .. } | ErlAst::MFA { .. } => None,
 
-      ErlAst::ModuleForms(f) => Some(f.iter().cloned().collect()),
+      ErlAst::ModuleForms(f) => Some(f.to_vec()),
 
       ErlAst::FnDef(fn_def) => {
         let r: Vec<Arc<ErlAst>> = fn_def.clauses.iter()
@@ -48,8 +48,8 @@ impl ErlAst {
                   binop.right.clone()])
       }
       ErlAst::UnaryOp(_loc, unop) => Some(vec![unop.expr.clone()]),
-      ErlAst::List { elements, .. } => Some(elements.iter().cloned().collect()),
-      ErlAst::Tuple { elements, .. } => Some(elements.iter().cloned().collect()),
+      ErlAst::List { elements, .. } => Some(elements.to_vec()),
+      ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       _ => unreachable!("Can't process {}", self),

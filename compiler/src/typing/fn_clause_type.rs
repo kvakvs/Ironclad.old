@@ -6,7 +6,7 @@ use crate::typing::erl_type::ErlType;
 use crate::display::display_comma_separated;
 
 /// Describes one function clause arg and return types.
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct FnClauseType {
   /// Argument types for this clause
   pub arg_types: Vec<Arc<ErlType>>,

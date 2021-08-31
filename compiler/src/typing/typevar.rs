@@ -1,4 +1,6 @@
 //! Defines a type variable, a unique numbered unnamed variable used in the Erlang code typing
+#![allow(clippy::new_without_default)]
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use lazy_static::lazy_static;
 use std::fmt::Formatter;

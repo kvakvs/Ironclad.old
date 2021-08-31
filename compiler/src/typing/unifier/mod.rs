@@ -110,7 +110,7 @@ impl Unifier {
           .map(|c2| {
             let clause1 = ErlType::FnClause(c1.clone()).into();
             let clause2 = ErlType::FnClause(c2.clone()).into();
-            return self.unify(module, &clause1, &clause2);
+            self.unify(module, &clause1, &clause2)
           })
           .filter(Result::is_ok)
           .map(Result::unwrap)
@@ -119,8 +119,7 @@ impl Unifier {
       if !unify_successes.is_empty() {
         // At least one match succeeded, means the clause c1 is compatible with some clauses in fun2
         unify_successes.into_iter()
-            .filter(Option::is_some)
-            .map(Option::unwrap)
+            .flatten()
             .for_each(|each_sub| subst.extend(each_sub.into_iter()));
       }
     }
@@ -180,7 +179,7 @@ impl Unifier {
       _any_type1 => {
         // Union should not be broken into subtypes, match left equation part directly vs the union
         if let ErlType::Union(types) = type2.deref() {
-          if self.unify_check_in_union(module, type1, &types) {
+          if self.unify_check_in_union(module, type1, types) {
             return Ok(None); // no substitution required, type is part of the union on the right
           }
         }
@@ -247,7 +246,7 @@ impl Unifier {
       }
     }
 
-    if self.occurs_check(&tvar, &ty) {
+    if self.occurs_check(tvar, ty) {
       let error = TypeError::OccursCheckFailed {
         tvar: *tvar,
         ty: ty.clone(),

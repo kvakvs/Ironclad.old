@@ -7,7 +7,7 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::display::display_semicolon_separated;
 
 /// ErlType variant for a function or a lambda
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct FunctionType {
   /// Name if known, for module level functions, or unnamed for anonymous funs
   pub name: Option<String>,

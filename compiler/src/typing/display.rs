@@ -5,9 +5,9 @@ use std::fmt::Formatter;
 use crate::typing::erl_type::{ErlType};
 use crate::display::{display_comma_separated, display_curly_list};
 
-impl std::fmt::Debug for ErlType {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
-}
+// impl std::fmt::Debug for ErlType {
+//   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
+// }
 
 impl std::fmt::Display for ErlType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

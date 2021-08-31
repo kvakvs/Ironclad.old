@@ -81,9 +81,12 @@ impl CoreAstBuilder {
     );
     clauses.push(cc_bad); // case clause
 
+    // TODO: Arity 0 does not require a case!
     let case = Case::new(
       erl_fndef.location.clone(),
-      iter::repeat(()).take(arity).map(|_| CoreAst::new_unique_var("Fndef")).collect(),
+      iter::repeat(()).take(arity)
+          .map(|_| CoreAst::new_unique_var("Fndef"))
+          .collect(),
       clauses,
     );
 
@@ -140,7 +143,7 @@ impl CoreAstBuilder {
     if let ErlAst::FnDef(fn_def) = ast.deref() {
       // Based on how many function clauses are there, we might inject an additional case operator
       // matching function args for all clauses
-      let core_body = Self::create_fnbody_from_multiple_fnclauses(env, &fn_def);
+      let core_body = Self::create_fnbody_from_multiple_fnclauses(env, fn_def);
       let core_fndef = Arc::new(FnDef {
         location: fn_def.location.clone(),
         funarity: fn_def.funarity.clone(),
@@ -148,7 +151,7 @@ impl CoreAstBuilder {
             .take(fn_def.funarity.arity)
             .map(|_| TypeVar::new())
             .collect(),
-        body: core_body.into(),
+        body: core_body,
         ret_ty: TypeVar::new(),
       });
 

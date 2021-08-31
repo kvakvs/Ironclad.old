@@ -228,7 +228,7 @@ impl Module {
     //self.add_function(fn_def.clone());
 
     assert!(!clauses.is_empty(), "Fn clauses cannot be empty");
-    let fn_def = ErlFnDef::new(location, funarity.clone(), clauses);
+    let fn_def = ErlFnDef::new(location, funarity, clauses);
     Ok(ErlAst::FnDef(fn_def).into())
   }
 

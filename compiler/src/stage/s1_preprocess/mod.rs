@@ -49,7 +49,7 @@ struct PpState {
 }
 
 fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
-  let pp_ast = PpAstTree::from_source_file(&source_file)?;
+  let pp_ast = PpAstTree::from_source_file(source_file)?;
   // println!("\n\
   //       filename: {}\n\
   //       PP AST ", source_file.file_name.display());
@@ -245,7 +245,7 @@ impl PpState {
     if let PpAst::File(nodes) = ast_tree.nodes.deref() {
       let interpreted: Vec<Rc<PpAst>> = nodes.iter()
           .filter_map(|node| {
-            let result = self.interpret_pp_rule_map(node, &source_file);
+            let result = self.interpret_pp_rule_map(node, source_file);
             match &result {
               Some(r) => println!("Interpret: {:40} → {}", node.to_dbg_str(), r.to_dbg_str()),
               None => println!("Interpret: {:40} → ×", node.to_dbg_str()),

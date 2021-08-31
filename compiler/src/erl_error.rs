@@ -114,10 +114,7 @@ impl std::fmt::Display for ErlError {
 
 impl ErlError {
   /// Some errors might result in a non-0 exit code, list them here
-  pub fn process_exit_code(&self) -> i32 {
-    // match self {}
-    return 1;
-  }
+  pub fn process_exit_code(&self) -> i32 { 1 }
 
   /// Create an internal error
   pub fn internal<T>(message: String) -> ErlResult<T> {

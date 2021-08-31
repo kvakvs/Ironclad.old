@@ -100,7 +100,7 @@ pub enum ErlAst {
 impl ErlAst {
   /// Returns true for ErlAst::Var
   pub fn is_var(&self) -> bool {
-    if let ErlAst::Var(..) = self { true } else { false }
+    matches!(self, ErlAst::Var(..))
   }
 
   /// Swaps a value and Empty AST, returns the taken value
@@ -109,55 +109,6 @@ impl ErlAst {
     std::mem::swap(from, &mut swap_in);
     swap_in
   }
-
-  // /// Gets the type of an AST node
-  // #[named]
-  // pub fn get_type(&self) -> ErlType {
-  //   match self {
-  //     ErlAst::ModuleForms(_) => ErlType::Any,
-  //     ErlAst::ModuleAttr { .. } => ErlType::Any,
-  //     ErlAst::FnDef(erl_fn_def) => (erl_fn_def.ret_ty).into(),
-  //     ErlAst::CClause(_loc, clause) => clause.body.get_type(),
-  //     ErlAst::Var(_loc, v) => v.ty.into(),
-  //     ErlAst::Apply(_loc, app) => app.ret_ty.into(),
-  //     ErlAst::Case(_loc, case) => case.ret_ty.into(),
-  //     ErlAst::Lit(_loc, l) => l.get_type(),
-  //     ErlAst::BinaryOp(_loc, binop) => binop.get_result_type(),
-  //     ErlAst::UnaryOp(_loc, unop) => unop.expr.get_type(), // same type as expr bool or num
-  //     // ErlAst::Comma { right, .. } => right.get_type(),
-  //     ErlAst::List { elements, tail, .. } => {
-  //       assert!(tail.is_none()); // todo
-  //       let union_t = ErlType::union_of(
-  //         elements.iter().map(|e| e.get_type()).collect(),
-  //         true);
-  //       ErlType::List(Box::new(union_t))
-  //     }
-  //     ErlAst::Tuple { elements, .. } => {
-  //       ErlType::Tuple(elements.iter().map(|e| e.get_type()).collect())
-  //     }
-  //     ErlAst::MFA { clause_types, .. } => {
-  //       let fn_type = FunctionType::new(None, clause_types.clone());
-  //       ErlType::Fn(fn_type)
-  //     }
-  //     _ => unreachable!("{}: Can't process {}", function_name!(), self),
-  //   }
-  // }
-
-  // /// Create a new function definition node, the caller has the responsibility to store it and
-  // /// to create `ErlAst::FunctionDef` with the stored index
-  // pub fn new_fun(funarity: FunArity,
-  //                start_clause: usize,
-  //                clause_count: usize,
-  //                clauses: &[FunctionClauseNode]) -> FunctionDefNode {
-  //   assert_ne!(clause_count, 0, "Clauses must not be empty");
-  //
-  //   assert!(clauses.iter().all(|fc| fc.arg_types.len() == funarity.arity),
-  //           "All clauses must have same arity");
-  //   assert!(clauses.iter().all(|fc| fc.arg_types.len() == fc.args.len()),
-  //           "All clause arg types must match in length all clauses' arguments");
-  //
-  //   FunctionDefNode::new(funarity, start_clause, clause_count)
-  // }
 
   /// Create a new variable AST node
   pub fn new_var(location: SourceLoc, name: &str) -> Arc<ErlAst> {
@@ -238,14 +189,6 @@ impl ErlAst {
       _ => None,
     }
   }
-
-  // /// Retrieve Some(function clause name) if AST node is a function clause
-  // pub fn get_fclause_name(&self) -> Option<String> {
-  //   match self {
-  //     ErlAst::FClause(_loc, fc) => Some(fc.name.clone()),
-  //     _ => None,
-  //   }
-  // }
 
   /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
   pub fn as_fn_def(&self) -> Option<&ErlFnDef> {

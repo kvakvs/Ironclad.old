@@ -30,7 +30,7 @@ impl CoreAstBuilder {
         let fndefs = forms.iter()
             .map(|each_form| Self::build(env, each_form))
             .collect();
-        return CoreAst::FunctionDefs(fndefs).into();
+        CoreAst::FunctionDefs(fndefs).into()
       }
       ErlAst::FnDef { .. } => Self::create_from_fndef(env, ast),
       // ErlAst::CClause(_, _) => {}
@@ -59,7 +59,7 @@ impl CoreAstBuilder {
         CoreAst::Lit {
           location: loc.clone(),
           value: lit.clone(),
-          ty: lit.get_type()
+          lit_type: lit.get_type()
         }.into()
       }
       ErlAst::BinaryOp(loc, binop) => {
@@ -80,7 +80,7 @@ impl CoreAstBuilder {
           elements: elements.iter()
               .map(|each_el| Self::build(env, each_el))
               .collect(),
-          tail: tail.as_ref().map(|t| Self::build(env, &t))
+          tail: tail.as_ref().map(|t| Self::build(env, t))
         }.into()
       }
       // ErlAst::Tuple { .. } => {}

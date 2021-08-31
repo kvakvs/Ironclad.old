@@ -43,11 +43,7 @@ impl FuncRegistry {
       if let Literal::Atom(a) = lit.deref() {
         // A single atom points to a possible existing function of `arity` in the current module
         let mfa = MFArity { module: None, name: a.clone(), arity };
-
-        return match self.functions_lookup.get(&mfa) {
-          None => None,
-          Some(index) => Some(*index),
-        }
+        return self.functions_lookup.get(&mfa).copied();
       }
     }
     None

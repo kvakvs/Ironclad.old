@@ -15,7 +15,7 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::erl_type_prefab::TypePrefab;
 
 /// A record field definition
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct RecordField {
   /// Field name, an atom stored as string
   pub name: String,
@@ -31,7 +31,7 @@ impl std::fmt::Display for RecordField {
 }
 
 /// A map field constraint
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct MapField {
   /// Key can be any literal
   pub key: Literal,
@@ -47,7 +47,7 @@ impl std::fmt::Display for MapField {
 }
 
 /// Defines a type of any Erlang value or expression or function
-#[derive(Clone, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub enum ErlType {
   //-------------------------------------
   // Special types, groups of types, etc
@@ -291,13 +291,13 @@ impl ErlType {
         ErlType::Record { tag: t2, fields: fields2 }) => {
         let mut result = t1.cmp(t2);
         if result == Ordering::Equal { // if record tags match, fields may be different!
-          result = fields1.cmp(&fields2);
+          result = fields1.cmp(fields2);
         }
         result
       }
-      (ErlType::Map(m1), ErlType::Map(m2)) => m1.cmp(&m2),
+      (ErlType::Map(m1), ErlType::Map(m2)) => m1.cmp(m2),
       (ErlType::Atom(a), ErlType::Atom(b)) => a.cmp(b),
-      (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(&lit2),
+      (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(lit2),
       (ErlType::Fn(f1), ErlType::Fn(f2)) => f1.cmp(f2),
       // (ErlType::Callable(fa1), ErlType::Callable(fa2)) => fa1.cmp(fa2),
 
@@ -409,22 +409,27 @@ impl ErlType {
     assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
 
     // integer() | float() => number()
-    if elements.len() >= 2 {
-      if elements.contains(&TypePrefab::float()) && elements.contains(&TypePrefab::any_integer()) {
-        let mut elements2 = elements.clone();
+    if elements.len() >= 2
+        && elements.contains(&TypePrefab::float())
+        && elements.contains(&TypePrefab::any_integer()
+    ) {
+      let mut elements_mut = elements;
 
-        // Remove integer() and float() from the union types
-        elements2.remove(&TypePrefab::float());
-        elements2.remove(&TypePrefab::any_integer());
+      // Remove integer() and float() from the union types
+      elements_mut.remove(&TypePrefab::float());
+      elements_mut.remove(&TypePrefab::any_integer());
 
-        // Insert the number() type
-        elements2.insert(TypePrefab::number());
+      // Insert the number() type
+      elements_mut.insert(TypePrefab::number());
 
-        // return ErlType::Union(elements2).into();
-        return Self::union_promote(elements2);
-      }
+      // return ErlType::Union(elements2).into();
+      return Self::union_promote(elements_mut);
     }
 
+
+    if elements.len() == 1 {
+      return elements.iter().next().unwrap().clone();
+    }
     ErlType::Union(elements).into()
   }
 
@@ -462,7 +467,7 @@ impl ErlType {
     match self {
       ErlType::Union(members) => {
         let mut new_members = members.clone();
-        new_members.insert(t.clone());
+        new_members.insert(t);
         Some(ErlType::Union(new_members))
       }
       _ => None,
@@ -487,7 +492,7 @@ impl ErlType {
   /// Retrieve inner FunctionType value or fail
   pub fn as_function(&self) -> &FunctionType {
     match self {
-      Self::Fn(ft) => &ft,
+      Self::Fn(ft) => ft,
       _ => panic!("Node {} is expected to be a Function type", self)
     }
   }
@@ -500,4 +505,4 @@ impl ErlType {
 
 impl From<TypeVar> for ErlType { fn from(tv: TypeVar) -> Self { ErlType::TVar(tv) } }
 
-impl From<&TypeVar> for ErlType { fn from(tv: &TypeVar) -> Self { ErlType::TVar(tv.clone()) } }
+impl From<&TypeVar> for ErlType { fn from(tv: &TypeVar) -> Self { ErlType::TVar(*tv) } }

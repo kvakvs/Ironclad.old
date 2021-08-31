@@ -48,9 +48,9 @@ impl Unifier {
     match ast.deref() {
       CoreAst::Module { .. } => {} // module root creates no equations
       CoreAst::Attributes { .. } => {}
-      CoreAst::Lit { value: _value, ty: _ty, .. } => {
-        // Literals create no equations, their type is known
-        // Self::equation(eq, ast, ty.clone(), value.get_type());
+      CoreAst::Lit { .. } => {
+        // Literals' type is already known, no equation is created
+        // Self::equation(eq, ast, &ty, &value.get_type());
       }
       CoreAst::Var { .. } => {}
       CoreAst::FnDef(fn_def) => {
@@ -99,7 +99,10 @@ impl Unifier {
       } // Any value can be raised, no check
 
       CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
-      _ => unreachable!("{}: Can't process {}", function_name!(), ast),
+      _ => {
+        println!("{}: Can't process {}", function_name!(), ast);
+        unreachable!()
+      }
     }
     Ok(())
   }
@@ -108,7 +111,7 @@ impl Unifier {
   /// Generate type equations for Case and its clauses
   #[named]
   fn generate_equations_case(&self, eq: &mut Vec<TypeEquation>,
-                               ast: &Arc<CoreAst>, case: &Case) -> ErlResult<()> {
+                             ast: &Arc<CoreAst>, case: &Case) -> ErlResult<()> {
     // For Case expression, type of case must be union of all clause types
     let all_clause_types = case.clauses.iter()
         .map(|c| c.body.get_type())
@@ -128,7 +131,7 @@ impl Unifier {
     }
 
     Self::equation(eq, ast, &ErlType::TVar(case.ret_ty).into(),
-                   &&all_clauses_t);
+                   &all_clauses_t);
     Ok(())
   }
 
