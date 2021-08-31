@@ -21,6 +21,7 @@ use std::ops::Deref;
 use crate::typing::erl_type_prefab::TypePrefab;
 
 /// AST node in Core Erlang (parsed or generated)
+#[derive(Debug)]
 pub enum CoreAst {
   /// Default value for AST tree not initialized
   Empty,
@@ -34,7 +35,7 @@ pub enum CoreAst {
   /// Module attributes collection, grouped all together
   Attributes(Vec<ModuleAttr>),
   /// Collection of new function definitions following the module header, exports and attrs
-  FunctionDefs(Vec<Arc<CoreAst>>),
+  ModuleFuns(Vec<Arc<CoreAst>>),
 
   //
   // Execution and branching AST nodes
@@ -212,7 +213,7 @@ impl CoreAst {
   pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> Option<Arc<CoreAst>> {
     match this.deref() {
       CoreAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => Some(this.clone()),
-      CoreAst::FunctionDefs(fndefs) => {
+      CoreAst::ModuleFuns(fndefs) => {
         // Find first in forms for which `find_function_def` returns something
         fndefs.iter()
             .find(|&each_fndef| CoreAst::find_function_def(each_fndef, funarity).is_some())
@@ -235,7 +236,7 @@ impl std::fmt::Display for CoreAst {
         writeln!(f, "attributes ")?;
         display::display_square_list(attrs, f)
       }
-      CoreAst::FunctionDefs(fndefs) => {
+      CoreAst::ModuleFuns(fndefs) => {
         for fndef in fndefs.iter() {
           writeln!(f, "{}", fndef)?;
         }
@@ -281,27 +282,27 @@ impl std::fmt::Display for CoreAst {
   }
 }
 
-impl std::fmt::Debug for CoreAst {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      CoreAst::FnDef(fn_def) => {
-        write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
-        display::display_paren_list(&fn_def.args, f)?;
-        write!(f, ":{} -> {}", fn_def.ret_ty, fn_def.body)?;
-        write!(f, "}})")
-        // write!(f, "fun {} -> {} {{", fn_def.funarity, fn_def.ret_ty)?;
-        // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
-        // write!(f, "}}")
-      }
-      CoreAst::Var(core_var) => write!(f, "{}:{}", self, core_var.ty),
-      // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
-      // CoreAst::BinaryOp(_loc, binop) => {
-      //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
-      // }
-      // CoreAst::UnaryOp(_loc, unop) => {
-      //   write!(f, "({} {:?})", unop.operator, unop.expr)
-      // }
-      _ => write!(f, "{}", self),
-    }
-  }
-}
+// impl std::fmt::Debug for CoreAst {
+//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//     match self {
+//       CoreAst::FnDef(fn_def) => {
+//         write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
+//         display::display_paren_list(&fn_def.args, f)?;
+//         write!(f, ":{} -> {}", fn_def.ret_ty, fn_def.body)?;
+//         write!(f, "}})")
+//         // write!(f, "fun {} -> {} {{", fn_def.funarity, fn_def.ret_ty)?;
+//         // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
+//         // write!(f, "}}")
+//       }
+//       CoreAst::Var(core_var) => write!(f, "{}:{}", self, core_var.ty),
+//       // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
+//       // CoreAst::BinaryOp(_loc, binop) => {
+//       //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
+//       // }
+//       // CoreAst::UnaryOp(_loc, unop) => {
+//       //   write!(f, "({} {:?})", unop.operator, unop.expr)
+//       // }
+//       _ => write!(f, "{}", self),
+//     }
+//   }
+// }

@@ -7,6 +7,7 @@ use crate::typing::typevar::TypeVar;
 use crate::source_loc::SourceLoc;
 
 /// Contains a function call on a MFArity
+#[derive(Debug)]
 pub struct Call {
   /// Source file pointer
   location: SourceLoc,

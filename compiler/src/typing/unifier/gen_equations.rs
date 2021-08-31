@@ -46,6 +46,11 @@ impl Unifier {
     }
 
     match ast.deref() {
+      CoreAst::ModuleFuns(list) => {
+        for each_fn in list.iter() {
+          self.generate_equations(module, eq, &each_fn)?
+        }
+      }
       CoreAst::Module { .. } => {} // module root creates no equations
       CoreAst::Attributes { .. } => {}
       CoreAst::Lit { .. } => {
@@ -100,7 +105,7 @@ impl Unifier {
 
       CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
       _ => {
-        println!("{}: Can't process {}", function_name!(), ast);
+        println!("{}: Can't process {:?}", function_name!(), ast);
         unreachable!()
       }
     }
@@ -137,18 +142,10 @@ impl Unifier {
 
   /// Generate type equations for a function definition
   #[named]
-  fn generate_equations_fndef(&self, _eq: &mut Vec<TypeEquation>,
-                              _ast: &CoreAst, _fn_def: &FnDef) -> ErlResult<()> {
-    // assert!(!fn_def.clauses.is_empty(), "Function definition with 0 clauses is not allowed");
-    // println!("Gen eq for {:?}", fn_def);
-
-    println!("{} TODO: fn_def", function_name!());
-    // Return type of a function is union of its clauses return types
-    // let ret_union_members = fn_def.clauses.iter()
-    //     .map(|c| c.ret.clone())
-    //     .collect();
-    // let ret_union_t = ErlType::union_of(ret_union_members, true);
-    // Self::equation(eq, ast, fn_def.ret_ty.into(), ret_union_t);
+  fn generate_equations_fndef(&self, eq: &mut Vec<TypeEquation>,
+                              ast: &Arc<CoreAst>, fn_def: &FnDef) -> ErlResult<()> {
+    Self::equation(eq, ast, &ErlType::TVar(fn_def.ret_ty).into(),
+                   &fn_def.body.get_type());
 
     // TODO: Exhaustive pattern analysis for function args - in the case statement
 

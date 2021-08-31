@@ -11,6 +11,7 @@ use crate::source_loc::SourceLoc;
 use crate::typing::fn_clause_type::FnClauseType;
 
 /// Contains a function call
+#[derive(Debug)]
 pub struct Apply {
   /// Source file pointer
   pub location: SourceLoc,

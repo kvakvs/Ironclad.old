@@ -30,7 +30,7 @@ impl CoreAstBuilder {
         let fndefs = forms.iter()
             .map(|each_form| Self::build(env, each_form))
             .collect();
-        CoreAst::FunctionDefs(fndefs).into()
+        CoreAst::ModuleFuns(fndefs).into()
       }
       ErlAst::FnDef { .. } => Self::create_from_fndef(env, ast),
       // ErlAst::CClause(_, _) => {}

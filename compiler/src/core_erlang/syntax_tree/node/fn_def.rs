@@ -7,6 +7,7 @@ use crate::typing::typevar::TypeVar;
 use crate::source_loc::SourceLoc;
 
 /// Defines a new function in Core Erlang
+#[derive(Debug)]
 pub struct FnDef {
   /// Source file pointer
   pub location: SourceLoc,

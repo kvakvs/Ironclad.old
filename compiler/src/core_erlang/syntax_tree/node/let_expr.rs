@@ -6,6 +6,7 @@ use crate::typing::typevar::TypeVar;
 use crate::source_loc::SourceLoc;
 
 /// Represents Haskell-style `let x = Value in Expr` node, used in Core Erlang to create scopes
+#[derive(Debug)]
 pub struct LetExpr {
   /// Source file pointer
   location: SourceLoc,

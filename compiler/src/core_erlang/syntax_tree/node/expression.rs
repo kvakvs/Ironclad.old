@@ -9,7 +9,7 @@ use crate::typing::erl_type_prefab::TypePrefab;
 use std::ops::Deref;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct BinaryOperatorExpr {
   /// Left operand
   pub left: Arc<CoreAst>,
@@ -87,7 +87,7 @@ impl BinaryOperatorExpr {
 }
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
-// #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct UnaryOperatorExpr {
   /// The operand
   pub expr: Arc<CoreAst>,

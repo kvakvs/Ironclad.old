@@ -11,6 +11,7 @@ use crate::typing::typevar::TypeVar;
 
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.
+#[derive(Debug)]
 pub struct Case {
   /// Source file pointer
   pub(crate) location: SourceLoc,
@@ -37,7 +38,7 @@ impl Case {
 impl std::fmt::Display for Case {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self.exprs.len() {
-      0 => unreachable!("Not allowed to have a `case` with 0 expressions"),
+      0 => writeln!(f, "( error empty case )")?,
       1 => writeln!(f, "( case {} of ", self.exprs[0])?,
       _ => {
         writeln!(f, "( case <")?;

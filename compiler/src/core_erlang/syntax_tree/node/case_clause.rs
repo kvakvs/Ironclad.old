@@ -9,6 +9,7 @@ use crate::typing::typevar::TypeVar;
 
 /// Case clause checks the input expression against `match_expr` and if it matches and if the guard
 /// is true, the body will be executed.
+#[derive(Debug)]
 pub struct CaseClause {
   location: SourceLoc,
   /// The array of match expressions, one per case condition value

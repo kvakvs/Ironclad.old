@@ -5,6 +5,7 @@ use std::fmt::Formatter;
 use crate::display;
 
 /// Each module attribute is just a name and list of literals
+#[derive(Debug)]
 pub struct ModuleAttr {
   /// Source file pointer
   location: SourceLoc,

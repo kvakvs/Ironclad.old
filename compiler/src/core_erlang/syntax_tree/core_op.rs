@@ -3,7 +3,7 @@
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 
 /// Binary operation taking two arguments
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CoreBinaryOp {
   /// Joins two expressions together, right becomes the result
   Comma,

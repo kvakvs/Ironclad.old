@@ -11,6 +11,7 @@ lazy_static! {
 
 /// Represents a variable with an optional name (`None` for generated variables), or a string name,
 /// and a new unique type variable.
+#[derive(Debug)]
 pub struct Var {
   /// Source file pointer
   pub location: SourceLoc,
