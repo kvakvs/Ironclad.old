@@ -38,12 +38,12 @@ impl Case {
 impl std::fmt::Display for Case {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self.exprs.len() {
-      0 => writeln!(f, "( error empty case )")?,
-      1 => writeln!(f, "( case {} of ", self.exprs[0])?,
+      0 => writeln!(f, "( case <error empty exprs> of ")?,
+      // 1 => writeln!(f, "( case <{}> of ", self.exprs[0])?,
       _ => {
-        writeln!(f, "( case <")?;
+        write!(f, "( case <")?;
         display::display_comma_separated(&self.exprs, f)?;
-        writeln!(f, " of ")?;
+        writeln!(f, "> of ")?;
       },
     }
     for clause in &self.clauses {

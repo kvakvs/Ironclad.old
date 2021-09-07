@@ -59,7 +59,7 @@ impl CoreAstBuilder {
         CoreAst::Lit {
           location: loc.clone(),
           value: lit.clone(),
-          lit_type: lit.get_type()
+          // lit_type: lit.get_type()
         }.into()
       }
       ErlAst::BinaryOp(loc, binop) => {

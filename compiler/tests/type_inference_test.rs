@@ -112,26 +112,27 @@ fn infer_funcall_test() -> ErlResult<()> {
 fn infer_multiple_clause_test() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a multi-clause function");
   let code = "-module(infer_multiple_clause).\n\
-                   main() -> [atom1] ++ [atom2];\n\
-                   main() -> 2 + 3.\n";
+                   main(one) -> [atom1] ++ [atom2];\n\
+                   main(two) -> 2 + 3.\n";
   let mut module = Module::default();
   module.parse_and_unify_erl_str(Rule::module, code)?;
 
   let find_result2 = CoreAst::find_function_def(
-    &module.core_ast, &MFArity::new_local_str("main", 0)
+    &module.core_ast, &MFArity::new_local_str("main", 1)
   ).unwrap();
 
   let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
   println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 
   // Expected: Main -> number()|[atom1|atom2]
-  let list_type = ErlType::List(
+  let list_of_atom1atom2 = ErlType::List(
     ErlType::union_of(
       vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")],
       true)
   ).into();
+  // Assert that type is: number() | [atom1|atom2]
   assert_eq!(main_ty,
-             ErlType::union_of(vec![TypePrefab::number(), list_type], true),
+             ErlType::union_of(vec![TypePrefab::number(), list_of_atom1atom2], true),
              "Function main/0 must have inferred type: number()|[atom1|atom2]");
 
   Ok(())

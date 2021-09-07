@@ -14,12 +14,14 @@ pub struct ErlFnClause {
   pub args: Vec<Arc<ErlAst>>,
   /// Function clause body
   pub body: Arc<ErlAst>,
+  /// Guard expression, if exists
+  pub guard_expr: Option<Arc<ErlAst>>,
 }
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
   pub fn new(name: String, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
-    ErlFnClause { name, args, body }
+    ErlFnClause { name, args, body, guard_expr: None }
   }
 
   /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
@@ -37,7 +39,11 @@ impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
     display::display_comma_separated(&self.args, f)?;
-    write!(f, ") -> {}", self.body)
+    write!(f, ") ")?;
+    if let Some(gexpr) = &self.guard_expr {
+      write!(f, "when {} ", *gexpr)?;
+    }
+    write!(f, "-> {}", self.body)
   }
 }
 
@@ -45,6 +51,10 @@ impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
     display::display_comma_separated(&self.args, f)?;
-    write!(f, ") -> {:?}", self.body)
+    write!(f, ") ")?;
+    if let Some(gexpr) = &self.guard_expr {
+      write!(f, "when {:?} ", *gexpr)?;
+    }
+    write!(f, "-> {:?}", self.body)
   }
 }

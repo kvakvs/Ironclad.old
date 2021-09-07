@@ -20,40 +20,19 @@ use crate::project::module::Module;
 
 // Conversion of Erlang function with clauses into Core function with case switch.
 impl CoreAstBuilder {
-  // /// A scenario with single fn clause, analyze the variables in the clause, and optionally create
-  // /// a case switch for the args. Otherwise return the converted body without the wrapping.
-  // #[named]
-  // fn create_fnbody_from_single_fnclause(erl_fndef: &ErlFnDef,
-  //                                       erl_clause: &ErlFnClause) -> Arc<CoreAst> {
-  //   if erl_clause.is_all_variable_args() {
-  //     // Simple approach, we do not need a case expr
-  //     Self::build(&erl_clause.body)
-  //   } else {
-  //     // If all arguments are variables, we just return the code, no case wrapping
-  //
-  //     // AST if the values match the expected patterns. Otherwise will raise a badarg.
-  //     let arity = erl_clause.args.len();
-  //     let good_ast = Self::build(&erl_clause.body);
-  //     // Good clause, when argument values matched the pattern
-  //     let cc_good = Self::create_case_clause_for_fnclause(arity, erl_clause, good_ast);
-  //
-  //     // Bad clause, for failed arguments match
-  //     let cc_bad = Self::create_case_badarg_clause(
-  //       arity,
-  //       erl_fndef.location.clone(),
-  //       CoreAst::create_badarg_primop(erl_fndef.location.clone()).into()
-  //     );
-  //
-  //     let case = Case {
-  //       location: erl_fndef.location.clone(),
-  //       exprs: erl_clause.args.iter().map(Self::build).collect(),
-  //       clauses: vec![cc_good, cc_bad],
-  //       ret_ty: TypeVar::new(),
-  //     };
-  //
-  //     CoreAst::Case(case).into()
-  //   }
-  // }
+  /// Function body transformed into Core AST
+  /// For 0 argument functions without guard and 1 clause is just the body expr
+  /// For functions with guards or pattern matching, is a case expr
+  #[named]
+  fn create_fnbody(env: &Module, erl_fndef: &ErlFnDef) -> Arc<CoreAst> {
+    if erl_fndef.funarity.arity == 0
+        && erl_fndef.clauses.len() == 1
+        && erl_fndef.clauses[0].guard_expr.is_none() {
+      Self::build(env, &erl_fndef.clauses[0].body)
+    } else {
+      Self::create_fnbody_from_multiple_fnclauses(env, erl_fndef)
+    }
+  }
 
   /// A scenario with multiple fn clauses, analyze the variables in each clause.
   // TODO: Check the situation with "clause X covers remaining inputs"
@@ -123,27 +102,15 @@ impl CoreAstBuilder {
     CaseClause::new(loc, bad_arg_exprs, bad_types, body)
   }
 
-  // /// Given a collection of function clauses, create a case switch for them, mapping arg expressions
-  // /// from each clause into Core case clauses.
-  // #[named]
-  // fn create_fnbody_from_fnclauses(erl_fndef: &ErlFnDef) -> Arc<CoreAst> {
-  //   assert!(erl_fndef.clauses.len() > 0,
-  //           "{}: Zero clause function is not acceptable", function_name!());
-  //   // if erl_fndef.clauses.len() == 1 {
-  //   //   Self::create_fnbody_from_single_fnclause(erl_fndef, &erl_fndef.clauses[0])
-  //   // } else {
-  //   Self::create_fnbody_from_multiple_fnclauses(erl_fndef)
-  //   // }
-  // }
-
   /// Given a FnDef, produce a CoreAst equivalent new function definition with an optional nested
   /// case for multiple clauses
   #[named]
   pub(crate) fn create_from_fndef(env: &Module, ast: &Arc<ErlAst>) -> Arc<CoreAst> {
     if let ErlAst::FnDef(fn_def) = ast.deref() {
-      // Based on how many function clauses are there, we might inject an additional case operator
-      // matching function args for all clauses
-      let core_body = Self::create_fnbody_from_multiple_fnclauses(env, fn_def);
+      // Build the new core body, which can be a new case switch for clauses and guards, or just the
+      // input body, for a single simple clause
+      let core_body = Self::create_fnbody(env, fn_def);
+
       let core_fndef = Arc::new(FnDef {
         location: fn_def.location.clone(),
         funarity: fn_def.funarity.clone(),

@@ -110,10 +110,11 @@ impl Module {
 
     // Parse tree to raw AST
     self.ast = self.build_ast_single_node(parse_output)?;
-    println!("\n{}: {}", function_name!(), self.ast);
+    println!("\n{}: ErlAST {}", function_name!(), self.ast);
 
     // Rebuild Core AST from Erlang AST
     self.core_ast = CoreAstBuilder::build(self, &self.ast);
+    println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     self.unifier = Unifier::new(self).unwrap();
     Ok(())
@@ -136,9 +137,10 @@ impl Module {
 
     // build initial AST from parse
     self.ast = self.build_ast_single_node(parse_output)?;
-    println!("\n{}: {}", function_name!(), self.ast);
+    println!("\n{}: ErlAST {}", function_name!(), self.ast);
 
     self.core_ast = CoreAstBuilder::build(self, &self.ast);
+    println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     Ok(())
   }

@@ -32,7 +32,7 @@ pub struct TypeEquation {
 
 impl std::fmt::Debug for TypeEquation {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} from {}", self, self.annotation)
+    write!(f, "{} equation created from {}", self, self.annotation)
   }
 }
 

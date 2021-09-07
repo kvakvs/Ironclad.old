@@ -24,7 +24,7 @@ impl Unifier {
       TypeEquation::new(Arc::downgrade(ast),
                         type_deduced.clone(),
                         type_expected.clone(),
-                        format!("{:?}", ast))
+                        format!("{}", ast))
     )
   }
 
