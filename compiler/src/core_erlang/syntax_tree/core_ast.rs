@@ -19,6 +19,7 @@ use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use std::ops::Deref;
 use crate::typing::erl_type_prefab::TypePrefab;
+use crate::typing::typevar::TypeVar;
 
 /// AST node in Core Erlang (parsed or generated)
 #[derive(Debug)]
@@ -43,6 +44,14 @@ pub enum CoreAst {
 
   /// Define a function with 1 clause (multiple clauses handled by a `case Args of`)
   FnDef(Arc<FnDef>),
+
+  /// Refer to a function by module:fun/arity, if module is not None, this is an external ref.
+  FnRef {
+    /// The module:fun/arity pointer
+    mfa: MFArity,
+    /// The function type with args for each clause and return type
+    fn_type: TypeVar,
+  },
 
   /// Branch based on whether an expression matches some conditions
   Case(Case),
@@ -127,6 +136,11 @@ impl CoreAst {
     }
   }
 
+  /// Creates a new function pointer node
+  pub fn new_fnref(mfa: MFArity) -> Self {
+    CoreAst::FnRef { mfa, fn_type: TypeVar::new() }
+  }
+
   /// Gets the type of an AST node
   #[named]
   pub fn get_type(&self) -> Arc<ErlType> {
@@ -135,6 +149,7 @@ impl CoreAst {
       CoreAst::Var(core_var) => ErlType::TVar(core_var.ty).into(),
       CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
       CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
+      CoreAst::FnRef { fn_type, .. } => ErlType::TVar(*fn_type).into(),
       CoreAst::Lit { value: l, .. } => l.get_type(),
       CoreAst::BinOp { op, .. } => op.get_result_type(),
       CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
@@ -272,6 +287,7 @@ impl std::fmt::Display for CoreAst {
       CoreAst::List { elements, .. } => display::display_square_list(elements, f),
       CoreAst::Tuple { elements, .. } => display::display_curly_list(elements, f),
       CoreAst::PrimOp { op, .. } => write!(f, "{:?}", op),
+      CoreAst::FnRef { mfa: mfarity, .. } => write!(f, "{}", mfarity),
 
       CoreAst::Let { .. } => todo!("display(let)"),
       CoreAst::Call { .. } => todo!("display(call)"),

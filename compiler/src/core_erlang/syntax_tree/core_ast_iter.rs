@@ -14,7 +14,7 @@ impl CoreAst {
   pub fn children(&self) -> Option<Vec<Arc<CoreAst>>> {
     match self {
       CoreAst::Attributes { .. } | CoreAst::Lit { .. } | CoreAst::Var { .. }
-      | CoreAst::Module { .. } => None,
+      | CoreAst::Module { .. } | CoreAst::FnRef { .. } => None,
 
       CoreAst::ModuleFuns(lst) => Some(lst.clone()),
       CoreAst::FnDef(fn_def) => Some(vec![fn_def.body.clone()]),
@@ -57,7 +57,7 @@ impl CoreAst {
       _ => {
         println!("{}: Can't process {:?}", function_name!(), self);
         unreachable!()
-      },
+      }
     }
   }
 }

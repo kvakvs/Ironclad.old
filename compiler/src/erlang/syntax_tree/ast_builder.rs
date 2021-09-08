@@ -96,8 +96,10 @@ impl Module {
       Rule::module => self.file_root_to_ast(pair)?,
       Rule::string => {
         let str_lit = Literal::String(String::from(pair.as_str())).into();
-        ErlAst::Lit(loc, str_lit)
-            .into()
+        ErlAst::Lit {
+          location: loc,
+          value: str_lit,
+        }.into()
       }
       Rule::module_attr => {
         ErlAst::ModuleAttr {

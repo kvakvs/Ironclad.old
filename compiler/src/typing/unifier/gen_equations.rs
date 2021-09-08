@@ -94,6 +94,7 @@ impl Unifier {
         // TODO: Match return type with inferred return typevar?
       }
       CoreAst::List { .. } => {}
+      CoreAst::FnRef { .. } => {}
       CoreAst::Tuple { .. } => {}
       CoreAst::PrimOp { op, .. } => {
         if let PrimOp::Raise { .. } = op {

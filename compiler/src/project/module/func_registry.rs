@@ -39,7 +39,7 @@ impl FuncRegistry {
   /// For an expression check whether it is a constant expression, and whether it points to some
   /// known function in this module. Arity is provided as the expression might be just an atom.
   pub fn find_function_by_expr_arity(&self, expr: &ErlAst, arity: usize) -> Option<usize> {
-    if let ErlAst::Lit(_loc, lit) = expr {
+    if let ErlAst::Lit { value: lit, .. } = expr {
       if let Literal::Atom(a) = lit.deref() {
         // A single atom points to a possible existing function of `arity` in the current module
         let mfa = MFArity { module: None, name: a.clone(), arity };

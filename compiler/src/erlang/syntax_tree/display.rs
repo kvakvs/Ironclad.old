@@ -32,7 +32,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Var(var) => write!(f, "{}", var.name),
       ErlAst::Apply(app) => write!(f, "{}", app),
       ErlAst::Case(_loc, case) => write!(f, "{}", case),
-      ErlAst::Lit(_loc, lit) => write!(f, "{}", lit),
+      ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
 
       ErlAst::BinaryOp(_loc, binop) => {
         write!(f, "({} {} {})", binop.left, binop.operator, binop.right)

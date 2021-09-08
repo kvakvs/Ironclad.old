@@ -20,9 +20,9 @@ fn parse_string_test() -> ErlResult<()> {
   let mut module = Module::default();
   module.parse_erl_str(Rule::string, "\"abc\"").unwrap();
 
-  if let ErlAst::Lit(_loc, lit) = module.ast.deref() {
+  if let ErlAst::Lit { value: lit, .. } = module.ast.deref() {
     if let Literal::String(_value) = lit.deref() {
-      return Ok(())
+      return Ok(());
     }
   }
   panic!("{} Expected: Literal(String) result, got {}", function_name!(), module.ast)
