@@ -74,11 +74,12 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
 #[test]
 fn infer_funcall_test() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a fun which calls another fun with a sum");
-  let code = "-module(infer_funcall).\n\
-                   add(A, B) -> A + B.\n\
-                   main() -> add(A, 4).\n";
+  let code = format!(
+    "-module({}).\n\
+    add(A, B) -> A + B.\n\
+    main() -> add(A, 4).\n", function_name!());
   let mut module = Module::default();
-  module.parse_and_unify_erl_str(Rule::module, code)?;
+  module.parse_and_unify_erl_str(Rule::module, &code)?;
 
   {
     let add_fn_ast = CoreAst::find_function_def(
@@ -94,7 +95,7 @@ fn infer_funcall_test() -> ErlResult<()> {
 
   {
     let find_result2 = CoreAst::find_function_def(
-      &module.core_ast, &MFArity::new_local_str("main", 0)
+      &module.core_ast, &MFArity::new_local_str("main", 0),
     ).unwrap();
 
     let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
@@ -118,7 +119,7 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   module.parse_and_unify_erl_str(Rule::module, code)?;
 
   let find_result2 = CoreAst::find_function_def(
-    &module.core_ast, &MFArity::new_local_str("main", 1)
+    &module.core_ast, &MFArity::new_local_str("main", 1),
   ).unwrap();
 
   let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));

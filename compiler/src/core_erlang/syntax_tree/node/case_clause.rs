@@ -30,7 +30,7 @@ pub struct CaseClause {
 
 impl std::fmt::Display for CaseClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "( <")?;
+    write!(f, "<")?;
     display::display_comma_separated(&self.match_exprs, f)?;
 
     match &self.guard {
@@ -38,7 +38,7 @@ impl std::fmt::Display for CaseClause {
       Some(cond) => write!(f, "> when {} -> ", cond)?,
     };
 
-    write!(f, "{} )", self.body)
+    write!(f, "{}", self.body)
   }
 }
 

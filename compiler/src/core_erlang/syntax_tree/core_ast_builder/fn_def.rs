@@ -25,6 +25,7 @@ impl CoreAstBuilder {
   /// For functions with guards or pattern matching, is a case expr
   #[named]
   fn create_fnbody(env: &Module, erl_fndef: &ErlFnDef) -> Arc<CoreAst> {
+    // TODO: A function without patterns and without guards should not generate a case
     if erl_fndef.funarity.arity == 0
         && erl_fndef.clauses.len() == 1
         && erl_fndef.clauses[0].guard_expr.is_none() {

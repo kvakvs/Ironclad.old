@@ -14,6 +14,7 @@ use crate::project::module::Module;
 use std::sync::Arc;
 use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
 use crate::core_erlang::syntax_tree::node::case::Case;
+use crate::core_erlang::syntax_tree::node::expression::BinaryOperatorExpr;
 
 impl Unifier {
   /// Add a type equation, shortcut
@@ -25,6 +26,19 @@ impl Unifier {
                         type_deduced.clone(),
                         type_expected.clone(),
                         format!("{}", ast))
+    )
+  }
+
+  /// Add a type equation, shortcut, with annotation
+  fn equation_anno(eq: &mut Vec<TypeEquation>, ast: &Arc<CoreAst>,
+                   type_deduced: &Arc<ErlType>,
+                   type_expected: &Arc<ErlType>,
+                   anno: String) {
+    eq.push(
+      TypeEquation::new(Arc::downgrade(ast),
+                        type_deduced.clone(),
+                        type_expected.clone(),
+                        anno)
     )
   }
 
@@ -65,28 +79,14 @@ impl Unifier {
         //   self.generate_equations_fn_clause(eq, ast, &fc)?
         // }
       }
-      CoreAst::Apply(app) => {
-        self.generate_equations_apply(eq, ast, app)?
-      }
+      CoreAst::Apply(app) => Unifier::generate_equations_apply(eq, ast, app)?,
       CoreAst::Let(letexpr) => {
         Self::equation(eq, ast,
                        &ErlType::TVar(letexpr.ret_ty).into(),
                        &letexpr.in_expr.get_type());
       }
-      CoreAst::Case(case) => {
-        self.generate_equations_case(eq, ast, case)?;
-      }
-      CoreAst::BinOp { op: binop, .. } => {
-        // Check result of the binary operation
-        Self::equation(eq, ast, &ErlType::TVar(binop.ty).into(),
-                       &binop.get_result_type());
-
-        if let Some(arg_type) = binop.get_arg_type() {
-          // Both sides of a binary op must have type appropriate for that op
-          Self::equation(eq, ast, &binop.left.get_type(), &arg_type);
-          Self::equation(eq, ast, &binop.right.get_type(), &arg_type);
-        }
-      }
+      CoreAst::Case(case) => self.generate_equations_case(eq, ast, case)?,
+      CoreAst::BinOp { op: binop, .. } => Unifier::generate_equations_binop(eq, ast, &binop),
       CoreAst::UnOp { op: unop, .. } => {
         // Equation of expression type must match either bool for logical negation,
         // or (int|float) for numerical negation
@@ -96,13 +96,7 @@ impl Unifier {
       CoreAst::List { .. } => {}
       CoreAst::FnRef { .. } => {}
       CoreAst::Tuple { .. } => {}
-      CoreAst::PrimOp { op, .. } => {
-        if let PrimOp::Raise { .. } = op {
-          println!("TODO: generate equations for primop::Raise")
-        } else {
-          panic!("{}: Don't know how to process PrimOp {:?}", function_name!(), ast)
-        }
-      } // Any value can be raised, no check
+      CoreAst::PrimOp { op, .. } => Unifier::generate_equations_primop(eq, ast, op),
 
       CoreAst::Empty => panic!("{}: Called on empty AST", function_name!()),
       _ => {
@@ -113,8 +107,33 @@ impl Unifier {
     Ok(())
   }
 
+  /// Type inference wiring
+  #[named]
+  fn generate_equations_primop(eq: &mut Vec<TypeEquation>, ast: &Arc<CoreAst>, op: &PrimOp) {
+    // Any value can be raised, no check
+    if let PrimOp::Raise { .. } = op {
+      println!("TODO: generate equations for primop::Raise")
+    } else {
+      panic!("{}: Don't know how to process PrimOp {:?}", function_name!(), ast)
+    }
+  }
 
-  /// Generate type equations for Case and its clauses
+  /// Type inference wiring
+  /// Generate type equations for CoreAst::BinOp
+  fn generate_equations_binop(eq: &mut Vec<TypeEquation>, ast: &Arc<CoreAst>, binop: &&BinaryOperatorExpr) {
+    // Check result of the binary operation
+    Self::equation(eq, ast, &ErlType::TVar(binop.ty).into(),
+                   &binop.get_result_type());
+
+    if let Some(arg_type) = binop.get_arg_type() {
+      // Both sides of a binary op must have type appropriate for that op
+      Self::equation(eq, ast, &binop.left.get_type(), &arg_type);
+      Self::equation(eq, ast, &binop.right.get_type(), &arg_type);
+    }
+  }
+
+  /// Type inference wiring
+  /// Generate type equations for CoreAst::Case and its clauses
   #[named]
   fn generate_equations_case(&self, eq: &mut Vec<TypeEquation>,
                              ast: &Arc<CoreAst>, case: &Case) -> ErlResult<()> {
@@ -141,6 +160,7 @@ impl Unifier {
     Ok(())
   }
 
+  /// Type inference wiring
   /// Generate type equations for a function definition
   #[named]
   fn generate_equations_fndef(&self, eq: &mut Vec<TypeEquation>,
@@ -153,30 +173,31 @@ impl Unifier {
     Ok(())
   }
 
-  // /// Type inference wiring
-  // /// Generate type equations for AST node FClause
-  // fn generate_equations_fn_clause(&self, eq: &mut Vec<TypeEquation>,
-  //                                 ast: &CoreAst, fc: &FnClause) -> ErlResult<()> {
-  //   // For each fun clause its return type is matched with body expression type
-  //   Self::equation(eq, ast, fc.ret.clone(), fc.body.get_type());
-  //   Ok(())
-  // }
-
   /// Type inference wiring
-  /// Generate type equations for AST node Application (a function call) Expr(Arg, ...)
-  fn generate_equations_apply(&self, eq: &mut Vec<TypeEquation>,
+  /// Generate type equations for CoreAst::Apply (a function call): Expr(Arg, ...)
+  #[named]
+  fn generate_equations_apply(eq: &mut Vec<TypeEquation>,
                               ast: &Arc<CoreAst>, app: &Apply) -> ErlResult<()> {
     // The expression we're calling must be something callable, i.e. must match a fun(Arg...)->Ret
     // Produce rule: App.Expr.type <=> fun(T1, T2, ...) -> Ret
+    let target_type = app.target.get_type();
+
     Self::equation(eq, ast,
-                   &app.target.get_type(),
+                   &target_type,
                    &app.get_function_type());
 
     // The return type of the application (App.Ret) must match the return type of the fun(Args...)->Ret
     // Equation: Application.Ret <=> Expr(Args...).Ret
     // let expr_type: &FunctionType = app.expr_ty.as_function();
-    // Self::equation(eq, ast, app.ret_ty.clone(), *(expr_type.ret_type).clone(), "Apply");
-    // todo!("Match app.ret with return type of the expr");
+    if let ErlType::Fn(fntype) = target_type.deref() {
+      Self::equation_anno(eq, ast,
+                          &ErlType::TVar(app.ret_ty).into(),
+                          &fntype.ret_type,
+                          "Match ret type of application with ret type of target".to_string());
+    } else {
+      panic!("{}: Expecting a Fn type for the application target, got {}", function_name!(), target_type);
+    }
+    // to do!("Match app.ret with return type of the expr");
     Ok(())
   }
 }
