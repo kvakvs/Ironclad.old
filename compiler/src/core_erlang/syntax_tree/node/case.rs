@@ -7,20 +7,17 @@ use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
 use crate::display;
 use crate::source_loc::SourceLoc;
-use crate::typing::typevar::TypeVar;
 
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.
 #[derive(Debug)]
 pub struct Case {
   /// Source file pointer
-  pub(crate) location: SourceLoc,
+  pub location: SourceLoc,
   /// Case switch expressions, multiple are allowed
-  pub(crate) exprs: Vec<Arc<CoreAst>>,
+  pub exprs: Vec<Arc<CoreAst>>,
   /// Case clauses in order. Each case must match every expression from `Self::exprs`
-  pub(crate) clauses: Vec<CaseClause>,
-  /// The unique typevar for return type, the union of clause return types
-  pub(crate) ret_ty: TypeVar,
+  pub clauses: Vec<CaseClause>,
 }
 
 impl Case {
@@ -30,7 +27,6 @@ impl Case {
       location,
       exprs,
       clauses,
-      ret_ty: TypeVar::new()
     }
   }
 }

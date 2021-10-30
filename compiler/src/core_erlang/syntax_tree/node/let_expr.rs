@@ -2,7 +2,6 @@
 use std::sync::Arc;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::var::Var;
-use crate::typing::typevar::TypeVar;
 use crate::source_loc::SourceLoc;
 
 /// Represents Haskell-style `let x = Value in Expr` node, used in Core Erlang to create scopes
@@ -18,6 +17,4 @@ pub struct LetExpr {
 
   /// Let x=y in <body> (type is in it, and becomes type of Expr::Let)
   pub in_expr: Arc<CoreAst>,
-  /// The `let` node result type
-  pub ret_ty: TypeVar,
 }

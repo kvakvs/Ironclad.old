@@ -2,14 +2,11 @@
 use std::fmt::Formatter;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
-use crate::typing::typevar::TypeVar;
 use std::sync::Arc;
 
 /// `Case X of ... end` expression AST node
 #[derive(Debug)]
 pub struct ErlCase {
-  /// A union type of all case clauses, also is the return type of the case expression
-  pub ret_ty: TypeVar,
   /// Argument X in `case X of`
   pub arg: Arc<ErlAst>,
   /// All case clauses in order

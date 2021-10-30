@@ -16,10 +16,7 @@ use crate::core_erlang::syntax_tree::node::module_attr::ModuleAttr;
 use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
-use crate::typing::erl_type::ErlType;
 use std::ops::Deref;
-use crate::typing::erl_type_prefab::TypePrefab;
-use crate::typing::typevar::TypeVar;
 
 /// AST node in Core Erlang (parsed or generated)
 #[derive(Debug)]
@@ -49,8 +46,6 @@ pub enum CoreAst {
   FnRef {
     /// The module:fun/arity pointer
     mfa: MFArity,
-    /// The function type with args for each clause and return type
-    fn_type: TypeVar,
   },
 
   /// Branch based on whether an expression matches some conditions
@@ -138,46 +133,46 @@ impl CoreAst {
 
   /// Creates a new function pointer node
   pub fn new_fnref(mfa: MFArity) -> Self {
-    CoreAst::FnRef { mfa, fn_type: TypeVar::new() }
+    CoreAst::FnRef { mfa }
   }
 
-  /// Gets the type of an AST node
-  #[named]
-  pub fn get_type(&self) -> Arc<ErlType> {
-    match self {
-      CoreAst::FnDef(fn_def) => ErlType::TVar(fn_def.ret_ty).into(),
-      CoreAst::Var(core_var) => ErlType::TVar(core_var.ty).into(),
-      CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
-      CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
-      CoreAst::FnRef { fn_type, .. } => ErlType::TVar(*fn_type).into(),
-      CoreAst::Lit { value: l, .. } => l.get_type(),
-      CoreAst::BinOp { op, .. } => op.get_result_type(),
-      CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
-      CoreAst::List { elements, tail, .. } => {
-        assert!(tail.is_none()); // todo
-        let union_t = ErlType::union_of(
-          elements.iter().map(|e| e.get_type()).collect(),
-          true);
-        ErlType::List(union_t).into()
-      }
-      CoreAst::Tuple { elements, .. } => {
-        ErlType::Tuple(elements.iter().map(|e| e.get_type()).collect())
-            .into()
-      }
-      // CoreAst::MFA { clause_types, .. } => {
-      //   let fn_type = FunctionType::new(None, clause_types.clone());
-      //   ErlType::Fn(fn_type)
-      // }
-      CoreAst::PrimOp { op, .. } => {
-        match op {
-          PrimOp::Raise { .. } => TypePrefab::none(),
-          PrimOp::ExcTrace => { panic!("TODO: get_type() for primop exctrace") }
-        }
-      }
-
-      _ => unreachable!("{}: Can't process {}", function_name!(), self),
-    }
-  }
+  // /// Gets the type of an AST node
+  // #[named]
+  // pub fn get_type(&self) -> Arc<ErlType> {
+  //   match self {
+  //     CoreAst::FnDef(fn_def) => ErlType::TVar(fn_def.ret_ty).into(),
+  //     CoreAst::Var(core_var) => ErlType::TVar(core_var.ty).into(),
+  //     CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
+  //     CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
+  //     CoreAst::FnRef { fn_type, .. } => ErlType::TVar(*fn_type).into(),
+  //     CoreAst::Lit { value: l, .. } => l.get_type(),
+  //     CoreAst::BinOp { op, .. } => op.get_result_type(),
+  //     CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
+  //     CoreAst::List { elements, tail, .. } => {
+  //       assert!(tail.is_none()); // todo
+  //       let union_t = ErlType::union_of(
+  //         elements.iter().map(|e| e.get_type()).collect(),
+  //         true);
+  //       ErlType::List(union_t).into()
+  //     }
+  //     CoreAst::Tuple { elements, .. } => {
+  //       let element_types = elements.iter().map(|e| e.get_type()).collect();
+  //       ErlType::Tuple { elements: element_types }.into()
+  //     }
+  //     // CoreAst::MFA { clause_types, .. } => {
+  //     //   let fn_type = FunctionType::new(None, clause_types.clone());
+  //     //   ErlType::Fn(fn_type)
+  //     // }
+  //     CoreAst::PrimOp { op, .. } => {
+  //       match op {
+  //         PrimOp::Raise { .. } => ErlType::None.into(),
+  //         PrimOp::ExcTrace => { panic!("TODO: get_type() for primop exctrace") }
+  //       }
+  //     }
+  //
+  //     _ => unreachable!("{}: Can't process {}", function_name!(), self),
+  //   }
+  // }
 
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
@@ -264,10 +259,7 @@ impl std::fmt::Display for CoreAst {
         write!(f, " -> {}", fn_def.body)?;
         write!(f, "}})")
       }
-      CoreAst::Var(core_var) => match &core_var.name {
-        None => write!(f, "{}", core_var.ty),
-        Some(n) => write!(f, "{}", n),
-      },
+      CoreAst::Var(core_var) => write!(f, "{}", core_var.name),
       CoreAst::Apply(app) => write!(f, "{}", app),
       CoreAst::Case(case) => write!(f, "{}", case),
       CoreAst::Lit { value, .. } => write!(f, "{}", value),

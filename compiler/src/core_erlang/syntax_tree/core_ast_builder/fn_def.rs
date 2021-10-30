@@ -15,7 +15,6 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
-use crate::typing::typevar::TypeVar;
 use crate::project::module::Module;
 
 // Conversion of Erlang function with clauses into Core function with case switch.
@@ -75,32 +74,32 @@ impl CoreAstBuilder {
 
   /// Creates a case clause for a certain ErlFnClause
   fn create_case_clause_for_fnclause(env: &Module,
-                                     arity: usize, clause: &ErlFnClause,
+                                     _arity: usize, clause: &ErlFnClause,
                                      ast: Arc<CoreAst>) -> CaseClause {
-    let good_types = iter::repeat(())
-        .take(arity)
-        .map(|_| TypeVar::new())
-        .collect();
+    // let good_types = iter::repeat(())
+    //     .take(arity)
+    //     .map(|_| TypeVar::new())
+    //     .collect();
 
     // Build a set of argument match expressions from args
     let good_arg_exprs = clause.args.iter()
         .map(|each_arg| Self::build(env, each_arg))
         .collect();
 
-    CaseClause::new(ast.location(), good_arg_exprs, good_types, ast)
+    CaseClause::new(ast.location(), good_arg_exprs, ast)
   }
 
   /// Creates a case clause matching on anything, to guard vs "function clause" or "case clause"
   fn create_case_badarg_clause(arity: usize, loc: SourceLoc, body: Arc<CoreAst>) -> CaseClause {
-    let bad_types = iter::repeat(())
-        .take(arity)
-        .map(|_| TypeVar::new())
-        .collect();
+    // let bad_types = iter::repeat(())
+    //     .take(arity)
+    //     .map(|_| TypeVar::new())
+    //     .collect();
     let bad_arg_exprs = iter::repeat(())
         .take(arity)
         .map(|_| CoreAst::new_unique_var("Arg"))
         .collect();
-    CaseClause::new(loc, bad_arg_exprs, bad_types, body)
+    CaseClause::new(loc, bad_arg_exprs, body)
   }
 
   /// Given a FnDef, produce a CoreAst equivalent new function definition with an optional nested
@@ -111,17 +110,14 @@ impl CoreAstBuilder {
       // Build the new core body, which can be a new case switch for clauses and guards, or just the
       // input body, for a single simple clause
       let core_body = Self::create_fnbody(env, fn_def);
+      let args = iter::repeat(()).take(fn_def.funarity.arity)
+          .map(|_| CoreAst::new_unique_var("arg").into())
+          .collect();
 
-      let core_fndef = Arc::new(FnDef {
-        location: fn_def.location.clone(),
-        funarity: fn_def.funarity.clone(),
-        args: iter::repeat(())
-            .take(fn_def.funarity.arity)
-            .map(|_| TypeVar::new())
-            .collect(),
-        body: core_body,
-        ret_ty: TypeVar::new(),
-      });
+      let core_fndef: Arc<FnDef> = FnDef::new(fn_def.location.clone(),
+                                              fn_def.funarity.clone(),
+                                              core_body,
+                                              args).into();
 
       if let Ok(mut registry) = env.registry.write() {
         registry.add_function(core_fndef.clone());

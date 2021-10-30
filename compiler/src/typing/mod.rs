@@ -1,10 +1,5 @@
-//! Collection of type inference and check facilities
-
+//! Contains types and typecheck related code
 pub mod erl_type;
-pub mod erl_type_prefab;
-pub mod error;
-pub mod typevar;
-pub mod unifier;
-pub mod display;
-pub mod fn_type;
+pub mod synth;
 pub mod fn_clause_type;
+pub mod type_error;

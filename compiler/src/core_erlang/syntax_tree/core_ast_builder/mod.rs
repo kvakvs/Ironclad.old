@@ -6,7 +6,6 @@ use std::ops::Deref;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::core_erlang::syntax_tree::node::expression::BinaryOperatorExpr;
-use crate::typing::typevar::TypeVar;
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
 use crate::project::module::Module;
@@ -80,7 +79,6 @@ impl CoreAstBuilder {
         left: Self::build(env, &binop.left),
         right: Self::build(env, &binop.right),
         operator: binop.operator.into(),
-        ty: TypeVar::new(),
       },
     }.into()
   }
@@ -98,8 +96,7 @@ impl CoreAstBuilder {
   fn core_from_var(erl_var: &ErlVar) -> Arc<CoreAst> {
     let core_var = Var {
       location: erl_var.location.clone(),
-      name: Some(erl_var.name.clone()),
-      ty: TypeVar::new(),
+      name: erl_var.name.clone(),
     };
     CoreAst::Var(core_var).into()
   }
@@ -135,7 +132,6 @@ impl CoreAstBuilder {
       args: app.args.iter()
           .map(|each_arg| Self::build(env, each_arg))
           .collect(),
-      ret_ty: TypeVar::new(),
     };
     CoreAst::Apply(core_app).into()
   }

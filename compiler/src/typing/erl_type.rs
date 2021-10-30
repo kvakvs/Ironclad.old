@@ -1,508 +1,228 @@
-//! Defines a type enum for any Erlang value or function
+//! Defines an Erlang-type
 use std::fmt::Formatter;
-use std::hash::{Hash, Hasher};
-
-use ::function_name::named;
 use std::sync::Arc;
-use std::ops::Deref;
-use std::collections::BTreeSet;
-use std::cmp::Ordering;
-
 use crate::literal::Literal;
-use crate::typing::fn_type::FunctionType;
-use crate::typing::typevar::TypeVar;
+use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::erl_type_prefab::TypePrefab;
 
-/// A record field definition
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct RecordField {
-  /// Field name, an atom stored as string
-  pub name: String,
-  /// Field value type TODO: by default record field types include 'undefined' atom
-  pub ty: ErlType,
-}
-
-impl std::fmt::Display for RecordField {
-  /// String representation of a record field type
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}: {}", self.name, self.ty)
-  }
-}
-
-/// A map field constraint
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct MapField {
-  /// Key can be any literal
-  pub key: Literal,
-  /// Value type
-  pub ty: ErlType,
-}
-
-impl std::fmt::Display for MapField {
-  /// String representation of a map field
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} => {}", self.key, self.ty)
-  }
-}
-
-/// Defines a type of any Erlang value or expression or function
-#[derive(Debug, Clone, Eq)]
+/// Describes an Erlang type, usually stored as Arc<ErlType>
+#[derive(Debug)]
 pub enum ErlType {
-  //-------------------------------------
-  // Special types, groups of types, etc
-  //-------------------------------------
-  /// Multiple types together
-  // TODO: Move out into a new Union struct and file
-  Union(BTreeSet<Arc<ErlType>>),
-
-  /// No type, usually signifies a type error
-  None,
-  /// All types, usually signifies an unchecked or untyped type
+  /// Any type
   Any,
-  /// A type variable, unique generated integer id
-  TVar(TypeVar),
+  /// Empty set of types, or a void return, or a crash
+  None,
 
-  //-------------------
-  // Erlang data types
-  //-------------------
+  /// Any atom
+  Atom,
+  /// Atom 'true' or atom 'false'
+  Boolean,
 
-  // TODO: Integer ranges, maybe float ranges possible too?
-  /// Integers or floats
+  /// Float or integer, any of those
   Number,
-
-  /// A integer number
-  AnyInteger,
-
-  /// Specific integer value
-  Integer(isize),
-
-  /// 64 bit floating point, is-a(Number)
+  /// IEEE 64-bit float
   Float,
-
-  /// A list of any type
-  AnyList,
-
-  /// A list of zero size
-  Nil,
-
-  /// A list with element type, type can be union
-  List(Arc<ErlType>),
-
-  /// A list of unicode codepoints list(char())
-  String,
-
-  /// A tuple of any size and any content
-  AnyTuple,
-
-  /// A tuple with each element type defined
-  Tuple(Vec<Arc<ErlType>>),
-
-  /// Special case of a tagged tuple where we know a record definition exists. is-a(Tuple)
-  Record {
-    /// Atom tag for record. Stored as string here.
-    tag: String,
-    /// List of record fields
-    fields: Vec<RecordField>,
+  /// Any integer or big integer
+  Integer,
+  /// Defines integer range A..B, cannot be single element or empty
+  IntegerRange {
+    /// First value of the range
+    from: Literal,
+    /// Last value of the range
+    to: Literal,
   },
 
-  /// A map with a vec of field constraints
-  Map(Vec<MapField>),
+  /// Any tuple of any size
+  AnyTuple,
+  /// Tuple of multiple types, elements count is the size
+  Tuple {
+    /// Collection of types for tuple elements, same size as tuple arity
+    elements: Vec<Arc<ErlType>>
+  },
+  /// A tuple with an atom tag and typed fields
+  Record {
+    /// Literal atom for the record tag
+    tag: String,
+    /// Record fields - name :: type()
+    fields: Vec<(String, Arc<ErlType>)>,
+  },
 
-  /// Any atom. For specific atom values see Literal
-  AnyAtom,
+  /// List of any()
+  AnyList,
+  /// List of elements belonging to an union type
+  List {
+    /// Union type for all elements
+    elements: Arc<ErlType>,
+    /// Tail element if not NIL
+    tail: Option<Arc<ErlType>>,
+  },
+  /// Tuple style list of fixed size, with each element having own type
+  TypedList {
+    /// Type for each list element also
+    elements: Vec<Arc<ErlType>>,
+    /// Tail element if not NIL
+    tail: Option<Arc<ErlType>>,
+  },
+  /// Empty list []
+  Nil,
 
-  /// Specific atom value
-  Atom(String),
+  /// Map with any keys
+  AnyMap,
+  /// Type for a dictionary of key=>value style
+  Map {
+    /// Defines map key/value type pairs
+    items: Vec<(Arc<ErlType>, Arc<ErlType>)>
+  },
 
-  /// Atom 'true' or atom 'false', is-a(Atom)
-  AnyBool,
+  /// Any binary of any size
+  AnyBinary,
+  /// Binary of size and possibly with last byte incomplete
+  Binary {
+    /// Byte size
+    size: usize,
+    /// If non-zero, this represents a bit string
+    last_byte_bits: usize,
+  },
 
-  /// A process id value, generated at runtime
+  /// Matches function references and lambdas
+  AnyFn,
+  /// Describes a function type with multiple clauses and return types
+  Fn {
+    /// Function clauses
+    clauses: Vec<FnClauseType>
+  },
+  /// fun name/2 style references, also remote references
+  FnRef {
+    /// Function's location (module/function or just function)
+    fun: MFArity
+  },
+  /// A function value, created using `fun(Args) -> code.` expression
+  Lambda,
+
+  /// A local or remote process id
   Pid,
-
-  /// A reference value, generated at runtime
+  /// A local or remote reference value
   Reference,
-  /// A port (socket, open file, etc.)
+  /// An open file, socket or some other port resource
   Port,
 
-  /// A binary type containing bytes and some trailing bits (incomplete last byte)
-  BinaryBits,
-
-  /// A binary type containing bytes, is-a(BinaryBits)
-  Binary,
-
-  /// Type for an Erlang Literal value, a data value fully known at compile time, having no type
-  /// variables or references to other types or other data
-  Literal(Literal),
-
-  /// Any callable
-  AnyFn,
-
-  /// Named function or unnamed
-  Fn(FunctionType),
-  /// Unnamed function clause, just argument types and return, this should also class as a function
-  FnClause(FnClauseType),
+  /// A single literal value of any type
+  Singleton {
+    /// Singleton's value, a literal
+    val: Arc<Literal>
+  },
 }
 
-impl PartialEq for ErlType {
-  fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
-      (ErlType::Number, ErlType::Number) | (ErlType::None, ErlType::None)
-      | (ErlType::Any, ErlType::Any) | (ErlType::Float, ErlType::Float)
-      | (ErlType::String, ErlType::String) | (ErlType::AnyList, ErlType::AnyList)
-      | (ErlType::AnyTuple, ErlType::AnyTuple) | (ErlType::AnyAtom, ErlType::AnyAtom)
-      | (ErlType::AnyBool, ErlType::AnyBool) | (ErlType::Pid, ErlType::Pid)
-      | (ErlType::Reference, ErlType::Reference) | (ErlType::BinaryBits, ErlType::BinaryBits)
-      | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Binary, ErlType::Binary)
-      | (ErlType::AnyFn, ErlType::AnyFn) => true,
-
-      // (ErlType::Callable(fa1), ErlType::Callable(fa2)) => fa1 == fa2,
-
-      (ErlType::Record { fields: f1, tag: t1, .. },
-        ErlType::Record { fields: f2, tag: t2, .. }) => t1 == t2 && f1 == f2,
-      (ErlType::TVar(u), ErlType::TVar(v)) => u == v,
-      (ErlType::Integer(u), ErlType::Integer(v)) => u == v,
-      (ErlType::List(u), ErlType::List(v)) => u == v,
-      (ErlType::Tuple(u), ErlType::Tuple(v)) => u == v,
-      (ErlType::Map(u), ErlType::Map(v)) => u == v,
-      (ErlType::Atom(a), ErlType::Atom(b)) => a == b,
-      (ErlType::Literal(u), ErlType::Literal(v)) => u == v,
-      (ErlType::Fn(fa), ErlType::Fn(fb)) => fa == fb,
-      (ErlType::Union(u), ErlType::Union(v)) => {
-        u.iter().all(|u_member| v.contains(u_member))
-      }
-      _ => false,
-    }
-  }
-}
-
-impl PartialOrd<Self> for ErlType {
-  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-    Some(self.cmp(other))
-  }
-}
-
-impl Ord for ErlType {
-  fn cmp(&self, other: &Self) -> Ordering {
-    let order = self.get_order().cmp(&other.get_order());
-    match order {
-      Ordering::Less | Ordering::Greater => order,
-      Ordering::Equal => self.cmp_same_type(other),
-    }
-  }
-}
-
-impl Hash for ErlType {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    match self {
-      ErlType::Union(members) => {
-        'U'.hash(state);
-        members.iter().for_each(|m| m.hash(state));
-      }
-      ErlType::None => 'z'.hash(state),
-      ErlType::Any => '*'.hash(state),
-      ErlType::TVar(n) => {
-        't'.hash(state);
-        n.hash(state);
-      }
-      ErlType::Number => 'N'.hash(state),
-      ErlType::AnyInteger => 'I'.hash(state),
-      ErlType::Integer(i) => {
-        'i'.hash(state);
-        i.hash(state);
-      }
-      ErlType::Float => 'f'.hash(state),
-      ErlType::AnyList => 'L'.hash(state),
-      ErlType::List(ltype) => {
-        'l'.hash(state);
-        (*ltype).hash(state);
-      }
-      ErlType::String => 'S'.hash(state),
-      ErlType::AnyTuple => 'T'.hash(state),
-      ErlType::Tuple(items) => {
-        't'.hash(state);
-        items.iter().for_each(|i| i.hash(state));
-      }
-      ErlType::Record { tag, fields } => {
-        'r'.hash(state);
-        tag.hash(state);
-        fields.iter().for_each(|f| f.hash(state));
-      }
-      ErlType::Map(mf) => {
-        '#'.hash(state);
-        mf.iter().for_each(|f| f.hash(state));
-      }
-      ErlType::AnyAtom => 'A'.hash(state),
-      ErlType::Atom(s) => {
-        'a'.hash(state);
-        s.hash(state);
-      }
-      ErlType::AnyBool => 'B'.hash(state),
-      ErlType::Pid => 'p'.hash(state),
-      ErlType::Reference => 'r'.hash(state),
-      ErlType::BinaryBits => '.'.hash(state),
-      ErlType::Binary => 'b'.hash(state),
-      ErlType::Literal(lit) => lit.hash(state),
-      ErlType::AnyFn => "f*".hash(state),
-      ErlType::Fn(ft) => {
-        "fn".hash(state);
-        ft.hash(state);
-      }
-      ErlType::FnClause(fc) => {
-        "fc".hash(state);
-        fc.hash(state);
-      }
-      // ErlType::Callable(fa) => {
-      //   '='.hash(state);
-      //   fa.hash(state);
-      // }
-      ErlType::Nil => "[]".hash(state),
-      ErlType::Port => 'P'.hash(state),
-    }
-  }
-
-  fn hash_slice<H: Hasher>(data: &[Self], state: &mut H) where Self: Sized {
-    data.iter().for_each(|d| d.hash(state))
-  }
+impl std::fmt::Display for ErlType {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{:?}", self) }
 }
 
 impl ErlType {
-  /// Compares two erlang types of same kind, otherwise general ordering applies
-  pub fn cmp_same_type(&self, other: &ErlType) -> Ordering {
-    match (self, other) {
-      (ErlType::None, ErlType::None) | (ErlType::Any, ErlType::Any) | (ErlType::Number, ErlType::Number)
-      | (ErlType::AnyInteger, ErlType::AnyInteger) | (ErlType::Float, ErlType::Float)
-      | (ErlType::AnyList, ErlType::AnyList) | (ErlType::Nil, ErlType::Nil)
-      | (ErlType::String, ErlType::String) | (ErlType::AnyTuple, ErlType::AnyTuple)
-      | (ErlType::AnyAtom, ErlType::AnyAtom) | (ErlType::AnyBool, ErlType::AnyBool)
-      | (ErlType::Pid, ErlType::Pid) | (ErlType::Reference, ErlType::Reference)
-      | (ErlType::Port, ErlType::Port) | (ErlType::BinaryBits, ErlType::BinaryBits)
-      | (ErlType::Binary, ErlType::Binary) | (ErlType::AnyFn, ErlType::AnyFn) => {
-        Ordering::Equal
-      }
+  /// Clones literal's refcounted pointer and returns a singleton type
+  pub fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
+    ErlType::Singleton { val: lit.clone() }.into()
+  }
 
-      (ErlType::Union(a), ErlType::Union(b)) => a.cmp(b),
-      (ErlType::TVar(TypeVar(a)), ErlType::TVar(TypeVar(b))) => a.cmp(b),
-      (ErlType::Integer(a), ErlType::Integer(b)) => a.cmp(b),
-      (ErlType::List(l1), ErlType::List(l2)) => l1.cmp(l2),
-      (ErlType::Tuple(t1), ErlType::Tuple(t2)) => t1.cmp(t2),
-      (ErlType::Record { tag: t1, fields: fields1 },
-        ErlType::Record { tag: t2, fields: fields2 }) => {
-        let mut result = t1.cmp(t2);
-        if result == Ordering::Equal { // if record tags match, fields may be different!
-          result = fields1.cmp(fields2);
-        }
-        result
-      }
-      (ErlType::Map(m1), ErlType::Map(m2)) => m1.cmp(m2),
-      (ErlType::Atom(a), ErlType::Atom(b)) => a.cmp(b),
-      (ErlType::Literal(lit1), ErlType::Literal(lit2)) => lit1.cmp(lit2),
-      (ErlType::Fn(f1), ErlType::Fn(f2)) => f1.cmp(f2),
-      // (ErlType::Callable(fa1), ErlType::Callable(fa2)) => fa1.cmp(fa2),
+  /// Creates new function type with clauses
+  pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
+    ErlType::Fn { clauses }.into()
+  }
 
-      _ => unreachable!("Don't know how to compare {} vs {}, only same type allowed in this function",
-                        self, other)
-    }
+  /// Checks whether type is an atom
+  pub fn is_atom(&self) -> bool {
+    return match self {
+      ErlType::Atom | ErlType::Boolean => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a number
+  pub fn is_number(&self) -> bool {
+    return match self {
+      ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a tuple type
+  pub fn is_tuple(&self) -> bool {
+    return match self {
+      ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. } => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a list
+  pub fn is_list(&self) -> bool {
+    return match self {
+      ErlType::AnyList | ErlType::List { .. } | ErlType::TypedList { .. } => true,
+      ErlType::Nil => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a binary
+  pub fn is_binary(&self) -> bool {
+    return match self {
+      ErlType::AnyBinary | ErlType::Binary { .. } => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a map
+  pub fn is_map(&self) -> bool {
+    return match self {
+      ErlType::AnyMap | ErlType::Map { .. } => true,
+      _ => false,
+    };
   }
 
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
-  /// This ordering is used for BTree construction, not
+  /// This ordering is used for BTree construction, not for comparisons
   pub fn get_order(&self) -> usize {
     match self {
       ErlType::None => 0,
-      ErlType::Union(_) => 1,
-      ErlType::TVar(_) => 2,
+      // ErlType::Union(_) => 1,
+      // ErlType::TVar(_) => 2,
       ErlType::Any => 1000,
 
       ErlType::Number => 10,
       ErlType::Float => 11,
-      ErlType::AnyInteger => 12,
-      ErlType::Integer(_) => 13,
+      ErlType::Integer => 12,
+      ErlType::IntegerRange { .. } => 13,
 
-      ErlType::AnyBool => 20,
-      ErlType::AnyAtom => 21,
-      ErlType::Atom(_) => 22,
+      ErlType::Boolean => 20,
+      ErlType::Atom => 21,
 
       ErlType::Reference => 30,
 
       ErlType::AnyFn => 40,
-      ErlType::Fn(_) => 41,
-      ErlType::FnClause(_) => 42,
-      // ErlType::Callable(_) => 43,
+      ErlType::Fn { .. } => 41,
+      ErlType::Lambda { .. } => 42,
 
       ErlType::Port => 50,
 
       ErlType::Pid => 60,
 
       ErlType::AnyTuple => 70,
-      ErlType::Tuple(_) => 71,
+      ErlType::Tuple { .. } => 71,
       ErlType::Record { .. } => 72,
 
-      ErlType::Map(_) => 80,
+      ErlType::Map { .. } => 80,
 
       ErlType::Nil => 90,
 
       ErlType::AnyList => 100,
-      ErlType::List(_) => 101,
-      ErlType::String => 102,
+      ErlType::List { .. } => 101,
+      ErlType::TypedList { .. } => 102,
 
-      ErlType::Binary => 110,
-      ErlType::BinaryBits => 111,
+      ErlType::AnyBinary => 110,
+      ErlType::Binary { .. } => 111,
 
-      ErlType::Literal(lit) => lit.get_type().get_order(),
+      ErlType::Singleton { val } => val.synthesize_type().get_order(),
+
+      other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", other),
     }
-  }
-
-  /// If self is a TypeVar, return Any, otherwise do not change.
-  /// Used after type inference was done to replace all typevars with any()
-  pub fn final_type(this: Arc<ErlType>) -> Arc<ErlType> {
-    match this.deref() {
-      ErlType::TVar(_) => TypePrefab::any(),
-      _other => this,
-    }
-  }
-
-  /// Given vector of literals, make a union type
-  pub fn union_of_literal_types(items: &[Literal]) -> Arc<ErlType> {
-    Self::union_of(
-      items.iter()
-          .map(|it| it.get_type())
-          .collect(),
-      true)
-  }
-
-  /// Creates an empty union type, equivalent to None
-  pub fn union_empty() -> Self {
-    ErlType::Union(Default::default())
-  }
-
-  /// Creates a new union of types from a vec of types. Tries to unfold nested union types and
-  /// flatten them while also trying to maintain uniqueness (see to do below).
-  /// Param `promote` will also call promote on the resulting union, trying to merge some type
-  /// combinations into supertypes.
-  pub fn union_of(types: Vec<Arc<ErlType>>, promote: bool) -> Arc<ErlType> {
-    if types.len() == 1 {
-      return types[0].clone();
-    }
-
-    let mut merged: BTreeSet<Arc<ErlType>> = Default::default();
-
-    // For every type in types, if its a Union, unfold it into member types.
-    // HashSet will ensure that the types are unique
-    types.into_iter().for_each(|t| {
-      match t.deref() {
-        ErlType::None => {} // ignore None-type it doesn't merge with anything
-        ErlType::Union(members) => merged.extend(members.iter().cloned()),
-        _ => { merged.insert(t); }
-      }
-    });
-    if promote { ErlType::union_promote(merged) } else { ErlType::Union(merged).into() }
-  }
-
-  /// Given a hashset of erlang types try and promote combinations of simpler types to a compound
-  /// type if such type exists. This is lossless operation, types are not generalized or shrunk.
-  /// Example: integer()|float() shrink into number()
-  #[named]
-  fn union_promote(elements: BTreeSet<Arc<ErlType>>) -> Arc<ErlType> {
-    assert!(!elements.is_empty(), "Union of 0 types is not valid, fill it with some types then call {}", function_name!());
-
-    // integer() | float() => number()
-    if elements.len() >= 2
-        && elements.contains(&TypePrefab::float())
-        && elements.contains(&TypePrefab::any_integer()
-    ) {
-      let mut elements_mut = elements;
-
-      // Remove integer() and float() from the union types
-      elements_mut.remove(&TypePrefab::float());
-      elements_mut.remove(&TypePrefab::any_integer());
-
-      // Insert the number() type
-      elements_mut.insert(TypePrefab::number());
-
-      // return ErlType::Union(elements2).into();
-      return Self::union_promote(elements_mut);
-    }
-
-
-    if elements.len() == 1 {
-      return elements.iter().next().unwrap().clone();
-    }
-    ErlType::Union(elements).into()
-  }
-
-  // /// Create a new function type provided args types and return type, possibly with a name
-  // pub fn new_fun_type(name: Option<String>, clauses: Vec<FunctionClauseType>) -> Self {
-  //   assert!(!clauses.is_empty(), "Function type with 0 function clause types is not allowed");
-  //   ErlType::Function(FunctionType::new(name, clauses))
-  // }
-
-  /// Create a new type, containing a new type variable with unique integer id
-  pub fn new_typevar() -> Self {
-    ErlType::TVar(TypeVar::new())
-  }
-
-  /// Check whether a type denotes a simple non-nested value or a union of simple values, i.e. when
-  /// the deeper type inspection is not required.
-  pub fn is_simple_value_type(&self) -> bool {
-    match self {
-      ErlType::Union(members) => {
-        members.iter().all(|m| m.is_simple_value_type())
-      }
-      ErlType::Number | ErlType::AnyInteger | ErlType::Integer(_) | ErlType::Float
-      | ErlType::AnyAtom | ErlType::Atom(_) | ErlType::AnyBool
-      | ErlType::List(_) | ErlType::String | ErlType::Tuple(_) | ErlType::Binary
-      | ErlType::Map(_) | ErlType::Record { .. }
-      | ErlType::Pid | ErlType::Reference
-      | ErlType::Literal(_) => true,
-      _ => false,
-    }
-  }
-
-  /// Given a union type, add t to the union, with uniqueness check
-  /// Returns Some() if the union was modified, None if no update has happened
-  pub fn union_add(&self, t: Arc<ErlType>) -> Option<Self> {
-    match self {
-      ErlType::Union(members) => {
-        let mut new_members = members.clone();
-        new_members.insert(t);
-        Some(ErlType::Union(new_members))
-      }
-      _ => None,
-    }
-  }
-
-  /// For Union type, if it contains empty set, collapses into None, if contains one type - will
-  /// collapse into that type.
-  pub fn union_collapse(this: &Arc<ErlType>) -> Arc<ErlType> {
-    match this.deref() {
-      ErlType::Union(members) => {
-        match members.len() {
-          1 => members.iter().next().unwrap().clone(),
-          0 => ErlType::None.into(),
-          _ => this.clone(),
-        }
-      }
-      _ => unreachable!("ErlType::union_collapse called on not-a-Union type")
-    }
-  }
-
-  /// Retrieve inner FunctionType value or fail
-  pub fn as_function(&self) -> &FunctionType {
-    match self {
-      Self::Fn(ft) => ft,
-      _ => panic!("Node {} is expected to be a Function type", self)
-    }
-  }
-
-  /// Create an atom from a string slice
-  pub fn atom_str(s: &str) -> Arc<ErlType> {
-    ErlType::Atom(String::from(s)).into()
   }
 }
-
-impl From<TypeVar> for ErlType { fn from(tv: TypeVar) -> Self { ErlType::TVar(tv) } }
-
-impl From<&TypeVar> for ErlType { fn from(tv: &TypeVar) -> Self { ErlType::TVar(*tv) } }

@@ -4,7 +4,6 @@ use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::typing::erl_type::ErlType;
-use crate::typing::erl_type_prefab::TypePrefab;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]
@@ -28,16 +27,14 @@ pub struct ErlUnaryOperatorExpr {
 
 impl ErlUnaryOperatorExpr {
   /// Get the type of an unary operation. Input type is same as return type.
-  pub fn get_type(&self) -> Arc<ErlType> {
+  pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self.operator {
-      ErlUnaryOp::Not => TypePrefab::any_bool(),
+      ErlUnaryOp::Not => ErlType::Boolean.into(),
 
       ErlUnaryOp::Negative
-      | ErlUnaryOp::Positive => {
-        ErlType::union_of(vec![TypePrefab::any_integer(), TypePrefab::float()], true)
-      }
+      | ErlUnaryOp::Positive => ErlType::Number.into(),
 
-      ErlUnaryOp::Catch => TypePrefab::any(),
+      ErlUnaryOp::Catch => ErlType::Any.into(),
     }
   }
 }

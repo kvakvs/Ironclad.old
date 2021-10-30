@@ -3,12 +3,11 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::typing::typevar::TypeVar;
 use crate::display;
-use crate::typing::erl_type::ErlType;
-use crate::typing::fn_type::FunctionType;
 use crate::source_loc::SourceLoc;
+use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::synth::TypeBuilder;
 
 /// Contains a function call
 #[derive(Debug)]
@@ -19,8 +18,6 @@ pub struct Apply {
   pub target: Arc<CoreAst>,
   /// Must match arity
   pub args: Vec<Arc<CoreAst>>,
-  /// The unique typevar for return type
-  pub ret_ty: TypeVar,
 }
 
 impl std::fmt::Display for Apply {
@@ -32,13 +29,15 @@ impl std::fmt::Display for Apply {
 
 impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
-  /// that specific call `Apply` would be performing
-  pub fn get_function_type(&self) -> Arc<ErlType> {
+  /// that specific call `Apply` would be performing.
+  /// TODO: This should synthesize return type not the expected fn type
+  pub fn synthesize_type(&self) -> Arc<ErlType> {
     let arg_types: Vec<Arc<ErlType>> = self.args.iter()
-        .map(|arg| arg.get_type())
+        .map(|arg| TypeBuilder::synthesize_from_core(arg))
         .collect();
-    let clause_type = FnClauseType::new(arg_types, ErlType::TVar(self.ret_ty).into());
-    let f_type = FunctionType::new(None, vec![clause_type]);
-    ErlType::Fn(f_type).into()
+    let ret_ty = ErlType::Any.into(); // TODO: Deduct here the expected types or something?
+
+    let clause_type = FnClauseType::new(arg_types, ret_ty).into();
+    ErlType::new_fn_type(vec![clause_type]).into()
   }
 }

@@ -13,7 +13,6 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_parser;
-use crate::typing::unifier::Unifier;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 use crate::project::module::func_registry::FuncRegistry;
@@ -37,9 +36,6 @@ pub struct Module {
   /// Core Erlang AST tree of the module
   pub core_ast: Arc<CoreAst>,
 
-  /// Type inference and typechecking engine, builds on the parsed AST
-  pub unifier: Unifier,
-
   /// Collection of module functions and a lookup table
   pub registry: RwLock<FuncRegistry>,
 
@@ -57,7 +53,6 @@ impl Default for Module {
       source_file: Arc::new(SourceFile::default()),
       ast: Arc::new(ErlAst::Empty),
       core_ast: Arc::new(CoreAst::Empty),
-      unifier: Default::default(),
       registry: RwLock::new(FuncRegistry::default()),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
@@ -116,7 +111,7 @@ impl Module {
     self.core_ast = CoreAstBuilder::build(self, &self.ast);
     println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
-    self.unifier = Unifier::new(self).unwrap();
+    // self.unifier = Unifier::new(self).unwrap();
     Ok(())
   }
 

@@ -3,7 +3,6 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::typing::typevar::TypeVar;
 
 /// AST node for a clause in a `case X of` expression.
 #[derive(Debug)]
@@ -14,8 +13,6 @@ pub struct ErlCaseClause {
   pub guard: Arc<ErlAst>,
   /// Case clause body expression
   pub body: Arc<ErlAst>,
-  /// Clause body type, for type inference
-  pub ty: TypeVar,
 }
 
 impl std::fmt::Display for ErlCaseClause {

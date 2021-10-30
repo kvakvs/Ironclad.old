@@ -8,7 +8,7 @@ use pest::error::LineColLocation;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::erlang::syntax_tree::erl_parser;
 use crate::preprocessor::syntax_tree::pp_parser;
-use crate::typing::error::TypeError;
+use crate::typing::type_error::TypeError;
 
 /// Erlang compiler errors all gathered together
 pub enum ErlError {

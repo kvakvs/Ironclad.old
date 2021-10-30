@@ -1,6 +1,5 @@
 //! A variable with possibly missing name and unique typevar
 use lazy_static::lazy_static;
-use crate::typing::typevar::TypeVar;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::source_loc::SourceLoc;
 
@@ -15,10 +14,8 @@ lazy_static! {
 pub struct Var {
   /// Source file pointer
   pub location: SourceLoc,
-  /// Optional name, `None` means the name is numbered from `Self::ty`
-  pub name: Option<String>,
-  /// Unique type variable
-  pub ty: TypeVar,
+  /// Variable name, numbered unnamed variables are pre-formatted to strings, for simplicity
+  pub name: String,
 }
 
 impl Var {
@@ -27,8 +24,7 @@ impl Var {
     let new_id = UNIQ_VAR_NUM.fetch_add(1, Ordering::Acquire);
     Self {
       location,
-      name: Some(format!("@{}{}", prefix, new_id)),
-      ty: TypeVar::new(),
+      name: format!("@{}{}", prefix, new_id),
     }
   }
 }

@@ -2,8 +2,8 @@
 use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
 
-use crate::typing::erl_type::ErlType;
 use std::sync::Arc;
+use crate::typing::erl_type::ErlType;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, Debug)]
@@ -85,29 +85,28 @@ impl Hash for Literal {
 }
 
 impl Literal {
-  /// Retrieves a type of a literal
-  pub fn get_type(&self) -> Arc<ErlType> {
+  /// Synthesizes a type of this literal
+  pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
-      Literal::Integer(i) => ErlType::Integer(*i).into(),
+      Literal::Integer(_) => ErlType::Integer.into(),
       Literal::Float(_) => ErlType::Float.into(),
-      Literal::Atom(s) => ErlType::Atom(s.clone()).into(),
-      Literal::Bool(_) => ErlType::AnyBool.into(),
+      Literal::Atom(_) => ErlType::Atom.into(),
+      Literal::Bool(_) => ErlType::Boolean.into(),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
-      Literal::List { elements, .. } => {
+      Literal::String(_) | Literal::Nil | Literal::List { .. } => {
         // List type is union of all element types
-        ErlType::List(ErlType::union_of_literal_types(elements))
-            .into()
+        // ErlType::List(ErlType::union_of_literal_types(elements)).into()
+        ErlType::AnyList.into()
       }
-      Literal::Nil => ErlType::AnyList.into(),
-      Literal::String(_) => ErlType::String.into(), // is-a(list(char))
       Literal::Tuple(items) => {
-        let t_type = ErlType::Tuple(items.iter()
-            .map(|it| it.get_type())
-            .collect());
-        t_type.into()
+        let element_types = items.iter()
+            .map(|it| it.synthesize_type())
+            .collect();
+        ErlType::Tuple { elements: element_types }.into()
       }
+      // other => unimplemented!("Don't know how to synthesize type for {}", other),
     }
   }
 }
@@ -137,8 +136,8 @@ impl PartialOrd<Self> for Literal {
 
 impl Ord for Literal {
   fn cmp(&self, other: &Self) -> Ordering {
-    let self_order = self.get_type().get_order();
-    let other_order = other.get_type().get_order();
+    let self_order = self.synthesize_type().get_order();
+    let other_order = other.synthesize_type().get_order();
     let order = self_order.cmp(&other_order);
     match order {
       Ordering::Less | Ordering::Greater => order,
