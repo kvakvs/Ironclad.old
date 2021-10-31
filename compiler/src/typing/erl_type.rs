@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::subtyping::SubtypeChecker;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
 #[derive(Debug, Eq, PartialEq)]
@@ -54,14 +55,14 @@ pub enum ErlType {
     /// Union type for all elements
     elements: Arc<ErlType>,
     /// Tail element if not NIL
-    tail: Option<Arc<ErlType>>,
+    tail: Arc<ErlType>,
   },
-  /// Tuple style list of fixed size, with each element having own type
-  TypedList {
+  /// Tuple-style strongly typed list of fixed size, with each element having own type
+  StronglyTypedList {
     /// Type for each list element also
     elements: Vec<Arc<ErlType>>,
     /// Tail element if not NIL
-    tail: Option<Arc<ErlType>>,
+    tail: Arc<ErlType>,
   },
   /// Empty list []
   Nil,
@@ -130,6 +131,11 @@ impl ErlType {
   pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
     ErlType::Fn { clauses }.into()
   }
+
+  /// Shortcut to the subtype checker
+  pub fn is_subtype_of(&self, other: &ErlType) -> bool {
+    SubtypeChecker::is_subtype(self, other)
+  }
 }
 
 //
@@ -171,7 +177,7 @@ impl ErlType {
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     return match self {
-      ErlType::AnyList | ErlType::List { .. } | ErlType::TypedList { .. } => true,
+      ErlType::AnyList | ErlType::List { .. } | ErlType::StronglyTypedList { .. } => true,
       ErlType::Nil => true,
       _ => false,
     };
@@ -231,7 +237,7 @@ impl ErlType {
 
       ErlType::AnyList => 100,
       ErlType::List { .. } => 101,
-      ErlType::TypedList { .. } => 102,
+      ErlType::StronglyTypedList { .. } => 102,
 
       ErlType::AnyBinary => 110,
       ErlType::Binary { .. } => 111,

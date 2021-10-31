@@ -8,7 +8,6 @@ use compiler::erl_error::ErlResult;
 use std::ops::Deref;
 use compiler::project::module::Module;
 use compiler::typing::erl_type::ErlType;
-use compiler::typing::subtyping::SubtypeChecker;
 use compiler::typing::synth::TypeBuilder;
 
 #[named]
@@ -36,15 +35,15 @@ fn typing_subtyping() -> ErlResult<()> {
 
   let sub1 = ErlType::Boolean;
   let sup1 = ErlType::Atom;
-  assert!(SubtypeChecker::is_subtype(&sub1, &sup1));
-  assert!(!SubtypeChecker::is_subtype(&sup1, &sub1));
+  assert!(sub1.is_subtype_of(&sup1));
+  assert!(!sup1.is_subtype_of(&sub1));
 
   let sub2_int = ErlType::Integer;
   let sub2_flt = ErlType::Float;
   let sup2 = ErlType::Number;
-  assert!(SubtypeChecker::is_subtype(&sub2_int, &sup2)); // int subtype of number
-  assert!(SubtypeChecker::is_subtype(&sub2_flt, &sup2)); // float subtype of number
-  assert!(!SubtypeChecker::is_subtype(&sup2, &sub2_int)); // number not subtype of int
+  assert!(sub2_int.is_subtype_of(&sup2)); // int subtype of number
+  assert!(sub2_flt.is_subtype_of(&sup2)); // float subtype of number
+  assert!(!sup2.is_subtype_of(&sub2_int)); // number not subtype of int
 
   Ok(())
 }
