@@ -17,6 +17,8 @@ use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
+use crate::typing::erl_type::ErlType;
+use crate::typing::synth::TypeBuilder;
 
 /// AST node in Core Erlang (parsed or generated)
 #[derive(Debug)]
@@ -134,6 +136,11 @@ impl CoreAst {
   /// Creates a new function pointer node
   pub fn new_fnref(mfa: MFArity) -> Self {
     CoreAst::FnRef { mfa }
+  }
+
+  /// Shortcut to call the typebuilder's synthesize
+  pub fn synthesize_type(&self) -> Arc<ErlType> {
+    TypeBuilder::synthesize_from_core(self)
   }
 
   // /// Gets the type of an AST node

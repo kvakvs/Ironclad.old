@@ -6,7 +6,6 @@ mod test_util;
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::typing::erl_type::ErlType;
-use compiler::typing::erl_type_prefab::TypePrefab;
 use std::ops::Deref;
 
 #[named]

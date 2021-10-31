@@ -6,7 +6,7 @@ use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ErlType {
   /// Any type
   Any,
@@ -117,6 +117,9 @@ impl std::fmt::Display for ErlType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{:?}", self) }
 }
 
+//
+// Constructors and Generators
+//
 impl ErlType {
   /// Clones literal's refcounted pointer and returns a singleton type
   pub fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
@@ -127,7 +130,12 @@ impl ErlType {
   pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
     ErlType::Fn { clauses }.into()
   }
+}
 
+//
+// Type classification
+//
+impl ErlType {
   /// Checks whether type is an atom
   pub fn is_atom(&self) -> bool {
     return match self {
@@ -140,6 +148,14 @@ impl ErlType {
   pub fn is_number(&self) -> bool {
     return match self {
       ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is an integer number
+  pub fn is_integer(&self) -> bool {
+    return match self {
+      ErlType::Integer | ErlType::IntegerRange { .. } => true,
       _ => false,
     };
   }

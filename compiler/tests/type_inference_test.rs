@@ -11,7 +11,6 @@ use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
 use compiler::project::module::Module;
 use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
-use compiler::typing::erl_type_prefab::TypePrefab;
 
 #[named]
 #[test]

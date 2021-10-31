@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
+use crate::typing::erl_type::ErlType;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]
@@ -16,46 +17,56 @@ pub struct BinaryOperatorExpr {
 }
 
 impl BinaryOperatorExpr {
-  // /// Gets the result type of a binary operation
-  // pub fn get_result_type(&self) -> Arc<ErlType> {
-  //   match self.operator {
-  //     CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
-  //       ErlType::union_of(vec![TypePrefab::any_integer(),
-  //                              TypePrefab::float()], true)
-  //     }
-  //
-  //     CoreBinaryOp::Div => TypePrefab::float(),
-  //
-  //     CoreBinaryOp::IntegerDiv => TypePrefab::any_integer(),
-  //
-  //     CoreBinaryOp::Modulo => TypePrefab::any_integer(),
-  //
-  //     CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
-  //     | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
-  //       TypePrefab::any_bool()
-  //     }
-  //     CoreBinaryOp::ListAppend => {
-  //       // Type of ++ will be union of left and right
-  //       if let ErlType::List(left_list_t) = self.left.get_type().deref() {
-  //         if let ErlType::List(right_list_t) = self.right.get_type().deref() {
-  //           let union_t = ErlType::union_of(
-  //             vec![left_list_t.clone(), right_list_t.clone()],
-  //             true);
-  //           return ErlType::List(union_t).into();
-  //         } else {
-  //           // right is not a list
-  //         }
-  //         // left is not a list
-  //       }
-  //       TypePrefab::none() // Raise TypeError::ListExpected?
-  //     }
-  //     CoreBinaryOp::ListSubtract => {
-  //       // Type of -- will be left, probably some elements which should be missing, but how do we know?
-  //       self.left.get_type()
-  //     }
-  //     CoreBinaryOp::Comma => self.right.get_type(),
-  //   }
-  // }
+  /// Gets the result type of a binary operation
+  pub fn synthesize_type(&self) -> Arc<ErlType> {
+    let left = self.left.synthesize_type();
+    let right = self.right.synthesize_type();
+
+    match self.operator {
+      CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
+        // A binary math operation can only produce a numeric type, integer if both args are integer
+        if !left.is_number() || !right.is_number() {
+          ErlType::None.into()
+        } else if left.is_integer() && right.is_integer() {
+          ErlType::Integer.into()
+        } else {
+          ErlType::Float.into()
+        }
+      }
+
+      CoreBinaryOp::Div => ErlType::Float.into(),
+
+      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => ErlType::Integer.into(),
+
+      CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
+      | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
+        ErlType::Boolean.into()
+      }
+
+      // CoreBinaryOp::ListAppend => {
+      //   // Type of ++ will be union of left and right
+      //   if let ErlType::List(left_list_t) = self.left.get_type().deref() {
+      //     if let ErlType::List(right_list_t) = self.right.get_type().deref() {
+      //       let union_t = ErlType::union_of(
+      //         vec![left_list_t.clone(), right_list_t.clone()],
+      //         true);
+      //       return ErlType::List(union_t).into();
+      //     } else {
+      //       // right is not a list
+      //     }
+      //     // left is not a list
+      //   }
+      //   TypePrefab::none() // Raise TypeError::ListExpected?
+      // }
+      // CoreBinaryOp::ListSubtract => {
+      //   // Type of -- will be left, probably some elements which should be missing, but how do we know?
+      //   self.left.get_type()
+      // }
+      CoreBinaryOp::Comma => self.right.synthesize_type(),
+
+      _ => unimplemented!("Don't know how to synthesize binary operation type for {:?}", self),
+    }
+  }
 
   // /// Gets the type for a binary operation, type is widened for numeric ops (return unions of
   // /// types) which later will be constrained by the type equations solver.
