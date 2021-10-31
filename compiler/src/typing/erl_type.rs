@@ -127,7 +127,22 @@ impl ErlType {
     ErlType::Singleton { val: lit.clone() }.into()
   }
 
-  /// Creates new function type with clauses
+  /// Creates a new singleton atom of name `s`
+  pub fn new_atom(s: &str) -> ErlType {
+    ErlType::Singleton {
+      val: Literal::Atom(s.to_string()).into()
+    }
+  }
+
+  /// Creates a type for a proper list with a NIL tail.
+  pub fn list_of(t: ErlType) -> ErlType {
+    ErlType::List {
+      elements: t.into(),
+      tail: ErlType::Nil.into(),
+    }
+  }
+
+    /// Creates new function type with clauses
   pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
     ErlType::Fn { clauses }.into()
   }
