@@ -54,15 +54,15 @@ pub enum ErlType {
   List {
     /// Union type for all elements
     elements: Arc<ErlType>,
-    /// Tail element if not NIL
-    tail: Arc<ErlType>,
+    /// Tail element if not NIL, otherwise None
+    tail: Option<Arc<ErlType>>,
   },
   /// Tuple-style strongly typed list of fixed size, with each element having own type
   StronglyTypedList {
     /// Type for each list element also
     elements: Vec<Arc<ErlType>>,
     /// Tail element if not NIL
-    tail: Arc<ErlType>,
+    tail: Option<Arc<ErlType>>,
   },
   /// Empty list []
   Nil,
@@ -89,8 +89,10 @@ pub enum ErlType {
   AnyFn,
   /// Describes a function type with multiple clauses and return types
   Fn {
+    /// For convenience arity is stored here, but each clause has same arity too
+    arity: usize,
     /// Function clauses
-    clauses: Vec<FnClauseType>
+    clauses: Vec<FnClauseType>,
   },
   /// fun name/2 style references, also remote references
   FnRef {
@@ -138,13 +140,23 @@ impl ErlType {
   pub fn list_of(t: ErlType) -> ErlType {
     ErlType::List {
       elements: t.into(),
-      tail: ErlType::Nil.into(),
+      tail: None,
     }
   }
 
-    /// Creates new function type with clauses
+  /// Creates new function type with clauses
   pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
-    ErlType::Fn { clauses }.into()
+    assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
+
+    let arity = clauses[0].arity();
+    assert!(clauses.iter().all(|c| c.arity() == arity),
+            "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
+            arity);
+
+    ErlType::Fn {
+      arity,
+      clauses,
+    }.into()
   }
 
   /// Shortcut to the subtype checker
@@ -160,7 +172,9 @@ impl ErlType {
   /// Checks whether type is an atom
   pub fn is_atom(&self) -> bool {
     return match self {
-      ErlType::Atom | ErlType::Boolean => true,
+      ErlType::Atom
+      | ErlType::Boolean => true,
+      ErlType::Singleton {val} => val.synthesize_type().is_atom(),
       _ => false,
     };
   }
@@ -168,7 +182,11 @@ impl ErlType {
   /// Checks whether type is a number
   pub fn is_number(&self) -> bool {
     return match self {
-      ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
+      ErlType::Number
+      | ErlType::Float
+      | ErlType::Integer
+      | ErlType::IntegerRange { .. } => true,
+      ErlType::Singleton {val} => val.synthesize_type().is_number(),
       _ => false,
     };
   }
@@ -176,7 +194,9 @@ impl ErlType {
   /// Checks whether type is an integer number
   pub fn is_integer(&self) -> bool {
     return match self {
-      ErlType::Integer | ErlType::IntegerRange { .. } => true,
+      ErlType::Integer
+      | ErlType::IntegerRange { .. } => true,
+      ErlType::Singleton {val} => val.synthesize_type().is_integer(),
       _ => false,
     };
   }
@@ -184,7 +204,9 @@ impl ErlType {
   /// Checks whether type is a tuple type
   pub fn is_tuple(&self) -> bool {
     return match self {
-      ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. } => true,
+      ErlType::AnyTuple
+      | ErlType::Tuple { .. }
+      | ErlType::IntegerRange { .. } => true,
       _ => false,
     };
   }
@@ -192,7 +214,17 @@ impl ErlType {
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     return match self {
-      ErlType::AnyList | ErlType::List { .. } | ErlType::StronglyTypedList { .. } => true,
+      ErlType::AnyList
+      | ErlType::List { .. }
+      | ErlType::StronglyTypedList { .. }
+      | ErlType::Nil => true,
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is an empty list (NIL)
+  pub fn is_nil(&self) -> bool {
+    return match self {
       ErlType::Nil => true,
       _ => false,
     };
@@ -201,7 +233,8 @@ impl ErlType {
   /// Checks whether type is a binary
   pub fn is_binary(&self) -> bool {
     return match self {
-      ErlType::AnyBinary | ErlType::Binary { .. } => true,
+      ErlType::AnyBinary
+      | ErlType::Binary { .. } => true,
       _ => false,
     };
   }
@@ -209,7 +242,8 @@ impl ErlType {
   /// Checks whether type is a map
   pub fn is_map(&self) -> bool {
     return match self {
-      ErlType::AnyMap | ErlType::Map { .. } => true,
+      ErlType::AnyMap
+      | ErlType::Map { .. } => true,
       _ => false,
     };
   }

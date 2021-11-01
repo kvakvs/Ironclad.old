@@ -16,4 +16,7 @@ impl FnClauseType {
   pub fn new(args: Vec<Arc<ErlType>>, ret_ty: Arc<ErlType>) -> Self {
     Self { args, ret_ty }
   }
+
+  /// Get the function clause argument count
+  pub fn arity(&self) -> usize { self.args.len() }
 }

@@ -3,27 +3,56 @@ extern crate function_name;
 
 mod test_util;
 
-use ::function_name::named;
-use compiler::erl_error::ErlResult;
 use std::ops::Deref;
+use ::function_name::named;
+use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
+use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
 use compiler::typing::erl_type::ErlType;
-use compiler::typing::synth::TypeBuilder;
 
 #[named]
 #[test]
-fn typing_simple() -> ErlResult<()> {
-  test_util::start(function_name!(), "Typing.Simple");
-  let code = "hello+2";
-  let mut module = Module::default();
+fn typing_synth() -> ErlResult<()> {
+  test_util::start(function_name!(), "Typing.Synth");
 
-  module.parse_erl_expr(code)?;
+  {
+    let list1 = Module::new_parse_expr("[1,2,atom]")?;
+    let t = list1.core_ast.synthesize_type();
+    println!("Synth list1: {}", &t);
+    if let ErlType::StronglyTypedList {elements, tail} = t.deref() {
+      assert!(elements[0].is_number());
+      assert!(elements[1].is_integer());
+      assert!(elements[2].is_atom());
 
-  let _ast = module.core_ast.clone();
+      let tail2 = tail.clone().unwrap_or(ErlType::Nil.into());
+      assert!(tail2.is_nil());
+      assert!(tail2.is_list());
+    } else {
+      panic!("Expected: StronglyTypedList, got {}", t)
+    }
+  }
 
-  println!("Parsed: {}", module.ast);
+  Ok(())
+}
 
-  println!("Synthesized type: {:?}", TypeBuilder::synthesize_from_core(&module.core_ast).deref());
+#[named]
+#[test]
+fn typing_expr_check() -> ErlResult<()> {
+  test_util::start(function_name!(), "Typing.ExprCheck");
+
+  {
+    let hello = Module::new_parse_expr("hello")?;
+    assert!(ErlType::Atom.is_supertype_of_expr(&hello.core_ast)?,
+            "Parsed atom 'hello' must be subtype of atom()");
+  }
+
+  {
+    let fn1 = Module::new_parse_fun("fun() -> 10 + 20.")?;
+    assert!(matches!(fn1.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn1.core_ast);
+    println!("Synth fn1: {}", fn1.core_ast.synthesize_type());
+    assert!(ErlType::Integer.is_supertype_of_expr(&fn1.core_ast)?,
+            "Parsed fun() must be subtype of integer()");
+  }
 
   Ok(())
 }

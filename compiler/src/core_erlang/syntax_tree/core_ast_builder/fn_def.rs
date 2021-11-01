@@ -10,6 +10,7 @@ use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 use crate::core_erlang::syntax_tree::node::case::Case;
 use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::core_erlang::syntax_tree::node::core_fn_clause::CoreFnClause;
 use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
@@ -102,22 +103,29 @@ impl CoreAstBuilder {
     CaseClause::new(loc, bad_arg_exprs, body)
   }
 
+  /// Directly translate args and body to core
+  fn create_core_fnclause(env: &Module, efnc: &ErlFnClause) -> CoreFnClause {
+    CoreFnClause {
+      args: efnc.args.iter()
+          .map(|efnc_ast| CoreAstBuilder::build(env, efnc_ast))
+          .collect(),
+      body: CoreAstBuilder::build(env, &efnc.body),
+      guard: efnc.guard_expr.as_ref()
+          .map(|ast| CoreAstBuilder::build(env, &ast)),
+    }
+  }
+
   /// Given a FnDef, produce a CoreAst equivalent new function definition with an optional nested
   /// case for multiple clauses
   #[named]
   pub(crate) fn create_from_fndef(env: &Module, ast: &Arc<ErlAst>) -> Arc<CoreAst> {
-    if let ErlAst::FnDef(fn_def) = ast.deref() {
-      // Build the new core body, which can be a new case switch for clauses and guards, or just the
-      // input body, for a single simple clause
-      let core_body = Self::create_fnbody(env, fn_def);
-      let args = iter::repeat(()).take(fn_def.funarity.arity)
-          .map(|_| CoreAst::new_unique_var("arg").into())
+    if let ErlAst::FnDef(erl_fndef) = ast.deref() {
+      let clauses = erl_fndef.clauses.iter()
+          .map(|efnc| Self::create_core_fnclause(env, efnc))
           .collect();
-
-      let core_fndef: Arc<FnDef> = FnDef::new(fn_def.location.clone(),
-                                              fn_def.funarity.clone(),
-                                              core_body,
-                                              args).into();
+      let core_fndef: Arc<FnDef> = FnDef::new(erl_fndef.location.clone(),
+                                              erl_fndef.funarity.clone(),
+                                              clauses).into();
 
       if let Ok(mut registry) = env.registry.write() {
         registry.add_function(core_fndef.clone());

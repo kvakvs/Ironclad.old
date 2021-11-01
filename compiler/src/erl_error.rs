@@ -121,6 +121,11 @@ impl ErlError {
     Err(ErlError::Internal(message))
   }
 
+  /// Wraps a `TypeError`
+  pub fn type_error<T>(terr: TypeError) -> ErlResult<T> {
+    Err(ErlError::TypeError(terr))
+  }
+
   /// Creates a preprocessor error from a filename and a message
   pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
     Err(ErlError::PreprocessorParse {

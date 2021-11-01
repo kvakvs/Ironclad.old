@@ -1,10 +1,11 @@
 //! Defines a new function in Core Erlang
-use std::ops::Deref;
 use std::sync::Arc;
 
 use crate::mfarity::MFArity;
-use crate::core_erlang::syntax_tree::core_ast::CoreAst;
+use crate::core_erlang::syntax_tree::node::core_fn_clause::CoreFnClause;
 use crate::source_loc::SourceLoc;
+use crate::typing::erl_type::ErlType;
+use crate::typing::fn_clause_type::FnClauseType;
 
 /// Defines a new function in Core Erlang
 /// Argument handling is moved from the clauses into the function body
@@ -14,21 +15,46 @@ pub struct FnDef {
   pub location: SourceLoc,
   /// Function name/arity, module is always None
   pub funarity: MFArity,
-  /// Function body AST, for multi-clause functions begins with a Case node.
-  pub body: Arc<CoreAst>,
-  /// Function arguments, CoreAst::Vars with unique numbers
-  pub args: Vec<Arc<CoreAst>>,
+  // /// Function body AST, for multi-clause functions begins with a Case node.
+  // pub body: Arc<CoreAst>,
+  // /// Function arguments, CoreAst::Vars with unique numbers
+  // pub args: Vec<Arc<CoreAst>>,
+  /// Core code split into function clause branches. In Core Erlang these should join as a big
+  /// case switch.
+  pub clauses: Vec<CoreFnClause>,
 }
 
 impl FnDef {
   /// Create a new function definition for Core Erlang AST
-  pub fn new(loc: SourceLoc, funarity: MFArity, body: Arc<CoreAst>, args: Vec<Arc<CoreAst>>) -> Self {
-    assert!(args.iter().all(|el| if let CoreAst::Var(_) = el.deref() { true } else { false }));
+  pub fn new(loc: SourceLoc, funarity: MFArity, clauses: Vec<CoreFnClause>) -> Self {
+    // assert!(args.iter().all(|el| if let CoreAst::Var(_) = el.deref() { true } else { false }));
     Self {
       location: loc,
       funarity,
-      body,
-      args,
+      clauses,
     }
+  }
+
+  /// Produce a function `ErlType` with all clauses and their return types
+  pub fn synthesize_function_type(&self) -> Arc<ErlType> {
+    let clauses: Vec<FnClauseType> = self.clauses.iter()
+        .map(|fnc| fnc.synthesize_fnctype())
+        .collect();
+    ErlType::Fn {
+      arity: self.funarity.arity,
+      clauses
+    }.into()
+  }
+
+  /// Produce a function return type, as union of all clauses returns
+  pub fn synthesize_return_type(&self) -> Arc<ErlType> {
+    // TODO: Filter out incompatible clauses
+    let clauses: Vec<FnClauseType> = self.clauses.iter()
+        .map(|fnc| fnc.synthesize_fnctype())
+        .collect();
+    ErlType::Fn {
+      arity: self.funarity.arity,
+      clauses
+    }.into()
   }
 }

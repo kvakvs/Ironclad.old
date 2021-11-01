@@ -261,10 +261,9 @@ impl std::fmt::Display for CoreAst {
       }
 
       CoreAst::FnDef(fn_def) => {
-        write!(f, "{} = (fun ", fn_def.funarity)?;
-        display::display_paren_list(&fn_def.args, f)?;
-        write!(f, " -> {}", fn_def.body)?;
-        write!(f, "}})")
+        write!(f, "{} = (", fn_def.funarity)?;
+        display::display_semicolon_separated(&fn_def.clauses, f)?;
+        write!(f, ")")
       }
       CoreAst::Var(core_var) => write!(f, "{}", core_var.name),
       CoreAst::Apply(app) => write!(f, "{}", app),

@@ -4,14 +4,20 @@ use std::fmt::{Display, Formatter};
 
 /// Indicates various type problems
 pub enum TypeError {
-  /// Dummy
-  None,
+  /// Synthesized type for an expression isn't a subtype of the given type
+  ExprNotASubtype {
+    /// Type which is expected
+    ty: String,
+    /// Type to check: type synthesized from an expression
+    expr_ty: String,
+  },
 }
 
 impl Display for TypeError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeError::None => write!(f, "No type error, all is good"),
+      TypeError::ExprNotASubtype { ty, expr_ty } =>
+        write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
     }
   }
 }

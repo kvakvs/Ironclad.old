@@ -9,6 +9,15 @@ use crate::typing::erl_type::ErlType;
 pub struct SubtypeChecker {}
 
 impl SubtypeChecker {
+  /// is_subtype check for `Option<Erltype>` which treats `None` as `[]`
+  pub fn is_subtype_for_list_tail(sub_ty: &Option<Arc<ErlType>>,
+                                  sup_ty: &Option<Arc<ErlType>>) -> bool {
+    let nil = Arc::new(ErlType::Nil); // TODO: Some global NIL for all our NIL needs?
+    let subt = sub_ty.clone().unwrap_or(nil.clone());
+    let supt = sup_ty.clone().unwrap_or(nil);
+    Self::is_subtype(&subt, &supt)
+  }
+
   /// Checks whether sub_ty is a subtype of super_ty
   pub fn is_subtype(sub_ty: &ErlType, super_ty: &ErlType) -> bool {
     match super_ty.deref() {
@@ -22,8 +31,9 @@ impl SubtypeChecker {
       ErlType::Integer => Self::is_subtype_of_integer(sub_ty),
       // ErlType::IntegerRange { from, to } => { todo: only singletons and nested ranges and must be from <= n <= to }
 
-      // ErlType::AnyTuple => {}
-      // ErlType::Tuple { .. } => {}
+      ErlType::AnyTuple => Self::is_subtype_of_anytuple(sub_ty),
+      ErlType::Tuple { elements: supertype_elements } =>
+        Self::is_subtype_of_tuple(supertype_elements, sub_ty),
       // ErlType::Record { .. } => {}
 
       ErlType::AnyList => Self::is_subtype_of_anylist(sub_ty),
@@ -151,17 +161,17 @@ impl SubtypeChecker {
   }
 
   /// Checks whether sub_ty matches a list `[supertype_elements() | supertype_tail()]` type.
-  fn is_subtype_of_list(supertype_elements: &ErlType, supertype_tail: &ErlType,
+  fn is_subtype_of_list(supertype_elements: &ErlType, supertype_tail: &Option<Arc<ErlType>>,
                         sub_ty: &ErlType) -> bool {
     match sub_ty {
       // For superlist to include a sublist
       ErlType::List { elements: subtype_elements, tail: subtype_tail } => {
-        subtype_tail.is_subtype_of(supertype_tail)
+        Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
             && subtype_elements.is_subtype_of(supertype_elements)
       }
       // For superlist to include typed sublist
       ErlType::StronglyTypedList { elements: subtype_elements, tail: subtype_tail } => {
-        subtype_tail.is_subtype_of(supertype_tail)
+        Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
             && subtype_elements.iter().all(|subt| subt.is_subtype_of(supertype_elements))
       }
       ErlType::Nil => true,
@@ -170,13 +180,14 @@ impl SubtypeChecker {
   }
 
   /// Checks whether sub_ty matches a list `[supertype_elements() | supertype_tail()]` type.
-  fn is_subtype_of_strongly_typed_list(supertype_elements: &Vec<Arc<ErlType>>, supertype_tail: &ErlType,
+  fn is_subtype_of_strongly_typed_list(supertype_elements: &Vec<Arc<ErlType>>,
+                                       supertype_tail: &Option<Arc<ErlType>>,
                                        sub_ty: &ErlType) -> bool {
     match sub_ty {
       // For typed list to include a list
       ErlType::List { elements: subtype_elements, tail: subtype_tail } => {
         // Sublist type must be subtype of each superlist element
-        subtype_tail.is_subtype_of(supertype_tail)
+        Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
             && supertype_elements.iter()
             .all(|supt| subtype_elements.is_subtype_of(supt))
       }
@@ -185,12 +196,49 @@ impl SubtypeChecker {
         // Length must match
         // AND Each element of sublist must be subtype of corresponding element of superlist
         subtype_elements.len() == supertype_elements.len()
-            && subtype_tail.is_subtype_of(supertype_tail)
+            && Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
             && subtype_elements.iter()
             .zip(supertype_elements.iter())
             .all(|(subt, supert)| subt.is_subtype_of(supert))
       }
       ErlType::Nil => true,
+      _ => false,
+    }
+  }
+
+  /// Checks whether sub_ty matches a tuple() type.
+  /// A tuple() includes any other tuples() typed and untyped, and records
+  fn is_subtype_of_anytuple(sub_ty: &ErlType) -> bool {
+    match sub_ty {
+      ErlType::Tuple { .. } | ErlType::Record { .. } => true,
+      _ => false,
+    }
+  }
+
+  /// Checks whether sub_ty matches a tuple(T1, T2, ...) type.
+  /// A tuple(T1, T2, ...) only includes tuples of the same size, where each element is a subtype,
+  /// and records of tuple-1 size, where subrecord's tag would serve as supertuple's first element
+  fn is_subtype_of_tuple(supertuple_elements: &Vec<Arc<ErlType>>, sub_ty: &ErlType) -> bool {
+    match sub_ty {
+      ErlType::Tuple { elements: subtuple_elements } => {
+        // lengths must match, and each element in subtuple must be a subtype of each corresponding
+        // element of the supertuple
+        subtuple_elements.len() == supertuple_elements.len()
+            && subtuple_elements.iter()
+            .zip(supertuple_elements.iter())
+            .all(|(subt, supert)| subt.is_subtype_of(supert))
+      }
+      ErlType::Record { tag: subrecord_tag, fields: subrecord_fields } => {
+        // lengths must match counting the record tag as an element
+        // record tag (atom) must be a subtype of 1st element of supertuple
+        // remaining record fields must be subtypes of the following supertuple elements
+        !supertuple_elements.is_empty()
+            && subrecord_fields.len() + 1 == supertuple_elements.len()
+            && ErlType::new_atom(subrecord_tag).is_subtype_of(&supertuple_elements[0])
+            && subrecord_fields.iter()
+            .zip(supertuple_elements[1..].iter())
+            .all(|((_, sub_t), super_t)| sub_t.is_subtype_of(super_t))
+      }
       _ => false,
     }
   }

@@ -75,6 +75,20 @@ impl Module {
     }
   }
 
+  /// Creates a module, where its AST comes from an expression
+  pub fn new_parse_expr(input: &str) -> ErlResult<Self> {
+    let mut module = Module::default();
+    module.parse_erl_expr(input)?;
+    Ok(module)
+  }
+
+  /// Creates a module, where its AST comes from a function
+  pub fn new_parse_fun(input: &str) -> ErlResult<Self> {
+    let mut module = Module::default();
+    module.parse_erl_fun(input)?;
+    Ok(module)
+  }
+
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
   pub fn add_error(&self, err: ErlError) -> bool {
@@ -132,10 +146,10 @@ impl Module {
 
     // build initial AST from parse
     self.ast = self.build_ast_single_node(parse_output)?;
-    println!("\n{}: ErlAST {}", function_name!(), self.ast);
+    // println!("\n{}: ErlAST {}", function_name!(), self.ast);
 
     self.core_ast = CoreAstBuilder::build(self, &self.ast);
-    println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
+    // println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     Ok(())
   }
@@ -149,5 +163,10 @@ impl Module {
   /// Parses code fragment with an Erlang expression
   pub fn parse_erl_expr(&mut self, input: &str) -> ErlResult<()> {
     self.parse_erl_str(Rule::expr, input)
+  }
+
+  /// Parses code fragment with an Erlang function
+  pub fn parse_erl_fun(&mut self, input: &str) -> ErlResult<()> {
+    self.parse_erl_str(Rule::function_def, input)
   }
 }

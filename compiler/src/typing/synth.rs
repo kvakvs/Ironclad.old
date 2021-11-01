@@ -15,7 +15,7 @@ impl TypeBuilder {
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
       CoreAst::Attributes(_) => unreachable!("Should not be synthesizing type from module attrs"),
       CoreAst::ModuleFuns(_) => unreachable!("Should not be synthesizing type from module functions section"),
-      // CoreAst::FnDef(_) => {}
+      CoreAst::FnDef(body) => body.synthesize_return_type(),
       // CoreAst::FnRef { .. } => {}
       // CoreAst::Case(_) => {}
       // CoreAst::Let(_) => {}
@@ -26,9 +26,24 @@ impl TypeBuilder {
       CoreAst::Lit { value, .. } => ErlType::new_singleton(value),
       CoreAst::BinOp { op, .. } => op.synthesize_type(),
       // CoreAst::UnOp { .. } => {}
-      CoreAst::List { .. } => ErlType::AnyList.into(),
+      CoreAst::List { elements, tail, .. } => Self::synthesize_list_type(elements, tail),
       CoreAst::Tuple { .. } => ErlType::AnyTuple.into(),
       other => unimplemented!("Don't know how to synthesize type from {}", other),
     }
+  }
+
+  /// Having a list `[...]` AST node, try synthesize its type as precise as possible
+  fn synthesize_list_type(elements: &Vec<Arc<CoreAst>>,
+                          tail: &Option<Arc<CoreAst>>) -> Arc<ErlType> {
+    let elements = elements.iter()
+        .map(|el| el.synthesize_type())
+        .collect();
+    ErlType::StronglyTypedList {
+      elements,
+      tail: match tail {
+        None => None,
+        Some(t) => Some(t.synthesize_type())
+      }
+    }.into()
   }
 }

@@ -1,5 +1,6 @@
 //! Defines some more complex node structs for Core Erlang AST
 pub mod fn_def;
+pub mod core_fn_clause;
 pub mod case;
 pub mod let_expr;
 pub mod var;

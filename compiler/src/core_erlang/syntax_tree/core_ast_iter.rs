@@ -17,7 +17,19 @@ impl CoreAst {
       | CoreAst::Module { .. } | CoreAst::FnRef { .. } => None,
 
       CoreAst::ModuleFuns(lst) => Some(lst.clone()),
-      CoreAst::FnDef(fn_def) => Some(vec![fn_def.body.clone()]),
+      CoreAst::FnDef(fn_def) => {
+        let children = fn_def.clauses.iter()
+            .map(|c| -> Vec<Arc<CoreAst>> {
+              vec![
+                c.body.clone(),
+                c.guard.as_ref()
+                    .map_or(CoreAst::Empty.into(), |cg| cg.clone()),
+              ]
+            })
+            .flatten()
+            .collect();
+        Some(children)
+      }
 
       CoreAst::Apply(app) => {
         let mut r: Vec<Arc<CoreAst>> = vec![app.target.clone()];
