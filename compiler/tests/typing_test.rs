@@ -16,11 +16,11 @@ fn typing_synth() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.Synth");
 
   {
-    let list1 = Module::new_parse_expr("[1,2,atom]")?;
+    let list1 = Module::new_parse_expr("[3.14159265358979 , 2,atom]")?;
     let t = list1.core_ast.synthesize_type();
     println!("Synth list1: {}", &t);
     if let ErlType::StronglyTypedList {elements, tail} = t.deref() {
-      assert!(elements[0].is_number());
+      assert!(elements[0].is_float());
       assert!(elements[1].is_integer());
       assert!(elements[2].is_atom());
 

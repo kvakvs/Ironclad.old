@@ -8,9 +8,10 @@ use crate::typing::erl_type::ErlType;
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, Debug)]
 pub enum Literal {
-  // TODO: Big integer
   /// Small enough to fit into a machine word
   Integer(isize),
+  /// TODO: Contains big integer
+  BigInteger,
 
   /// A 8-byte wide float
   Float(f64),
@@ -51,6 +52,7 @@ impl Hash for Literal {
         'i'.hash(state);
         n.hash(state);
       }
+      Literal::BigInteger => unimplemented!("Big integer hash"),
       Literal::Float(f) => {
         'f'.hash(state);
         format!("{}", f).hash(state);
@@ -88,7 +90,8 @@ impl Literal {
   /// Synthesizes a type of this literal
   pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
-      Literal::Integer(_) => ErlType::Integer.into(),
+      Literal::Integer(_)
+      | Literal::BigInteger => ErlType::Integer.into(),
       Literal::Float(_) => ErlType::Float.into(),
       Literal::Atom(_) => ErlType::Atom.into(),
       Literal::Bool(_) => ErlType::Boolean.into(),

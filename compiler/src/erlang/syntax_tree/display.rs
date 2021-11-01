@@ -90,6 +90,7 @@ impl std::fmt::Display for Literal {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
       Literal::Integer(i) => write!(f, "{}", i),
+      Literal::BigInteger => write!(f, "<NotImpl:Printing BigInteger>"),
       Literal::Float(flt) => write!(f, "{}", flt),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => write!(f, "{}", b),

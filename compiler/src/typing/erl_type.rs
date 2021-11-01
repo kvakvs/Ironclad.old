@@ -1,5 +1,6 @@
 //! Defines an Erlang-type
 use std::fmt::Formatter;
+use std::ops::Deref;
 use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
@@ -174,7 +175,12 @@ impl ErlType {
     return match self {
       ErlType::Atom
       | ErlType::Boolean => true,
-      ErlType::Singleton {val} => val.synthesize_type().is_atom(),
+      ErlType::Singleton { val } => {
+        match val.deref() {
+          Literal::Atom(_) => true,
+          _ => false,
+        }
+      }
       _ => false,
     };
   }
@@ -186,7 +192,14 @@ impl ErlType {
       | ErlType::Float
       | ErlType::Integer
       | ErlType::IntegerRange { .. } => true,
-      ErlType::Singleton {val} => val.synthesize_type().is_number(),
+      ErlType::Singleton { val } => {
+        match val.deref() {
+          Literal::Integer(_)
+          | Literal::BigInteger
+          | Literal::Float(_) => true,
+          _ => false
+        }
+      }
       _ => false,
     };
   }
@@ -196,7 +209,29 @@ impl ErlType {
     return match self {
       ErlType::Integer
       | ErlType::IntegerRange { .. } => true,
-      ErlType::Singleton {val} => val.synthesize_type().is_integer(),
+      ErlType::Singleton { val } => {
+        match val.deref() {
+          Literal::Integer(_)
+          | Literal::BigInteger => true,
+          _ => false
+        }
+      }
+      _ => false,
+    };
+  }
+
+  /// Checks whether type is a floating point number (or an integer, because compatible why not)
+  pub fn is_float(&self) -> bool {
+    return match self {
+      ErlType::Float => true,
+      ErlType::Singleton { val } => {
+        match val.deref() {
+          Literal::Float(_)
+          | Literal::Integer(_)
+          | Literal::BigInteger => true,
+          _ => false
+        }
+      }
       _ => false,
     };
   }
