@@ -19,4 +19,20 @@ impl FnClauseType {
 
   /// Get the function clause argument count
   pub fn arity(&self) -> usize { self.args.len() }
+
+  /// Check whether calling any clause of `supertype` function type would be compatible with calling
+  /// this clause with the same args.
+  pub fn is_any_clause_compatible(&self, supertype: &Vec<FnClauseType>) -> bool {
+    supertype.iter()
+        .any(|sup| self.is_clause_compatible(sup))
+  }
+
+  /// Check whether `self` is a subtype of super_clause (i.e. if calling `self`, will be compatible
+  /// with calling `super_clause` with the same args.
+  fn is_clause_compatible(&self, super_clause: &FnClauseType) -> bool {
+    self.args.iter()
+        .zip(super_clause.args.iter())
+        .all(|(sub_arg, super_arg)| sub_arg.is_subtype_of(super_arg))
+    && self.ret_ty.is_subtype_of(&super_clause.ret_ty)
+  }
 }

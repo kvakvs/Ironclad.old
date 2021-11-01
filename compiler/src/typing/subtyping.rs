@@ -4,6 +4,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
+use crate::typing::fn_clause_type::FnClauseType;
 
 /// Hosts code to check the is-subtype-of relation
 pub struct SubtypeChecker {}
@@ -64,7 +65,9 @@ impl SubtypeChecker {
         }
       }
       // only can be subtype of self (equality checked at the top)
-      ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda => false,
+      ErlType::Fn { clauses, arity } =>
+        Self::is_subtype_of_fn(*arity, clauses, sub_ty),
+      ErlType::FnRef { .. } | ErlType::Lambda => false,
 
       // only can be subtype of self (equality checked at the top)
       ErlType::Pid | ErlType::Reference | ErlType::Port | ErlType::Singleton { .. } => false,
@@ -240,6 +243,21 @@ impl SubtypeChecker {
             .all(|((_, sub_t), super_t)| sub_t.is_subtype_of(super_t))
       }
       _ => false,
+    }
+  }
+
+  /// Checks whether sub_ty matches a regular Erlang function type with possibly multiple clauses
+  /// and multiple return types.
+  fn is_subtype_of_fn(sup_arity: usize, sup_clauses: &Vec<FnClauseType>, sub_ty: &ErlType) -> bool {
+    match sub_ty {
+      ErlType::Fn { arity: sub_arity, clauses: sub_clauses } => {
+        // Arities must match, and
+        // any clause of subfn must be compatible with any clause of (be a subtype of) superfn
+        sup_arity == *sub_arity
+            && sub_clauses.iter().any(|subc| subc.is_any_clause_compatible(sup_clauses))
+      }
+      ErlType::FnRef { .. } => unimplemented!("Matching reference to a function"),
+      _ => false
     }
   }
 }

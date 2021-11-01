@@ -185,6 +185,19 @@ impl ErlType {
     };
   }
 
+  /// Checks whether type is a literal atom of value
+  pub fn is_lit_atom(&self, s: &str) -> bool {
+    return match self {
+      ErlType::Singleton { val } => {
+        match val.deref() {
+          Literal::Atom(actual) => actual == s,
+          _ => false,
+        }
+      }
+      _ => false,
+    };
+  }
+
   /// Checks whether type is a number
   pub fn is_number(&self) -> bool {
     return match self {
@@ -253,6 +266,12 @@ impl ErlType {
       | ErlType::List { .. }
       | ErlType::StronglyTypedList { .. }
       | ErlType::Nil => true,
+      ErlType::Singleton { val: singleton } => {
+        match singleton.deref() {
+          Literal::List{..} | Literal::String{..} => true,
+          _ => false
+        }
+      }
       _ => false,
     };
   }

@@ -32,6 +32,20 @@ fn typing_synth() -> ErlResult<()> {
     }
   }
 
+  {
+    let tup1 = Module::new_parse_expr("{tuple, 1.2, 3, \"hello\"}")?;
+    let t = tup1.core_ast.synthesize_type();
+    println!("Synth tup1: {}", &t);
+    if let ErlType::Tuple {elements} = t.deref() {
+      assert!(elements[0].is_lit_atom("tuple"), "t[0] - expected 'tuple', got {}", elements[0]);
+      assert!(elements[1].is_float(), "t[1] - expected float, got {}", elements[1]);
+      assert!(elements[2].is_integer(), "t[2] - expected integer, got {}", elements[2]);
+      assert!(elements[3].is_list(), "t[3] - expected string, got {}", elements[3]);
+    } else {
+      panic!("Expected: Tuple, got {}", t)
+    }
+  }
+
   Ok(())
 }
 

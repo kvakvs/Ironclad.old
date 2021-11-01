@@ -158,6 +158,22 @@ impl ErlAst {
     }.into()
   }
 
+  /// Create a new literal AST node of a floating point number
+  pub fn new_lit_float(location: SourceLoc, val: &str) -> Arc<ErlAst> {
+    ErlAst::Lit {
+      location,
+      value: Literal::Float(val.parse().unwrap()).into(),
+    }.into()
+  }
+
+  /// Create a new literal AST node of a "string"
+  pub fn new_lit_string(location: SourceLoc, val: &str) -> Arc<ErlAst> {
+    ErlAst::Lit {
+      location,
+      value: Literal::String(String::from(val)).into(),
+    }.into()
+  }
+
   /// Create a new AST node for a list of some expressions
   pub fn new_list(location: SourceLoc, elements: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node

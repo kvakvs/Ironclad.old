@@ -27,7 +27,7 @@ impl TypeBuilder {
       CoreAst::BinOp { op, .. } => op.synthesize_type(),
       // CoreAst::UnOp { .. } => {}
       CoreAst::List { elements, tail, .. } => Self::synthesize_list_type(elements, tail),
-      CoreAst::Tuple { .. } => ErlType::AnyTuple.into(),
+      CoreAst::Tuple { elements, .. } => Self::synthesize_tuple_type(elements),
       other => unimplemented!("Don't know how to synthesize type from {}", other),
     }
   }
@@ -43,7 +43,15 @@ impl TypeBuilder {
       tail: match tail {
         None => None,
         Some(t) => Some(t.synthesize_type())
-      }
+      },
     }.into()
+  }
+
+  /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
+  fn synthesize_tuple_type(elements: &Vec<Arc<CoreAst>>) -> Arc<ErlType> {
+    let elements = elements.iter()
+        .map(|el| el.synthesize_type())
+        .collect();
+    ErlType::Tuple { elements }.into()
   }
 }

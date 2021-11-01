@@ -39,18 +39,22 @@ impl CoreAstBuilder {
       ErlAst::FnDef { .. } => Self::create_from_fndef(env, ast),
       // ErlAst::CClause(_, _) => {}
       // ErlAst::MFA { .. } => {}
-      ErlAst::Var(erl_var) => CoreAstBuilder::core_from_var(erl_var),
-      ErlAst::Apply(app) => CoreAstBuilder::core_from_apply(env, &app),
+      ErlAst::Var(erl_var) => Self::core_from_var(erl_var),
+      ErlAst::Apply(app) => Self::core_from_apply(env, &app),
       // ErlAst::Case(_, _) => {}
-      ErlAst::Lit { location: loc, value: lit } => CoreAstBuilder::core_from_literal(loc, lit),
+      ErlAst::Lit { location: loc, value: lit } => {
+        Self::core_from_literal(loc, lit)
+      }
       ErlAst::BinaryOp(loc, binop) => {
-        CoreAstBuilder::core_from_binaryop(env, loc, &binop)
+        Self::core_from_binaryop(env, loc, &binop)
       }
       // ErlAst::UnaryOp(_, _) => {}
       ErlAst::List { location, elements, tail } => {
-        CoreAstBuilder::core_from_list(env, location, elements, tail)
+        Self::core_from_list(env, location, elements, tail)
       }
-      // ErlAst::Tuple { .. } => {}
+      ErlAst::Tuple { location, elements, .. } => {
+        Self::core_from_tuple(env, location, elements)
+      }
 
       other => unimplemented!("{}: Don't know how to convert ErlAst {:?} into CoreAst",
                               function_name!(), other)
@@ -67,6 +71,17 @@ impl CoreAstBuilder {
           .map(|each_el| Self::build(env, each_el))
           .collect(),
       tail: tail.as_ref().map(|t| Self::build(env, t)),
+    }.into()
+  }
+
+  /// From Erl tuple rewrap a Core tuple
+  fn core_from_tuple(env: &Module, location: &SourceLoc,
+                     elements: &Vec<Arc<ErlAst>>) -> Arc<CoreAst> {
+    CoreAst::Tuple {
+      location: location.clone(),
+      elements: elements.iter()
+          .map(|each_el| Self::build(env, each_el))
+          .collect(),
     }.into()
   }
 

@@ -286,8 +286,13 @@ impl Module {
         ErlAst::new_lit_int(pair.as_span().into(), val)
       }
       Rule::atom => ErlAst::new_lit_atom(pair.as_span().into(), pair.as_str()),
+      Rule::number_float => ErlAst::new_lit_float(pair.as_span().into(), pair.as_str()),
+      Rule::string => {
+        let inner = pair.into_inner().into_iter().next().unwrap();
+        ErlAst::new_lit_string(inner.as_span().into(), inner.as_str())
+      },
 
-      other => todo!("parse_literal: unknown parse node {:?}", other),
+      other => unimplemented!("Don't know how to parse {:?}", other),
     };
     Ok(result)
   }
