@@ -6,6 +6,7 @@ use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::display;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::scope::Scope;
 
 /// Core function clause, keep it split without building a big case operator, for all function
 /// clauses for type checking purposes.
@@ -33,15 +34,17 @@ impl std::fmt::Display for CoreFnClause {
 impl CoreFnClause {
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self) -> FnClauseType {
+  pub fn synthesize_clause_type(&self, env: &Scope) -> FnClauseType {
     FnClauseType {
       args: self.args.iter()
-          .map(|a| a.synthesize_type())
+          .map(|a| a.synthesize_type(env))
           .collect(),
-      ret_ty: self.synthesize_clause_return_type(),
+      ret_ty: self.synthesize_clause_return_type(env),
     }
   }
 
   /// Return type from the body AST
-  pub fn synthesize_clause_return_type(&self) -> Arc<ErlType> { self.body.synthesize_type() }
+  pub fn synthesize_clause_return_type(&self, env: &Scope) -> Arc<ErlType> {
+    self.body.synthesize_type(env)
+  }
 }

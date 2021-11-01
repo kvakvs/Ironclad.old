@@ -18,6 +18,7 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
 use crate::typing::erl_type::ErlType;
+use crate::typing::scope::Scope;
 use crate::typing::synth::TypeBuilder;
 
 /// AST node in Core Erlang (parsed or generated)
@@ -139,8 +140,8 @@ impl CoreAst {
   }
 
   /// Shortcut to call the typebuilder's synthesize
-  pub fn synthesize_type(&self) -> Arc<ErlType> {
-    TypeBuilder::synthesize_from_core(self)
+  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
+    TypeBuilder::synthesize_from_core(env, self)
   }
 
   // /// Gets the type of an AST node

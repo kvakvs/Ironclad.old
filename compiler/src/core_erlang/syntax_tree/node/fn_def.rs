@@ -6,6 +6,7 @@ use crate::core_erlang::syntax_tree::node::core_fn_clause::CoreFnClause;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::scope::Scope;
 
 /// Defines a new function in Core Erlang
 /// Argument handling is moved from the clauses into the function body
@@ -36,9 +37,9 @@ impl FnDef {
   }
 
   /// Produce a function `ErlType` with all clauses and their return types
-  pub fn synthesize_function_type(&self) -> Arc<ErlType> {
+  pub fn synthesize_function_type(&self, env: &Scope) -> Arc<ErlType> {
     let clauses: Vec<FnClauseType> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_type())
+        .map(|fnc| fnc.synthesize_clause_type(env))
         .collect();
     ErlType::Fn {
       arity: self.funarity.arity,
@@ -47,10 +48,10 @@ impl FnDef {
   }
 
   /// Produce a function return type, as union of all clauses returns
-  pub fn synthesize_return_type(&self) -> Arc<ErlType> {
+  pub fn synthesize_return_type(&self, env: &Scope) -> Arc<ErlType> {
     // TODO: Filter out incompatible clauses
     let clauses_ret = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_return_type())
+        .map(|fnc| fnc.synthesize_clause_return_type(env))
         .collect();
     ErlType::new_union(clauses_ret)
   }

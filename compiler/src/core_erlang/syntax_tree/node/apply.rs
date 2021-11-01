@@ -7,6 +7,7 @@ use crate::display;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::scope::Scope;
 use crate::typing::synth::TypeBuilder;
 
 /// Contains a function call
@@ -31,9 +32,9 @@ impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing.
   /// TODO: This should synthesize return type not the expected fn type
-  pub fn synthesize_type(&self) -> Arc<ErlType> {
+  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
     let arg_types: Vec<Arc<ErlType>> = self.args.iter()
-        .map(|arg| TypeBuilder::synthesize_from_core(arg))
+        .map(|arg| TypeBuilder::synthesize_from_core(env, arg))
         .collect();
     let ret_ty = ErlType::Any.into(); // TODO: Deduct here the expected types or something?
 

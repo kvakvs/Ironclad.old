@@ -29,8 +29,8 @@ bindable_expr = { var | "_" | literal }
 expr = {
     ( application_or_term ~ ( expr_operator ~ application_or_term )* )
 }
-application_or_term = _{ application | expr_term }
-expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal | list | tuple | lambda }
+application_or_term = _{ application | lambda | expr_term }
+expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal | list | tuple }
 list = { "[" ~ expr ~ ("," ~ expr)* ~ "]" }
 tuple = { "{" ~ expr ~ ("," ~ expr)* ~ "}" }
 
@@ -145,7 +145,7 @@ ident = ${ !keyword ~ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIG
 capitalized_ident = ${ (ASCII_ALPHA_UPPER | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 
-keyword = { "after" | "and" | "andalso" | "band" | "begin"| "bnot" | "bor" | "bsl" | "bsr" | "bxor" | "case"
+keyword = _{ "after" | "and" | "andalso" | "band" | "begin"| "bnot" | "bor" | "bsl" | "bsr" | "bxor" | "case"
  | "catch" | "cond" | "div" | "end" | "fun" | "if"| "let" | "not" | "of" | "or"| "orelse" | "receive" | "rem"
  | "try" | "when" | "xor" }
 

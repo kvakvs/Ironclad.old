@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
 use crate::typing::erl_type::ErlType;
+use crate::typing::scope::Scope;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]
@@ -18,9 +19,9 @@ pub struct BinaryOperatorExpr {
 
 impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
-  pub fn synthesize_type(&self) -> Arc<ErlType> {
-    let left = self.left.synthesize_type();
-    let right = self.right.synthesize_type();
+  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
+    let left = self.left.synthesize_type(env);
+    let right = self.right.synthesize_type(env);
 
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
@@ -62,7 +63,7 @@ impl BinaryOperatorExpr {
       //   // Type of -- will be left, probably some elements which should be missing, but how do we know?
       //   self.left.get_type()
       // }
-      CoreBinaryOp::Comma => self.right.synthesize_type(),
+      CoreBinaryOp::Comma => self.right.synthesize_type(env),
 
       _ => unimplemented!("Don't know how to synthesize binary operation type for {:?}", self),
     }
