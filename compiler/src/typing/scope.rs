@@ -17,4 +17,13 @@ impl Scope {
       variables: Default::default()
     }
   }
+
+  /// Return new copy of Scope with a new variable added
+  pub fn add(&self, name: &str, t: Arc<ErlType>) -> Scope {
+    let mut new_variables = self.variables.clone();
+    new_variables.insert(String::from(name), t);
+    Scope {
+      variables: new_variables
+    }
+  }
 }

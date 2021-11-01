@@ -74,7 +74,8 @@ fn typing_expr_check() -> ErlResult<()> {
   }
 
   {
-    let env = Scope::empty();
+    let env = Scope::empty()
+        .add("A", ErlType::Integer.into());
     let expr2 = Module::new_parse_expr("10 + A")?;
     assert!(matches!(expr2.core_ast.deref(), CoreAst::BinOp {..}), "Expected 10+A received {:?}", expr2.core_ast);
     println!("Synth expr2: {}", expr2.core_ast.synthesize_type(&env));

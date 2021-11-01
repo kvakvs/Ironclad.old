@@ -23,7 +23,12 @@ impl TypeBuilder {
       // CoreAst::Apply(_) => {}
       // CoreAst::Call(_) => {}
       // CoreAst::PrimOp { .. } => {}
-      CoreAst::Var(_v) => ErlType::Any.into(),
+      CoreAst::Var(v) => {
+        match env.variables.get(&v.name) {
+          None => ErlType::None.into(), // TODO: must be a variable not found error
+          Some(t) => t.clone(),
+        }
+      }
       CoreAst::Lit { value, .. } => ErlType::new_singleton(value),
       CoreAst::BinOp { op, .. } => op.synthesize_type(env),
       // CoreAst::UnOp { .. } => {}
