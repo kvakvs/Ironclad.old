@@ -6,6 +6,7 @@ use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::subtyping::SubtypeChecker;
+use crate::typing::type_union::TypeUnion;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
 #[derive(Debug, Eq, PartialEq)]
@@ -115,6 +116,9 @@ pub enum ErlType {
     /// Singleton's value, a literal
     val: Arc<Literal>
   },
+
+  /// Contains multiple types + operations on these types
+  Union(TypeUnion),
 }
 
 impl std::fmt::Display for ErlType {
@@ -146,7 +150,7 @@ impl ErlType {
   }
 
   /// Creates new function type with clauses
-  pub fn new_fn_type(clauses: Vec<FnClauseType>) -> Arc<ErlType> {
+  pub fn new_fn_type(clauses: Vec<FnClauseType>) -> ErlType {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
@@ -157,12 +161,16 @@ impl ErlType {
     ErlType::Fn {
       arity,
       clauses,
-    }.into()
+    }
   }
 
-  /// Shortcut to the subtype checker
-  pub fn is_subtype_of(&self, other: &ErlType) -> bool {
-    SubtypeChecker::is_subtype(self, other)
+  /// Wrapper to access type union construction
+  pub fn new_union(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+    match types.len() {
+      0 => ErlType::None.into(),
+      1 => types[0].clone(),
+      _ => ErlType::Union(TypeUnion::new(types)).into()
+    }
   }
 }
 
@@ -170,6 +178,11 @@ impl ErlType {
 // Type classification
 //
 impl ErlType {
+  /// Shortcut to the subtype checker
+  pub fn is_subtype_of(&self, other: &ErlType) -> bool {
+    SubtypeChecker::is_subtype(self, other)
+  }
+
   /// Checks whether type is an atom
   pub fn is_atom(&self) -> bool {
     return match self {
@@ -268,7 +281,7 @@ impl ErlType {
       | ErlType::Nil => true,
       ErlType::Singleton { val: singleton } => {
         match singleton.deref() {
-          Literal::List{..} | Literal::String{..} => true,
+          Literal::List { .. } | Literal::String { .. } => true,
           _ => false
         }
       }

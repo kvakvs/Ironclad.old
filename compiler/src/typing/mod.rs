@@ -5,3 +5,4 @@ pub mod subtyping;
 pub mod fn_clause_type;
 pub mod type_error;
 pub mod check;
+pub mod type_union;

@@ -55,17 +55,25 @@ fn typing_expr_check() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck");
 
   {
-    let hello = Module::new_parse_expr("hello")?;
-    assert!(ErlType::Atom.is_supertype_of_expr(&hello.core_ast)?,
+    let expr1 = Module::new_parse_expr("hello")?;
+    assert!(ErlType::Atom.is_supertype_of_expr(&expr1.core_ast)?,
             "Parsed atom 'hello' must be subtype of atom()");
   }
 
   {
-    let fn1 = Module::new_parse_fun("fun() -> 10 + 20.")?;
+    let fn1 = Module::new_parse_fun("myfun() -> 10 + 20.")?;
     assert!(matches!(fn1.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn1.core_ast);
     println!("Synth fn1: {}", fn1.core_ast.synthesize_type());
     assert!(ErlType::Integer.is_supertype_of_expr(&fn1.core_ast)?,
             "Parsed fun() must be subtype of integer()");
+  }
+
+  {
+    let expr2 = Module::new_parse_expr("fun(A) -> 10 + A")?;
+    assert!(matches!(expr2.core_ast.deref(), CoreAst::FnDef(_)), "Expected Lambda received {:?}", expr2.core_ast);
+    println!("Synth expr2: {}", expr2.core_ast.synthesize_type());
+    // assert!(ErlType::Integer.is_supertype_of_expr(&expr2.core_ast)?,
+    //         "Parsed fun() must be subtype of integer()");
   }
 
   Ok(())

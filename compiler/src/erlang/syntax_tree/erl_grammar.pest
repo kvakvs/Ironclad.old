@@ -13,6 +13,7 @@ form = _{ module_attr | attribute | attribute_noargs | function_def }
 // A function clause begins with a name, and a list of match variables in parentheses.
 // A function body is an expression (attempted to parse as a comma expression).
 function_def = { function_clause ~ (";" ~ function_clause) * ~ "." }
+
 function_clause = {atom ~ "(" ~ bindable_expr? ~ ("," ~ bindable_expr)* ~ ")"
     ~ ("when" ~ guard_expr)? ~ "->"
     ~ expr }
@@ -29,9 +30,14 @@ expr = {
     ( application_or_term ~ ( expr_operator ~ application_or_term )* )
 }
 application_or_term = _{ application | expr_term }
-expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal | list | tuple }
+expr_term = _{ ( "(" ~ expr ~ ")" ) | var | literal | list | tuple | lambda }
 list = { "[" ~ expr ~ ("," ~ expr)* ~ "]" }
 tuple = { "{" ~ expr ~ ("," ~ expr)* ~ "}" }
+
+lambda = { "fun" ~ lambda_function_clause ~ (";" ~ lambda_function_clause) }
+lambda_function_clause = { "(" ~ bindable_expr? ~ ("," ~ bindable_expr)* ~ ")"
+    ~ ("when" ~ guard_expr)? ~ "->"
+    ~ expr }
 
 // Attaches to the end of an expression converting it into a function call
 application = {
@@ -135,9 +141,13 @@ quoted_atom_char = {
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
-ident = ${ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
+ident = ${ !keyword ~ (ASCII_ALPHA_LOWER | "_") ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
 capitalized_ident = ${ (ASCII_ALPHA_UPPER | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 anycase_ident = ${ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
+
+keyword = { "after" | "and" | "andalso" | "band" | "begin"| "bnot" | "bor" | "bsl" | "bsr" | "bxor" | "case"
+ | "catch" | "cond" | "div" | "end" | "fun" | "if"| "let" | "not" | "of" | "or"| "orelse" | "receive" | "rem"
+ | "try" | "when" | "xor" }
 
 // // Take all characters which are not newline, even with whitespaces
 // text = ${ (!NEWLINE ~ ANY)+ ~ NEWLINE }

@@ -38,7 +38,7 @@ impl FnDef {
   /// Produce a function `ErlType` with all clauses and their return types
   pub fn synthesize_function_type(&self) -> Arc<ErlType> {
     let clauses: Vec<FnClauseType> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_fnctype())
+        .map(|fnc| fnc.synthesize_clause_type())
         .collect();
     ErlType::Fn {
       arity: self.funarity.arity,
@@ -49,12 +49,9 @@ impl FnDef {
   /// Produce a function return type, as union of all clauses returns
   pub fn synthesize_return_type(&self) -> Arc<ErlType> {
     // TODO: Filter out incompatible clauses
-    let clauses: Vec<FnClauseType> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_fnctype())
+    let clauses_ret = self.clauses.iter()
+        .map(|fnc| fnc.synthesize_clause_return_type())
         .collect();
-    ErlType::Fn {
-      arity: self.funarity.arity,
-      clauses
-    }.into()
+    ErlType::new_union(clauses_ret)
   }
 }
