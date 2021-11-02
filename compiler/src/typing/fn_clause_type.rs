@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::typing::erl_type::ErlType;
 
 /// Defines a function clause, with arguments and return type. Part of the function type.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FnClauseType {
   /// Argument types for this function clause
   pub args: Vec<Arc<ErlType>>,

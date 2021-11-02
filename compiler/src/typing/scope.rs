@@ -10,6 +10,12 @@ pub struct Scope {
   pub variables: HashMap<String, Arc<ErlType>>,
 }
 
+impl Default for Scope {
+  fn default() -> Self {
+    Self { variables: Default::default() }
+  }
+}
+
 impl Scope {
   /// Create a new empty scope
   pub fn empty() -> Self {

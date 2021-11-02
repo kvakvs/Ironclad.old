@@ -16,6 +16,7 @@ use crate::erlang::syntax_tree::erl_parser::{Rule};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 use crate::project::module::func_registry::FuncRegistry;
+use crate::typing::scope::Scope;
 
 pub mod func_registry;
 
@@ -38,6 +39,8 @@ pub struct Module {
 
   /// Collection of module functions and a lookup table
   pub registry: RwLock<FuncRegistry>,
+  /// Module level scope, containing functions
+  pub scope: Scope,
 
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
@@ -54,6 +57,7 @@ impl Default for Module {
       ast: Arc::new(ErlAst::Empty),
       core_ast: Arc::new(CoreAst::Empty),
       registry: RwLock::new(FuncRegistry::default()),
+      scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
@@ -75,17 +79,35 @@ impl Module {
     }
   }
 
+  /// Parses code fragment starting with "-module(...)." and containing some function definitions
+  /// and the usual module stuff.
+  pub fn new_erl_module(input: &str) -> ErlResult<Self> {
+    let mut module = Module::default();
+    module.parse_erl_str(Rule::module, input)?;
+    Ok(module)
+  }
+
+  // /// Parses code fragment with an Erlang expression
+  // pub fn parse_erl_expr(&mut self, input: &str) -> ErlResult<()> {
+  //   self.parse_erl_str(Rule::expr, input)
+  // }
+
+  // /// Parses code fragment with an Erlang function
+  // pub fn parse_erl_fun(&mut self, input: &str) -> ErlResult<()> {
+  //   self.parse_erl_str(Rule::function_def, input)
+  // }
+
   /// Creates a module, where its AST comes from an expression
   pub fn new_parse_expr(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
-    module.parse_erl_expr(input)?;
+    module.parse_erl_str(Rule::expr, input)?;
     Ok(module)
   }
 
   /// Creates a module, where its AST comes from a function
   pub fn new_parse_fun(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
-    module.parse_erl_fun(input)?;
+    module.parse_erl_str(Rule::function_def, input)?;
     Ok(module)
   }
 
@@ -99,35 +121,38 @@ impl Module {
   /// Parse self.source_file as Erlang syntax
   pub fn parse_and_unify_erlang(&mut self) -> ErlResult<()> {
     let sf = self.source_file.clone(); // lure the borrow checker to letting us use text
-    self.parse_and_unify_erl_str(erl_parser::Rule::module, &sf.text)
-  }
-
-  /// Create a dummy sourcefile and parse it starting with the given parser rule.
-  /// This updates the self.fun_table and self.ast
-  #[named]
-  pub fn parse_and_unify_erl_str(&mut self,
-                                 rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
-    let parse_output = match erl_parser::ErlParser::parse(rule, input) {
-      Ok(mut root) => root.next().unwrap(),
-      Err(bad) => {
-        panic!("Parse failed {}", bad);
-        // return Err(ErlError::from(bad));
-      }
-    };
-
-    self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-
-    // Parse tree to raw AST
-    self.ast = self.build_ast_single_node(parse_output)?;
-    println!("\n{}: ErlAST {}", function_name!(), self.ast);
-
-    // Rebuild Core AST from Erlang AST
-    self.core_ast = CoreAstBuilder::build(self, &self.ast);
-    println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
-
-    // self.unifier = Unifier::new(self).unwrap();
+    // self.parse_and_unify_erl_str(erl_parser::Rule::module, &sf.text)
+    let mut module = Module::default();
+    module.parse_erl_str(Rule::module, &sf.text)?;
     Ok(())
   }
+
+  // /// Create a dummy sourcefile and parse it starting with the given parser rule.
+  // /// This updates the self.fun_table and self.ast
+  // #[named]
+  // pub fn parse_and_unify_erl_str(&mut self,
+  //                                rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
+  //   let parse_output = match erl_parser::ErlParser::parse(rule, input) {
+  //     Ok(mut root) => root.next().unwrap(),
+  //     Err(bad) => {
+  //       panic!("Parse failed {}", bad);
+  //       // return Err(ErlError::from(bad));
+  //     }
+  //   };
+  //
+  //   self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
+  //
+  //   // Parse tree to raw AST
+  //   self.ast = self.build_ast_single_node(parse_output)?;
+  //   println!("\n{}: ErlAST {}", function_name!(), self.ast);
+  //
+  //   // Rebuild Core AST from Erlang AST
+  //   self.core_ast = CoreAstBuilder::build(self, &self.ast);
+  //   println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
+  //
+  //   // self.unifier = Unifier::new(self).unwrap();
+  //   Ok(())
+  // }
 
   /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
   /// This updates only self.ast
@@ -152,21 +177,5 @@ impl Module {
     // println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     Ok(())
-  }
-
-  /// Parses code fragment starting with "-module(...)." and containing some function definitions
-  /// and the usual module stuff.
-  pub fn parse_erl_module(&mut self, input: &str) -> ErlResult<()> {
-    self.parse_erl_str(Rule::module, input)
-  }
-
-  /// Parses code fragment with an Erlang expression
-  pub fn parse_erl_expr(&mut self, input: &str) -> ErlResult<()> {
-    self.parse_erl_str(Rule::expr, input)
-  }
-
-  /// Parses code fragment with an Erlang function
-  pub fn parse_erl_fun(&mut self, input: &str) -> ErlResult<()> {
-    self.parse_erl_str(Rule::function_def, input)
   }
 }

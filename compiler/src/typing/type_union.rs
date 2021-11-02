@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::typing::erl_type::ErlType;
 
 /// Contains multiple types
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeUnion {
   types: Vec<Arc<ErlType>>,
   // lists: Vec<Arc<ErlType>>,
@@ -37,5 +37,16 @@ impl TypeUnion {
         })
         .map(|(_index, ty)| ty.clone())
         .collect();
+    // match new_types.len() {
+    //   0 => ErlType::None.into(),
+    //   1 => new_types[0].clone(),
+    //   _ => ErlType::Union(TypeUnion::new(new_types)).into() // rebuild from remaining types
+    // }
+  }
+
+  /// Whether type t is found in any of the union contents
+  pub fn contains(&self, t: &ErlType) -> bool {
+    self.types.iter()
+        .any(|union_t| t.is_subtype_of(union_t))
   }
 }

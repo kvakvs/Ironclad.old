@@ -53,6 +53,6 @@ impl FnDef {
     let clauses_ret = self.clauses.iter()
         .map(|fnc| fnc.synthesize_clause_return_type(env))
         .collect();
-    ErlType::new_union(clauses_ret)
+    ErlType::new_union(clauses_ret).into()
   }
 }

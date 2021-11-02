@@ -9,7 +9,7 @@ use crate::typing::subtyping::SubtypeChecker;
 use crate::typing::type_union::TypeUnion;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlType {
   /// Any type
   Any,
@@ -165,11 +165,11 @@ impl ErlType {
   }
 
   /// Wrapper to access type union construction
-  pub fn new_union(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+  pub fn new_union(types: Vec<Arc<ErlType>>) -> ErlType {
     match types.len() {
-      0 => ErlType::None.into(),
-      1 => types[0].clone(),
-      _ => ErlType::Union(TypeUnion::new(types)).into()
+      0 => ErlType::None,
+      1 => (*types[0].as_ref()).clone(),
+      _ => ErlType::Union(TypeUnion::new(types))
     }
   }
 }

@@ -5,7 +5,6 @@ mod test_util;
 
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
-use compiler::erlang::syntax_tree::erl_parser::{Rule};
 use std::ops::Deref;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
@@ -17,8 +16,7 @@ use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
 fn infer_simplemath() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for simple expression");
   let code = "myfun(A) -> (A + 1) / 2.";
-  let mut module = Module::default();
-  module.parse_and_unify_erl_str(Rule::function_def, code)?;
+  let module = Module::new_parse_fun(code)?;
 
   let ast = module.core_ast.clone();
 
@@ -27,14 +25,14 @@ fn infer_simplemath() -> ErlResult<()> {
       // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
       assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
       assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
-      assert_eq!(fn_def.args.len(), 1, "FnDef must have exact one arg");
       // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
     }
     other1 => test_util::fail_unexpected(other1),
   }
   println!("Parsed: {}", module.ast);
 
-  let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
+  // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
+  let f_t = ast.synthesize_type(&module.scope);
   println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
 
   Ok(())
@@ -47,16 +45,16 @@ fn infer_simplemath() -> ErlResult<()> {
 fn infer_atom_list_concatenation() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a sum of two lists with atoms");
   let code = "atomtest(A) -> [atom1] ++ [atom2].";
-  let mut module = Module::default();
-  module.parse_and_unify_erl_str(Rule::function_def, code)?;
+  let module = Module::new_parse_fun(code)?;
 
-  let f_t = ErlType::final_type(module.unifier.infer_ast(&module.core_ast));
+  // let f_t = ErlType::final_type(module.unifier.infer_ast(&module.core_ast));
+  let f_t = module.core_ast.synthesize_type(&module.scope);
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, f_t);
 
-  if let ErlType::List(t) = f_t.deref() {
-    if let ErlType::Union(elems) = t.deref() {
-      assert!(elems.contains(&ErlType::Atom(String::from("atom1"))));
-      assert!(elems.contains(&ErlType::Atom(String::from("atom2"))));
+  if let ErlType::List { elements: t, .. } = f_t.deref() {
+    if let ErlType::Union(u) = t.as_ref() {
+      assert!(u.contains(&ErlType::new_atom("atom1")));
+      assert!(u.contains(&ErlType::new_atom("atom2")));
     } else {
       panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got [{}]",
              function_name!(), t)
@@ -77,19 +75,19 @@ fn infer_funcall_test() -> ErlResult<()> {
     "-module({}).\n\
     add(A, B) -> A + B.\n\
     main() -> add(A, 4).\n", function_name!());
-  let mut module = Module::default();
-  module.parse_and_unify_erl_str(Rule::module, &code)?;
-
+  let module = Module::new_erl_module(&code)?;
   {
     let add_fn_ast = CoreAst::find_function_def(
       &module.core_ast, &MFArity::new_local_str("add", 2),
     ).unwrap();
 
-    let f_t1 = ErlType::final_type(module.unifier.infer_ast(add_fn_ast.deref()));
+    // let f_t1 = ErlType::final_type(module.unifier.infer_ast(add_fn_ast.deref()));
+    let f_t1 = add_fn_ast.synthesize_type(&module.scope);
     println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_ast, f_t1);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
-    assert_eq!(f_t1, TypePrefab::number(), "Function add/2 must have inferred type: number()");
+    assert!(ErlType::Number.is_subtype_of(&f_t1),
+            "Function add/2 must have inferred type: number(), received {}", f_t1);
   }
 
   {
@@ -97,11 +95,12 @@ fn infer_funcall_test() -> ErlResult<()> {
       &module.core_ast, &MFArity::new_local_str("main", 0),
     ).unwrap();
 
-    let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
+    // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
+    let f_t2 = find_result2.synthesize_type(&module.scope);
     println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
     // Expected: Main -> integer()
-    assert_eq!(f_t2, TypePrefab::number(), "Function main/0 must have inferred type: number()");
+    assert!(ErlType::Number.is_subtype_of(&f_t2), "Function main/0 must have inferred type: number()");
   }
 
   Ok(())
@@ -114,26 +113,27 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   let code = "-module(infer_multiple_clause).\n\
                    main(one) -> [atom1] ++ [atom2];\n\
                    main(two) -> 2 + 3.\n";
-  let mut module = Module::default();
-  module.parse_and_unify_erl_str(Rule::module, code)?;
+  let module = Module::new_erl_module(code)?;
 
   let find_result2 = CoreAst::find_function_def(
     &module.core_ast, &MFArity::new_local_str("main", 1),
   ).unwrap();
 
-  let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
+  // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
+  let main_ty = find_result2.synthesize_type(&module.scope);
   println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 
   // Expected: Main -> number()|[atom1|atom2]
-  let list_of_atom1atom2 = ErlType::List(
-    ErlType::union_of(
-      vec![ErlType::atom_str("atom1"), ErlType::atom_str("atom2")],
-      true)
+  let list_of_atom1atom2 = ErlType::list_of(
+    ErlType::new_union(
+      vec![ErlType::new_atom("atom1").into(),
+           ErlType::new_atom("atom2").into()]
+    )
   ).into();
   // Assert that type is: number() | [atom1|atom2]
-  assert_eq!(main_ty,
-             ErlType::union_of(vec![TypePrefab::number(), list_of_atom1atom2], true),
-             "Function main/0 must have inferred type: number()|[atom1|atom2]");
+  let compare_t = ErlType::new_union(vec![ErlType::Number.into(), list_of_atom1atom2]);
+  assert!(main_ty.as_ref().eq(&compare_t),
+          "Function main/0 must have inferred type: number()|[atom1|atom2]");
 
   Ok(())
 }
