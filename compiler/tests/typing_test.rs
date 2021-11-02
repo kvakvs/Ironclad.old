@@ -76,19 +76,27 @@ fn typing_expr_check() -> ErlResult<()> {
   {
     let env = Scope::empty()
         .add("A", ErlType::Integer.into());
-    let expr2 = Module::new_parse_expr("10 + A")?;
-    assert!(matches!(expr2.core_ast.deref(), CoreAst::BinOp {..}), "Expected 10+A received {:?}", expr2.core_ast);
-    println!("Synth expr2: {}", expr2.core_ast.synthesize_type(&env));
+    let fn2 = Module::new_parse_fun("myfun2(A) -> 10.0 + A.")?;
+    assert!(matches!(fn2.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn2.core_ast);
+    println!("Synth fn2: {}", fn2.core_ast.synthesize_type(&env));
   }
 
-  {
-    let env = Scope::empty();
-    let expr3 = Module::new_parse_expr("fun(A) -> 10 + A")?;
-    assert!(matches!(expr3.core_ast.deref(), CoreAst::FnDef {..}), "Expected Lambda received {:?}", expr3.core_ast);
-    println!("Synth expr3: {}", expr3.core_ast.synthesize_type(&env));
-    // assert!(ErlType::Integer.is_supertype_of_expr(&expr2.core_ast)?,
-    //         "Parsed fun() must be subtype of integer()");
-  }
+  // {
+  //   let env = Scope::empty()
+  //       .add("A", ErlType::Integer.into());
+  //   let expr2 = Module::new_parse_expr("10 + A")?;
+  //   assert!(matches!(expr2.core_ast.deref(), CoreAst::BinOp {..}), "Expected 10+A received {:?}", expr2.core_ast);
+  //   println!("Synth expr2: {}", expr2.core_ast.synthesize_type(&env));
+  // }
+
+  // {
+  //   let env = Scope::empty();
+  //   let expr3 = Module::new_parse_expr("fun(A) -> 10 + A")?;
+  //   assert!(matches!(expr3.core_ast.deref(), CoreAst::FnDef {..}), "Expected Lambda received {:?}", expr3.core_ast);
+  //   println!("Synth expr3: {}", expr3.core_ast.synthesize_type(&env));
+  //   // assert!(ErlType::Integer.is_supertype_of_expr(&expr2.core_ast)?,
+  //   //         "Parsed fun() must be subtype of integer()");
+  // }
 
   Ok(())
 }

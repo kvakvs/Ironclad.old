@@ -160,10 +160,15 @@ impl ErlAst {
 
   /// Create a new literal AST node of a floating point number
   pub fn new_lit_float(location: SourceLoc, val: &str) -> Arc<ErlAst> {
-    ErlAst::Lit {
-      location,
-      value: Literal::Float(val.parse().unwrap()).into(),
-    }.into()
+    match String::from(val).trim().parse() {
+      Ok(flt) =>     ErlAst::Lit {
+        location,
+        value: Literal::Float(flt).into(),
+      }.into(),
+      Err(e) => {
+        panic!("Failed to parse float from \"{}\": error {}", val, e)
+      },
+    }
   }
 
   /// Create a new literal AST node of a "string"

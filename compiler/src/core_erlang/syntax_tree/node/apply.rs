@@ -34,7 +34,7 @@ impl Apply {
   /// TODO: This should synthesize return type not the expected fn type
   pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
     let arg_types: Vec<Arc<ErlType>> = self.args.iter()
-        .map(|arg| TypeBuilder::synthesize_from_core(env, arg))
+        .map(|arg| TypeBuilder::synthesize(env, arg))
         .collect();
     let ret_ty = ErlType::Any.into(); // TODO: Deduct here the expected types or something?
 

@@ -141,7 +141,7 @@ impl CoreAst {
 
   /// Shortcut to call the typebuilder's synthesize
   pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
-    TypeBuilder::synthesize_from_core(env, self)
+    TypeBuilder::synthesize(env, self)
   }
 
   // /// Gets the type of an AST node

@@ -10,7 +10,7 @@ pub struct TypeBuilder {}
 impl TypeBuilder {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
-  pub fn synthesize_from_core(env: &Scope, node: &CoreAst) -> Arc<ErlType> {
+  pub fn synthesize(env: &Scope, node: &CoreAst) -> Arc<ErlType> {
     match node {
       CoreAst::Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
