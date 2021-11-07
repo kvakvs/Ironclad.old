@@ -173,7 +173,7 @@ impl Module {
     self.ast = self.build_ast_single_node(parse_output)?;
     // println!("\n{}: ErlAST {}", function_name!(), self.ast);
 
-    self.core_ast = CoreAstBuilder::build(self, &self.ast);
+    self.core_ast = CoreAstBuilder::build(self, &self.ast)?;
     // println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     Ok(())

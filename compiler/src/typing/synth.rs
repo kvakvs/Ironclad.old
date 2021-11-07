@@ -18,7 +18,12 @@ impl TypeBuilder {
       CoreAst::Attributes(_) => unreachable!("Should not be synthesizing type from module attrs"),
       CoreAst::ModuleFuns(_) => unreachable!("Should not be synthesizing type from module functions section"),
       CoreAst::FnDef(fndef) => fndef.synthesize_return_type(scope),
-      // CoreAst::FnRef { .. } => {}
+      CoreAst::FnRef { mfa } => {
+        match Scope::retrieve_fn_from(scope, mfa) {
+          None => return ErlError::local_function_not_found(mfa),
+          Some(fntype) => Ok(fntype),
+        }
+      }
       // CoreAst::Case(_) => {}
       // CoreAst::Let(_) => {}
       CoreAst::Apply(apply) => apply.synthesize_type(scope),
@@ -43,7 +48,7 @@ impl TypeBuilder {
       CoreAst::Tuple { elements, .. } => {
         Self::synthesize_tuple_type(scope, elements)
       }
-      other => unimplemented!("Don't know how to synthesize type from {}", other),
+      other => unimplemented!("Don't know how to synthesize type from {} debug {:?}", other, other),
     }
   }
 

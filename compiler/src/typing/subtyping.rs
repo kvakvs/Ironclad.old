@@ -65,8 +65,9 @@ impl SubtypeChecker {
         }
       }
       // only can be subtype of self (equality checked at the top)
-      ErlType::Fn { clauses, arity } =>
-        Self::is_subtype_of_fn(*arity, clauses, sub_ty),
+      ErlType::Fn(fn_type) =>
+        Self::is_subtype_of_fn(fn_type.arity(), fn_type.clauses(), sub_ty),
+
       ErlType::FnRef { .. } | ErlType::Lambda => false,
 
       // only can be subtype of self (equality checked at the top)
@@ -248,13 +249,16 @@ impl SubtypeChecker {
 
   /// Checks whether sub_ty matches a regular Erlang function type with possibly multiple clauses
   /// and multiple return types.
-  fn is_subtype_of_fn(sup_arity: usize, sup_clauses: &Vec<FnClauseType>, sub_ty: &ErlType) -> bool {
+  fn is_subtype_of_fn(sup_arity: usize,
+                      sup_clauses: &Vec<Arc<FnClauseType>>,
+                      sub_ty: &ErlType) -> bool {
     match sub_ty {
-      ErlType::Fn { arity: sub_arity, clauses: sub_clauses } => {
+      ErlType::Fn(sub_fntype) => {
         // Arities must match, and
         // any clause of subfn must be compatible with any clause of (be a subtype of) superfn
-        sup_arity == *sub_arity
-            && sub_clauses.iter().any(|subc| subc.is_any_clause_compatible(sup_clauses))
+        sup_arity == sub_fntype.arity()
+            && sub_fntype.clauses().iter()
+            .any(|subc| subc.is_any_clause_compatible(sup_clauses))
       }
       ErlType::FnRef { .. } => unimplemented!("Matching reference to a function"),
       _ => false

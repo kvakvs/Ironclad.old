@@ -7,6 +7,7 @@ use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::fn_type::FnType;
 use crate::typing::scope::Scope;
 
 /// Defines a new function in Core Erlang
@@ -39,13 +40,11 @@ impl FnDef {
 
   /// Produce a function `ErlType` with all clauses and their return types
   pub fn synthesize_function_type(&self, _scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
-    let clauses: ErlResult<Vec<FnClauseType>> = self.clauses.iter()
+    let clauses_r: ErlResult<Vec<Arc<FnClauseType>>> = self.clauses.iter()
         .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
         .collect();
-    let synthesized_t = ErlType::Fn {
-      arity: self.funarity.arity,
-      clauses: clauses?
-    }.into();
+    let fn_type = FnType::new(self.funarity.arity, clauses_r?);
+    let synthesized_t = ErlType::Fn(fn_type.into()).into();
     Ok(synthesized_t)
   }
 

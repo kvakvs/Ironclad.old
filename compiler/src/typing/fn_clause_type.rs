@@ -13,6 +13,9 @@ pub struct FnClauseType {
 }
 
 impl FnClauseType {
+  /// Retrieve return type
+  pub fn ret_ty(&self) -> &Arc<ErlType> { &self.ret_ty }
+
   /// Create a new function clause from just args
   pub fn new(args: Vec<Arc<ErlType>>, ret_ty: Arc<ErlType>) -> Self {
     Self { args, ret_ty }
@@ -23,7 +26,7 @@ impl FnClauseType {
 
   /// Check whether calling any clause of `supertype` function type would be compatible with calling
   /// this clause with the same args.
-  pub fn is_any_clause_compatible(&self, supertype: &Vec<FnClauseType>) -> bool {
+  pub fn is_any_clause_compatible(&self, supertype: &Vec<Arc<FnClauseType>>) -> bool {
     supertype.iter()
         .any(|sup| self.is_clause_compatible(sup))
   }
@@ -35,5 +38,11 @@ impl FnClauseType {
         .zip(super_clause.args.iter())
         .all(|(sub_arg, super_arg)| sub_arg.is_subtype_of(super_arg))
     && self.ret_ty.is_subtype_of(&super_clause.ret_ty)
+  }
+
+  /// Check whether argument list can be passed to this clause
+  pub fn can_accept_args(&self, args: &Vec<Arc<ErlType>>) -> bool {
+    self.args.iter().zip(args.iter())
+        .all(|(in_arg, my_arg)| in_arg.is_subtype_of(my_arg))
   }
 }

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::subtyping::SubtypeChecker;
 use crate::typing::type_union::TypeUnion;
@@ -90,12 +91,7 @@ pub enum ErlType {
   /// Matches function references and lambdas
   AnyFn,
   /// Describes a function type with multiple clauses and return types
-  Fn {
-    /// For convenience arity is stored here, but each clause has same arity too
-    arity: usize,
-    /// Function clauses
-    clauses: Vec<FnClauseType>,
-  },
+  Fn(Arc<FnType>),
   /// fun name/2 style references, also remote references
   FnRef {
     /// Function's location (module/function or just function)
@@ -147,7 +143,7 @@ impl ErlType {
   }
 
   /// Creates new function type with clauses
-  pub fn new_fn_type(clauses: Vec<FnClauseType>) -> ErlType {
+  pub fn new_fn_type(clauses: Vec<Arc<FnClauseType>>) -> ErlType {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
@@ -155,10 +151,8 @@ impl ErlType {
             "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
             arity);
 
-    ErlType::Fn {
-      arity,
-      clauses,
-    }
+    let fn_type = FnType::new(arity, clauses);
+    ErlType::Fn(fn_type.into())
   }
 
   /// Wrapper to access type union construction

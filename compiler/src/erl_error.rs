@@ -7,6 +7,7 @@ use pest::error::LineColLocation;
 
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::erlang::syntax_tree::erl_parser;
+use crate::mfarity::MFArity;
 use crate::preprocessor::syntax_tree::pp_parser;
 use crate::typing::type_error::TypeError;
 
@@ -68,6 +69,8 @@ pub enum ErlError {
 
   /// A variable was referenced that's not in the scope
   VariableNotFound(String),
+  /// A local function referenced by MFA (module ignored) is not found
+  LocalFunctionNotFound(MFArity),
   /// Returned when a type error or mismatching types were found
   TypeError(TypeError),
 }
@@ -110,6 +113,7 @@ impl std::fmt::Display for ErlError {
         write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
       }
       ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
+      ErlError::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
       ErlError::TypeError(terr) => write!(f, "Type error: {}", terr),
     }
   }
@@ -132,6 +136,11 @@ impl ErlError {
   /// Wraps a `VariableNotFound`
   pub fn variable_not_found<T>(var_name: &str) -> ErlResult<T> {
     Err(ErlError::VariableNotFound(String::from(var_name)))
+  }
+
+  /// Wraps a `FunctionNotFound`
+  pub fn local_function_not_found<T>(mfa: &MFArity) -> ErlResult<T> {
+    Err(ErlError::LocalFunctionNotFound(mfa.clone()))
   }
 
   /// Creates a preprocessor error from a filename and a message

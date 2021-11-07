@@ -20,6 +20,16 @@ pub enum TypeError {
   NotAFunction {
     /// Message to go with the error
     msg: String,
+  },
+  /// A function call was attempted with wrong argument count
+  BadArity {
+    /// Message to go with the error
+    msg: String,
+  },
+  /// A function call was attempted with incompatible arguments
+  BadArguments {
+    /// Message to go with the error
+    msg: String,
   }
 }
 
@@ -28,8 +38,10 @@ impl Display for TypeError {
     match self {
       TypeError::ExprNotASubtype { ty, expr_ty } =>
         write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
-      TypeError::ListExpected { msg } => write!(f, "{}", msg),
-      TypeError::NotAFunction { msg } => write!(f, "{}", msg),
+      TypeError::ListExpected { msg } => write!(f, "Bad list: {}", msg),
+      TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),
+      TypeError::BadArity { msg } => write!(f, "Bad arity: {}", msg),
+      TypeError::BadArguments { msg } => write!(f, "Bad arguments: {}", msg),
     }
   }
 }

@@ -64,7 +64,7 @@ impl CoreFnClause {
 
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<FnClauseType> {
+  pub fn synthesize_clause_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<FnClauseType>> {
     // Synthesizing return type using the inner function scope, with added args
     let args_types = self.args.iter()
         .map(|_| Var::synthesize_type())
@@ -73,7 +73,7 @@ impl CoreFnClause {
       args_types,
       self.synthesize_clause_return_type(scope)?,
     );
-    Ok(synthesized_t)
+    Ok(synthesized_t.into())
   }
 
   /// Return type from the body AST
