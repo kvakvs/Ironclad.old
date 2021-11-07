@@ -11,21 +11,21 @@ pub struct TypeBuilder {}
 impl TypeBuilder {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
-  pub fn synthesize(env: &Arc<RwLock<Scope>>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize(scope: &Arc<RwLock<Scope>>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {
     match node {
       CoreAst::Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
       CoreAst::Attributes(_) => unreachable!("Should not be synthesizing type from module attrs"),
       CoreAst::ModuleFuns(_) => unreachable!("Should not be synthesizing type from module functions section"),
-      CoreAst::FnDef(fndef) => fndef.synthesize_return_type(env),
+      CoreAst::FnDef(fndef) => fndef.synthesize_return_type(scope),
       // CoreAst::FnRef { .. } => {}
       // CoreAst::Case(_) => {}
       // CoreAst::Let(_) => {}
-      // CoreAst::Apply(_) => {}
+      CoreAst::Apply(apply) => apply.synthesize_type(scope),
       // CoreAst::Call(_) => {}
       // CoreAst::PrimOp { .. } => {}
       CoreAst::Var(v) => {
-        if let Ok(env_read) = env.read() {
+        if let Ok(env_read) = scope.read() {
           match env_read.variables.get(&v.name) {
             None => return ErlError::variable_not_found(&v.name),
             Some(val) => Ok(val.ty.clone()),
@@ -35,13 +35,13 @@ impl TypeBuilder {
         }
       }
       CoreAst::Lit { value, .. } => Ok(ErlType::new_singleton(value)),
-      CoreAst::BinOp { op, .. } => op.synthesize_type(env),
+      CoreAst::BinOp { op, .. } => op.synthesize_type(scope),
       // CoreAst::UnOp { .. } => {}
       CoreAst::List { elements, tail, .. } => {
-        Self::synthesize_list_type(env, elements, tail)
+        Self::synthesize_list_type(scope, elements, tail)
       }
       CoreAst::Tuple { elements, .. } => {
-        Self::synthesize_tuple_type(env, elements)
+        Self::synthesize_tuple_type(scope, elements)
       }
       other => unimplemented!("Don't know how to synthesize type from {}", other),
     }

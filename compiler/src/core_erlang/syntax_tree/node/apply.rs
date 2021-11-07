@@ -4,11 +4,12 @@ use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::display::Pretty;
-use crate::erl_error::ErlResult;
+use crate::erl_error::{ErlError, ErlResult};
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
+use crate::typing::type_error::TypeError;
 use crate::typing::synth::TypeBuilder;
 
 /// Contains a function call
@@ -33,9 +34,16 @@ impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing.
   /// TODO: This should synthesize return type not the expected fn type
-  pub fn synthesize_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+    // Synthesize target and check its a function type
+    let target_ty = self.target.synthesize_type(scope)?;
+    if !target_ty.is_function() {
+      let msg = format!("Attempt to call a value which is not a function: {}", self.target);
+      return ErlError::type_error(TypeError::NotAFunction { msg });
+    }
+
     let arg_types: ErlResult<Vec<Arc<ErlType>>> = self.args.iter()
-        .map(|arg| TypeBuilder::synthesize(env, arg))
+        .map(|arg| TypeBuilder::synthesize(scope, arg))
         .collect();
     let ret_ty = ErlType::Any.into(); // TODO: Deduct here the expected types or something?
 

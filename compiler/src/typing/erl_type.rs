@@ -138,11 +138,12 @@ impl ErlType {
   }
 
   /// Creates a type for a proper list with a NIL tail.
-  pub fn list_of(t: ErlType) -> ErlType {
-    ErlType::List {
+  pub fn list_of(t: Arc<ErlType>) -> Arc<ErlType> {
+    let result = ErlType::List {
       elements: t.into(),
       tail: None,
-    }
+    };
+    result.into()
   }
 
   /// Creates new function type with clauses
@@ -161,14 +162,18 @@ impl ErlType {
   }
 
   /// Wrapper to access type union construction
-  pub fn new_union(types: Vec<Arc<ErlType>>) -> ErlType {
+  pub fn new_union(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
     match types.len() {
-      0 => ErlType::None,
-      1 => (*types[0].as_ref()).clone(),
+      0 => ErlType::None.into(),
+      1 => types[0].clone(),
       _ => {
         let mut u = TypeUnion::new(types);
         u.normalize();
-        ErlType::Union(u)
+        match u.types().len() {
+          0 => panic!("Can't create type union of 0 types after normalization"),
+          1 => u.types()[0].clone(),
+          _ => ErlType::Union(u).into()
+        }
       }
     }
   }
@@ -314,6 +319,18 @@ impl ErlType {
       _ => false,
     };
   }
+
+  /// Checks whether a type is callable
+  pub fn is_function(&self) -> bool {
+    return match self {
+      ErlType::AnyFn
+      | ErlType::Fn { .. }
+      | ErlType::FnRef { .. }
+      | ErlType::Lambda  => true,
+      _ => false,
+    };
+  }
+
 
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string

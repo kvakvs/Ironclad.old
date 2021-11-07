@@ -16,6 +16,11 @@ pub enum TypeError {
     /// Message to go with the error
     msg: String
   },
+  /// Returned when a call is attempted to something that's not a function
+  NotAFunction {
+    /// Message to go with the error
+    msg: String,
+  }
 }
 
 impl Display for TypeError {
@@ -24,6 +29,7 @@ impl Display for TypeError {
       TypeError::ExprNotASubtype { ty, expr_ty } =>
         write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
       TypeError::ListExpected { msg } => write!(f, "{}", msg),
+      TypeError::NotAFunction { msg } => write!(f, "{}", msg),
     }
   }
 }

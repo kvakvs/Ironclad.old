@@ -32,11 +32,14 @@ impl std::fmt::Display for ErlType {
       ErlType::StronglyTypedList { elements, tail } => {
         match tail {
           Some(t) => {
-            write!(f, "[")?;
+            write!(f, "strong_list(")?;
             Pretty::display_comma_separated(elements, f)?;
-            write!(f, " | {}]", t)
+            write!(f, " | {})", t)
           },
-          None => Pretty::display_square_list(elements, f),
+          None => {
+            write!(f, "strong_list")?;
+            Pretty::display_paren_list(elements, f)
+          },
         }
       }
       ErlType::Nil => write!(f, "[]"),

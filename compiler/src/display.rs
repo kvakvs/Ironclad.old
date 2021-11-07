@@ -40,9 +40,9 @@ impl Pretty {
   /// Print ( <comma separated something> )
   pub fn display_paren_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
     where T: std::fmt::Display {
-    write!(f, "[")?;
+    write!(f, "(")?;
     Pretty::display_comma_separated(elems, f)?;
-    write!(f, "]")
+    write!(f, ")")
   }
 
   /// Print { <comma separated something> }

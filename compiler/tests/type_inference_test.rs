@@ -68,24 +68,25 @@ fn infer_simplefun_addition() -> ErlResult<()> {
 /// Expected: Inferred type list(atom1|atom2)
 fn infer_atom_list_concatenation() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a sum of two lists with atoms");
-  let code = "atomtest(A) -> [atom1] ++ [atom2].";
-  let module = Module::new_parse_fun(code)?;
+  let module = Module::new_parse_fun("atomtest(A) -> [atom1] ++ [atom2].")?;
 
-  // let f_t = ErlType::final_type(module.unifier.infer_ast(&module.core_ast));
-  let f_t = module.core_ast.synthesize_type(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, f_t);
+  let synthesized_t = module.core_ast.synthesize_type(&module.scope)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, synthesized_t);
 
-  if let ErlType::List { elements: t, .. } = f_t.deref() {
-    if let ErlType::Union(u) = t.as_ref() {
+  if let ErlType::StronglyTypedList { elements: all_elements, .. } = synthesized_t.deref() {
+    assert_eq!(all_elements.len(), 1, "Strongly typed list must have length of 1");
+    let first_element = all_elements[0].clone();
+
+    if let ErlType::Union(u) = first_element.as_ref() {
       assert!(u.contains(&ErlType::new_atom("atom1")));
       assert!(u.contains(&ErlType::new_atom("atom2")));
     } else {
-      panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got [{}]",
-             function_name!(), t)
+      panic!("{}: Inferred type expected: strongly typed list of [atom1|atom2], got a list of {}",
+             function_name!(), first_element)
     }
   } else {
-    panic!("{}: Function atomtest() must have inferred type [atom1|atom2], got {}",
-           function_name!(), f_t)
+    panic!("{}: Inferred type expected: strongly typed list of [atom1|atom2], got {:?}",
+           function_name!(), synthesized_t)
   };
 
   Ok(())
@@ -159,11 +160,16 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
       vec![ErlType::new_atom("atom1").into(),
            ErlType::new_atom("atom2").into()]
     )
-  ).into();
+  );
   // Assert that type is: number() | [atom1|atom2]
-  let compare_t = ErlType::new_union(vec![ErlType::Number.into(), list_of_atom1atom2]);
-  assert!(main_ty.as_ref().eq(&compare_t),
-          "Function main/0 must have inferred type: number()|[atom1|atom2]");
+  if let ErlType::Union(u) = main_ty.deref() {
+    assert_eq!(u.types().len(), 2, "Inferred type for main/0 must be union of size 2");
+    assert!(!u.contains(&ErlType::Any), "Inferred type for main/0 must not contain any()");
+    assert!(u.contains(&ErlType::Integer), "Inferred type for main/0 must contain integer()");
+    assert!(u.contains(&list_of_atom1atom2), "Inferred type for main/0 must contain [atom1|atom2]");
+  } else {
+    panic!("Inferred type for main/0 must be a type union");
+  }
 
   Ok(())
 }

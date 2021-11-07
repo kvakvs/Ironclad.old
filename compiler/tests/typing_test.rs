@@ -131,9 +131,9 @@ fn typing_subtyping() -> ErlResult<()> {
 
   {
     let test3_any = ErlType::AnyList;
-    let test3_l_num = ErlType::list_of(ErlType::Number);
-    let test3_l_flt = ErlType::list_of(ErlType::Float);
-    let test3_l_int = ErlType::list_of(ErlType::Integer);
+    let test3_l_num = ErlType::list_of(ErlType::Number.into());
+    let test3_l_flt = ErlType::list_of(ErlType::Float.into());
+    let test3_l_int = ErlType::list_of(ErlType::Integer.into());
 
     assert!(test3_l_num.is_subtype_of(&test3_any)); // list(number()) is subtype of list()
     assert!(!test3_any.is_subtype_of(&test3_l_num)); // list() not subtype of list(number())
