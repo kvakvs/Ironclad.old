@@ -7,6 +7,7 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::display;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
+use crate::typing::extract_vars::ExtractVar;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
 
@@ -18,7 +19,7 @@ pub struct CoreFnClause {
   /// Argument match expressions directly translated from `ErlAst`
   args_ast: Vec<Arc<CoreAst>>,
   /// Argument variable names (named as incoming into the function)
-  args: Vec<Var>,
+  args: Vec<Arc<Var>>,
   /// Function clause body directly translated from `ErlAst`
   body: Arc<CoreAst>,
   /// The optional guard expression
@@ -34,15 +35,15 @@ impl CoreFnClause {
              args_ast: Vec<Arc<CoreAst>>,
              body: Arc<CoreAst>,
              guard: Option<Arc<CoreAst>>) -> Self {
-    let args: Vec<Var> = args_ast.iter()
-        .map(|arg_ast| Var::new_unique(arg_ast.location(), "Arg"))
+    let args: Vec<Arc<Var>> = args_ast.iter()
+        .map(|arg_ast| ExtractVar::extract_vars(arg_ast))
+        .flatten()
         .collect();
+
     // Create inner_env for each arg where it has any() type, later this can be amended
     let inner_scope: Scope = args.iter()
         .fold(Scope::empty(Arc::downgrade(fn_header_scope)),
-              |scope, arg| {
-                scope.add(&arg.name, Var::synthesize_type())
-              });
+              |scope, arg| scope.add(&arg));
     Self {
       args,
       args_ast,
@@ -53,7 +54,7 @@ impl CoreFnClause {
   }
 
   /// Read-only access to args
-  pub fn args(&self) -> &Vec<Var> { &self.args }
+  pub fn args(&self) -> &Vec<Arc<Var>> { &self.args }
 
   /// Read-only access to body Arc (clone if you have to)
   pub fn body(&self) -> &Arc<CoreAst> { &self.body }

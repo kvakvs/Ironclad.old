@@ -2,13 +2,14 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
+use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::typing::erl_type::ErlType;
 
 /// Contains identifiers known in the current scope
 #[derive(Debug)]
 pub struct Scope {
   /// Variables known to exist in the current scope
-  pub variables: HashMap<String, Arc<ErlType>>,
+  pub variables: HashMap<String, Arc<Var>>,
   /// Reference to the parent scope for name search
   pub parent_scope: Weak<RwLock<Scope>>,
 }
@@ -33,7 +34,7 @@ impl Scope {
 
   /// Create a new scope from a variable hashmap
   pub fn new(parent_scope: Weak<RwLock<Scope>>,
-             variables: HashMap<String, Arc<ErlType>>) -> Self {
+             variables: HashMap<String, Arc<Var>>) -> Self {
     Self {
       variables,
       parent_scope,
@@ -46,14 +47,15 @@ impl Scope {
   }
 
   /// Return new copy of Scope with a new variable added
-  pub fn add(&self, name: &str, t: Arc<ErlType>) -> Scope {
+  pub fn add(&self, var: &Arc<Var>) -> Scope {
     let mut new_variables = self.variables.clone();
-    new_variables.insert(String::from(name), t);
+    new_variables.insert(var.name.clone(), var.clone());
     Self::new(self.parent_scope.clone(), new_variables)
   }
 
   /// Retrieve variable type from scope
-  pub fn get(&self, name: &str) -> Option<Arc<ErlType>> {
-    self.variables.get(&String::from(name)).cloned()
+  pub fn get(&self, var: &Arc<Var>) -> Option<Arc<ErlType>> {
+    self.variables.get(&var.name)
+        .map(|scope_var| scope_var.ty.clone())
   }
 }

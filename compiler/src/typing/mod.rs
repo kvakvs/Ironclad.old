@@ -7,3 +7,4 @@ pub mod type_error;
 pub mod check;
 pub mod type_union;
 pub mod scope;
+pub mod extract_vars;

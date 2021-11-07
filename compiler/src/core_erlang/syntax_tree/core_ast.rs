@@ -77,7 +77,7 @@ pub enum CoreAst {
   //
 
   /// A variable with optional name and assigned unique numbered typevar
-  Var(Var),
+  Var(Arc<Var>),
 
   /// A literal value (fully known at compile time)
   Lit {
@@ -199,8 +199,8 @@ impl CoreAst {
 
   /// Create a new named variable with unique number id and a small text prefix
   pub fn new_unique_var(prefix: &str) -> Arc<CoreAst> {
-    CoreAst::Var(Var::new_unique(SourceLoc::None, prefix))
-        .into()
+    let new_v = Var::new_unique(SourceLoc::None, prefix);
+    CoreAst::Var(new_v.into()).into()
   }
 
   /// Creates a primop raising badarg atom

@@ -28,7 +28,7 @@ impl TypeBuilder {
         if let Ok(env_read) = env.read() {
           match env_read.variables.get(&v.name) {
             None => return ErlError::variable_not_found(&v.name),
-            Some(val) => Ok(val.clone()),
+            Some(val) => Ok(val.ty.clone()),
           }
         } else {
           panic!("Can't read from env");

@@ -19,6 +19,8 @@ pub struct Var {
   pub location: SourceLoc,
   /// Variable name, numbered unnamed variables are pre-formatted to strings, for simplicity
   pub name: String,
+  /// Variable's deduced type, begins as `any()` and is narrowed down.
+  pub ty: Arc<ErlType>,
 }
 
 impl Var {
@@ -28,6 +30,7 @@ impl Var {
     Self {
       location,
       name: format!("@{}{}", prefix, new_id),
+      ty: ErlType::Any.into(),
     }
   }
 

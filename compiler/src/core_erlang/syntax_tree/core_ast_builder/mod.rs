@@ -14,6 +14,7 @@ use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::source_loc::SourceLoc;
 use crate::literal::Literal;
 use crate::erlang::syntax_tree::node::erl_expression::ErlBinaryOperatorExpr;
+use crate::typing::erl_type::ErlType;
 
 mod fn_def;
 
@@ -112,8 +113,9 @@ impl CoreAstBuilder {
     let core_var = Var {
       location: erl_var.location.clone(),
       name: erl_var.name.clone(),
+      ty: ErlType::Any.into(),
     };
-    CoreAst::Var(core_var).into()
+    CoreAst::Var(core_var.into()).into()
   }
 
   /// Given a left side of Application Expr(Args, ...) try to resolve atom function name in Expr
