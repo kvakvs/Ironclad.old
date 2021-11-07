@@ -11,6 +11,11 @@ pub enum TypeError {
     /// Type to check: type synthesized from an expression
     expr_ty: String,
   },
+  /// List operation received something that's not a list
+  ListExpected {
+    /// Message to go with the error
+    msg: String
+  },
 }
 
 impl Display for TypeError {
@@ -18,6 +23,7 @@ impl Display for TypeError {
     match self {
       TypeError::ExprNotASubtype { ty, expr_ty } =>
         write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
+      TypeError::ListExpected { msg } => write!(f, "{}", msg),
     }
   }
 }

@@ -13,27 +13,51 @@ use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
 
 #[named]
 #[test]
-fn infer_simplemath() -> ErlResult<()> {
-  test_util::start(function_name!(), "infer type for simple expression");
-  let code = "myfun(A) -> (A + 1) / 2.";
-  let module = Module::new_parse_fun(code)?;
-
-  let ast = module.core_ast.clone();
-
-  match ast.deref() {
-    CoreAst::FnDef(fn_def) => {
-      // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-      assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
-      assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
-      // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
-    }
-    other1 => test_util::fail_unexpected(other1),
+fn infer_list_append() -> ErlResult<()> {
+  test_util::start(function_name!(), "infer type for list++list");
+  {
+    let module = Module::new_parse_expr("[atom1] ++ [atom2]")?;
+    let expr_type = module.core_ast.synthesize_type(&module.scope)?;
+    println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, expr_type);
   }
-  println!("Parsed: {}", module.ast);
+  Ok(())
+}
 
-  // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  let f_t = ast.synthesize_type(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
+#[named]
+#[test]
+fn infer_simplefun_division() -> ErlResult<()> {
+  test_util::start(function_name!(), "infer type for simple expression");
+  {
+    let module = Module::new_parse_fun("myfun(A) -> (A + 1) / 2.")?;
+    let ast = module.core_ast.clone();
+
+    match ast.deref() {
+      CoreAst::FnDef(fn_def) => {
+        // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
+        assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
+        assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
+        // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
+      }
+      other1 => test_util::fail_unexpected(other1),
+    }
+    println!("Parsed: {}", module.ast);
+
+    // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
+    let f_t = ast.synthesize_type(&module.scope)?;
+    println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
+  }
+  Ok(())
+}
+
+#[named]
+#[test]
+fn infer_simplefun_addition() -> ErlResult<()> {
+  {
+    let module = Module::new_parse_fun("myfun(A) -> A + 1.")?;
+    let ast = module.core_ast.clone();
+    let f_t = ast.synthesize_type(&module.scope)?;
+    println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
+  }
 
   Ok(())
 }
@@ -67,40 +91,47 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
   Ok(())
 }
 
+// #[named]
+// #[test]
+// fn infer_fun_call_other_fun() -> ErlResult<()> {
+//   test_util::start(function_name!(), "infer type for a fun which calls another fun with a sum");
+//   let code = format!(
+//     "-module({}).\n\
+//     add(A, B) -> A + B.\n\
+//     main() -> add(A, 4).\n", function_name!());
+//   let module = Module::new_erl_module(&code)?;
+//   let fn_add2 = CoreAst::find_function_def(
+//     &module.core_ast, &MFArity::new_local_str("add", 2),
+//   ).unwrap();
+//
+//   let type_fn_add2 = fn_add2.synthesize_type(&module.scope)?;
+//   println!("{}: Inferred {} 🡆 {}", function_name!(), fn_add2, type_fn_add2);
+//
+//   // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
+//   assert!(ErlType::Number.is_subtype_of(&type_fn_add2),
+//           "Function add/2 must have inferred type: number(), received {}", type_fn_add2);
+//   Ok(())
+// }
+
 #[named]
 #[test]
-fn infer_funcall_test() -> ErlResult<()> {
+fn infer_fun_call_other_fun() -> ErlResult<()> {
   test_util::start(function_name!(), "infer type for a fun which calls another fun with a sum");
   let code = format!(
     "-module({}).\n\
     add(A, B) -> A + B.\n\
     main() -> add(A, 4).\n", function_name!());
   let module = Module::new_erl_module(&code)?;
-  {
-    let fn_add2 = CoreAst::find_function_def(
-      &module.core_ast, &MFArity::new_local_str("add", 2),
-    ).unwrap();
+  let find_result2 = CoreAst::find_function_def(
+    &module.core_ast, &MFArity::new_local_str("main", 0),
+  ).unwrap();
 
-    let type_fn_add2 = fn_add2.synthesize_type(&module.scope)?;
-    println!("{}: Inferred {} 🡆 {}", function_name!(), fn_add2, type_fn_add2);
+  // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
+  let f_t2 = find_result2.synthesize_type(&module.scope)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
-    // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
-    assert!(ErlType::Number.is_subtype_of(&type_fn_add2),
-            "Function add/2 must have inferred type: number(), received {}", type_fn_add2);
-  }
-
-  {
-    let find_result2 = CoreAst::find_function_def(
-      &module.core_ast, &MFArity::new_local_str("main", 0),
-    ).unwrap();
-
-    // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-    let f_t2 = find_result2.synthesize_type(&module.scope)?;
-    println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
-
-    // Expected: Main -> integer()
-    assert!(ErlType::Number.is_subtype_of(&f_t2), "Function main/0 must have inferred type: number()");
-  }
+  // Expected: Main -> integer()
+  assert!(ErlType::Number.is_subtype_of(&f_t2), "Function main/0 must have inferred type: number()");
 
   Ok(())
 }

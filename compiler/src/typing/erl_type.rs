@@ -169,7 +169,11 @@ impl ErlType {
     match types.len() {
       0 => ErlType::None,
       1 => (*types[0].as_ref()).clone(),
-      _ => ErlType::Union(TypeUnion::new(types))
+      _ => {
+        let mut u = TypeUnion::new(types);
+        u.normalize();
+        ErlType::Union(u)
+      }
     }
   }
 }

@@ -12,6 +12,7 @@ impl ExtractVar {
   pub fn extract_vars(ast: &CoreAst) -> Vec<Arc<Var>> {
     match ast {
       CoreAst::Var(v) => vec![v.clone()],
+      CoreAst::Lit { .. } => vec![],
       other => unimplemented!("ExtractVar: Don't know how to handle {}", other),
     }
   }

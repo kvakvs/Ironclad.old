@@ -24,6 +24,11 @@ impl Default for Scope {
 }
 
 impl Scope {
+  /// Default empty scope for the module root
+  pub fn new_root_scope() -> Arc<RwLock<Self>> {
+    Scope::empty(Weak::new()).into_arc_rwlock()
+  }
+
   /// Create a new empty scope
   pub fn empty(parent_scope: Weak<RwLock<Scope>>) -> Self {
     Self {

@@ -17,9 +17,9 @@ fn typing_synth() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.Synth");
 
   {
-    let env = Scope::empty();
+    let env = Scope::new_root_scope();
     let list1 = Module::new_parse_expr("[3.14159265358979 , 2,atom]")?;
-    let t = list1.core_ast.synthesize_type(&env);
+    let t = list1.core_ast.synthesize_type(&env)?;
     println!("Synth list1: {}", &t);
     if let ErlType::StronglyTypedList { elements, tail } = t.deref() {
       assert!(elements[0].is_float());
@@ -35,9 +35,9 @@ fn typing_synth() -> ErlResult<()> {
   }
 
   {
-    let env = Scope::empty();
+    let env = Scope::new_root_scope();
     let tup1 = Module::new_parse_expr("{tuple, 1.2, 3, \"hello\"}")?;
-    let t = tup1.core_ast.synthesize_type(&env);
+    let t = tup1.core_ast.synthesize_type(&env)?;
     println!("Synth tup1: {}", &t);
     if let ErlType::Tuple { elements } = t.deref() {
       assert!(elements[0].is_lit_atom("tuple"), "t[0] - expected 'tuple', got {}", elements[0]);
@@ -58,27 +58,27 @@ fn typing_expr_check() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck");
 
   {
-    let env = Scope::empty();
+    let env = Scope::new_root_scope();
     let expr1 = Module::new_parse_expr("hello")?;
     assert!(ErlType::Atom.is_supertype_of_expr(&env, &expr1.core_ast)?,
             "Parsed atom 'hello' must be subtype of atom()");
   }
 
   {
-    let env = Scope::empty();
+    let env = Scope::new_root_scope();
     let fn1 = Module::new_parse_fun("myfun() -> 10 + 20.")?;
     assert!(matches!(fn1.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn1.core_ast);
-    println!("Synth fn1: {}", fn1.core_ast.synthesize_type(&env));
+    println!("Synth fn1: {}", fn1.core_ast.synthesize_type(&env)?);
     assert!(ErlType::Integer.is_supertype_of_expr(&env, &fn1.core_ast)?,
             "Parsed fun() must be subtype of integer()");
   }
 
   {
-    let env = Scope::empty()
-        .add("A", ErlType::Integer.into());
+    let env = Scope::new_root_scope();
+    //env.add("A", ErlType::Integer.into())
     let fn2 = Module::new_parse_fun("myfun2(A) -> 10.0 + A.")?;
     assert!(matches!(fn2.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn2.core_ast);
-    println!("Synth fn2: {}", fn2.core_ast.synthesize_type(&env));
+    println!("Synth fn2: {}", fn2.core_ast.synthesize_type(&env)?);
   }
 
   // {

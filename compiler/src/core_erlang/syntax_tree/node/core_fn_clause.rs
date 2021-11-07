@@ -25,7 +25,7 @@ pub struct CoreFnClause {
   /// The optional guard expression
   guard: Option<Arc<CoreAst>>,
   /// Function scope (variables and passed arguments)
-  scope: Arc<Scope>,
+  pub scope: Arc<RwLock<Scope>>,
 }
 
 impl CoreFnClause {
@@ -49,7 +49,7 @@ impl CoreFnClause {
       args_ast,
       body,
       guard,
-      scope: inner_scope.into(),
+      scope: inner_scope.into_arc_rwlock(),
     }
   }
 
@@ -64,14 +64,14 @@ impl CoreFnClause {
 
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<FnClauseType> {
+  pub fn synthesize_clause_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<FnClauseType> {
     // Synthesizing return type using the inner function scope, with added args
     let args_types = self.args.iter()
         .map(|_| Var::synthesize_type())
         .collect();
     let synthesized_t = FnClauseType::new(
       args_types,
-      self.synthesize_clause_return_type(env)?,
+      self.synthesize_clause_return_type(scope)?,
     );
     Ok(synthesized_t)
   }

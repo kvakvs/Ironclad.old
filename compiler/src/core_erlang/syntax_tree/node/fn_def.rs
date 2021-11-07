@@ -38,9 +38,9 @@ impl FnDef {
   }
 
   /// Produce a function `ErlType` with all clauses and their return types
-  pub fn synthesize_function_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_function_type(&self, _scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
     let clauses: ErlResult<Vec<FnClauseType>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_type(env))
+        .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
         .collect();
     let synthesized_t = ErlType::Fn {
       arity: self.funarity.arity,
@@ -50,10 +50,10 @@ impl FnDef {
   }
 
   /// Produce a function return type, as union of all clauses returns
-  pub fn synthesize_return_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_return_type(&self, _scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
     // TODO: Filter out incompatible clauses
     let clauses_ret: ErlResult<Vec<Arc<ErlType>>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_return_type(env))
+        .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
         .collect();
     let synthesized_t = ErlType::new_union(clauses_ret?).into();
     Ok(synthesized_t)
