@@ -21,8 +21,8 @@ impl CoreAst {
         let children = fn_def.clauses.iter()
             .map(|c| -> Vec<Arc<CoreAst>> {
               vec![
-                c.body.clone(),
-                c.guard.as_ref()
+                c.body().clone(),
+                c.guard().as_ref()
                     .map_or(CoreAst::Empty.into(), |cg| cg.clone()),
               ]
             })

@@ -9,7 +9,6 @@ use std::ops::Deref;
 use std::collections::HashMap;
 
 /// Collection of module functions and a lookup table
-#[deprecated = "Use typing::Scope, or this is another type of Scope"]
 pub struct FuncRegistry {
   /// Function definitions of the module
   pub functions: Vec<Arc<FnDef>>,

@@ -1,9 +1,10 @@
 //! Application (a function call on an expression)
 use std::fmt::Formatter;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::display;
+use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -32,13 +33,14 @@ impl Apply {
   /// From argument types build a new ErlType::Function() with a single clause corresponding to
   /// that specific call `Apply` would be performing.
   /// TODO: This should synthesize return type not the expected fn type
-  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
-    let arg_types: Vec<Arc<ErlType>> = self.args.iter()
+  pub fn synthesize_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+    let arg_types: ErlResult<Vec<Arc<ErlType>>> = self.args.iter()
         .map(|arg| TypeBuilder::synthesize(env, arg))
         .collect();
     let ret_ty = ErlType::Any.into(); // TODO: Deduct here the expected types or something?
 
-    let clause_type = FnClauseType::new(arg_types, ret_ty).into();
-    ErlType::new_fn_type(vec![clause_type]).into()
+    let clause_type = FnClauseType::new(arg_types?, ret_ty).into();
+    let synthesized_t = ErlType::new_fn_type(vec![clause_type]).into();
+    Ok(synthesized_t)
   }
 }

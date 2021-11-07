@@ -1,7 +1,7 @@
 //! Defines AST tree for Core Erlang-like intermediate language. A more generalized and simplified
 //! intermediate language, allowing easier optimisations and easier code generation.
 use ::function_name::named;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::display;
 use crate::mfarity::MFArity;
@@ -17,6 +17,7 @@ use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
+use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::synth::TypeBuilder;
@@ -140,7 +141,7 @@ impl CoreAst {
   }
 
   /// Shortcut to call the typebuilder's synthesize
-  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
+  pub fn synthesize_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
     TypeBuilder::synthesize(env, self)
   }
 

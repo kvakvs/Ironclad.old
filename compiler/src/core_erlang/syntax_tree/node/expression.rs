@@ -1,8 +1,9 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp, CoreUnaryOp};
+use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 
@@ -19,29 +20,29 @@ pub struct BinaryOperatorExpr {
 
 impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
-  pub fn synthesize_type(&self, env: &Scope) -> Arc<ErlType> {
-    let left = self.left.synthesize_type(env);
-    let right = self.right.synthesize_type(env);
+  pub fn synthesize_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+    let left = self.left.synthesize_type(env)?;
+    let right = self.right.synthesize_type(env)?;
 
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
         // A binary math operation can only produce a numeric type, integer if both args are integer
         if !left.is_number() || !right.is_number() {
-          ErlType::None.into()
+          Ok(ErlType::None.into())
         } else if left.is_integer() && right.is_integer() {
-          ErlType::Integer.into()
+          Ok(ErlType::Integer.into())
         } else {
-          ErlType::Float.into()
+          Ok(ErlType::Float.into())
         }
       }
 
-      CoreBinaryOp::Div => ErlType::Float.into(),
+      CoreBinaryOp::Div => Ok(ErlType::Float.into()),
 
-      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => ErlType::Integer.into(),
+      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => Ok(ErlType::Integer.into()),
 
       CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
       | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
-        ErlType::Boolean.into()
+        Ok(ErlType::Boolean.into())
       }
 
       // CoreBinaryOp::ListAppend => {

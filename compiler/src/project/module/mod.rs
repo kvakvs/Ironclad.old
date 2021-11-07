@@ -40,7 +40,7 @@ pub struct Module {
   /// Collection of module functions and a lookup table
   pub registry: RwLock<FuncRegistry>,
   /// Module level scope, containing functions
-  pub scope: Scope,
+  pub scope: Arc<RwLock<Scope>>,
 
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.

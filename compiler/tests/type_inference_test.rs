@@ -32,7 +32,7 @@ fn infer_simplemath() -> ErlResult<()> {
   println!("Parsed: {}", module.ast);
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  let f_t = ast.synthesize_type(&module.scope);
+  let f_t = ast.synthesize_type(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
 
   Ok(())
@@ -48,7 +48,7 @@ fn infer_atom_list_concatenation() -> ErlResult<()> {
   let module = Module::new_parse_fun(code)?;
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(&module.core_ast));
-  let f_t = module.core_ast.synthesize_type(&module.scope);
+  let f_t = module.core_ast.synthesize_type(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, f_t);
 
   if let ErlType::List { elements: t, .. } = f_t.deref() {
@@ -77,17 +77,16 @@ fn infer_funcall_test() -> ErlResult<()> {
     main() -> add(A, 4).\n", function_name!());
   let module = Module::new_erl_module(&code)?;
   {
-    let add_fn_ast = CoreAst::find_function_def(
+    let fn_add2 = CoreAst::find_function_def(
       &module.core_ast, &MFArity::new_local_str("add", 2),
     ).unwrap();
 
-    // let f_t1 = ErlType::final_type(module.unifier.infer_ast(add_fn_ast.deref()));
-    let f_t1 = add_fn_ast.synthesize_type(&module.scope);
-    println!("{}: Inferred {} 🡆 {}", function_name!(), add_fn_ast, f_t1);
+    let type_fn_add2 = fn_add2.synthesize_type(&module.scope)?;
+    println!("{}: Inferred {} 🡆 {}", function_name!(), fn_add2, type_fn_add2);
 
     // Expected: in Add/2 -> number(), args A :: number(), B :: integer()
-    assert!(ErlType::Number.is_subtype_of(&f_t1),
-            "Function add/2 must have inferred type: number(), received {}", f_t1);
+    assert!(ErlType::Number.is_subtype_of(&type_fn_add2),
+            "Function add/2 must have inferred type: number(), received {}", type_fn_add2);
   }
 
   {
@@ -96,7 +95,7 @@ fn infer_funcall_test() -> ErlResult<()> {
     ).unwrap();
 
     // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-    let f_t2 = find_result2.synthesize_type(&module.scope);
+    let f_t2 = find_result2.synthesize_type(&module.scope)?;
     println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
 
     // Expected: Main -> integer()
@@ -120,7 +119,7 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
   ).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_ty = find_result2.synthesize_type(&module.scope);
+  let main_ty = find_result2.synthesize_type(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
 
   // Expected: Main -> number()|[atom1|atom2]

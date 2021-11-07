@@ -2,13 +2,14 @@
 use std::sync::Arc;
 use crate::typing::erl_type::ErlType;
 
-/// Defines a function clause, with arguments and return type. Part of the function type.
+/// Defines a function clause, with arguments and return type.
+/// Use 1 or multiple `FnClauseType` to construct a function type.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FnClauseType {
   /// Argument types for this function clause
-  pub args: Vec<Arc<ErlType>>,
+  args: Vec<Arc<ErlType>>,
   /// Return type of this function clause
-  pub ret_ty: Arc<ErlType>,
+  ret_ty: Arc<ErlType>,
 }
 
 impl FnClauseType {

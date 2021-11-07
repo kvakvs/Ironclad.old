@@ -66,6 +66,8 @@ pub enum ErlError {
     msg: String,
   },
 
+  /// A variable was referenced that's not in the scope
+  VariableNotFound(String),
   /// Returned when a type error or mismatching types were found
   TypeError(TypeError),
 }
@@ -107,6 +109,7 @@ impl std::fmt::Display for ErlError {
       ErlError::ErlangSyntax { parse_err, msg } => {
         write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
       }
+      ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
       ErlError::TypeError(terr) => write!(f, "Type error: {}", terr),
     }
   }
@@ -124,6 +127,11 @@ impl ErlError {
   /// Wraps a `TypeError`
   pub fn type_error<T>(terr: TypeError) -> ErlResult<T> {
     Err(ErlError::TypeError(terr))
+  }
+
+  /// Wraps a `VariableNotFound`
+  pub fn variable_not_found<T>(var_name: &str) -> ErlResult<T> {
+    Err(ErlError::VariableNotFound(String::from(var_name)))
   }
 
   /// Creates a preprocessor error from a filename and a message
