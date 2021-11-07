@@ -135,6 +135,7 @@ impl CoreAstBuilder {
       let clauses: ErlResult<_> = erl_fndef.clauses.iter()
           .map(|efnc| Self::create_core_fnclause(module, efnc))
           .collect();
+
       let core_fndef: Arc<FnDef> = FnDef::new(erl_fndef.location.clone(),
                                               erl_fndef.funarity.clone(),
                                               clauses?).into();

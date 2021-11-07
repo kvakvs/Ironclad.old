@@ -7,7 +7,6 @@ use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
-use crate::typing::extract_vars::ExtractVar;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
 
@@ -35,9 +34,13 @@ impl CoreFnClause {
              args_ast: Vec<Arc<CoreAst>>,
              body: Arc<CoreAst>,
              guard: Option<Arc<CoreAst>>) -> Self {
+    // let args: Vec<Arc<Var>> = args_ast.iter()
+    //     .map(|arg_ast| ExtractVar::extract_vars(arg_ast))
+    //     .flatten()
+    //     .collect();
+    // println!("New fnclause: args {:?}\nnew args {:?}", args_ast, args);
     let args: Vec<Arc<Var>> = args_ast.iter()
-        .map(|arg_ast| ExtractVar::extract_vars(arg_ast))
-        .flatten()
+        .map(|ast| Var::new_unique(ast.location(), "Arg").into())
         .collect();
 
     // Create inner_env for each arg where it has any() type, later this can be amended
