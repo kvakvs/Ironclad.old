@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
-use crate::display;
+use crate::display::Pretty;
 use crate::source_loc::SourceLoc;
 
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
@@ -38,7 +38,7 @@ impl std::fmt::Display for Case {
       // 1 => writeln!(f, "( case <{}> of ", self.exprs[0])?,
       _ => {
         write!(f, "( case <")?;
-        display::display_comma_separated(&self.exprs, f)?;
+        Pretty::display_comma_separated(&self.exprs, f)?;
         writeln!(f, "> of ")?;
       },
     }

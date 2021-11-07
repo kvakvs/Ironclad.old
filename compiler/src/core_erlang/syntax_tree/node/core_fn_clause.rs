@@ -4,7 +4,7 @@ use std::fmt::Formatter;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::var::Var;
-use crate::display;
+use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::extract_vars::ExtractVar;
@@ -84,7 +84,7 @@ impl CoreFnClause {
 
 impl std::fmt::Display for CoreFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    display::display_paren_list(&self.args, f)?;
+    Pretty::display_paren_list(&self.args, f)?;
     match &self.guard {
       Some(g) => write!(f, " when {}", g)?,
       None => {}

@@ -1,10 +1,10 @@
 //! Defines an Erlang-type
-use std::fmt::Formatter;
 use std::ops::Deref;
 use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::subtyping::SubtypeChecker;
 use crate::typing::type_union::TypeUnion;
 
@@ -47,7 +47,7 @@ pub enum ErlType {
     /// Literal atom for the record tag
     tag: String,
     /// Record fields - name :: type()
-    fields: Vec<(String, Arc<ErlType>)>,
+    fields: Vec<Arc<RecordFieldType>>,
   },
 
   /// List of any()
@@ -119,10 +119,6 @@ pub enum ErlType {
 
   /// Contains multiple types + operations on these types
   Union(TypeUnion),
-}
-
-impl std::fmt::Display for ErlType {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{:?}", self) }
 }
 
 //

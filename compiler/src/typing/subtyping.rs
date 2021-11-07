@@ -240,7 +240,7 @@ impl SubtypeChecker {
             && ErlType::new_atom(subrecord_tag).is_subtype_of(&supertuple_elements[0])
             && subrecord_fields.iter()
             .zip(supertuple_elements[1..].iter())
-            .all(|((_, sub_t), super_t)| sub_t.is_subtype_of(super_t))
+            .all(|(sub_t, super_t)| sub_t.ty.is_subtype_of(super_t))
       }
       _ => false,
     }

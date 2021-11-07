@@ -3,7 +3,7 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::display;
+use crate::display::Pretty;
 use crate::source_loc::SourceLoc;
 
 /// Case clause checks the input expression against `match_expr` and if it matches and if the guard
@@ -24,7 +24,7 @@ pub struct CaseClause {
 impl std::fmt::Display for CaseClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "<")?;
-    display::display_comma_separated(&self.match_exprs, f)?;
+    Pretty::display_comma_separated(&self.match_exprs, f)?;
 
     match &self.guard {
       None => write!(f, "> -> ")?,

@@ -2,8 +2,8 @@
 use std::fmt::Formatter;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::display;
 use std::sync::Arc;
+use crate::display::Pretty;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
@@ -38,7 +38,7 @@ impl ErlFnClause {
 impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
-    display::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
       write!(f, "when {} ", *gexpr)?;
@@ -50,7 +50,7 @@ impl std::fmt::Display for ErlFnClause {
 impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.name)?;
-    display::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
       write!(f, "when {:?} ", *gexpr)?;

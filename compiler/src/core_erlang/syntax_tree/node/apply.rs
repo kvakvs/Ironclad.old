@@ -3,7 +3,7 @@ use std::fmt::Formatter;
 use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::display;
+use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
@@ -25,7 +25,7 @@ pub struct Apply {
 impl std::fmt::Display for Apply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "apply {} ", self.target)?;
-    display::display_paren_list(&self.args, f)
+    Pretty::display_paren_list(&self.args, f)
   }
 }
 

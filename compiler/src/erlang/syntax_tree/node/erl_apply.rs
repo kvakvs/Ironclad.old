@@ -1,9 +1,9 @@
 //! Defines Application AST node for a function call
 use std::fmt::Formatter;
 use std::sync::Arc;
+use crate::display::Pretty;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::display::display_comma_separated;
 use crate::source_loc::SourceLoc;
 
 /// AST node which contains a function call
@@ -19,7 +19,7 @@ pub struct ErlApply {
 impl std::fmt::Display for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.expr)?;
-    display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ")")
   }
 }
@@ -27,7 +27,7 @@ impl std::fmt::Display for ErlApply {
 impl std::fmt::Debug for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "apply({:?}, (", self.expr)?;
-    display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(&self.args, f)?;
     write!(f, "))")
   }
 }

@@ -2,7 +2,7 @@
 use crate::source_loc::SourceLoc;
 use crate::literal::Literal;
 use std::fmt::Formatter;
-use crate::display;
+use crate::display::Pretty;
 
 /// Each module attribute is just a name and list of literals
 #[derive(Debug)]
@@ -18,7 +18,7 @@ pub struct ModuleAttr {
 impl std::fmt::Display for ModuleAttr {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "'{}' = ", self.name)?;
-    display::display_square_list(&self.args, f)?;
+    Pretty::display_square_list(&self.args, f)?;
     write!(f, ",")
   }
 }

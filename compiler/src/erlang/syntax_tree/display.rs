@@ -1,6 +1,6 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
-use crate::display;
+use crate::display::Pretty;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::literal::Literal;
@@ -46,8 +46,8 @@ impl std::fmt::Display for ErlAst {
           Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
         }
       }
-      ErlAst::List { elements, .. } => display::display_square_list(elements, f),
-      ErlAst::Tuple { elements, .. } => display::display_curly_list(elements, f),
+      ErlAst::List { elements, .. } => Pretty::display_square_list(elements, f),
+      ErlAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
     }
   }
 }
@@ -94,10 +94,10 @@ impl std::fmt::Display for Literal {
       Literal::Float(flt) => write!(f, "{}", flt),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => write!(f, "{}", b),
-      Literal::List { elements, .. } => display::display_square_list(elements, f),
+      Literal::List { elements, .. } => Pretty::display_square_list(elements, f),
       Literal::Nil => write!(f, "[]"),
       Literal::String(s) => write!(f, "\"{}\"", s),
-      Literal::Tuple(t) => display::display_curly_list(t, f),
+      Literal::Tuple(t) => Pretty::display_curly_list(t, f),
     }
   }
 }

@@ -15,6 +15,9 @@ pub struct TypeUnion {
 }
 
 impl TypeUnion {
+  /// Access the readonly types list
+  pub fn types(&self) -> &Vec<Arc<ErlType>> { &self.types }
+
   /// Create a type union from a vec of types
   pub fn new(types: Vec<Arc<ErlType>>) -> Self {
     Self { types }

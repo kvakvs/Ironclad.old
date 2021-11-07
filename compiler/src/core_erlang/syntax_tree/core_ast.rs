@@ -3,7 +3,6 @@
 use ::function_name::named;
 use std::sync::{Arc, RwLock};
 
-use crate::display;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 use crate::core_erlang::syntax_tree::node::apply::Apply;
@@ -17,6 +16,7 @@ use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
+use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
@@ -249,11 +249,11 @@ impl std::fmt::Display for CoreAst {
     match self {
       CoreAst::Module { name, exports } => {
         writeln!(f, "module {} ", name)?;
-        display::display_square_list(exports, f)
+        Pretty::display_square_list(exports, f)
       }
       CoreAst::Attributes(attrs) => {
         writeln!(f, "attributes ")?;
-        display::display_square_list(attrs, f)
+        Pretty::display_square_list(attrs, f)
       }
       CoreAst::ModuleFuns(fndefs) => {
         for fndef in fndefs.iter() {
@@ -264,7 +264,7 @@ impl std::fmt::Display for CoreAst {
 
       CoreAst::FnDef(fn_def) => {
         write!(f, "{} = (", fn_def.funarity)?;
-        display::display_semicolon_separated(&fn_def.clauses, f)?;
+        Pretty::display_semicolon_separated(&fn_def.clauses, f)?;
         write!(f, ")")
       }
       CoreAst::Var(core_var) => write!(f, "{}", core_var.name),
@@ -284,8 +284,8 @@ impl std::fmt::Display for CoreAst {
       //     Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
       //   }
       // }
-      CoreAst::List { elements, .. } => display::display_square_list(elements, f),
-      CoreAst::Tuple { elements, .. } => display::display_curly_list(elements, f),
+      CoreAst::List { elements, .. } => Pretty::display_square_list(elements, f),
+      CoreAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
       CoreAst::PrimOp { op, .. } => write!(f, "{:?}", op),
       CoreAst::FnRef { mfa: mfarity, .. } => write!(f, "{}", mfarity),
 
