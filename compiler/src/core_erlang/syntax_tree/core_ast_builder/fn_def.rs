@@ -109,8 +109,12 @@ impl CoreAstBuilder {
   }
 
   /// Directly translate args and body to core
+  /// Create a new empty scope under module scope
   fn create_core_fnclause(module: &Module, efnc: &ErlFnClause) -> ErlResult<CoreFnClause> {
-    let fn_header_scope = Scope::empty(Arc::downgrade(&module.scope)).into_arc_rwlock();
+    let clause_scope = Scope::empty(
+      format!("fn_header_scope {}:{}", module.name, efnc.name),
+      Arc::downgrade(&module.scope),
+    ).into_arc_rwlock();
 
     let args_as_core: ErlResult<_> = efnc.args.iter()
         .map(|efnc_ast| CoreAstBuilder::build(module, efnc_ast))
@@ -119,7 +123,7 @@ impl CoreAstBuilder {
         .map(|ast| CoreAstBuilder::build(module, &ast));
 
     let fnclause = CoreFnClause::new(
-      &fn_header_scope,
+      clause_scope,
       args_as_core?,
       CoreAstBuilder::build(module, &efnc.body)?,
       guard_as_core.map(|r| r.unwrap()),

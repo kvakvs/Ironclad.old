@@ -9,6 +9,9 @@ use crate::typing::erl_type::ErlType;
 /// Contains identifiers known in the current scope
 #[derive(Debug)]
 pub struct Scope {
+  /// A debug name used to distinguish between scopes while printing
+  pub name: String,
+
   /// Variables known to exist in the current scope
   pub variables: HashMap<String, Arc<Var>>,
 
@@ -23,6 +26,7 @@ pub struct Scope {
 impl Default for Scope {
   fn default() -> Self {
     Self {
+      name: "default_scope".to_string(),
       variables: Default::default(),
       functions: Default::default(),
       parent_scope: Default::default(),
@@ -32,13 +36,14 @@ impl Default for Scope {
 
 impl Scope {
   /// Default empty scope for the module root
-  pub fn new_root_scope() -> Arc<RwLock<Self>> {
-    Scope::empty(Weak::new()).into_arc_rwlock()
+  pub fn new_root_scope(name: String) -> Arc<RwLock<Self>> {
+    Scope::empty(name, Weak::new()).into_arc_rwlock()
   }
 
   /// Create a new empty scope
-  pub fn empty(parent_scope: Weak<RwLock<Scope>>) -> Self {
+  pub fn empty(name: String, parent_scope: Weak<RwLock<Scope>>) -> Self {
     Self {
+      name,
       variables: Default::default(),
       functions: Default::default(),
       parent_scope,
@@ -46,9 +51,11 @@ impl Scope {
   }
 
   /// Create a new scope from a variable hashmap
-  pub fn new(parent_scope: Weak<RwLock<Scope>>,
+  pub fn new(name: String,
+             parent_scope: Weak<RwLock<Scope>>,
              variables: HashMap<String, Arc<Var>>) -> Self {
     Self {
+      name,
       variables,
       functions: Default::default(),
       parent_scope,
@@ -64,7 +71,14 @@ impl Scope {
   pub fn add(&self, var: &Arc<Var>) -> Scope {
     let mut new_variables = self.variables.clone();
     new_variables.insert(var.name.clone(), var.clone());
-    Self::new(self.parent_scope.clone(), new_variables)
+    Self::new(self.name.clone(), self.parent_scope.clone(), new_variables)
+  }
+
+  /// Insert a new var into scope
+  pub fn add_to(scope: &Arc<RwLock<Scope>>, var: &Arc<Var>) {
+    if let Ok(mut scope_w) = scope.write() {
+      scope_w.variables.insert(var.name.clone(), var.clone());
+    }
   }
 
   /// Retrieve variable type from scope
@@ -90,6 +104,7 @@ impl Scope {
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
   pub fn retrieve_fn_from(scope: &Arc<RwLock<Scope>>, mfa: &MFArity) -> Option<Arc<ErlType>> {
+    println!("retr_fnfrom {} - {:?}", mfa, scope);
     if let Ok(scope_read) = scope.read() {
       match scope_read.functions.get(mfa) {
         Some(val) => Some(val.clone()),

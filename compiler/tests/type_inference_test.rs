@@ -121,10 +121,10 @@ fn infer_fun_call_other_fun() -> ErlResult<()> {
   let code = format!(
     "-module({}).\n\
     add(A, B) -> A + B.\n\
-    main() -> add(A, 4).\n", function_name!());
+    main(A) -> add(A, 4).\n", function_name!());
   let module = Module::new_erl_module(&code)?;
   let find_result2 = CoreAst::find_function_def(
-    &module.core_ast, &MFArity::new_local_str("main", 0),
+    &module.core_ast, &MFArity::new_local_str("main", 1),
   ).unwrap();
 
   // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));

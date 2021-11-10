@@ -1,6 +1,7 @@
 //! Defines core function clause
 
 use std::fmt::Formatter;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::var::Var;
@@ -28,9 +29,28 @@ pub struct CoreFnClause {
 }
 
 impl CoreFnClause {
+  fn extract_var_or_make_new(scope: &Arc<RwLock<Scope>>, ast: &Arc<CoreAst>) -> Arc<Var> {
+    match ast.deref() {
+      CoreAst::Var(v) => {
+        match Scope::retrieve_var_from(scope, &v) {
+          None => {
+            // not exists: add it
+            Scope::add_to(scope, v);
+            v.clone()
+          }
+          Some(_) => {
+            // Exists: return it
+            v.clone()
+          }
+        }
+      }
+      _other => Var::new_unique(ast.location(), "Arg").into(),
+    }
+  }
+
   /// Creates a new Core Function Clause
   /// All input variables are given unique new names.
-  pub fn new(fn_header_scope: &Arc<RwLock<Scope>>,
+  pub fn new(clause_scope: Arc<RwLock<Scope>>,
              args_ast: Vec<Arc<CoreAst>>,
              body: Arc<CoreAst>,
              guard: Option<Arc<CoreAst>>) -> Self {
@@ -40,19 +60,25 @@ impl CoreFnClause {
     //     .collect();
     // println!("New fnclause: args {:?}\nnew args {:?}", args_ast, args);
     let args: Vec<Arc<Var>> = args_ast.iter()
-        .map(|ast| Var::new_unique(ast.location(), "Arg").into())
+        .map(|ast| Self::extract_var_or_make_new(&clause_scope, ast))
         .collect();
 
     // Create inner_env for each arg where it has any() type, later this can be amended
-    let inner_scope: Scope = args.iter()
-        .fold(Scope::empty(Arc::downgrade(fn_header_scope)),
-              |scope, arg| scope.add(&arg));
+    let inner_scope: Arc<RwLock<Scope>> = args.iter()
+        .fold(clause_scope, |scope, arg| {
+          if let Ok(scope_r) = scope.read() {
+            scope_r.add(&arg).into_arc_rwlock()
+          } else {
+            panic!("Can't read-lock scope for creating clause scope while building core AST")
+          }
+        });
+
     Self {
       args,
       args_ast,
       body,
       guard,
-      scope: inner_scope.into_arc_rwlock(),
+      scope: inner_scope,
     }
   }
 
