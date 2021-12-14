@@ -14,7 +14,7 @@ impl SubtypeChecker {
   pub fn is_subtype_for_list_tail(sub_ty: &Option<Arc<ErlType>>,
                                   sup_ty: &Option<Arc<ErlType>>) -> bool {
     let nil = Arc::new(ErlType::Nil); // TODO: Some global NIL for all our NIL needs?
-    let subt = sub_ty.clone().unwrap_or(nil.clone());
+    let subt = sub_ty.clone().unwrap_or_else(|| nil.clone());
     let supt = sup_ty.clone().unwrap_or(nil);
     Self::is_subtype(&subt, &supt)
   }
@@ -44,26 +44,14 @@ impl SubtypeChecker {
         Self::is_subtype_of_strongly_typed_list(supertype_elements, supertype_tail, sub_ty),
       ErlType::Nil => false, // can only include other nil
 
-      ErlType::AnyMap => {
-        match sub_ty {
-          ErlType::Map { .. } => true,
-          _ => false,
-        }
-      }
+      ErlType::AnyMap => matches!(sub_ty, ErlType::Map { .. }),
       // ErlType::Map { .. } => {}
 
-      ErlType::AnyBinary => {
-        if let ErlType::Binary { .. } = sub_ty { true } else { false }
-      }
+      ErlType::AnyBinary => matches!(sub_ty, ErlType::Binary { .. }),
       // An equal binary type can be a subtype of binary, no other matches it (checked at the top)
       ErlType::Binary { .. } => false,
 
-      ErlType::AnyFn => {
-        match sub_ty {
-          ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda => true,
-          _ => false,
-        }
-      }
+      ErlType::AnyFn => matches!(sub_ty, ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda),
       // only can be subtype of self (equality checked at the top)
       ErlType::Fn(fn_type) =>
         Self::is_subtype_of_fn(fn_type.arity(), fn_type.clauses(), sub_ty),
@@ -84,7 +72,7 @@ impl SubtypeChecker {
       ErlType::Boolean => true,
       ErlType::Singleton { val } => {
         // Singleton atom values are a subtype of atom
-        if let Literal::Atom(_) = val.deref() { true } else { false }
+        matches!(val.deref(), Literal::Atom(_))
       }
       _other => false,
     }
@@ -110,11 +98,7 @@ impl SubtypeChecker {
       | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
         // Floats and integer singletons are subtype of number
-        match val.deref() {
-          Literal::Float(_) => true,
-          Literal::Integer(_) => true,
-          _ => false,
-        }
+        matches!(val.deref(), Literal::Float(_) | Literal::Integer(_))
       }
       _ => false,
     }
@@ -128,11 +112,7 @@ impl SubtypeChecker {
       | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
         // Floats and integer singletons are subtype of float
-        match val.deref() {
-          Literal::Float(_) => true,
-          Literal::Integer(_) => true,
-          _ => false,
-        }
+        matches!(val.deref(), Literal::Float(_) | Literal::Integer(_))
       }
       _ => false,
     }
@@ -146,10 +126,7 @@ impl SubtypeChecker {
       | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
         // Integer singletons are subtype of integer
-        match val.deref() {
-          Literal::Integer(_) => true,
-          _ => false,
-        }
+        matches!(val.deref(), Literal::Integer(_))
       }
       _ => false,
     }
@@ -158,10 +135,7 @@ impl SubtypeChecker {
   /// Checks whether sub_ty matches a list() type.
   /// A list() includes any other lists() and nil []
   fn is_subtype_of_anylist(sub_ty: &ErlType) -> bool {
-    match sub_ty {
-      ErlType::List { .. } | ErlType::StronglyTypedList { .. } | ErlType::Nil => true,
-      _ => false,
-    }
+    matches!(sub_ty, ErlType::List { .. } | ErlType::StronglyTypedList { .. } | ErlType::Nil)
   }
 
   /// Checks whether sub_ty matches a list `[supertype_elements() | supertype_tail()]` type.
@@ -184,7 +158,7 @@ impl SubtypeChecker {
   }
 
   /// Checks whether sub_ty matches a list `[supertype_elements() | supertype_tail()]` type.
-  fn is_subtype_of_strongly_typed_list(supertype_elements: &Vec<Arc<ErlType>>,
+  fn is_subtype_of_strongly_typed_list(supertype_elements: &[Arc<ErlType>],
                                        supertype_tail: &Option<Arc<ErlType>>,
                                        sub_ty: &ErlType) -> bool {
     match sub_ty {
@@ -213,16 +187,13 @@ impl SubtypeChecker {
   /// Checks whether sub_ty matches a tuple() type.
   /// A tuple() includes any other tuples() typed and untyped, and records
   fn is_subtype_of_anytuple(sub_ty: &ErlType) -> bool {
-    match sub_ty {
-      ErlType::Tuple { .. } | ErlType::Record { .. } => true,
-      _ => false,
-    }
+    matches!(sub_ty, ErlType::Tuple { .. } | ErlType::Record { .. })
   }
 
   /// Checks whether sub_ty matches a tuple(T1, T2, ...) type.
   /// A tuple(T1, T2, ...) only includes tuples of the same size, where each element is a subtype,
   /// and records of tuple-1 size, where subrecord's tag would serve as supertuple's first element
-  fn is_subtype_of_tuple(supertuple_elements: &Vec<Arc<ErlType>>, sub_ty: &ErlType) -> bool {
+  fn is_subtype_of_tuple(supertuple_elements: &[Arc<ErlType>], sub_ty: &ErlType) -> bool {
     match sub_ty {
       ErlType::Tuple { elements: subtuple_elements } => {
         // lengths must match, and each element in subtuple must be a subtype of each corresponding
@@ -250,7 +221,7 @@ impl SubtypeChecker {
   /// Checks whether sub_ty matches a regular Erlang function type with possibly multiple clauses
   /// and multiple return types.
   fn is_subtype_of_fn(sup_arity: usize,
-                      sup_clauses: &Vec<Arc<FnClauseType>>,
+                      sup_clauses: &[Arc<FnClauseType>],
                       sub_ty: &ErlType) -> bool {
     match sub_ty {
       ErlType::Fn(sub_fntype) => {

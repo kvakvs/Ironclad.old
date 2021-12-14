@@ -91,14 +91,16 @@ impl BinaryOperatorExpr {
   /// For `list() ++ list(T1, T2...)` operation
   fn synthesize_stronglist_append(_scope: &Arc<RwLock<Scope>>,
                                   left: &Arc<ErlType>,
-                                  left_elements: &Vec<Arc<ErlType>>,
+                                  left_elements: &[Arc<ErlType>],
                                   _left_tail: &Option<Arc<ErlType>>,
                                   right: &Arc<ErlType>) -> ErlResult<Arc<ErlType>> {
     match right.deref() {
       ErlType::AnyList => panic!("Internal: Synthesize stronglist++anylist loses type precision"),
       ErlType::List { elements: right_elements, tail: right_tail } => {
         let elements: Vec<Arc<ErlType>> = left_elements.iter()
-            .map(|l_elem| ErlType::new_union(vec![l_elem.clone(), right_elements.clone()]).into())
+            .map(|l_elem| {
+              ErlType::new_union(vec![l_elem.clone(), right_elements.clone()])
+            })
             .collect();
         let result_list = ErlType::StronglyTypedList {
           elements,
@@ -108,7 +110,9 @@ impl BinaryOperatorExpr {
       }
       ErlType::StronglyTypedList { elements: right_elements, tail: right_tail } => {
         let elements: Vec<Arc<ErlType>> = left_elements.iter().zip(right_elements.iter())
-            .map(|(l_elem, r_elem)| ErlType::new_union(vec![l_elem.clone(), r_elem.clone()]).into())
+            .map(|(l_elem, r_elem)| {
+              ErlType::new_union(vec![l_elem.clone(), r_elem.clone()])
+            })
             .collect();
         let result_list = ErlType::StronglyTypedList {
           elements,
@@ -141,7 +145,7 @@ impl BinaryOperatorExpr {
         // Result type for ++ is union of left and right types, and right tail is applied as the
         // tail type for result
         let result_type = ErlType::List {
-          elements: union_t.into(),
+          elements: union_t,
           tail: right_tail.clone(),
         };
         Ok(result_type.into())

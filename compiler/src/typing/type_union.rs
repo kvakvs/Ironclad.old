@@ -34,8 +34,8 @@ impl TypeUnion {
           return self.types.iter().enumerate()
               .all(|(index2, type2)|
                        *index1 == index2
-                           || !type1.is_subtype_of(&type2)
-                           || (type2.is_subtype_of(&type1) && *index1 < index2),
+                           || !type1.is_subtype_of(type2)
+                           || (type2.is_subtype_of(type1) && *index1 < index2),
               );
         })
         .map(|(_index, ty)| ty.clone())

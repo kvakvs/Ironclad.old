@@ -130,7 +130,7 @@ impl CoreAst {
     let name_s = name.to_string();
     CoreAst::Lit {
       location: SourceLoc::None,
-      value: Arc::new(Literal::Atom(name_s.clone())),
+      value: Arc::new(Literal::Atom(name_s)),
       // lit_type: ErlType::Atom(name_s).into(),
     }
   }

@@ -9,21 +9,13 @@ use std::ops::Deref;
 use std::collections::HashMap;
 
 /// Collection of module functions and a lookup table
+#[derive(Default)]
 pub struct FuncRegistry {
   /// Function definitions of the module
   pub functions: Vec<Arc<FnDef>>,
 
   /// Lookup by function_name/arity into `Self::functions`
   pub functions_lookup: HashMap<MFArity, usize>,
-}
-
-impl Default for FuncRegistry {
-  fn default() -> Self {
-    FuncRegistry {
-      functions: vec![],
-      functions_lookup: Default::default(),
-    }
-  }
 }
 
 impl FuncRegistry {

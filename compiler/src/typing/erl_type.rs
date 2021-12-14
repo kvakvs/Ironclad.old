@@ -136,7 +136,7 @@ impl ErlType {
   /// Creates a type for a proper list with a NIL tail.
   pub fn list_of(t: Arc<ErlType>) -> Arc<ErlType> {
     let result = ErlType::List {
-      elements: t.into(),
+      elements: t,
       tail: None,
     };
     result.into()
@@ -188,10 +188,7 @@ impl ErlType {
       ErlType::Atom
       | ErlType::Boolean => true,
       ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Atom(_) => true,
-          _ => false,
-        }
+        matches!(val.deref(), Literal::Atom(_))
       }
       _ => false,
     };
@@ -218,12 +215,7 @@ impl ErlType {
       | ErlType::Integer
       | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Integer(_)
-          | Literal::BigInteger
-          | Literal::Float(_) => true,
-          _ => false
-        }
+        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger | Literal::Float(_))
       }
       _ => false,
     };
@@ -235,11 +227,7 @@ impl ErlType {
       ErlType::Integer
       | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Integer(_)
-          | Literal::BigInteger => true,
-          _ => false
-        }
+        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger)
       }
       _ => false,
     };
@@ -250,12 +238,7 @@ impl ErlType {
     return match self {
       ErlType::Float => true,
       ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Float(_)
-          | Literal::Integer(_)
-          | Literal::BigInteger => true,
-          _ => false
-        }
+        matches!(val.deref(), Literal::Float(_) | Literal::Integer(_) | Literal::BigInteger)
       }
       _ => false,
     };
@@ -263,12 +246,7 @@ impl ErlType {
 
   /// Checks whether type is a tuple type
   pub fn is_tuple(&self) -> bool {
-    return match self {
-      ErlType::AnyTuple
-      | ErlType::Tuple { .. }
-      | ErlType::IntegerRange { .. } => true,
-      _ => false,
-    };
+    matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
   }
 
   /// Checks whether type is a list
@@ -279,10 +257,7 @@ impl ErlType {
       | ErlType::StronglyTypedList { .. }
       | ErlType::Nil => true,
       ErlType::Singleton { val: singleton } => {
-        match singleton.deref() {
-          Literal::List { .. } | Literal::String { .. } => true,
-          _ => false
-        }
+        matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
       }
       _ => false,
     };
@@ -290,39 +265,22 @@ impl ErlType {
 
   /// Checks whether type is an empty list (NIL)
   pub fn is_nil(&self) -> bool {
-    return match self {
-      ErlType::Nil => true,
-      _ => false,
-    };
+    matches!(self, ErlType::Nil)
   }
 
   /// Checks whether type is a binary
   pub fn is_binary(&self) -> bool {
-    return match self {
-      ErlType::AnyBinary
-      | ErlType::Binary { .. } => true,
-      _ => false,
-    };
+    matches!(self, ErlType::AnyBinary | ErlType::Binary { .. })
   }
 
   /// Checks whether type is a map
   pub fn is_map(&self) -> bool {
-    return match self {
-      ErlType::AnyMap
-      | ErlType::Map { .. } => true,
-      _ => false,
-    };
+    matches!(self, ErlType::AnyMap | ErlType::Map { .. })
   }
 
   /// Checks whether a type is callable
   pub fn is_function(&self) -> bool {
-    return match self {
-      ErlType::AnyFn
-      | ErlType::Fn { .. }
-      | ErlType::FnRef { .. }
-      | ErlType::Lambda  => true,
-      _ => false,
-    };
+    matches!(self, ErlType::AnyFn | ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda)
   }
 
 

@@ -36,7 +36,7 @@ impl FnType {
   pub fn clauses(&self) -> &Vec<Arc<FnClauseType>> { &self.clauses }
 
   /// Check whether argument list can be passed to any of the clauses
-  pub fn get_compatible_clauses(&self, args: &Vec<Arc<ErlType>>) -> Vec<Arc<FnClauseType>> {
+  pub fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<Arc<FnClauseType>> {
     self.clauses.iter()
         .filter(|fc| fc.can_accept_args(args))
         .cloned()

@@ -64,7 +64,7 @@ impl Apply {
         }
         let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
         if compatible_clauses.is_empty() {
-          let msg = format!("Attempt to call a function with incompatible arguments");
+          let msg = "Attempt to call a function with incompatible arguments".to_string();
           return ErlError::type_error(TypeError::BadArguments { msg });
         }
         // Return type only from compatible clauses
@@ -79,7 +79,7 @@ impl Apply {
 
       other => {
         let msg = format!("Attempt to call a non-function: {}", other);
-        return ErlError::type_error(TypeError::NotAFunction { msg });
+        ErlError::type_error(TypeError::NotAFunction { msg })
       }
     }
     // let clause_type = FnClauseType::new(arg_types?, ret_ty).into();

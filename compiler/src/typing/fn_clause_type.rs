@@ -26,7 +26,7 @@ impl FnClauseType {
 
   /// Check whether calling any clause of `supertype` function type would be compatible with calling
   /// this clause with the same args.
-  pub fn is_any_clause_compatible(&self, supertype: &Vec<Arc<FnClauseType>>) -> bool {
+  pub fn is_any_clause_compatible(&self, supertype: &[Arc<FnClauseType>]) -> bool {
     supertype.iter()
         .any(|sup| self.is_clause_compatible(sup))
   }
@@ -41,7 +41,7 @@ impl FnClauseType {
   }
 
   /// Check whether argument list can be passed to this clause
-  pub fn can_accept_args(&self, args: &Vec<Arc<ErlType>>) -> bool {
+  pub fn can_accept_args(&self, args: &[Arc<ErlType>]) -> bool {
     self.args.iter().zip(args.iter())
         .all(|(in_arg, my_arg)| in_arg.is_subtype_of(my_arg))
   }

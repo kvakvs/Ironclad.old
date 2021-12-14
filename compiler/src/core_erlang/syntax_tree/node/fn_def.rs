@@ -54,7 +54,7 @@ impl FnDef {
     let clauses_ret: ErlResult<Vec<Arc<ErlType>>> = self.clauses.iter()
         .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
         .collect();
-    let synthesized_t = ErlType::new_union(clauses_ret?).into();
+    let synthesized_t = ErlType::new_union(clauses_ret?);
     Ok(synthesized_t)
   }
 }

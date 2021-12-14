@@ -20,7 +20,7 @@ impl TypeBuilder {
       CoreAst::FnDef(fndef) => fndef.synthesize_return_type(scope),
       CoreAst::FnRef { mfa } => {
         match Scope::retrieve_fn_from(scope, mfa) {
-          None => return ErlError::local_function_not_found(mfa),
+          None => ErlError::local_function_not_found(mfa),
           Some(fntype) => Ok(fntype),
         }
       }
@@ -32,7 +32,7 @@ impl TypeBuilder {
       CoreAst::Var(v) => {
         if let Ok(env_read) = scope.read() {
           match env_read.variables.get(&v.name) {
-            None => return ErlError::variable_not_found(&v.name),
+            None => ErlError::variable_not_found(&v.name),
             Some(val) => Ok(val.ty.clone()),
           }
         } else {
@@ -54,7 +54,7 @@ impl TypeBuilder {
 
   /// Having a list `[...]` AST node, try synthesize its type as precise as possible
   fn synthesize_list_type(env: &Arc<RwLock<Scope>>,
-                          elements: &Vec<Arc<CoreAst>>,
+                          elements: &[Arc<CoreAst>],
                           tail: &Option<Arc<CoreAst>>) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
         .map(|el| el.synthesize_type(env))
@@ -72,7 +72,7 @@ impl TypeBuilder {
   }
 
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
-  fn synthesize_tuple_type(env: &Arc<RwLock<Scope>>, elements: &Vec<Arc<CoreAst>>) -> ErlResult<Arc<ErlType>> {
+  fn synthesize_tuple_type(env: &Arc<RwLock<Scope>>, elements: &[Arc<CoreAst>]) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
         .map(|el| el.synthesize_type(env))
         .collect();

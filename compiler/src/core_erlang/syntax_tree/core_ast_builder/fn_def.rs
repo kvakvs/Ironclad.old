@@ -120,7 +120,7 @@ impl CoreAstBuilder {
         .map(|efnc_ast| CoreAstBuilder::build(module, efnc_ast))
         .collect();
     let guard_as_core = efnc.guard_expr.as_ref()
-        .map(|ast| CoreAstBuilder::build(module, &ast));
+        .map(|ast| CoreAstBuilder::build(module, ast));
 
     let fnclause = CoreFnClause::new(
       clause_scope,

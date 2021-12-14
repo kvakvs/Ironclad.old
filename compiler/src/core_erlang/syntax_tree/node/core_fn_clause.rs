@@ -32,7 +32,7 @@ impl CoreFnClause {
   fn extract_var_or_make_new(scope: &Arc<RwLock<Scope>>, ast: &Arc<CoreAst>) -> Arc<Var> {
     match ast.deref() {
       CoreAst::Var(v) => {
-        match Scope::retrieve_var_from(scope, &v) {
+        match Scope::retrieve_var_from(scope, v) {
           None => {
             // not exists: add it
             Scope::add_to(scope, v);
@@ -64,10 +64,11 @@ impl CoreFnClause {
         .collect();
 
     // Create inner_env for each arg where it has any() type, later this can be amended
+    // TODO: This creates new Arc<RwLock> for each clause argument, which is not slow but unnecessary
     let inner_scope: Arc<RwLock<Scope>> = args.iter()
         .fold(clause_scope, |scope, arg| {
           if let Ok(scope_r) = scope.read() {
-            scope_r.add(&arg).into_arc_rwlock()
+            scope_r.add(arg).into_arc_rwlock()
           } else {
             panic!("Can't read-lock scope for creating clause scope while building core AST")
           }

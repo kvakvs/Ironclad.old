@@ -45,7 +45,7 @@ impl CoreAstBuilder {
       // ErlAst::CClause(_, _) => {}
       // ErlAst::MFA { .. } => {}
       ErlAst::Var(erl_var) => Self::core_from_var(erl_var),
-      ErlAst::Apply(app) => Self::core_from_apply(env, &app),
+      ErlAst::Apply(app) => Self::core_from_apply(env, app),
       // ErlAst::Case(_, _) => {}
       ErlAst::Lit { location: loc, value: lit } => Self::core_from_literal(loc, lit),
       ErlAst::BinaryOp(loc, binop) => {
@@ -66,7 +66,7 @@ impl CoreAstBuilder {
 
   /// From Erl List rewrap a Core List
   fn core_from_list(env: &Module, location: &SourceLoc,
-                    elements: &Vec<Arc<ErlAst>>,
+                    elements: &[Arc<ErlAst>],
                     tail: &Option<Arc<ErlAst>>) -> ErlResult<Arc<CoreAst>> {
     let elements_as_core: ErlResult<_> = elements.iter()
         .map(|each_el| Self::build(env, each_el))
@@ -81,7 +81,7 @@ impl CoreAstBuilder {
 
   /// From Erl tuple rewrap a Core tuple
   fn core_from_tuple(env: &Module, location: &SourceLoc,
-                     elements: &Vec<Arc<ErlAst>>) -> ErlResult<Arc<CoreAst>> {
+                     elements: &[Arc<ErlAst>]) -> ErlResult<Arc<CoreAst>> {
     let elements_as_core: ErlResult<_> = elements.iter()
         .map(|each_el| Self::build(env, each_el))
         .collect();
@@ -131,14 +131,9 @@ impl CoreAstBuilder {
   fn core_from_apply_target(env: &Module,
                             expr_ast: &Arc<ErlAst>, apply: &ErlApply) -> ErlResult<Arc<CoreAst>> {
     if let Ok(reg) = env.registry.read() {
-      match reg.find_function_by_expr_arity(expr_ast, apply.args.len()) {
-        Some(index) => {
-          let fndef = reg.functions[index].clone();
-          return Ok(CoreAst::new_fnref(fndef.funarity.clone()).into());
-        }
-        // TODO: external function references Mod:Fun/Arity
-        // TODO: tuple calls? Literal::Tuple(_) => {}
-        _ => {}
+      if let Some(index) = reg.find_function_by_expr_arity(expr_ast, apply.args.len()) {
+        let fndef = reg.functions[index].clone();
+        return Ok(CoreAst::new_fnref(fndef.funarity.clone()).into());
       }
     }
     Self::build(env, expr_ast)
