@@ -43,6 +43,6 @@ impl FnClauseType {
   /// Check whether argument list can be passed to this clause
   pub fn can_accept_args(&self, args: &[Arc<ErlType>]) -> bool {
     self.args.iter().zip(args.iter())
-        .all(|(in_arg, my_arg)| in_arg.is_subtype_of(my_arg))
+        .all(|(in_arg, my_arg)| my_arg.is_subtype_of(in_arg))
   }
 }

@@ -1,6 +1,7 @@
 //! Code to support variable scopes
 
 use std::collections::HashMap;
+use std::fmt::Formatter;
 use std::sync::{Arc, RwLock, Weak};
 use crate::core_erlang::syntax_tree::node::var::Var;
 use crate::mfarity::MFArity;
@@ -31,6 +32,20 @@ impl Default for Scope {
       functions: Default::default(),
       parent_scope: Default::default(),
     }
+  }
+}
+
+impl std::fmt::Display for Scope {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let vars_fmt = self.variables.iter()
+        .map(|v| format!("{}={}", v.0, v.1))
+        .collect::<Vec<String>>()
+        .join(", ");
+    let funs_fmt = self.functions.iter()
+        .map(|fnc| format!("{}", fnc.0))
+        .collect::<Vec<String>>()
+        .join(", ");
+    write!(f, "Scope{{ \"{}\", vars [{}], funs [{}] }}", self.name, vars_fmt, funs_fmt)
   }
 }
 
@@ -104,8 +119,8 @@ impl Scope {
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
   pub fn retrieve_fn_from(scope: &Arc<RwLock<Scope>>, mfa: &MFArity) -> Option<Arc<ErlType>> {
-    println!("retr_fnfrom {} - {:?}", mfa, scope);
     if let Ok(scope_read) = scope.read() {
+      println!("retrieve_fn_from {} - {}", mfa, scope_read);
       match scope_read.functions.get(mfa) {
         Some(val) => Some(val.clone()),
         None => match scope_read.parent_scope.upgrade() {

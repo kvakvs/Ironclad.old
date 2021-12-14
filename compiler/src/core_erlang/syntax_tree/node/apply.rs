@@ -64,7 +64,12 @@ impl Apply {
         }
         let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
         if compatible_clauses.is_empty() {
-          let msg = "Attempt to call a function with incompatible arguments".to_string();
+          let args_str = self.args.iter()
+              .map(|arg| format!("{}", arg))
+              .collect::<Vec<String>>()
+              .join(", ");
+          let msg = format!("No compatible function clauses while calling {} with args ({})",
+                            self.target, args_str);
           return ErlError::type_error(TypeError::BadArguments { msg });
         }
         // Return type only from compatible clauses

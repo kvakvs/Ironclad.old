@@ -123,16 +123,17 @@ fn infer_fun_call_other_fun() -> ErlResult<()> {
     add(A, B) -> A + B.\n\
     main(A) -> add(A, 4).\n", function_name!());
   let module = Module::new_erl_module(&code)?;
-  let find_result2 = CoreAst::find_function_def(
+  let main_fn_ast = CoreAst::find_function_def(
     &module.core_ast, &MFArity::new_local_str("main", 1),
   ).unwrap();
 
   // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let f_t2 = find_result2.synthesize_type(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, f_t2);
+  let main_fn_type = main_fn_ast.synthesize_type(&module.scope)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
 
   // Expected: Main -> integer()
-  assert!(ErlType::Number.is_subtype_of(&f_t2), "Function main/0 must have inferred type: number()");
+  assert!(ErlType::Number.is_subtype_of(&main_fn_type),
+          "Function main/0 must have inferred type: number(); received {}", main_fn_type);
 
   Ok(())
 }
