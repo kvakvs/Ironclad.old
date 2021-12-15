@@ -3,7 +3,7 @@ use function_name::named;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::node::prim_op::PrimOp;
+use crate::core_erlang::syntax_tree::node::core_prim_op::PrimOp;
 
 impl CoreAst {
   /// Const iterator on the Core AST tree

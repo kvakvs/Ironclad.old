@@ -5,9 +5,9 @@ use std::ops::Deref;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::core_erlang::syntax_tree::node::expression::BinaryOperatorExpr;
-use crate::core_erlang::syntax_tree::node::var::Var;
-use crate::core_erlang::syntax_tree::node::apply::Apply;
+use crate::core_erlang::syntax_tree::node::core_expr::BinaryOperatorExpr;
+use crate::core_erlang::syntax_tree::node::core_var::Var;
+use crate::core_erlang::syntax_tree::node::core_apply::Apply;
 use crate::erl_error::ErlResult;
 use crate::project::module::Module;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
@@ -17,7 +17,7 @@ use crate::literal::Literal;
 use crate::erlang::syntax_tree::node::erl_expression::ErlBinaryOperatorExpr;
 use crate::typing::erl_type::ErlType;
 
-mod fn_def;
+mod fn_def_builder;
 
 /// Dummy struct containing building code for Core AST from Erlang AST
 pub struct CoreAstBuilder {}

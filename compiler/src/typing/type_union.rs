@@ -19,8 +19,8 @@ impl TypeUnion {
   pub fn types(&self) -> &Vec<Arc<ErlType>> { &self.types }
 
   /// Create a type union from a vec of types
-  pub fn new(types: Vec<Arc<ErlType>>) -> Self {
-    Self { types }
+  pub fn new(types: &[Arc<ErlType>]) -> Self {
+    Self { types: types.into() }
   }
 
   /// Filters through the types in the union and throws away those which are subtypes of other type

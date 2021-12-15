@@ -4,7 +4,7 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::core_erlang::syntax_tree::node::core_case_clause::CaseClause;
 use crate::display::Pretty;
 use crate::source_loc::SourceLoc;
 

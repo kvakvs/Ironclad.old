@@ -1,12 +1,12 @@
 //! Defines some more complex node structs for Core Erlang AST
-pub mod apply;
-pub mod call;
-pub mod case;
-pub mod case_clause;
+pub mod core_apply;
+pub mod core_call;
+pub mod core_case;
+pub mod core_case_clause;
 pub mod core_fn_clause;
-pub mod expression;
-pub mod fn_def;
-pub mod let_expr;
-pub mod module_attr;
-pub mod prim_op;
-pub mod var;
+pub mod core_expr;
+pub mod core_fn_def;
+pub mod core_let_expr;
+pub mod core_module_attr;
+pub mod core_prim_op;
+pub mod core_var;

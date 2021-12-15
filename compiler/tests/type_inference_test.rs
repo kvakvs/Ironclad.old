@@ -123,17 +123,26 @@ fn infer_fun_call_other_fun() -> ErlResult<()> {
     add(A, B) -> A + B.\n\
     main(A) -> add(A, 4).\n", function_name!());
   let module = Module::new_erl_module(&code)?;
-  let main_fn_ast = CoreAst::find_function_def(
-    &module.core_ast, &MFArity::new_local_str("main", 1),
-  ).unwrap();
+  println!("AST: {}", &module.core_ast);
 
-  // let f_t2 = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_fn_type = main_fn_ast.synthesize_type(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
+  {
+    let add_fn_ast = CoreAst::find_function_def(
+      &module.core_ast, &MFArity::new_local("add", 2),
+    ).unwrap();
+    let add_fn_type = add_fn_ast.synthesize_type(&module.scope)?;
+    println!("{}: Inferred for add fn {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
+  }
 
-  // Expected: Main -> integer()
-  assert!(ErlType::Number.is_subtype_of(&main_fn_type),
-          "Function main/0 must have inferred type: number(); received {}", main_fn_type);
+  {
+    let main_fn_ast = CoreAst::find_function_def(
+      &module.core_ast, &MFArity::new_local("main", 1),
+    ).unwrap();
+    let main_fn_type = main_fn_ast.synthesize_type(&module.scope)?;
+    println!("{}: Inferred for main fn {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
+    // Expected: Main -> integer()
+    assert!(ErlType::Number.is_subtype_of(&main_fn_type),
+            "Function main/0 must have inferred type: number(); received {}", main_fn_type);
+  }
 
   Ok(())
 }
@@ -147,21 +156,19 @@ fn infer_multiple_clause_test() -> ErlResult<()> {
                    main(two) -> 2 + 3.\n";
   let module = Module::new_erl_module(code)?;
 
-  let find_result2 = CoreAst::find_function_def(
-    &module.core_ast, &MFArity::new_local_str("main", 1),
+  let main_fn_ast = CoreAst::find_function_def(
+    &module.core_ast, &MFArity::new_local("main", 1),
   ).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_ty = find_result2.synthesize_type(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), find_result2, main_ty);
+  let main_ty = main_fn_ast.synthesize_type(&module.scope)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Expected: Main -> number()|[atom1|atom2]
-  let list_of_atom1atom2 = ErlType::list_of(
-    ErlType::new_union(
-      vec![ErlType::new_atom("atom1").into(),
-           ErlType::new_atom("atom2").into()]
-    )
-  );
+  let atom1_atom2 = vec![ErlType::new_atom("atom1").into(),
+                         ErlType::new_atom("atom2").into()];
+  let list_of_atom1atom2 = ErlType::list_of(ErlType::new_union(&atom1_atom2));
+
   // Assert that type is: number() | [atom1|atom2]
   if let ErlType::Union(u) = main_ty.deref() {
     assert_eq!(u.types().len(), 2, "Inferred type for main/0 must be union of size 2");

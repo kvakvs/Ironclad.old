@@ -5,15 +5,15 @@ use std::sync::{Arc, RwLock};
 
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
-use crate::core_erlang::syntax_tree::node::apply::Apply;
-use crate::core_erlang::syntax_tree::node::call::Call;
-use crate::core_erlang::syntax_tree::node::case::Case;
-use crate::core_erlang::syntax_tree::node::expression::{BinaryOperatorExpr, UnaryOperatorExpr};
-use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
-use crate::core_erlang::syntax_tree::node::let_expr::LetExpr;
-use crate::core_erlang::syntax_tree::node::module_attr::ModuleAttr;
-use crate::core_erlang::syntax_tree::node::prim_op::{PrimOp, ExceptionType};
-use crate::core_erlang::syntax_tree::node::var::Var;
+use crate::core_erlang::syntax_tree::node::core_apply::Apply;
+use crate::core_erlang::syntax_tree::node::core_call::Call;
+use crate::core_erlang::syntax_tree::node::core_case::Case;
+use crate::core_erlang::syntax_tree::node::core_expr::{BinaryOperatorExpr, UnaryOperatorExpr};
+use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;
+use crate::core_erlang::syntax_tree::node::core_let_expr::LetExpr;
+use crate::core_erlang::syntax_tree::node::core_module_attr::ModuleAttr;
+use crate::core_erlang::syntax_tree::node::core_prim_op::{PrimOp, ExceptionType};
+use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
 use crate::display::Pretty;
@@ -249,10 +249,11 @@ impl std::fmt::Display for CoreAst {
     match self {
       CoreAst::Module { name, exports } => {
         writeln!(f, "module {} ", name)?;
+        write!(f, "exports=")?;
         Pretty::display_square_list(exports, f)
       }
       CoreAst::Attributes(attrs) => {
-        writeln!(f, "attributes ")?;
+        write!(f, "attributes=")?;
         Pretty::display_square_list(attrs, f)
       }
       CoreAst::ModuleFuns(fndefs) => {

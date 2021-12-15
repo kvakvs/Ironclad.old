@@ -8,10 +8,10 @@ use function_name::named;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
-use crate::core_erlang::syntax_tree::node::case::Case;
-use crate::core_erlang::syntax_tree::node::case_clause::CaseClause;
+use crate::core_erlang::syntax_tree::node::core_case::Case;
+use crate::core_erlang::syntax_tree::node::core_case_clause::CaseClause;
 use crate::core_erlang::syntax_tree::node::core_fn_clause::CoreFnClause;
-use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
+use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;
 use crate::erl_error::ErlResult;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;

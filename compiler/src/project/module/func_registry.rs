@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::mfarity::MFArity;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::literal::Literal;
-use crate::core_erlang::syntax_tree::node::fn_def::FnDef;
+use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;
 use std::ops::Deref;
 use std::collections::HashMap;
 

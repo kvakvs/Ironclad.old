@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::sync::{Arc, RwLock, Weak};
-use crate::core_erlang::syntax_tree::node::var::Var;
+use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::mfarity::MFArity;
 use crate::typing::erl_type::ErlType;
 

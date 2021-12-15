@@ -156,7 +156,7 @@ impl ErlType {
   }
 
   /// Wrapper to access type union construction
-  pub fn new_union(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+  pub fn new_union(types: &[Arc<ErlType>]) -> Arc<ErlType> {
     match types.len() {
       0 => ErlType::None.into(),
       1 => types[0].clone(),

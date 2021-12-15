@@ -4,7 +4,7 @@ use std::fmt::Formatter;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::node::var::Var;
+use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;

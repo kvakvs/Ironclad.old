@@ -73,11 +73,11 @@ impl Apply {
           return ErlError::type_error(TypeError::BadArguments { msg });
         }
         // Return type only from compatible clauses
-        let ret_types = compatible_clauses.iter()
+        let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter()
             .map(|fc| fc.ret_ty())
             .cloned()
             .collect();
-        Ok(ErlType::new_union(ret_types))
+        Ok(ErlType::new_union(&ret_types))
       }
       ErlType::FnRef { .. } => unimplemented!("Callable is a fun reference"),
       ErlType::Lambda => unimplemented!("Callable is a lambda"),

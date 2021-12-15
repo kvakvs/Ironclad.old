@@ -225,7 +225,7 @@ impl Module {
         .collect();
 
     let arity = clauses[0].args.len();
-    let funarity = MFArity::new_local(clauses[0].name.clone(), arity);
+    let funarity = MFArity::new_local_from_string(clauses[0].name.clone(), arity);
 
     //self.add_function(fn_def.clone());
 
