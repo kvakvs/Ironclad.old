@@ -15,7 +15,7 @@ pub struct FnType {
 
 impl FnType {
   /// Create a new function type with clauses
-  pub fn new(arity: usize, clauses: Vec<Arc<FnClauseType>>) -> Self {
+  pub fn new(arity: usize, clauses: &[Arc<FnClauseType>]) -> Self {
     if cfg!(debug_assertions) {
       let in_arities: Vec<String> = clauses.iter()
           .map(|fc| format!("{}", fc.arity()))
@@ -26,7 +26,10 @@ impl FnType {
               "All clauses must have arity {}: found {}", arity, arities_str);
     }
 
-    Self { arity, clauses }
+    Self {
+      arity,
+      clauses: clauses.into(),
+    }
   }
 
   /// Retrieve arity

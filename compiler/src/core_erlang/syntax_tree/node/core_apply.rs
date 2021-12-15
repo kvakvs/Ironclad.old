@@ -34,7 +34,7 @@ impl Apply {
   /// Check the apply target it must be a callable.
   /// Check the apply arguments, they must match the arguments of the callable, or at least arity.
   /// The return type of the callable will be the apply synthesis result.
-  pub fn synthesize_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     // Synthesize target and check its a function type
     let target_ty = self.target.synthesize_type(scope)?;
     if !target_ty.is_function() {

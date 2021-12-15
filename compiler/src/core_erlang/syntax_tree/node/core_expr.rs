@@ -22,7 +22,7 @@ pub struct BinaryOperatorExpr {
 
 impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
-  pub fn synthesize_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     let left = self.left.synthesize_type(scope)?;
     let right = self.right.synthesize_type(scope)?;
 
@@ -62,7 +62,7 @@ impl BinaryOperatorExpr {
   }
 
   /// For `any list() ++ any list()` operation
-  fn synthesize_list_append_op(scope: &Arc<RwLock<Scope>>,
+  fn synthesize_list_append_op(scope: &RwLock<Scope>,
                                left: &Arc<ErlType>,
                                right: &Arc<ErlType>) -> ErlResult<Arc<ErlType>> {
     // Type of ++ will be union of left and right
@@ -89,7 +89,7 @@ impl BinaryOperatorExpr {
   }
 
   /// For `list() ++ list(T1, T2...)` operation
-  fn synthesize_stronglist_append(_scope: &Arc<RwLock<Scope>>,
+  fn synthesize_stronglist_append(_scope: &RwLock<Scope>,
                                   left: &Arc<ErlType>,
                                   left_elements: &[Arc<ErlType>],
                                   _left_tail: &Option<Arc<ErlType>>,
@@ -130,7 +130,7 @@ impl BinaryOperatorExpr {
   }
 
   /// For `list(T) ++ any list` operation
-  fn synthesize_list_of_t_append(_scope: &Arc<RwLock<Scope>>,
+  fn synthesize_list_of_t_append(_scope: &RwLock<Scope>,
                                  _left: &Arc<ErlType>,
                                  right: &Arc<ErlType>,
                                  left_elements: &Arc<ErlType>,

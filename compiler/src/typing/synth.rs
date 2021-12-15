@@ -11,7 +11,7 @@ pub struct TypeBuilder {}
 impl TypeBuilder {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
-  pub fn synthesize(scope: &Arc<RwLock<Scope>>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize(scope: &RwLock<Scope>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {
     match node {
       CoreAst::Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
@@ -53,7 +53,7 @@ impl TypeBuilder {
   }
 
   /// Having a list `[...]` AST node, try synthesize its type as precise as possible
-  fn synthesize_list_type(env: &Arc<RwLock<Scope>>,
+  fn synthesize_list_type(env: &RwLock<Scope>,
                           elements: &[Arc<CoreAst>],
                           tail: &Option<Arc<CoreAst>>) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
@@ -72,7 +72,7 @@ impl TypeBuilder {
   }
 
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
-  fn synthesize_tuple_type(env: &Arc<RwLock<Scope>>, elements: &[Arc<CoreAst>]) -> ErlResult<Arc<ErlType>> {
+  fn synthesize_tuple_type(env: &RwLock<Scope>, elements: &[Arc<CoreAst>]) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
         .map(|el| el.synthesize_type(env))
         .collect();

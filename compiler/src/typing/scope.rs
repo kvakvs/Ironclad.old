@@ -118,7 +118,7 @@ impl Scope {
   }
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub fn retrieve_fn_from(scope: &Arc<RwLock<Scope>>, mfa: &MFArity) -> Option<Arc<ErlType>> {
+  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<Arc<ErlType>> {
     if let Ok(scope_read) = scope.read() {
       println!("retrieve_fn_from {} - {}", mfa, scope_read);
       match scope_read.functions.get(mfa) {

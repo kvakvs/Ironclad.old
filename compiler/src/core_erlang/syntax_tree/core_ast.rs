@@ -141,47 +141,9 @@ impl CoreAst {
   }
 
   /// Shortcut to call the typebuilder's synthesize
-  pub fn synthesize_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     TypeBuilder::synthesize(env, self)
   }
-
-  // /// Gets the type of an AST node
-  // #[named]
-  // pub fn get_type(&self) -> Arc<ErlType> {
-  //   match self {
-  //     CoreAst::FnDef(fn_def) => ErlType::TVar(fn_def.ret_ty).into(),
-  //     CoreAst::Var(core_var) => ErlType::TVar(core_var.ty).into(),
-  //     CoreAst::Apply(app) => ErlType::TVar(app.ret_ty).into(),
-  //     CoreAst::Case(case) => ErlType::TVar(case.ret_ty).into(),
-  //     CoreAst::FnRef { fn_type, .. } => ErlType::TVar(*fn_type).into(),
-  //     CoreAst::Lit { value: l, .. } => l.get_type(),
-  //     CoreAst::BinOp { op, .. } => op.get_result_type(),
-  //     CoreAst::UnOp { op, .. } => op.expr.get_type(), // same type as expr bool or num
-  //     CoreAst::List { elements, tail, .. } => {
-  //       assert!(tail.is_none()); // todo
-  //       let union_t = ErlType::union_of(
-  //         elements.iter().map(|e| e.get_type()).collect(),
-  //         true);
-  //       ErlType::List(union_t).into()
-  //     }
-  //     CoreAst::Tuple { elements, .. } => {
-  //       let element_types = elements.iter().map(|e| e.get_type()).collect();
-  //       ErlType::Tuple { elements: element_types }.into()
-  //     }
-  //     // CoreAst::MFA { clause_types, .. } => {
-  //     //   let fn_type = FunctionType::new(None, clause_types.clone());
-  //     //   ErlType::Fn(fn_type)
-  //     // }
-  //     CoreAst::PrimOp { op, .. } => {
-  //       match op {
-  //         PrimOp::Raise { .. } => ErlType::None.into(),
-  //         PrimOp::ExcTrace => { panic!("TODO: get_type() for primop exctrace") }
-  //       }
-  //     }
-  //
-  //     _ => unreachable!("{}: Can't process {}", function_name!(), self),
-  //   }
-  // }
 
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
@@ -279,12 +241,6 @@ impl std::fmt::Display for CoreAst {
       CoreAst::UnOp { op, .. } => {
         write!(f, "({} {})", op.operator, op.expr)
       }
-      // CoreAst::MFA { mfarity: mfa, .. } => {
-      //   match &mfa.module {
-      //     None => write!(f, "(fun {}/{})", mfa.name, mfa.arity),
-      //     Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
-      //   }
-      // }
       CoreAst::List { elements, .. } => Pretty::display_square_list(elements, f),
       CoreAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
       CoreAst::PrimOp { op, .. } => write!(f, "{:?}", op),
@@ -294,32 +250,7 @@ impl std::fmt::Display for CoreAst {
       CoreAst::Call { .. } => todo!("display(call)"),
       CoreAst::Empty => write!(f, "<empty ast>"),
 
-      //other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
+      // other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
     }
   }
 }
-
-// impl std::fmt::Debug for CoreAst {
-//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//     match self {
-//       CoreAst::FnDef(fn_def) => {
-//         write!(f, "{}/{} = (fun ", fn_def.funarity.name, fn_def.funarity.arity)?;
-//         display::display_paren_list(&fn_def.args, f)?;
-//         write!(f, ":{} -> {}", fn_def.ret_ty, fn_def.body)?;
-//         write!(f, "}})")
-//         // write!(f, "fun {} -> {} {{", fn_def.funarity, fn_def.ret_ty)?;
-//         // for fc in fn_def.clauses.iter() { write!(f, "{:?};", fc)?; }
-//         // write!(f, "}}")
-//       }
-//       CoreAst::Var(core_var) => write!(f, "{}:{}", self, core_var.ty),
-//       // CoreAst::Apply { app, .. } => write!(f, "{:?}", app),
-//       // CoreAst::BinaryOp(_loc, binop) => {
-//       //   write!(f, "({:?} {} {:?}):{}", binop.left, binop.operator, binop.right, binop.ty)
-//       // }
-//       // CoreAst::UnaryOp(_loc, unop) => {
-//       //   write!(f, "({} {:?})", unop.operator, unop.expr)
-//       // }
-//       _ => write!(f, "{}", self),
-//     }
-//   }
-// }

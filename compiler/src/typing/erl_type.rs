@@ -151,7 +151,7 @@ impl ErlType {
             "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
             arity);
 
-    let fn_type = FnType::new(arity, clauses);
+    let fn_type = FnType::new(arity, &clauses);
     ErlType::Fn(fn_type.into())
   }
 
