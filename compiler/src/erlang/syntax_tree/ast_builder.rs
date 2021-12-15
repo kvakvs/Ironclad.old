@@ -1,7 +1,8 @@
 //! Processes parser output and produces ErlAst tree for the program
+use ::function_name::named;
 use crate::erlang::syntax_tree::erl_ast::{ErlAst};
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
-use crate::erlang::syntax_tree::erl_parser::{Rule, get_prec_climber};
+use crate::erlang::syntax_tree::erl_parser_prec_climber::{Rule, get_prec_climber};
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::literal::Literal;
 use pest::iterators::{Pair};
@@ -89,6 +90,7 @@ impl Module {
 
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Erlang AST tree.
   /// Processes a single node where there's no need to use precedence climber.
+  #[named]
   pub fn build_ast_single_node(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
     let loc: SourceLoc = pair.as_span().into();
 
@@ -101,22 +103,23 @@ impl Module {
           value: str_lit,
         }.into()
       }
-      Rule::module_attr => {
+      Rule::module_start_attr => {
         ErlAst::ModuleAttr {
           location: loc,
           name: String::from(pair.into_inner().as_str()),
         }.into()
       }
-      Rule::function_def => self.function_def_to_ast(pair)?,
-      Rule::expr => self.build_ast_prec_climb(pair, get_prec_climber())?,
+      Rule::function_def => return self.function_def_to_ast(pair),
+      Rule::expr => return self.build_ast_prec_climb(pair, get_prec_climber()),
       Rule::bindable_expr => {
         // self.bindable_expr_to_ast(self.parse_inner(pair)?)?
-        self.build_ast_prec_climb(pair.into_inner().next().unwrap(), get_prec_climber())?
+        return self.build_ast_prec_climb(pair.into_inner().next().unwrap(),
+                                         get_prec_climber())
         // TODO: Use prec_climber but a different grammar rule
       }
       Rule::capitalized_ident => ErlAst::new_var(loc, pair.as_str()),
 
-      Rule::literal => self.parse_literal(pair.into_inner().next().unwrap())?,
+      Rule::literal => return self.parse_literal(pair.into_inner().next().unwrap()),
       // moved to parse_literal
       // Rule::number_int => {
       //   let val = pair_s.parse::<isize>()?;
@@ -124,7 +127,7 @@ impl Module {
       // }
       Rule::atom => ErlAst::new_lit_atom(loc, pair.as_str()),
       Rule::var => ErlAst::new_var(loc, pair.as_str()),
-      Rule::application => self.application_to_ast(pair)?,
+      Rule::application => return self.application_to_ast(pair),
 
       // Temporary tokens must be consumed by this function and never exposed to the
       // rest of the program
@@ -161,10 +164,23 @@ impl Module {
       Rule::op_catch => ErlAst::temporary_token(ErlToken::Catch),
       Rule::op_comma => ErlAst::temporary_token(ErlToken::Comma),
 
+      //-----------------------------
+      // Type spec support
+      //-----------------------------
+      Rule::fn_spec_attr => return self.fn_spec_to_ast(pair),
+
+      //-----------------------------
+      // Misc and unrecognized
+      //-----------------------------
       Rule::COMMENT => ErlAst::Comment(pair.as_span().into()).into(),
-      other => return ErlError::internal(format!("to_ast_single_node: unknown parse node {:?}", other)),
+      other => return ErlError::internal(format!("{}: unknown parse node {:?}", function_name!(), other)),
     };
     Ok(result)
+  }
+
+  /// Creates a function spec AST node
+  fn fn_spec_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
+
   }
 
   /// Parsed Application tokens are converted to App AST node.

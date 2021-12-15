@@ -6,7 +6,7 @@ use std::path::{Path};
 use pest::error::LineColLocation;
 
 use crate::source_loc::{ErrorLocation, SourceLoc};
-use crate::erlang::syntax_tree::erl_parser;
+use crate::erlang::syntax_tree::erl_parser_prec_climber;
 use crate::mfarity::MFArity;
 use crate::preprocessor::syntax_tree::pp_parser;
 use crate::typing::type_error::TypeError;
@@ -62,7 +62,7 @@ pub enum ErlError {
   /// Returned when Erlang syntax is not correct
   ErlangSyntax {
     /// Error from PEST parser
-    parse_err: pest::error::Error<erl_parser::Rule>,
+    parse_err: pest::error::Error<erl_parser_prec_climber::Rule>,
     /// Message from the compiler
     msg: String,
   },
@@ -216,8 +216,8 @@ impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
   }
 }
 
-impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
-  fn from(value: pest::error::Error<erl_parser::Rule>) -> Self {
+impl From<pest::error::Error<erl_parser_prec_climber::Rule>> for ErlError {
+  fn from(value: pest::error::Error<erl_parser_prec_climber::Rule>) -> Self {
     let msg = value.to_string();
     ErlError::ErlangSyntax {
       parse_err: value,

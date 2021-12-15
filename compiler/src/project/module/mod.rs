@@ -11,8 +11,8 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::erl_parser;
-use crate::erlang::syntax_tree::erl_parser::{Rule};
+use crate::erlang::syntax_tree::erl_parser_prec_climber;
+use crate::erlang::syntax_tree::erl_parser_prec_climber::{Rule};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 use crate::project::module::func_registry::FuncRegistry;
@@ -157,8 +157,8 @@ impl Module {
   /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
   /// This updates only self.ast
   #[named]
-  fn parse_erl_str(&mut self, rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
-    let parse_output = match erl_parser::ErlParser::parse(rule, input) {
+  fn parse_erl_str(&mut self, rule: erl_parser_prec_climber::Rule, input: &str) -> ErlResult<()> {
+    let parse_output = match erl_parser_prec_climber::ErlParser::parse(rule, input) {
       Ok(mut root) => root.next().unwrap(),
       Err(bad) => {
         panic!("{}, failed {}", function_name!(), bad);

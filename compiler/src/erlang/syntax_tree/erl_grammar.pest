@@ -1,13 +1,13 @@
 // Erlang file contains list of forms
 // Each form is either an attribute or a function definition.
 
-module = { form * }
+module = { module_start_attr ~ form * }
 
-module_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+module_start_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
 attribute_noargs = { "-" ~ ident ~ ( "." | ( "(" ~ ")" ~ "." )) }
 attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr ~ ("," ~ expr)* ~ ")" ~ "." }
 
-form = _{ module_attr | any_typespec | attribute | attribute_noargs | function_def }
+form = _{ any_typespec | attribute | attribute_noargs | function_def }
 
 // Function contains of 1 or more clauses, separated by ";" and terminated by "."
 // A function clause begins with a name, and a list of match variables in parentheses.
@@ -165,7 +165,7 @@ keyword = _{ "after" | "and" | "andalso" | "band" | "begin"| "bnot" | "bor" | "b
 any_typespec = _{ fn_spec_attr | new_type_attr | type_export_attr }
 
 // Module, function name, and arity. Module name is allowed in typespecs if equal to the current module
-mfarity = { ( ident ~ ":" )? ~ ident ~ "/" ~ non_negative_int }
+fn_spec_fn_name = { ( ident ~ ":" )? ~ ident }
 
 // Defines a named erlang type, possibly with some type arguments
 erl_type = { ident ~ "()" }
@@ -182,7 +182,7 @@ typevar_spec = { typevar ~ "::" ~ erl_type }
 // One function clause, has some arguments, a return type and optional when-part
 fn_clause_spec = { "(" ~ fn_spec_args ~ ")" ~ "->" ~ erl_type ~ fn_spec_when? }
 // Function spec contains one or multiple clauses, finalized with a period
-fn_spec_attr = { "-spec" ~ mfarity ~ fn_clause_spec ~ ( ";" ~ fn_clause_spec )* ~ "." }
+fn_spec_attr = { "-spec" ~ fn_spec_fn_name ~ fn_clause_spec ~ ( ";" ~ fn_clause_spec )* ~ "." }
 
 new_type_attr = { "-type()." }
 type_export_attr = { "-export_type([])." }
