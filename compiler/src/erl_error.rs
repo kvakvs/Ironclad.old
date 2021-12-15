@@ -72,7 +72,7 @@ pub enum ErlError {
   /// A local function referenced by MFA (module ignored) is not found
   LocalFunctionNotFound(MFArity),
   /// Returned when a type error or mismatching types were found
-  TypeError(TypeError),
+  TypeErr(TypeError),
 }
 
 impl std::fmt::Debug for ErlError {
@@ -114,7 +114,7 @@ impl std::fmt::Display for ErlError {
       }
       ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
       ErlError::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
-      ErlError::TypeError(terr) => write!(f, "Type error: {}", terr),
+      ErlError::TypeErr(terr) => write!(f, "Type error: {}", terr),
     }
   }
 }
@@ -130,7 +130,7 @@ impl ErlError {
 
   /// Wraps a `TypeError`
   pub fn type_error<T>(terr: TypeError) -> ErlResult<T> {
-    Err(ErlError::TypeError(terr))
+    Err(ErlError::TypeErr(terr))
   }
 
   /// Wraps a `VariableNotFound`
@@ -228,7 +228,7 @@ impl From<pest::error::Error<erl_parser::Rule>> for ErlError {
 
 impl From<TypeError> for ErlError {
   fn from(value: TypeError) -> Self {
-    ErlError::TypeError(value)
+    ErlError::TypeErr(value)
   }
 }
 

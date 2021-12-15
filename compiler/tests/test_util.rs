@@ -18,8 +18,7 @@ pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
 
 #[allow(dead_code)]
 pub fn fail_unexpected<T>(val: &T) where T: std::fmt::Display {
-  println!("Unexpected value: {}", val);
-  panic!()
+  panic!("Unexpected value: {}", val)
 }
 
 #[allow(dead_code)]

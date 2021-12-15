@@ -18,9 +18,10 @@ use crate::literal::Literal;
 use std::ops::Deref;
 use crate::core_erlang::syntax_tree::node::core_unary_op::UnaryOperatorExpr;
 use crate::display::Pretty;
-use crate::erl_error::ErlResult;
+use crate::erl_error::{ErlError, ErlResult};
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
+use crate::typing::type_error::TypeError;
 use crate::typing::type_synth::TypeSynth;
 
 /// AST node in Core Erlang (parsed or generated)
@@ -192,17 +193,25 @@ impl CoreAst {
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
-  pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> Option<Arc<CoreAst>> {
+  pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> ErlResult<Arc<CoreAst>> {
     match this.deref() {
-      CoreAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => Some(this.clone()),
+      CoreAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
+        return Ok(this.clone());
+      }
       CoreAst::ModuleFuns(fndefs) => {
         // Find first in forms for which `find_function_def` returns something
-        fndefs.iter()
-            .find(|&each_fndef| CoreAst::find_function_def(each_fndef, funarity).is_some())
-            .cloned()
+        let find_result = fndefs.iter()
+            .find(|&each_fndef| {
+              CoreAst::find_function_def(each_fndef, funarity).is_ok()
+            })
+            .cloned();
+        if find_result.is_some() {
+          return Ok(find_result.unwrap());
+        }
       }
-      _ => None,
+      _ => {}
     }
+    ErlError::type_error(TypeError::FunctionNotFound { mfa: funarity.clone() })
   }
 }
 

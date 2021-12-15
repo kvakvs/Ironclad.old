@@ -1,6 +1,7 @@
 //! Type errors returned by the typing engine
 
 use std::fmt::{Display, Formatter};
+use crate::mfarity::MFArity;
 
 /// Indicates various type problems
 pub enum TypeError {
@@ -20,6 +21,11 @@ pub enum TypeError {
   NotAFunction {
     /// Message to go with the error
     msg: String,
+  },
+  /// Returned when function is not in function scope
+  FunctionNotFound {
+    /// The MFA that's not found
+    mfa: MFArity,
   },
   /// A function call was attempted with wrong argument count
   BadArity {
@@ -42,6 +48,7 @@ impl Display for TypeError {
       TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),
       TypeError::BadArity { msg } => write!(f, "Bad arity: {}", msg),
       TypeError::BadArguments { msg } => write!(f, "Bad arguments: {}", msg),
+      TypeError::FunctionNotFound { mfa } => write!(f, "Function not found: {}", mfa),
     }
   }
 }
