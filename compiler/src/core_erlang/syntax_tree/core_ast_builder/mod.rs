@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::core_erlang::syntax_tree::node::core_expr::BinaryOperatorExpr;
+use crate::core_erlang::syntax_tree::node::core_binary_op::BinaryOperatorExpr;
 use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::core_erlang::syntax_tree::node::core_apply::Apply;
 use crate::erl_error::ErlResult;
