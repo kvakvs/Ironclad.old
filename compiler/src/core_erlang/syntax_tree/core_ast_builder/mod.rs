@@ -121,7 +121,7 @@ impl CoreAstBuilder {
     let core_var = Var {
       location: erl_var.location.clone(),
       name: erl_var.name.clone(),
-      ty: ErlType::Any.into(),
+      ty: ErlType::any(),
     };
     Ok(CoreAst::Var(core_var.into()).into())
   }

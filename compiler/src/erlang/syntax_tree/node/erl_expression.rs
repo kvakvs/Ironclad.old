@@ -29,12 +29,12 @@ impl ErlUnaryOperatorExpr {
   /// Get the type of an unary operation. Input type is same as return type.
   pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self.operator {
-      ErlUnaryOp::Not => ErlType::Boolean.into(),
+      ErlUnaryOp::Not => ErlType::boolean(),
 
       ErlUnaryOp::Negative
-      | ErlUnaryOp::Positive => ErlType::Number.into(),
+      | ErlUnaryOp::Positive => ErlType::number(),
 
-      ErlUnaryOp::Catch => ErlType::Any.into(),
+      ErlUnaryOp::Catch => ErlType::any(),
     }
   }
 }

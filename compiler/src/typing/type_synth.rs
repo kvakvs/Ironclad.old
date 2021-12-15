@@ -6,9 +6,9 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 
 /// Hosts code to synthesize ErlTypes from AST
-pub struct TypeBuilder {}
+pub struct TypeSynth {}
 
-impl TypeBuilder {
+impl TypeSynth {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
   pub fn synthesize(scope: &RwLock<Scope>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {

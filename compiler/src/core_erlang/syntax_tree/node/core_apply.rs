@@ -10,7 +10,7 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use crate::typing::synth::TypeBuilder;
+use crate::typing::type_synth::TypeSynth;
 
 /// Contains a function call
 #[derive(Debug)]
@@ -44,7 +44,7 @@ impl Apply {
 
     // Build argument type list and check every argument vs the target (the callee)
     let arg_types_r: ErlResult<Vec<Arc<ErlType>>> = self.args.iter()
-        .map(|arg| TypeBuilder::synthesize(scope, arg))
+        .map(|arg| TypeSynth::synthesize(scope, arg))
         .collect();
     let arg_types = arg_types_r?;
 
@@ -53,7 +53,7 @@ impl Apply {
       ErlType::Tuple { .. } => unimplemented!("Callable is a tuple"),
 
       // AnyFn is always callable and always returns any, for we do not know better
-      ErlType::AnyFn => Ok(ErlType::Any.into()),
+      ErlType::AnyFn => Ok(ErlType::any()),
 
       ErlType::Fn(fn_type) => {
         if self.args.len() != fn_type.arity() {

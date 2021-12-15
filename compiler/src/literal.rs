@@ -91,17 +91,17 @@ impl Literal {
   pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
       Literal::Integer(_)
-      | Literal::BigInteger => ErlType::Integer.into(),
-      Literal::Float(_) => ErlType::Float.into(),
-      Literal::Atom(_) => ErlType::Atom.into(),
-      Literal::Bool(_) => ErlType::Boolean.into(),
+      | Literal::BigInteger => ErlType::integer(),
+      Literal::Float(_) => ErlType::float(),
+      Literal::Atom(_) => ErlType::atom(),
+      Literal::Bool(_) => ErlType::boolean(),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
       Literal::String(_) | Literal::Nil | Literal::List { .. } => {
         // List type is union of all element types
         // ErlType::List(ErlType::union_of_literal_types(elements)).into()
-        ErlType::AnyList.into()
+        ErlType::any_list()
       }
       Literal::Tuple(items) => {
         let element_types = items.iter()

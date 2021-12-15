@@ -20,7 +20,7 @@ use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
-use crate::typing::synth::TypeBuilder;
+use crate::typing::type_synth::TypeSynth;
 
 /// AST node in Core Erlang (parsed or generated)
 #[derive(Debug)]
@@ -142,7 +142,7 @@ impl CoreAst {
 
   /// Shortcut to call the typebuilder's synthesize
   pub fn synthesize_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    TypeBuilder::synthesize(env, self)
+    TypeSynth::synthesize(env, self)
   }
 
   /// Retrieve source file location for an AST element

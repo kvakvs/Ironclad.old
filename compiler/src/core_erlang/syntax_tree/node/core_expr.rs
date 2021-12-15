@@ -29,22 +29,25 @@ impl BinaryOperatorExpr {
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
         // A binary math operation can only produce a numeric type, integer if both args are integer
-        if !left.is_number() || !right.is_number() {
-          Ok(ErlType::None.into())
-        } else if left.is_integer() && right.is_integer() {
-          Ok(ErlType::Integer.into())
+        if !left.is_supertype_of_number() || !right.is_supertype_of_number() {
+          // Either left or right are not compatible with number
+          Ok(ErlType::none())
+        } else if left.is_supertype_of_number() && right.is_supertype_of_number() {
+          Ok(ErlType::number())
+        } else if left.is_supertype_of_float() || right.is_supertype_of_float() {
+          Ok(ErlType::float())
         } else {
-          Ok(ErlType::Float.into())
+          Ok(ErlType::integer())
         }
       }
 
-      CoreBinaryOp::Div => Ok(ErlType::Float.into()),
+      CoreBinaryOp::Div => Ok(ErlType::float()),
 
-      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => Ok(ErlType::Integer.into()),
+      CoreBinaryOp::IntegerDiv | CoreBinaryOp::Modulo => Ok(ErlType::integer()),
 
       CoreBinaryOp::Less | CoreBinaryOp::Greater | CoreBinaryOp::LessEq | CoreBinaryOp::GreaterEq
       | CoreBinaryOp::Eq | CoreBinaryOp::NotEq | CoreBinaryOp::HardEq | CoreBinaryOp::HardNotEq => {
-        Ok(ErlType::Boolean.into())
+        Ok(ErlType::boolean())
       }
 
       CoreBinaryOp::ListAppend => Self::synthesize_list_append_op(scope, &left, &right),

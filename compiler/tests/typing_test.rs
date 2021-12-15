@@ -26,7 +26,7 @@ fn typing_synth() -> ErlResult<()> {
       assert!(elements[1].is_integer());
       assert!(elements[2].is_atom());
 
-      let tail2 = tail.clone().unwrap_or(ErlType::Nil.into());
+      let tail2 = tail.clone().unwrap_or_else(|| ErlType::nil());
       assert!(tail2.is_nil());
       assert!(tail2.is_list());
     } else {
@@ -75,7 +75,6 @@ fn typing_expr_check() -> ErlResult<()> {
 
   {
     let env = Scope::new_root_scope(function_name!().to_string());
-    //env.add("A", ErlType::Integer.into())
     let fn2 = Module::new_parse_fun("myfun2(A) -> 10.0 + A.")?;
     assert!(matches!(fn2.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn2.core_ast);
     println!("Synth fn2: {}", fn2.core_ast.synthesize_type(&env)?);
@@ -83,7 +82,7 @@ fn typing_expr_check() -> ErlResult<()> {
 
   // {
   //   let env = Scope::empty()
-  //       .add("A", ErlType::Integer.into());
+  //       .add("A", ErlType::integer());
   //   let expr2 = Module::new_parse_expr("10 + A")?;
   //   assert!(matches!(expr2.core_ast.deref(), CoreAst::BinOp {..}), "Expected 10+A received {:?}", expr2.core_ast);
   //   println!("Synth expr2: {}", expr2.core_ast.synthesize_type(&env));
@@ -131,9 +130,9 @@ fn typing_subtyping() -> ErlResult<()> {
 
   {
     let test3_any = ErlType::AnyList;
-    let test3_l_num = ErlType::list_of(ErlType::Number.into());
-    let test3_l_flt = ErlType::list_of(ErlType::Float.into());
-    let test3_l_int = ErlType::list_of(ErlType::Integer.into());
+    let test3_l_num = ErlType::list_of(ErlType::number());
+    let test3_l_flt = ErlType::list_of(ErlType::float());
+    let test3_l_int = ErlType::list_of(ErlType::integer());
 
     assert!(test3_l_num.is_subtype_of(&test3_any)); // list(number()) is subtype of list()
     assert!(!test3_any.is_subtype_of(&test3_l_num)); // list() not subtype of list(number())

@@ -30,14 +30,14 @@ impl Var {
     Self {
       location,
       name: format!("@{}{}", prefix, new_id),
-      ty: ErlType::Any.into(),
+      ty: ErlType::any(),
     }
   }
 
   /// A default guessed type for var is `any()` we will reiterate and make it more a narrow type at
   /// a later stage, as we learn more usage details.
   pub fn synthesize_type() -> Arc<ErlType> {
-    ErlType::Any.into()
+    ErlType::any()
   }
 }
 

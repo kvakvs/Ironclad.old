@@ -158,7 +158,7 @@ impl ErlType {
   /// Wrapper to access type union construction
   pub fn new_union(types: &[Arc<ErlType>]) -> Arc<ErlType> {
     match types.len() {
-      0 => ErlType::None.into(),
+      0 => ErlType::none(),
       1 => types[0].clone(),
       _ => {
         let mut u = TypeUnion::new(types);
@@ -219,6 +219,21 @@ impl ErlType {
       }
       _ => false,
     };
+  }
+
+  /// Checks whether `self` potentially can be an integer
+  pub fn is_supertype_of_integer(&self) -> bool {
+    ErlType::Integer.is_subtype_of(self)
+  }
+
+  /// Checks whether `self` potentially can be a floating point number
+  pub fn is_supertype_of_float(&self) -> bool {
+    ErlType::Float.is_subtype_of(self)
+  }
+
+  /// Checks whether `self` potentially can be an integer or a float
+  pub fn is_supertype_of_number(&self) -> bool {
+    ErlType::Number.is_subtype_of(self)
   }
 
   /// Checks whether type is an integer number
