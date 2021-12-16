@@ -1,13 +1,20 @@
 // Erlang file contains list of forms
 // Each form is either an attribute or a function definition.
 
+// Parse entire modules starting from this rule
 module = { module_start_attr ~ form * }
-
 module_start_attr = { "-" ~ "module" ~ "(" ~ atom ~ ")" ~ "." }
+
+// // This consumes entire line which begins with "-<ident>" and ends with ".<newline>"
+// entire_attr_as_text = { "-" ~ ident ~ !( "." ~ NEWLINE ) ~ ANY * ~ "." ~ NEWLINE }
+
+// TODO: Consume entire attribute as string and parse separately
+// Parse extracted attributes starting from this rule
+attr = _ { any_typespec | attribute | attribute_noargs }
 attribute_noargs = { "-" ~ ident ~ ( "." | ( "(" ~ ")" ~ "." )) }
 attribute = { "-" ~ !"module" ~ ident ~ "(" ~ expr ~ ("," ~ expr)* ~ ")" ~ "." }
 
-form = _{ any_typespec | attribute | attribute_noargs | function_def }
+form = _{ attr | function_def }
 
 // Function contains of 1 or more clauses, separated by ";" and terminated by "."
 // A function clause begins with a name, and a list of match variables in parentheses.

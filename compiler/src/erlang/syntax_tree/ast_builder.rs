@@ -179,8 +179,8 @@ impl Module {
   }
 
   /// Creates a function spec AST node
-  fn fn_spec_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
-
+  fn fn_spec_to_ast(&mut self, _pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
+    ErlError::internal("notimpl".to_string())
   }
 
   /// Parsed Application tokens are converted to App AST node.

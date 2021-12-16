@@ -50,3 +50,25 @@ fn union_auto_shrink_1() -> ErlResult<()> {
   assert!(union_t.as_ref().eq(&ErlType::Nil), "Union type of nil should be just nil, got {}", union_t);
   Ok(())
 }
+
+#[named]
+#[test]
+/// Check that union of int|int is int
+fn union_int_int() -> ErlResult<()> {
+  test_util::start(function_name!(), "TypeUnion.IntInt");
+  let union_t = ErlType::new_union(&vec![ErlType::integer(), ErlType::integer()]);
+  assert!(union_t.as_ref().eq(&ErlType::Integer),
+          "Union type of int|int should be just int(), got {}", union_t);
+  Ok(())
+}
+
+#[named]
+#[test]
+/// Check that union of nothing is none()
+fn union_none() -> ErlResult<()> {
+  test_util::start(function_name!(), "TypeUnion.None");
+  let union_t = ErlType::new_union(&vec![]);
+  assert!(union_t.as_ref().eq(&ErlType::None),
+          "Union type of nothing should be none(), got {}", union_t);
+  Ok(())
+}
