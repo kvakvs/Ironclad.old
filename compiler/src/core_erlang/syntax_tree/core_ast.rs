@@ -1,7 +1,7 @@
 //! Defines AST tree for Core Erlang-like intermediate language. A more generalized and simplified
 //! intermediate language, allowing easier optimisations and easier code generation.
 use ::function_name::named;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc};
 
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
@@ -19,10 +19,7 @@ use std::ops::Deref;
 use crate::core_erlang::syntax_tree::node::core_unary_op::UnaryOperatorExpr;
 use crate::display::Pretty;
 use crate::erl_error::{ErlError, ErlResult};
-use crate::typing::erl_type::ErlType;
-use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use crate::typing::type_synth::TypeSynth;
 
 /// AST node in Core Erlang (parsed or generated)
 #[derive(Debug)]
@@ -142,10 +139,10 @@ impl CoreAst {
     CoreAst::FnRef { mfa }
   }
 
-  /// Shortcut to call the typebuilder's synthesize
-  pub fn synthesize_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    TypeSynth::synthesize(env, self)
-  }
+  // /// Shortcut to call the typebuilder's synthesize
+  // pub fn synthesize_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+  //   TypeSynth::synthesize(env, self)
+  // }
 
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {

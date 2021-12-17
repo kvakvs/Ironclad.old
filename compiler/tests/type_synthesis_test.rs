@@ -17,7 +17,7 @@ fn synth_list_append() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
   let module = Module::from_expr_source("[atom1] ++ [atom2]")?;
-  let expr_type = module.core_ast.synthesize_type(&module.scope)?;
+  let expr_type = module.core_ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, expr_type);
 
   Ok(())
@@ -43,7 +43,7 @@ fn synth_simplefun_division() -> ErlResult<()> {
   println!("Parsed: {}", module.ast);
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  let f_t = ast.synthesize_type(&module.scope)?;
+  let f_t = ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
 
   Ok(())
@@ -56,7 +56,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 
   let module = Module::from_fun_source("myfun(A) -> A + 1.")?;
   let ast = module.core_ast.clone();
-  let f_t = ast.synthesize_type(&module.scope)?;
+  let f_t = ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
 
 
@@ -130,7 +130,7 @@ fn synth_fun_call() -> ErlResult<()> {
     let add_fn_ast = CoreAst::find_function_def(
       &module.core_ast, &MFArity::new_local("add", 2),
     ).unwrap();
-    let add_fn_type = add_fn_ast.synthesize_type(&module.scope)?;
+    let add_fn_type = add_fn_ast.synthesize(&module.scope)?;
     println!("{}: Inferred for add fn {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
   }
 
@@ -138,7 +138,7 @@ fn synth_fun_call() -> ErlResult<()> {
     let main_fn_ast = CoreAst::find_function_def(
       &module.core_ast, &MFArity::new_local("main", 1),
     ).unwrap();
-    let main_fn_type = main_fn_ast.synthesize_type(&module.scope)?;
+    let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
     println!("{}: Inferred for main fn {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
     // Expected: Main -> integer()
     assert!(ErlType::Number.is_subtype_of(&main_fn_type),
@@ -164,7 +164,7 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
   ).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_ty = main_fn_ast.synthesize_type(&module.scope)?;
+  let main_ty = main_fn_ast.synthesize(&module.scope)?;
   println!("{}: Synthesized {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Assert that type is a two-clause function type
@@ -173,15 +173,15 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
                "Synth type for main/1 must be a function type with two clauses, got {}", main_ty);
     let clause1 = fntype.clause(0);
     assert_eq!(clause1.arity(), 1);
-    // assert!(clause1.args[0].eq(&ErlType::new_atom("one")),
-    //         "Clause1 arg0 must be atom 'one', got {}", clause1.args[0]);
+    assert!(clause1.args[0].eq(&ErlType::new_atom("one")),
+            "Clause1 arg0 must be atom 'one', got {}", clause1.args[0]);
     assert!(clause1.ret_ty().eq(&ErlType::new_atom("atom1")),
             "Clause1 must return literal 'atom1', got {}", clause1.ret_ty());
 
     let clause2 = fntype.clause(1);
     assert_eq!(clause2.arity(), 1);
-    // assert!(clause2.args[0].eq(&ErlType::new_atom("two")),
-    //         "Clause2 arg0 must be atom 'two', got {}", clause2.args[0]);
+    assert!(clause2.args[0].eq(&ErlType::new_atom("two")),
+            "Clause2 arg0 must be atom 'two', got {}", clause2.args[0]);
     assert!(clause2.ret_ty().is_integer(),
             "Clause 2 must return '222' (or integer()), got {}", clause2.ret_ty());
   } else {
@@ -189,4 +189,6 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
   }
 
   Ok(())
+
+  // TODO: narrowing test, calling 2 clause function with 'one' and with 'two'
 }

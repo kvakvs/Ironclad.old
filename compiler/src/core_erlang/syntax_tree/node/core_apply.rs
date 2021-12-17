@@ -10,7 +10,6 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use crate::typing::type_synth::TypeSynth;
 
 /// Contains a function call
 #[derive(Debug)]
@@ -36,7 +35,7 @@ impl Apply {
   /// The return type of the callable will be the apply synthesis result.
   pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     // Synthesize target and check its a function type
-    let target_ty = self.target.synthesize_type(scope)?;
+    let target_ty = self.target.synthesize(scope)?;
     if !target_ty.is_function() {
       let msg = format!("Attempt to call a value which is not a function: {}", self.target);
       return ErlError::type_error(TypeError::NotAFunction { msg });
@@ -44,7 +43,7 @@ impl Apply {
 
     // Build argument type list and check every argument vs the target (the callee)
     let arg_types_r: ErlResult<Vec<Arc<ErlType>>> = self.args.iter()
-        .map(|arg| TypeSynth::synthesize(scope, arg))
+        .map(|arg| arg.synthesize(scope))
         .collect();
     let arg_types = arg_types_r?;
 

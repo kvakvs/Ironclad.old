@@ -14,7 +14,7 @@ impl TypeCheck {
   /// Checks whether ErlType `ty` is a subtype of synthesized type for expression `ast`.
   /// This is used to check (for example) whether an incoming value would be accepted by a function.
   pub fn check(ty: &ErlType, env: &Arc<RwLock<Scope>>, ast: &CoreAst) -> ErlResult<bool> {
-    let synth_type = ast.synthesize_type(env)?;
+    let synth_type = ast.synthesize(env)?;
 
     if !ty.is_subtype_of(&synth_type) {
       ErlError::type_error(TypeError::ExpectedType {

@@ -108,7 +108,7 @@ impl CoreFnClause {
 
   /// Return type from the body AST
   pub fn synthesize_clause_return_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
-    self.body.synthesize_type(env)
+    self.body.synthesize(env)
   }
 }
 

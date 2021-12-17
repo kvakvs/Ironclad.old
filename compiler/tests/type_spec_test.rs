@@ -38,7 +38,7 @@ fn fn_typespec_parse() -> ErlResult<()> {
     println!("Core: {}", &module.core_ast);
 
     // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-    let synth_fn_type = myfun_ast.synthesize_type(&module.scope)?;
+    let synth_fn_type = myfun_ast.synthesize(&module.scope)?;
     println!("{}: Synthesized {} 🡆 {}", function_name!(), &myfun_ast, synth_fn_type);
   }
   Ok(())

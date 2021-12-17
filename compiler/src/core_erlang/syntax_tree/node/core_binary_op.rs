@@ -23,8 +23,8 @@ pub struct BinaryOperatorExpr {
 impl BinaryOperatorExpr {
   /// Gets the result type of a binary operation
   pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    let left = self.left.synthesize_type(scope)?;
-    let right = self.right.synthesize_type(scope)?;
+    let left = self.left.synthesize(scope)?;
+    let right = self.right.synthesize(scope)?;
 
     match self.operator {
       CoreBinaryOp::Add | CoreBinaryOp::Sub | CoreBinaryOp::Mul => {
@@ -55,7 +55,7 @@ impl BinaryOperatorExpr {
         // Type of -- will be left, probably some elements which should be missing, but how do we know?
         Ok(left)
       }
-      CoreBinaryOp::Comma => self.right.synthesize_type(scope),
+      CoreBinaryOp::Comma => self.right.synthesize(scope),
 
       // other => {
       //   unimplemented!("Don't know how to synthesize binary operation type for operation {} on {:?}",

@@ -20,7 +20,7 @@ fn typing_synth() -> ErlResult<()> {
   {
     let env = Scope::new_root_scope(function_name!().to_string());
     let list1 = Module::from_expr_source("[3.14159265358979 , 2,atom]")?;
-    let t = list1.core_ast.synthesize_type(&env)?;
+    let t = list1.core_ast.synthesize(&env)?;
     println!("Synth list1: {}", &t);
     if let ErlType::StronglyTypedList { elements, tail } = t.deref() {
       assert!(elements[0].is_float());
@@ -38,7 +38,7 @@ fn typing_synth() -> ErlResult<()> {
   {
     let env = Scope::new_root_scope(function_name!().to_string());
     let tup1 = Module::from_expr_source("{tuple, 1.2, 3, \"hello\"}")?;
-    let t = tup1.core_ast.synthesize_type(&env)?;
+    let t = tup1.core_ast.synthesize(&env)?;
     println!("Synth tup1: {}", &t);
     if let ErlType::Tuple { elements } = t.deref() {
       assert!(elements[0].is_lit_atom("tuple"), "t[0] - expected 'tuple', got {}", elements[0]);
@@ -72,7 +72,7 @@ fn typing_expr_check_2() -> ErlResult<()> {
   let env = Scope::new_root_scope(function_name!().to_string());
   let fn1 = Module::from_fun_source("myfun() -> 10 + 20.")?;
   assert!(matches!(fn1.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn1.core_ast);
-  println!("Synth fn1: {}", fn1.core_ast.synthesize_type(&env)?);
+  println!("Synth fn1: {}", fn1.core_ast.synthesize(&env)?);
   assert!(TypeCheck::check(&ErlType::integer(), &env, &fn1.core_ast)?,
           "Parsed fun() must be subtype of integer()");
   Ok(())
@@ -85,7 +85,7 @@ fn typing_expr_check_3() -> ErlResult<()> {
   let env = Scope::new_root_scope(function_name!().to_string());
   let fn2 = Module::from_fun_source("myfun2(A) -> 10.0 + A.")?;
   assert!(matches!(fn2.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn2.core_ast);
-  println!("Synth fn2: {}", fn2.core_ast.synthesize_type(&env)?);
+  println!("Synth fn2: {}", fn2.core_ast.synthesize(&env)?);
   Ok(())
 }
 

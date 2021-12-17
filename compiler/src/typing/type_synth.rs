@@ -5,14 +5,14 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 
-/// Hosts code to synthesize ErlTypes from AST
-pub struct TypeSynth {}
+// /// Hosts code to synthesize ErlTypes from AST
+// pub struct TypeSynth {}
 
-impl TypeSynth {
+impl CoreAst {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
-  pub fn synthesize(scope: &RwLock<Scope>, node: &CoreAst) -> ErlResult<Arc<ErlType>> {
-    match node {
+  pub fn synthesize(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+    match self {
       CoreAst::Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
       CoreAst::Attributes(_) => unreachable!("Should not be synthesizing type from module attrs"),
@@ -57,14 +57,14 @@ impl TypeSynth {
                           elements: &[Arc<CoreAst>],
                           tail: &Option<Arc<CoreAst>>) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
-        .map(|el| el.synthesize_type(env))
+        .map(|el| el.synthesize(env))
         .collect();
 
     let synthesized_t = ErlType::StronglyTypedList {
       elements: elements?,
       tail: match tail {
         None => None,
-        Some(t) => Some(t.synthesize_type(env)?)
+        Some(t) => Some(t.synthesize(env)?)
       },
     }.into();
 
@@ -74,7 +74,7 @@ impl TypeSynth {
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
   fn synthesize_tuple_type(env: &RwLock<Scope>, elements: &[Arc<CoreAst>]) -> ErlResult<Arc<ErlType>> {
     let elements: ErlResult<Vec<Arc<ErlType>>> = elements.iter()
-        .map(|el| el.synthesize_type(env))
+        .map(|el| el.synthesize(env))
         .collect();
     Ok(ErlType::Tuple { elements: elements? }.into())
   }
