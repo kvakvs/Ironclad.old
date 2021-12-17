@@ -22,7 +22,7 @@ fn union_auto_shrink_numbers() -> ErlResult<()> {
     assert_eq!(u.types().len(), 2, "Union of int|float|'atom': ");
     assert!(u.contains(&ErlType::Float),
             "Union of int|float|'atom' does not contain float(): got {}", union_t);
-    assert!(u.contains(&ErlType::new_atom("atom").into()),
+    assert!(u.contains(&ErlType::new_atom("atom")),
             "Union of int|float|'atom' does not contain 'atom': got {}", union_t);
   } else {
     panic!("Union of int|float|'atom' should be a type union, got {}", &union_t)

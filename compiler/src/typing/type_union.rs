@@ -15,19 +15,29 @@ pub struct TypeUnion {
 }
 
 impl TypeUnion {
+  /// True if union contains no types and is equal to none() type
+  pub fn is_empty(&self) -> bool { self.types.is_empty() }
+
   /// Access the readonly types list
   pub fn types(&self) -> &Vec<Arc<ErlType>> { &self.types }
 
   /// Create a type union from a vec of types
   pub fn new(types: &[Arc<ErlType>]) -> Self {
-    Self { types: types.into() }
+    // throw away none() types
+    let filtered = types.iter()
+        .filter(|t| !t.is_none())
+        .cloned()
+        .collect();
+    Self { types: filtered }
   }
 
   /// Filters through the types in the union and throws away those which are subtypes of other type
   /// in the same union
   pub fn normalize(&mut self) {
     // let self_clone = self.types.clone();
-    self.types = self.types.iter().enumerate()
+    self.types = self.types.iter()
+        .filter(|t| !t.is_none()) // throw away none() types
+        .enumerate()
         .filter(|(index1, type1)| {
           // an arm is kept if for every arm (except itself) it's not a subtype of the other arm
           // or it's equivalent to the other arm and this is the first equivalent arm

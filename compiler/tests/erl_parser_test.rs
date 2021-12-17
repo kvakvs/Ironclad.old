@@ -16,7 +16,7 @@ mod test_util;
 #[named]
 #[test]
 fn parse_string_test() -> ErlResult<()> {
-  let module = Module::new_parse_expr("\"abc\"").unwrap();
+  let module = Module::from_expr_source("\"abc\"").unwrap();
 
   if let ErlAst::Lit { value: lit, .. } = module.ast.deref() {
     if let Literal::String(_value) = lit.deref() {
@@ -30,7 +30,7 @@ fn parse_string_test() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_expr_flat() -> ErlResult<()> {
-  let module = Module::new_parse_expr("A + 123 + 333 + 6 + atom + Test")?;
+  let module = Module::from_expr_source("A + 123 + 333 + 6 + atom + Test")?;
 
   if let ErlAst::BinaryOp { .. } = module.ast.deref() {
     // ok
@@ -45,7 +45,7 @@ fn parse_expr_flat() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_expr_longer() -> ErlResult<()> {
-  let module = Module::new_parse_expr("123 + 1 / (2 * hello)")?;
+  let module = Module::from_expr_source("123 + 1 / (2 * hello)")?;
 
   if let ErlAst::BinaryOp { .. } = module.ast.deref() {
     //ok
@@ -60,7 +60,7 @@ fn parse_expr_longer() -> ErlResult<()> {
 #[test]
 fn parse_expr_comma() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a comma separated list of expressions");
-  let module = Module::new_parse_expr("A, B, 123 * C")?;
+  let module = Module::from_expr_source("A, B, 123 * C")?;
 
   if let ErlAst::BinaryOp(_loc, _expr) = module.ast.deref() {
     // ok
@@ -75,7 +75,7 @@ fn parse_expr_comma() -> ErlResult<()> {
 #[test]
 fn parse_fn1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
-  let module = Module::new_parse_fun("f(A) -> atom123.")?;
+  let module = Module::from_fun_source("f(A) -> atom123.")?;
 
   if let ErlAst::FnDef { .. } = module.ast.deref() {
     // ok
@@ -99,7 +99,7 @@ fn parse_fn1() -> ErlResult<()> {
 #[test]
 fn parse_apply_1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a simple apply() expr");
-  let module = Module::new_parse_expr("a_function()")?;
+  let module = Module::from_expr_source("a_function()")?;
   println!("{}: parsed {}", function_name!(), module.ast);
 
   if let ErlAst::Apply { .. } = module.ast.deref() {
@@ -115,7 +115,7 @@ fn parse_apply_1() -> ErlResult<()> {
 #[test]
 fn parse_apply_2() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an apply() expression with a fancy left side");
-  let module = Module::new_parse_expr("(123 + atom)()")?;
+  let module = Module::from_expr_source("(123 + atom)()")?;
   println!("{}: parsed {}", function_name!(), module.ast);
 
   if let ErlAst::Apply { .. } = module.ast.deref() {
@@ -131,7 +131,7 @@ fn parse_apply_2() -> ErlResult<()> {
 #[test]
 fn parse_apply_3() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a very fancy nested apply() expression");
-  let module = Module::new_parse_expr("(F() + g())(test(), 123())")?;
+  let module = Module::from_expr_source("(F() + g())(test(), 123())")?;
   println!("{} parse_application 3 parsed {}", function_name!(), module.ast);
 
   if let ErlAst::Apply { .. } = module.ast.deref() {

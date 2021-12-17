@@ -6,7 +6,7 @@ use crate::mfarity::MFArity;
 /// Indicates various type problems
 pub enum TypeError {
   /// Synthesized type for an expression isn't a subtype of the given type
-  ExprNotASubtype {
+  ExpectedType {
     /// Type which is expected
     ty: String,
     /// Type to check: type synthesized from an expression
@@ -42,7 +42,7 @@ pub enum TypeError {
 impl Display for TypeError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeError::ExprNotASubtype { ty, expr_ty } =>
+      TypeError::ExpectedType { ty, expr_ty } =>
         write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
       TypeError::ListExpected { msg } => write!(f, "Bad list: {}", msg),
       TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),

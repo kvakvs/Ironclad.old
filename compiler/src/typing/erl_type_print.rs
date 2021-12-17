@@ -48,7 +48,10 @@ impl std::fmt::Display for ErlType {
       ErlType::AnyBinary => write!(f, "binary()"),
       ErlType::Binary { .. } => unimplemented!("Display type for binary"),
       ErlType::AnyFn => write!(f, "function()"),
-      ErlType::Fn { .. } => unimplemented!("Display type for fn"),
+      ErlType::Fn(fntype) => {
+        write!(f, "fun ")?;
+        Pretty::display_semicolon_separated(fntype.clauses(), f)
+      }
       ErlType::FnRef { fun } => write!(f, "fun {}", fun),
       ErlType::Lambda => write!(f, "function()"),
       ErlType::Pid => write!(f, "pid()"),

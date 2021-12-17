@@ -39,7 +39,7 @@ impl FnDef {
   }
 
   /// Produce a function `ErlType` with all clauses and their return types
-  pub fn synthesize_function_type(&self, _scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     let clauses_r: ErlResult<Vec<Arc<FnClauseType>>> = self.clauses.iter()
         .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
         .collect();

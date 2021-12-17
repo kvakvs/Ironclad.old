@@ -35,8 +35,11 @@ impl FnType {
   /// Retrieve arity
   pub fn arity(&self) -> usize { self.arity }
 
-  /// Read access to clauses vector
+  /// Read clauses vector
   pub fn clauses(&self) -> &Vec<Arc<FnClauseType>> { &self.clauses }
+
+  /// Read one clause
+  pub fn clause(&self, index: usize) -> &Arc<FnClauseType> { &self.clauses[index] }
 
   /// Check whether argument list can be passed to any of the clauses
   pub fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<Arc<FnClauseType>> {

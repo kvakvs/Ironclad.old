@@ -18,7 +18,7 @@ fn fn_typespec_parse() -> ErlResult<()> {
                                     -spec myfun(A :: integer()) -> any().
                                     myfun(A) -> (A + 1) / 2.",
                              function_name!());
-    let module = Module::new_erl_module(&module_src)?;
+    let module = Module::from_module_source(&module_src)?;
     if let Ok(r_scope) = module.scope.read() {
       println!("Scope: {}", r_scope);
     }

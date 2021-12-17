@@ -1,12 +1,10 @@
 //! Defines an Erlang-type
-use std::ops::Deref;
 use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
-use crate::typing::subtyping::SubtypeChecker;
 use crate::typing::type_union::TypeUnion;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
@@ -127,10 +125,10 @@ impl ErlType {
   }
 
   /// Creates a new singleton atom of name `s`
-  pub fn new_atom(s: &str) -> ErlType {
+  pub fn new_atom(s: &str) -> Arc<ErlType> {
     ErlType::Singleton {
       val: Literal::Atom(s.to_string()).into()
-    }
+    }.into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
@@ -176,129 +174,8 @@ impl ErlType {
 //
 // Type classification
 //
+
 impl ErlType {
-  /// Shortcut to the subtype checker
-  pub fn is_subtype_of(&self, other: &ErlType) -> bool {
-    SubtypeChecker::is_subtype(self, other)
-  }
-
-  /// Checks whether type is an atom
-  pub fn is_atom(&self) -> bool {
-    return match self {
-      ErlType::Atom
-      | ErlType::Boolean => true,
-      ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Atom(_))
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether type is a literal atom of value
-  pub fn is_lit_atom(&self, s: &str) -> bool {
-    return match self {
-      ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Atom(actual) => actual == s,
-          _ => false,
-        }
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether type is a number
-  pub fn is_number(&self) -> bool {
-    return match self {
-      ErlType::Number
-      | ErlType::Float
-      | ErlType::Integer
-      | ErlType::IntegerRange { .. } => true,
-      ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger | Literal::Float(_))
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether `self` potentially can be an integer
-  pub fn is_supertype_of_integer(&self) -> bool {
-    ErlType::Integer.is_subtype_of(self)
-  }
-
-  /// Checks whether `self` potentially can be a floating point number
-  pub fn is_supertype_of_float(&self) -> bool {
-    ErlType::Float.is_subtype_of(self)
-  }
-
-  /// Checks whether `self` potentially can be an integer or a float
-  pub fn is_supertype_of_number(&self) -> bool {
-    ErlType::Number.is_subtype_of(self)
-  }
-
-  /// Checks whether type is an integer number
-  pub fn is_integer(&self) -> bool {
-    return match self {
-      ErlType::Integer
-      | ErlType::IntegerRange { .. } => true,
-      ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger)
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether type is a floating point number (or an integer, because compatible why not)
-  pub fn is_float(&self) -> bool {
-    return match self {
-      ErlType::Float => true,
-      ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Float(_) | Literal::Integer(_) | Literal::BigInteger)
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether type is a tuple type
-  pub fn is_tuple(&self) -> bool {
-    matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
-  }
-
-  /// Checks whether type is a list
-  pub fn is_list(&self) -> bool {
-    return match self {
-      ErlType::AnyList
-      | ErlType::List { .. }
-      | ErlType::StronglyTypedList { .. }
-      | ErlType::Nil => true,
-      ErlType::Singleton { val: singleton } => {
-        matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
-      }
-      _ => false,
-    };
-  }
-
-  /// Checks whether type is an empty list (NIL)
-  pub fn is_nil(&self) -> bool {
-    matches!(self, ErlType::Nil)
-  }
-
-  /// Checks whether type is a binary
-  pub fn is_binary(&self) -> bool {
-    matches!(self, ErlType::AnyBinary | ErlType::Binary { .. })
-  }
-
-  /// Checks whether type is a map
-  pub fn is_map(&self) -> bool {
-    matches!(self, ErlType::AnyMap | ErlType::Map { .. })
-  }
-
-  /// Checks whether a type is callable
-  pub fn is_function(&self) -> bool {
-    matches!(self, ErlType::AnyFn | ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda)
-  }
-
-
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
   /// This ordering is used for BTree construction, not for comparisons

@@ -17,7 +17,7 @@ impl TypeSynth {
       CoreAst::Module { .. } => unreachable!("Should not be synthesizing type from module node"),
       CoreAst::Attributes(_) => unreachable!("Should not be synthesizing type from module attrs"),
       CoreAst::ModuleFuns(_) => unreachable!("Should not be synthesizing type from module functions section"),
-      CoreAst::FnDef(fndef) => fndef.synthesize_return_type(scope),
+      CoreAst::FnDef(fndef) => fndef.synthesize_function_type(scope),
       CoreAst::FnRef { mfa } => {
         match Scope::retrieve_fn_from(scope, mfa) {
           None => ErlError::local_function_not_found(mfa),

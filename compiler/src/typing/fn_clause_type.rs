@@ -1,5 +1,7 @@
 //! Function clause type, component of function type
+use std::fmt::Formatter;
 use std::sync::Arc;
+use crate::display::Pretty;
 use crate::typing::erl_type::ErlType;
 
 /// Defines a function clause, with arguments and return type.
@@ -7,9 +9,16 @@ use crate::typing::erl_type::ErlType;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FnClauseType {
   /// Argument types for this function clause
-  args: Vec<Arc<ErlType>>,
+  pub args: Vec<Arc<ErlType>>,
   /// Return type of this function clause
-  ret_ty: Arc<ErlType>,
+  pub ret_ty: Arc<ErlType>,
+}
+
+impl std::fmt::Display for FnClauseType {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    Pretty::display_paren_list(&self.args, f)?;
+    write!(f, " -> {}", self.ret_ty)
+  }
 }
 
 impl FnClauseType {

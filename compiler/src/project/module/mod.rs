@@ -81,7 +81,7 @@ impl Module {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn new_erl_module(input: &str) -> ErlResult<Self> {
+  pub fn from_module_source(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
     module.parse_erl_str(Rule::module, input)?;
     Ok(module)
@@ -98,14 +98,14 @@ impl Module {
   // }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn new_parse_expr(input: &str) -> ErlResult<Self> {
+  pub fn from_expr_source(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
     module.parse_erl_str(Rule::expr, input)?;
     Ok(module)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn new_parse_fun(input: &str) -> ErlResult<Self> {
+  pub fn from_fun_source(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
     module.parse_erl_str(Rule::function_def, input)?;
     Ok(module)
