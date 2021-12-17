@@ -110,22 +110,22 @@ impl CoreAstBuilder {
 
   /// Directly translate args and body to core
   /// Create a new empty scope under module scope
-  fn create_core_fnclause(module: &Module, efnc: &ErlFnClause) -> ErlResult<CoreFnClause> {
+  fn create_core_fnclause(module: &Module, erl_fnc: &ErlFnClause) -> ErlResult<CoreFnClause> {
     let clause_scope = Scope::empty(
-      format!("fn_header_scope {}:{}", module.name, efnc.name),
+      format!("fn_header_scope {}:{}", module.name, erl_fnc.name),
       Arc::downgrade(&module.scope),
     ).into_arc_rwlock();
 
-    let args_as_core: ErlResult<_> = efnc.args.iter()
+    let args_as_core: ErlResult<Vec<_>> = erl_fnc.args.iter()
         .map(|efnc_ast| CoreAstBuilder::build(module, efnc_ast))
         .collect();
-    let guard_as_core = efnc.guard_expr.as_ref()
+    let guard_as_core = erl_fnc.guard_expr.as_ref()
         .map(|ast| CoreAstBuilder::build(module, ast));
 
     let fnclause = CoreFnClause::new(
       clause_scope,
-      args_as_core?,
-      CoreAstBuilder::build(module, &efnc.body)?,
+      &args_as_core?,
+      CoreAstBuilder::build(module, &erl_fnc.body)?,
       guard_as_core.map(|r| r.unwrap()),
     );
     Ok(fnclause)
@@ -137,7 +137,9 @@ impl CoreAstBuilder {
   pub fn core_from_fndef(module: &Module, ast: &Arc<ErlAst>) -> ErlResult<Arc<CoreAst>> {
     if let ErlAst::FnDef(erl_fndef) = ast.deref() {
       let clauses: ErlResult<_> = erl_fndef.clauses.iter()
-          .map(|efnc| Self::create_core_fnclause(module, efnc))
+          .map(|erl_fnc| {
+            Self::create_core_fnclause(module, erl_fnc)
+          })
           .collect();
 
       let core_fndef: Arc<FnDef> = FnDef::new(erl_fndef.location.clone(),

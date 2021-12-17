@@ -1,10 +1,8 @@
 //! Defines core function clause
 
 use std::fmt::Formatter;
-use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::display::Pretty;
 use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
@@ -17,41 +15,28 @@ use crate::typing::scope::Scope;
 #[derive(Debug)]
 pub struct CoreFnClause {
   /// Argument match expressions directly translated from `ErlAst`
-  args_ast: Vec<Arc<CoreAst>>,
-  /// Argument variable names (named as incoming into the function)
-  args: Vec<Arc<Var>>,
+  pub args_ast: Vec<Arc<CoreAst>>,
   /// Function clause body directly translated from `ErlAst`
-  body: Arc<CoreAst>,
+  pub body: Arc<CoreAst>,
   /// The optional guard expression
-  guard: Option<Arc<CoreAst>>,
+  pub guard: Option<Arc<CoreAst>>,
   /// Function scope (variables and passed arguments)
   pub scope: Arc<RwLock<Scope>>,
 }
 
 impl CoreFnClause {
-  fn extract_var_or_make_new(scope: &Arc<RwLock<Scope>>, ast: &Arc<CoreAst>) -> Arc<Var> {
-    match ast.deref() {
-      CoreAst::Var(v) => {
-        match Scope::retrieve_var_from(scope, v) {
-          None => {
-            // not exists: add it
-            Scope::add_to(scope, v);
-            v.clone()
-          }
-          Some(_) => {
-            // Exists: return it
-            v.clone()
-          }
-        }
+  fn update_scope(scope: &RwLock<Scope>, ast: &CoreAst) {
+    if let CoreAst::Var(v) = ast {
+      if Scope::retrieve_var_from(scope, v).is_none() {
+        Scope::add_to(scope, v)
       }
-      _other => Var::new_unique(ast.location(), "Arg").into(),
     }
   }
 
   /// Creates a new Core Function Clause
   /// All input variables are given unique new names.
   pub fn new(clause_scope: Arc<RwLock<Scope>>,
-             args_ast: Vec<Arc<CoreAst>>,
+             args_ast: &[Arc<CoreAst>],
              body: Arc<CoreAst>,
              guard: Option<Arc<CoreAst>>) -> Self {
     // let args: Vec<Arc<Var>> = args_ast.iter()
@@ -59,45 +44,34 @@ impl CoreFnClause {
     //     .flatten()
     //     .collect();
     // println!("New fnclause: args {:?}\nnew args {:?}", args_ast, args);
-    let args: Vec<Arc<Var>> = args_ast.iter()
-        .map(|ast| Self::extract_var_or_make_new(&clause_scope, ast))
-        .collect();
+    args_ast.iter().for_each(|ast| Self::update_scope(&clause_scope, ast));
 
     // Create inner_env for each arg where it has any() type, later this can be amended
-    // TODO: This creates new Arc<RwLock> for each clause argument, which is not slow but unnecessary
-    let inner_scope: Arc<RwLock<Scope>> = args.iter()
-        .fold(clause_scope, |scope, arg| {
-          if let Ok(scope_r) = scope.read() {
-            scope_r.add(arg).into_arc_rwlock()
-          } else {
-            panic!("Can't read-lock scope for creating clause scope while building core AST")
-          }
-        });
+    // TOxDO: This creates new Arc<RwLock> for each clause argument, which is not slow but unnecessary
+    // let inner_scope: Arc<RwLock<Scope>> = args_ast.iter()
+    //     .fold(clause_scope.clone(), |scope, arg| {
+    //       if let Ok(scope_r) = scope.read() {
+    //         scope_r.add(arg).into_arc_rwlock()
+    //       } else {
+    //         panic!("Can't read-lock scope for creating clause scope while building core AST")
+    //       }
+    //     });
 
     Self {
-      args,
-      args_ast,
+      args_ast: args_ast.into(),
       body,
       guard,
-      scope: inner_scope,
+      scope: clause_scope,
     }
   }
 
-  /// Read-only access to args
-  pub fn args(&self) -> &Vec<Arc<Var>> { &self.args }
-
-  /// Read-only access to body Arc (clone if you have to)
-  pub fn body(&self) -> &Arc<CoreAst> { &self.body }
-
-  /// Read-only access to guard expression (clone if you have to)
-  pub fn guard(&self) -> &Option<Arc<CoreAst>> { &self.guard }
-
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self, scope: &Arc<RwLock<Scope>>) -> ErlResult<Arc<FnClauseType>> {
+  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<FnClauseType>> {
     // Synthesizing return type using the inner function scope, with added args
-    let args_types = self.args.iter()
-        .map(|_| Var::synthesize_type())
+    let args_types = self.args_ast.iter()
+        .map(|arg| arg.synthesize(scope))
+        .map(Result::unwrap)
         .collect();
     let synthesized_t = FnClauseType::new(
       args_types,
@@ -107,14 +81,14 @@ impl CoreFnClause {
   }
 
   /// Return type from the body AST
-  pub fn synthesize_clause_return_type(&self, env: &Arc<RwLock<Scope>>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_clause_return_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     self.body.synthesize(env)
   }
 }
 
 impl std::fmt::Display for CoreFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    Pretty::display_paren_list(&self.args, f)?;
+    Pretty::display_paren_list(&self.args_ast, f)?;
     match &self.guard {
       Some(g) => write!(f, " when {}", g)?,
       None => {}

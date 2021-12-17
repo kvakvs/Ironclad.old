@@ -90,7 +90,7 @@ impl Scope {
   }
 
   /// Insert a new var into scope
-  pub fn add_to(scope: &Arc<RwLock<Scope>>, var: &Arc<Var>) {
+  pub fn add_to(scope: &RwLock<Scope>, var: &Arc<Var>) {
     if let Ok(mut scope_w) = scope.write() {
       scope_w.variables.insert(var.name.clone(), var.clone());
     }
@@ -103,7 +103,7 @@ impl Scope {
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
-  pub fn retrieve_var_from(scope: &Arc<RwLock<Scope>>, var: &Var) -> Option<Arc<ErlType>> {
+  pub fn retrieve_var_from(scope: &RwLock<Scope>, var: &Var) -> Option<Arc<ErlType>> {
     if let Ok(scope_read) = scope.read() {
       match scope_read.variables.get(&var.name) {
         Some(val) => Some(val.ty.clone()),
