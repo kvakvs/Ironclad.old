@@ -140,7 +140,7 @@ fn synth_fun_call() -> ErlResult<()> {
     println!("{}: Synthesized for main/1 {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
     // Expected: Main -> integer()
     assert!(ErlType::Number.is_subtype_of(&main_fn_type),
-            "Function main/0 must have inferred type: fun(number()) -> number(); got {}", main_fn_type);
+            "For main/0 we expect synthesized type: fun(number()) -> number(); actual: {}", main_fn_type);
   }
 
   Ok(())

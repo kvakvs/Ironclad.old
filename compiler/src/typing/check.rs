@@ -20,7 +20,7 @@ impl TypeCheck {
     println!("Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
              ast, synth_type, match_ty);
 
-    if !match_ty.is_subtype_of(&synth_type) && !synth_type.is_subtype_of(match_ty) {
+    if !match_ty.is_subtype_of(&synth_type) {
       ErlError::type_error(TypeError::ExpectedType {
         expected_type: format!("{}", match_ty),
         actual_type: format!("{}", synth_type),

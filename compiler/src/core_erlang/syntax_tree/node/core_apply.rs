@@ -8,6 +8,7 @@ use crate::display::Pretty;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
+use crate::typing::fn_type::FnType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
 
@@ -54,30 +55,7 @@ impl Apply {
       // AnyFn is always callable and always returns any, for we do not know better
       ErlType::AnyFn => Ok(ErlType::any()),
 
-      ErlType::Fn(fn_type) => {
-        if self.args.len() != fn_type.arity() {
-          let msg = format!(
-            "Attempt to call a function with wrong number of arguments: expected {}, got {}",
-            fn_type.arity(), self.args.len());
-          return ErlError::type_error(TypeError::BadArity { msg });
-        }
-        let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
-        if compatible_clauses.is_empty() {
-          let args_str = self.args.iter()
-              .map(|arg| format!("{}", arg))
-              .collect::<Vec<String>>()
-              .join(", ");
-          let msg = format!("No compatible function clauses while calling {} with args ({})",
-                            self.target, args_str);
-          return ErlError::type_error(TypeError::BadArguments { msg });
-        }
-        // Return type only from compatible clauses
-        let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter()
-            .map(|fc| fc.ret_ty())
-            .cloned()
-            .collect();
-        Ok(ErlType::new_union(&ret_types))
-      }
+      ErlType::Fn(fn_type) => self.synthesize_call_to_fn(&fn_type, &arg_types),
       ErlType::FnRef { .. } => unimplemented!("Callable is a fun reference"),
       ErlType::Lambda => unimplemented!("Callable is a lambda"),
 
@@ -89,5 +67,31 @@ impl Apply {
     // let clause_type = FnClauseType::new(arg_types?, ret_ty).into();
     // let synthesized_t = ErlType::new_fn_type(vec![clause_type]).into();
     // Ok(synthesized_t)
+  }
+
+  fn synthesize_call_to_fn(&self, fn_type: &FnType,
+                           arg_types: &[Arc<ErlType>]) -> ErlResult<Arc<ErlType>> {
+    if self.args.len() != fn_type.arity() {
+      let msg = format!(
+        "Attempt to call a function with wrong number of arguments: expected {}, got {}",
+        fn_type.arity(), self.args.len());
+      return ErlError::type_error(TypeError::BadArity { msg });
+    }
+    let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
+    if compatible_clauses.is_empty() {
+      let args_str = self.args.iter()
+          .map(|arg| format!("{}", arg))
+          .collect::<Vec<String>>()
+          .join(", ");
+      let msg = format!("No compatible function clauses while calling {} with args ({})",
+                        self.target, args_str);
+      return ErlError::type_error(TypeError::BadArguments { msg });
+    }
+    // Return type only from compatible clauses
+    let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter()
+        .map(|fc| fc.ret_ty())
+        .cloned()
+        .collect();
+    Ok(ErlType::new_union(&ret_types))
   }
 }

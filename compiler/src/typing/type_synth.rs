@@ -1,4 +1,6 @@
 //! Synthesize a type from AST node
+
+use ::function_name::named;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::erl_error::{ErlError, ErlResult};
@@ -11,6 +13,7 @@ use crate::typing::scope::Scope;
 impl CoreAst {
   /// From core AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
+  #[named]
   pub fn synthesize(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     match self {
       CoreAst::Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
@@ -36,7 +39,7 @@ impl CoreAst {
             Some(val) => Ok(val.clone()),
           }
         } else {
-          panic!("Can't read from env");
+          panic!("{}: Can't find variable in the env: {}", function_name!(), v.name);
         }
       }
       CoreAst::Lit { value, .. } => Ok(ErlType::new_singleton(value)),
