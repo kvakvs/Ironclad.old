@@ -128,21 +128,19 @@ fn synth_fun_call() -> ErlResult<()> {
 
   {
     let add_fn_ast = CoreAst::find_function_def(
-      &module.core_ast, &MFArity::new_local("add", 2),
-    ).unwrap();
+      &module.core_ast, &MFArity::new_local("add", 2)).unwrap();
     let add_fn_type = add_fn_ast.synthesize(&module.scope)?;
-    println!("{}: Inferred for add fn {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
+    println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
   }
 
   {
     let main_fn_ast = CoreAst::find_function_def(
-      &module.core_ast, &MFArity::new_local("main", 1),
-    ).unwrap();
+      &module.core_ast, &MFArity::new_local("main", 1)).unwrap();
     let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
-    println!("{}: Inferred for main fn {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
+    println!("{}: Synthesized for main/1 {} 🡆 {}", function_name!(), main_fn_ast, main_fn_type);
     // Expected: Main -> integer()
     assert!(ErlType::Number.is_subtype_of(&main_fn_type),
-            "Function main/0 must have inferred type: number(); received {}", main_fn_type);
+            "Function main/0 must have inferred type: fun(number()) -> number(); got {}", main_fn_type);
   }
 
   Ok(())

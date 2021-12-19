@@ -11,32 +11,33 @@ use crate::typing::type_error::TypeError;
 pub struct TypeCheck {}
 
 impl TypeCheck {
-  /// Checks whether ErlType `ty` is a subtype of synthesized type for expression `ast`.
+  /// Checks whether synthesized type for expression `ast` contains ErlType `ty`.
   /// This is used to check (for example) whether an incoming value would be accepted by a function.
-  pub fn check(ty: &ErlType, env: &Arc<RwLock<Scope>>, ast: &CoreAst) -> ErlResult<bool> {
+  /// This is essentially an Erlang "match" check.
+  pub fn check(env: &Arc<RwLock<Scope>>, ast: &CoreAst, match_ty: &ErlType) -> ErlResult<bool> {
     let synth_type = ast.synthesize(env)?;
 
-    if !ty.is_subtype_of(&synth_type) {
+    println!("Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
+             ast, synth_type, match_ty);
+
+    if !match_ty.is_subtype_of(&synth_type) && !synth_type.is_subtype_of(match_ty) {
       ErlError::type_error(TypeError::ExpectedType {
-        ty: format!("{}", synth_type),
-        expr_ty: format!("{}", ty),
+        expected_type: format!("{}", match_ty),
+        actual_type: format!("{}", synth_type),
       })
     } else {
       Ok(true)
     }
   }
-
-  // /// Checks whether `self` *contains* the expression's synthesized type
-  // pub fn contains_expr_synth_type(&self, env: &Arc<RwLock<Scope>>, ast: &CoreAst) -> ErlResult<bool> {
-  //   let synth_type = ast.synthesize_type(env)?;
-  //
-  //   if !synth_type.is_subtype_of(self) {
-  //     ErlError::type_error(TypeError::ExprNotASubtype {
-  //       ty: format!("{}", self),
-  //       expr_ty: format!("{}", synth_type),
-  //     })
-  //   } else {
-  //     Ok(true)
-  //   }
-  // }
 }
+
+// /// For function definition, check every clause if any return type is matching
+// // TODO: narrowing, if we know incoming arg types, select only matching clauses
+// fn check_fndef(fndef: &FnDef, match_ty: &ErlType) -> ErlResult<bool> {
+//   let any_matches = fndef.clauses.iter()
+//       .any(|clause| {
+//         // rough unwrap, TODO: Maybe nicer error returning
+//         Self::check(&clause.scope, &clause.body, match_ty).unwrap()
+//       });
+//   return Ok(any_matches);
+// }

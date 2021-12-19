@@ -45,8 +45,6 @@ impl FnDef {
         .collect();
     let clauses = clauses_r?;
 
-    println!("synth_function_type for {}: {:?}", self.funarity, clauses);
-
     let fn_type = FnType::new(self.funarity.arity, &clauses);
     let synthesized_t = ErlType::Fn(fn_type.into()).into();
     Ok(synthesized_t)

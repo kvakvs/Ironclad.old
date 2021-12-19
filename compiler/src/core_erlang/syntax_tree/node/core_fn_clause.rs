@@ -28,7 +28,7 @@ impl CoreFnClause {
   fn update_scope(scope: &RwLock<Scope>, ast: &CoreAst) {
     if let CoreAst::Var(v) = ast {
       if Scope::retrieve_var_from(scope, v).is_none() {
-        Scope::add_to(scope, v)
+        Scope::add_to(scope, &v.name)
       }
     }
   }

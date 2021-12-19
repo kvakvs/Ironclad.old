@@ -8,9 +8,9 @@ pub enum TypeError {
   /// Synthesized type for an expression isn't a subtype of the given type
   ExpectedType {
     /// Type which is expected
-    ty: String,
+    expected_type: String,
     /// Type to check: type synthesized from an expression
-    expr_ty: String,
+    actual_type: String,
   },
   /// List operation received something that's not a list
   ListExpected {
@@ -42,8 +42,8 @@ pub enum TypeError {
 impl Display for TypeError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeError::ExpectedType { ty, expr_ty } =>
-        write!(f, "Expression's type: {} but expected: {}", expr_ty, ty),
+      TypeError::ExpectedType { expected_type, actual_type } =>
+        write!(f, "Expression's type: {} but expected: {}", actual_type, expected_type),
       TypeError::ListExpected { msg } => write!(f, "Bad list: {}", msg),
       TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),
       TypeError::BadArity { msg } => write!(f, "Bad arity: {}", msg),

@@ -2,7 +2,6 @@
 use std::sync::Arc;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
-use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
@@ -113,62 +112,6 @@ pub enum ErlType {
 
   /// Contains multiple types + operations on these types
   Union(TypeUnion),
-}
-
-//
-// Constructors and Generators
-//
-impl ErlType {
-  /// Clones literal's refcounted pointer and returns a singleton type
-  pub fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
-    ErlType::Singleton { val: lit.clone() }.into()
-  }
-
-  /// Creates a new singleton atom of name `s`
-  pub fn new_atom(s: &str) -> Arc<ErlType> {
-    ErlType::Singleton {
-      val: Literal::Atom(s.to_string()).into()
-    }.into()
-  }
-
-  /// Creates a type for a proper list with a NIL tail.
-  pub fn list_of(t: Arc<ErlType>) -> Arc<ErlType> {
-    let result = ErlType::List {
-      elements: t,
-      tail: None,
-    };
-    result.into()
-  }
-
-  /// Creates new function type with clauses
-  pub fn new_fn_type(clauses: Vec<Arc<FnClauseType>>) -> ErlType {
-    assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
-
-    let arity = clauses[0].arity();
-    assert!(clauses.iter().all(|c| c.arity() == arity),
-            "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
-            arity);
-
-    let fn_type = FnType::new(arity, &clauses);
-    ErlType::Fn(fn_type.into())
-  }
-
-  /// Wrapper to access type union construction
-  pub fn new_union(types: &[Arc<ErlType>]) -> Arc<ErlType> {
-    match types.len() {
-      0 => ErlType::none(),
-      1 => types[0].clone(),
-      _ => {
-        let mut u = TypeUnion::new(types);
-        u.normalize();
-        match u.types().len() {
-          0 => panic!("Can't create type union of 0 types after normalization"),
-          1 => u.types()[0].clone(),
-          _ => ErlType::Union(u).into()
-        }
-      }
-    }
-  }
 }
 
 //

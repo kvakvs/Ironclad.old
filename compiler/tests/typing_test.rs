@@ -5,7 +5,6 @@ mod test_util;
 
 use std::ops::Deref;
 use ::function_name::named;
-use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
 use compiler::typing::check::TypeCheck;
@@ -37,11 +36,11 @@ fn typing_synth() -> ErlResult<()> {
 
   {
     let env = Scope::new_root_scope(function_name!().to_string());
-    let tup1 = Module::from_expr_source("{tuple, 1.2, 3, \"hello\"}")?;
+    let tup1 = Module::from_expr_source("{tuple_tag, 1.2, 3, \"hello\"}")?;
     let t = tup1.core_ast.synthesize(&env)?;
     println!("Synth tup1: {}", &t);
     if let ErlType::Tuple { elements } = t.deref() {
-      assert!(elements[0].is_lit_atom("tuple"), "t[0] - expected 'tuple', got {}", elements[0]);
+      assert!(elements[0].is_lit_atom("tuple_tag"), "t[0] - expected 'tuple_tag', got {}", elements[0]);
       assert!(elements[1].is_float(), "t[1] - expected float, got {}", elements[1]);
       assert!(elements[2].is_integer(), "t[2] - expected integer, got {}", elements[2]);
       assert!(elements[3].is_list(), "t[3] - expected string, got {}", elements[3]);
@@ -60,32 +59,60 @@ fn typing_expr_check_1() -> ErlResult<()> {
 
   let env = Scope::new_root_scope(function_name!().to_string());
   let expr1 = Module::from_expr_source("hello")?;
-  assert!(TypeCheck::check(&ErlType::atom(), &env, &expr1.core_ast)?,
+  assert!(TypeCheck::check(&env, &expr1.core_ast, &ErlType::Atom)?,
           "Parsed atom 'hello' must be subtype of atom()");
   Ok(())
 }
 
 #[named]
 #[test]
-fn typing_expr_check_2() -> ErlResult<()> {
-  test_util::start(function_name!(), "Typing.ExprCheck.FnDef1");
+/// Create a fun with 0 args, which returns an integer(). See if its compatible with an integer().
+fn typing_expr_check_noarg() -> ErlResult<()> {
+  test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
   let env = Scope::new_root_scope(function_name!().to_string());
-  let fn1 = Module::from_fun_source("myfun() -> 10 + 20.")?;
-  assert!(matches!(fn1.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn1.core_ast);
-  println!("Synth fn1: {}", fn1.core_ast.synthesize(&env)?);
-  assert!(TypeCheck::check(&ErlType::integer(), &env, &fn1.core_ast)?,
-          "Parsed fun() must be subtype of integer()");
+
+  let int_fn1 = Module::from_fun_source("my_int_fun1() -> 10 + 20.")?;
+  assert!(int_fn1.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn1.core_ast);
+  // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
+
+  let match_ty = &ErlType::new_fn_type_of_any_args(0, ErlType::integer());
+  assert!(TypeCheck::check(&env, &int_fn1.core_ast, match_ty)?,
+          "my_int_fun1()'s return type must be compatible with integer()");
   Ok(())
 }
 
 #[named]
 #[test]
-fn typing_expr_check_3() -> ErlResult<()> {
-  test_util::start(function_name!(), "Typing.ExprCheck.FnDef2");
+/// Create a fun with argument, which returns an integer(). See if its compatible with an integer().
+fn typing_check_int_arg_fn() -> ErlResult<()> {
+  test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let env = Scope::new_root_scope(function_name!().to_string());
-  let fn2 = Module::from_fun_source("myfun2(A) -> 10.0 + A.")?;
-  assert!(matches!(fn2.core_ast.deref(), CoreAst::FnDef(_)), "Expected FnDef() received {:?}", fn2.core_ast);
-  println!("Synth fn2: {}", fn2.core_ast.synthesize(&env)?);
+
+  let int_fn2 = Module::from_fun_source("my_int_fun2(A) -> 10.0 + A.")?;
+  assert!(int_fn2.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn2.core_ast);
+  // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
+
+  let match_ty = &ErlType::new_fn_type_of_any_args(1, ErlType::integer());
+  assert!(TypeCheck::check(&env, &int_fn2.core_ast, match_ty)?,
+          "my_int_fun2()'s result type must be compatible with integer()");
+  Ok(())
+}
+
+#[named]
+#[test]
+/// Create a fun which returns a tuple of `{any(), integer()}` and see if it checks against a tuple
+fn typing_expr_check_tuple1() -> ErlResult<()> {
+  test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
+  let env = Scope::new_root_scope(function_name!().to_string());
+
+  let tuple_fn = Module::from_fun_source("mytuple_fun(A) -> {A, 123}.")?;
+  assert!(tuple_fn.core_ast.is_fndef(), "Expected FnDef() received {:?}", tuple_fn.core_ast);
+  // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
+
+  let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
+  let match_ty = &ErlType::new_fn_type_of_any_args(0, expected_type);
+  assert!(TypeCheck::check(&env, &tuple_fn.core_ast, match_ty)?,
+          "Parsed mytuple_fun() result type must match {{any(), integer()}}");
   Ok(())
 }
 
