@@ -57,6 +57,14 @@ impl ErrorLocation {
       location,
     }
   }
+
+  /// Create an empty non-location
+  pub fn empty() -> ErrorLocation {
+    Self {
+      path: None,
+      location: SourceLoc::None,
+    }
+  }
 }
 
 impl std::fmt::Display for ErrorLocation {

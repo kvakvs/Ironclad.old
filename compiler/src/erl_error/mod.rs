@@ -1,6 +1,4 @@
 //! Contains all possible Erlang compiler errors
-use std::fmt::Formatter;
-use std::num::ParseIntError;
 use std::path::{Path};
 
 use pest::error::LineColLocation;
@@ -10,6 +8,9 @@ use crate::erlang::syntax_tree::erl_parser_prec_climber;
 use crate::mfarity::MFArity;
 use crate::preprocessor::syntax_tree::pp_parser;
 use crate::typing::type_error::TypeError;
+
+pub mod format;
+pub mod from;
 
 /// Erlang compiler errors all gathered together
 pub enum ErlError {
@@ -73,50 +74,6 @@ pub enum ErlError {
   LocalFunctionNotFound(MFArity),
   /// Returned when a type error or mismatching types were found
   TypeErr(TypeError),
-}
-
-impl std::fmt::Debug for ErlError {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
-}
-
-impl std::fmt::Display for ErlError {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      ErlError::Interrupted(s) => write!(f, "Processing interrupted: {}", s),
-      ErlError::Multiple(errs) => {
-        writeln!(f, "Multiple errors:")?;
-        for err in errs.iter() {
-          writeln!(f, "{}", err)?;
-        }
-        Ok(())
-      }
-      ErlError::Io(ioerr) => write!(f, "File IO error: {}", ioerr),
-      ErlError::Glob(gerr) => write!(f, "Directory scan error: {}", gerr),
-      ErlError::GlobPattern(gperr) => write!(f, "Glob pattern error: {}", gperr),
-      ErlError::Config(cfgerr) => write!(f, "Configuration file syntax error: {}", cfgerr),
-      ErlError::PreprocessorParse { loc, msg } => {
-        write!(f, "Preprocessor parse error: {} (at {})", msg, loc)
-      }
-      ErlError::PreprocessorSyntax { parse_err } => {
-        write!(f, "Preprocessor syntax parse error: {}", parse_err)
-      }
-      ErlError::ParserInternal { loc, msg } => {
-        write!(f, "Parser internal error: {} (at {})", msg, loc)
-      }
-      ErlError::Internal(msg) => {
-        write!(f, "Internal error: {}", msg)
-      }
-      ErlError::ErlangParse { loc, msg } => {
-        write!(f, "Erlang parse error: {} (at {})", msg, loc)
-      }
-      ErlError::ErlangSyntax { parse_err, msg } => {
-        write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
-      }
-      ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
-      ErlError::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
-      ErlError::TypeErr(terr) => write!(f, "Type error: {}", terr),
-    }
-  }
 }
 
 impl ErlError {
@@ -185,58 +142,3 @@ impl ErlError {
 
 /// Used as Result<T> for all parse and compile operations
 pub type ErlResult<T> = Result<T, ErlError>;
-
-impl From<std::io::Error> for ErlError {
-  fn from(value: std::io::Error) -> Self {
-    ErlError::Io(value)
-  }
-}
-
-impl From<toml::de::Error> for ErlError {
-  fn from(value: toml::de::Error) -> Self {
-    ErlError::Config(value)
-  }
-}
-
-impl From<glob::GlobError> for ErlError {
-  fn from(value: glob::GlobError) -> Self {
-    ErlError::Glob(value)
-  }
-}
-
-impl From<glob::PatternError> for ErlError {
-  fn from(value: glob::PatternError) -> Self {
-    ErlError::GlobPattern(value)
-  }
-}
-
-impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
-  fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
-    ErlError::PreprocessorSyntax { parse_err: value }
-  }
-}
-
-impl From<pest::error::Error<erl_parser_prec_climber::Rule>> for ErlError {
-  fn from(value: pest::error::Error<erl_parser_prec_climber::Rule>) -> Self {
-    let msg = value.to_string();
-    ErlError::ErlangSyntax {
-      parse_err: value,
-      msg,
-    }
-  }
-}
-
-impl From<TypeError> for ErlError {
-  fn from(value: TypeError) -> Self {
-    ErlError::TypeErr(value)
-  }
-}
-
-impl From<ParseIntError> for ErlError {
-  fn from(pie: ParseIntError) -> Self {
-    ErlError::ErlangParse {
-      loc: ErrorLocation::new(None, SourceLoc::None),
-      msg: format!("Cannot parse integer: {}", pie.to_string()),
-    }
-  }
-}

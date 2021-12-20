@@ -7,6 +7,7 @@ use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
 use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
+use compiler::erlang::syntax_tree::nom_parse_attr::nom_parse_generic_attr;
 use compiler::mfarity::MFArity;
 
 #[named]
@@ -15,15 +16,19 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line");
 
   {
-    let attr1_src = format!("-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n");
-    let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-    println!("Core for attr1_mod: {}", &attr1_mod.core_ast);
+    let attr1_src = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
+    // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
+    let (tail1, result1) = nom_parse_generic_attr(attr1_src)?;
+    assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
+    println!("ErlAst for attr1: {}", result1);
   }
 
   {
-    let attr2_src = format!(" -bbbggg(ababagalamaga () [] {{}}!!! --- ).\n");
-    let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-    println!("Core for attr2_mod: {}", &attr2_mod.core_ast);
+    let attr2_src = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
+    // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
+    let (tail2, result2) = nom_parse_generic_attr(attr2_src)?;
+    assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
+    println!("ErlAst for attr2: {}", result2);
   }
   Ok(())
 }
