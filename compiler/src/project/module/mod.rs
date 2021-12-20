@@ -79,36 +79,31 @@ impl Module {
     }
   }
 
-  /// Parses code fragment starting with "-module(...)." and containing some function definitions
-  /// and the usual module stuff.
-  pub fn from_module_source(input: &str) -> ErlResult<Self> {
+  fn new_from_parse(input: &str, rule: erl_parser_prec_climber::Rule) -> ErlResult<Self> {
     let mut module = Module::default();
-    module.parse_erl_str(Rule::module, input)?;
+    module.parse_erl_str(rule, input)?;
     Ok(module)
   }
 
-  // /// Parses code fragment with an Erlang expression
-  // pub fn parse_erl_expr(&mut self, input: &str) -> ErlResult<()> {
-  //   self.parse_erl_str(Rule::expr, input)
-  // }
-
-  // /// Parses code fragment with an Erlang function
-  // pub fn parse_erl_fun(&mut self, input: &str) -> ErlResult<()> {
-  //   self.parse_erl_str(Rule::function_def, input)
-  // }
+  /// Parses code fragment starting with "-module(...)." and containing some function definitions
+  /// and the usual module stuff.
+  pub fn from_module_source(input: &str) -> ErlResult<Self> {
+    Self::new_from_parse(input, Rule::module)
+  }
 
   /// Creates a module, where its AST comes from an expression
   pub fn from_expr_source(input: &str) -> ErlResult<Self> {
-    let mut module = Module::default();
-    module.parse_erl_str(Rule::expr, input)?;
-    Ok(module)
+    Self::new_from_parse(input, Rule::expr)
+  }
+
+  /// Creates a module, where its AST comes from a raw module attribute string (`-something().`)
+  pub fn from_module_attr_source(input: &str) -> ErlResult<Self> {
+    Self::new_from_parse(input, Rule::generic_attr)
   }
 
   /// Creates a module, where its AST comes from a function
   pub fn from_fun_source(input: &str) -> ErlResult<Self> {
-    let mut module = Module::default();
-    module.parse_erl_str(Rule::function_def, input)?;
-    Ok(module)
+    Self::new_from_parse(input, Rule::function_def)
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code

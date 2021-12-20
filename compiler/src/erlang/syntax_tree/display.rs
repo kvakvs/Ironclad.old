@@ -18,6 +18,7 @@ impl std::fmt::Display for ErlAst {
         Ok(())
       }
       ErlAst::ModuleAttr { name, .. } => writeln!(f, "-module('{}').", name),
+      ErlAst::UnparsedAttr { text, .. } => writeln!(f, "attr: {}", text),
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)
       // }

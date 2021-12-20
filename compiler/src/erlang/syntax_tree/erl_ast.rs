@@ -42,6 +42,14 @@ pub enum ErlAst {
     name: String,
   },
 
+  /// A generic attribute `"-name" ... "."\n` extracted from the source, parsed at a later stage
+  UnparsedAttr {
+    /// Source file pointer
+    location: SourceLoc,
+    /// Module name atom, stored as string
+    text: String,
+  },
+
   /// Defines a new function, with clauses.
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.

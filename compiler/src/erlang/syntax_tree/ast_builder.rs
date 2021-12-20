@@ -114,7 +114,7 @@ impl Module {
       Rule::bindable_expr => {
         // self.bindable_expr_to_ast(self.parse_inner(pair)?)?
         return self.build_ast_prec_climb(pair.into_inner().next().unwrap(),
-                                         get_prec_climber())
+                                         get_prec_climber());
         // TODO: Use prec_climber but a different grammar rule
       }
       Rule::capitalized_ident => ErlAst::new_var(loc, pair.as_str()),
@@ -167,7 +167,8 @@ impl Module {
       //-----------------------------
       // Type spec support
       //-----------------------------
-      Rule::fn_spec_attr => return self.fn_spec_to_ast(pair),
+      // Rule::fn_spec_attr => return self.fn_spec_to_ast(pair),
+      Rule::generic_attr => return self.generic_attr_to_ast(pair),
 
       //-----------------------------
       // Misc and unrecognized
@@ -178,9 +179,14 @@ impl Module {
     Ok(result)
   }
 
-  /// Creates a function spec AST node
-  fn fn_spec_to_ast(&mut self, _pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
-    ErlError::internal("notimpl".to_string())
+  /// Creates an "unparsed" attribute AST node
+  fn generic_attr_to_ast(&mut self, pair: Pair<Rule>) -> ErlResult<Arc<ErlAst>> {
+    let attr = ErlAst::UnparsedAttr {
+      location: pair.as_span().into(),
+      text: pair.to_string(),
+    }.into();
+    println!("Attr: {:?}", attr);
+    Ok(attr)
   }
 
   /// Parsed Application tokens are converted to App AST node.
@@ -306,7 +312,7 @@ impl Module {
       Rule::string => {
         let inner = pair.into_inner().into_iter().next().unwrap();
         ErlAst::new_lit_string(inner.as_span().into(), inner.as_str())
-      },
+      }
 
       other => unimplemented!("Don't know how to parse {:?}", other),
     };
