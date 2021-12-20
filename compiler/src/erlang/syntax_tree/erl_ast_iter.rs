@@ -10,7 +10,7 @@ impl ErlAst {
   /// Returns `AstChild` wrapped because some nodes are RefCells.
   pub fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
     match self {
-      ErlAst::ModuleAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
+      ErlAst::ModuleStartAttr { .. } | ErlAst::Lit { .. } | ErlAst::Comment { .. }
       | ErlAst::Var { .. } | ErlAst::MFA { .. } => None,
 
       ErlAst::ModuleForms(f) => Some(f.to_vec()),

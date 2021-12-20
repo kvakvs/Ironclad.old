@@ -11,7 +11,7 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::erl_parser_prec_climber;
+use crate::erlang::syntax_tree::{erl_parser_prec_climber, nom_parse};
 use crate::erlang::syntax_tree::erl_parser_prec_climber::{Rule};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
@@ -91,6 +91,21 @@ impl Module {
     Self::new_from_parse(input, Rule::module)
   }
 
+  /// Parses code fragment starting with "-module(...)." and containing some function definitions
+  /// and the usual module stuff.
+  pub fn from_module_source_nom(input: &str) -> ErlResult<Self> {
+    let mut module = Module::default();
+    let (tail, forms) = nom_parse::nom_parse_module(input)?;
+
+    assert!(tail.is_empty(), "Not all input was consumed by parse. Tail: {}", tail);
+
+    module.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
+    module.ast = ErlAst::ModuleForms(forms).into();
+    module.core_ast = CoreAstBuilder::build(&module, &module.ast)?;
+
+    Ok(module)
+  }
+
   /// Creates a module, where its AST comes from an expression
   pub fn from_expr_source(input: &str) -> ErlResult<Self> {
     Self::new_from_parse(input, Rule::expr)
@@ -122,33 +137,6 @@ impl Module {
     Ok(())
   }
 
-  // /// Create a dummy sourcefile and parse it starting with the given parser rule.
-  // /// This updates the self.fun_table and self.ast
-  // #[named]
-  // pub fn parse_and_unify_erl_str(&mut self,
-  //                                rule: erl_parser::Rule, input: &str) -> ErlResult<()> {
-  //   let parse_output = match erl_parser::ErlParser::parse(rule, input) {
-  //     Ok(mut root) => root.next().unwrap(),
-  //     Err(bad) => {
-  //       panic!("Parse failed {}", bad);
-  //       // return Err(ErlError::from(bad));
-  //     }
-  //   };
-  //
-  //   self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(""));
-  //
-  //   // Parse tree to raw AST
-  //   self.ast = self.build_ast_single_node(parse_output)?;
-  //   println!("\n{}: ErlAST {}", function_name!(), self.ast);
-  //
-  //   // Rebuild Core AST from Erlang AST
-  //   self.core_ast = CoreAstBuilder::build(self, &self.ast);
-  //   println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
-  //
-  //   // self.unifier = Unifier::new(self).unwrap();
-  //   Ok(())
-  // }
-
   /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
   /// This updates only self.ast
   #[named]
@@ -166,10 +154,8 @@ impl Module {
 
     // build initial AST from parse
     self.ast = self.build_ast_single_node(parse_output)?;
-    // println!("\n{}: ErlAST {}", function_name!(), self.ast);
 
     self.core_ast = CoreAstBuilder::build(self, &self.ast)?;
-    // println!("\n{}: CoreAST {}", function_name!(), self.core_ast);
 
     Ok(())
   }

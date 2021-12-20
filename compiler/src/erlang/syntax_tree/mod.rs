@@ -8,4 +8,4 @@ pub mod ast_builder;
 pub mod ast_processor;
 pub mod node;
 
-pub mod nom_parse_attr;
+pub mod nom_parse;

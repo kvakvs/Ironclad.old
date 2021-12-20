@@ -35,7 +35,7 @@ pub enum ErlAst {
   ModuleForms(Vec<Arc<ErlAst>>),
 
   /// -module(name). attribute, defines module start
-  ModuleAttr {
+  ModuleStartAttr {
     /// Source file pointer
     location: SourceLoc,
     /// Module name atom, stored as string
@@ -254,7 +254,7 @@ impl ErlAst {
     match self {
       ErlAst::Comment(loc) => loc.clone(),
       ErlAst::Token { location: loc, .. } => loc.clone(),
-      ErlAst::ModuleAttr { location: loc, .. } => loc.clone(),
+      ErlAst::ModuleStartAttr { location: loc, .. } => loc.clone(),
       // ErlAst::Comma { location: loc, .. } => loc.clone(),
       ErlAst::FnDef(erl_fndef) => erl_fndef.location.clone(),
       // ErlAst::FClause(loc, _) => loc.clone(),

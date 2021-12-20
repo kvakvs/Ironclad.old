@@ -7,7 +7,7 @@ use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
 use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
-use compiler::erlang::syntax_tree::nom_parse_attr::nom_parse_generic_attr;
+use compiler::erlang::syntax_tree::nom_parse::parse_attr::nom_parse_generic_attr;
 use compiler::mfarity::MFArity;
 
 #[named]
@@ -43,7 +43,7 @@ fn fn_typespec_parse() -> ErlResult<()> {
                                     -spec myfun(A :: integer()) -> any().
                                     myfun(A) -> (A + 1) / 2.",
                            function_name!());
-  let module = Module::from_module_source(&module_src)?;
+  let module = Module::from_module_source_nom(&module_src)?;
   if let Ok(r_scope) = module.scope.read() {
     println!("Scope: {}", r_scope);
   }

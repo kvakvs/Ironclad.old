@@ -28,7 +28,7 @@ impl CoreAstBuilder {
   pub fn build(env: &Module, ast: &Arc<ErlAst>) -> ErlResult<Arc<CoreAst>> {
     match ast.deref() {
       ErlAst::Empty => Ok(CoreAst::Empty.into()),
-      ErlAst::ModuleAttr { name, .. } => {
+      ErlAst::ModuleStartAttr { name, .. } => {
         let module_as_core = CoreAst::Module {
           name: name.clone(),
           exports: vec![],

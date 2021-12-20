@@ -104,7 +104,7 @@ impl Module {
         }.into()
       }
       Rule::module_start_attr => {
-        ErlAst::ModuleAttr {
+        ErlAst::ModuleStartAttr {
           location: loc,
           name: String::from(pair.into_inner().as_str()),
         }.into()
