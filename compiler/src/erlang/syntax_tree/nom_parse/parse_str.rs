@@ -1,5 +1,4 @@
-//! Complex support code to parse 'delimited' atom strings and atoms in general
-//! String parsing code from Nom examples.
+//! Parse double quoted strings
 
 use nom::{sequence, multi, branch, combinator, error,
           bytes::streaming::{is_not, take_while_m_n},
@@ -72,7 +71,7 @@ fn parse_escaped_char<'a, E>(input: &'a str) -> nom::IResult<&'a str, char, E>
       combinator::value('\u{0C}', character::streaming::char('f')),
       combinator::value('\\', character::streaming::char('\\')),
       combinator::value('/', character::streaming::char('/')),
-      combinator::value('\'', character::streaming::char('\'')),
+      combinator::value('"', character::streaming::char('"')),
     )),
   )(input)
 }
@@ -92,7 +91,7 @@ fn parse_escaped_whitespace<'a, E: error::ParseError<&'a str>>(
 fn parse_literal<'a, E: error::ParseError<&'a str>>(input: &'a str) -> nom::IResult<&'a str, &'a str, E> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
   // given characters.
-  let not_quote_slash = is_not("\'\\");
+  let not_quote_slash = is_not("\"\\");
 
   // `verify` runs a parser, then runs a verification function on the output of
   // the parser. The verification function accepts out output only if it
@@ -128,7 +127,7 @@ fn parse_fragment<'a, E>(input: &'a str) -> nom::IResult<&'a str, StringFragment
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-fn parse_quoted_atom<'a, E>(input: &'a str) -> nom::IResult<&'a str, String, E>
+pub fn parse_string<'a, E>(input: &'a str) -> nom::IResult<&'a str, String, E>
   where
       E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
 {
@@ -156,15 +155,7 @@ fn parse_quoted_atom<'a, E>(input: &'a str) -> nom::IResult<&'a str, String, E>
   // `delimited` with a looping parser (like fold_many0), be sure that the
   // loop won't accidentally match your closing delimiter!
   sequence::delimited(
-    character::streaming::char('\''),
+    character::streaming::char('\"'),
     build_quoted_atom_body,
-    character::streaming::char('\''))(input)
-}
-
-/// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
-/// delitmited string
-pub fn atom(input: &str) -> nom::IResult<&str, String> {
-  branch::alt(
-    (misc::parse_ident, parse_quoted_atom, )
-  )(input)
+    character::streaming::char('\"'))(input)
 }

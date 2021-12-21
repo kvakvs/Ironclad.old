@@ -112,7 +112,9 @@ impl CoreAstBuilder {
   /// Create a new empty scope under module scope
   fn create_core_fnclause(module: &Module, erl_fnc: &ErlFnClause) -> ErlResult<CoreFnClause> {
     let clause_scope = Scope::empty(
-      format!("fn_header_scope {}:{}", module.name, erl_fnc.name),
+      format!("fn_header_scope {}:{}",
+              module.name,
+              erl_fnc.name.unwrap_or_else(|| "$unnamed-lambda".to_string())),
       Arc::downgrade(&module.scope),
     ).into_arc_rwlock();
 

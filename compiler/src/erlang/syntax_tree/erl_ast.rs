@@ -50,7 +50,7 @@ pub enum ErlAst {
     text: String,
   },
 
-  /// Defines a new function, with clauses.
+  /// Defines a new function, with clauses, or an inline lambda (then name will be `None`).
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.
   FnDef(ErlFnDef),

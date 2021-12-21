@@ -5,6 +5,8 @@
 pub enum ErlBinaryOp {
   /// Joins two expressions together, right becomes the result
   Comma,
+  /// Joins two guard expression parts together, not allowed in normal expressions
+  Semicolon,
   /// Sum of two any numbers
   Add,
   /// Subtraction resut of two any numbers
@@ -57,11 +59,15 @@ pub enum ErlBinaryOp {
   BinaryShiftLeft,
   /// Bit shift right
   BinaryShiftRight,
+  /// Match operator =, also will assign unbound left variable expressions to right counterparts
+  Match,
 }
 
 /// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlUnaryOp {
+  /// Send operator "!"
+  Bang,
   /// Prefixed by 'catch' keyword
   Catch,
   /// Logical negation

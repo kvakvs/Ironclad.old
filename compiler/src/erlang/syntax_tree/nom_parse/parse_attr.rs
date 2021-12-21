@@ -31,7 +31,7 @@ fn naked_attr(input: &str) -> nom::IResult<&str, &str> {
   combinator::recognize(
     sequence::tuple((
       misc::ws(tag("-")),
-      misc::ws(misc::ident),
+      misc::ws(misc::parse_ident),
       multi::many_till(anychar, attr_terminator)
     ))
   )(input)
@@ -42,7 +42,7 @@ fn parenthesized_attr(input: &str) -> nom::IResult<&str, &str> {
   combinator::recognize(
     sequence::tuple((
       misc::ws(tag("-")),
-      misc::ws(misc::ident),
+      misc::ws(misc::parse_ident),
       tag("("),
       multi::many_till(anychar, parenthesized_attr_terminator)
     ))

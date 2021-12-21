@@ -8,8 +8,9 @@ use crate::display::Pretty;
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
 pub struct ErlFnClause {
-  /// Name, because it comes from AST, prefer to use funarity.name in the parent `FunctionDef`
-  pub name: String,
+  /// Name, because it comes from AST, prefer to use funarity.name in the parent `FnDef`
+  /// For inline defined lambdas name will be `None`, take care and give it a good name later
+  pub name: Option<String>,
   /// Function clause arguments, binding/match expressions
   pub args: Vec<Arc<ErlAst>>,
   /// Function clause body
@@ -20,7 +21,7 @@ pub struct ErlFnClause {
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(name: String, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
     ErlFnClause { name, args, body, guard_expr: None }
   }
 
@@ -37,7 +38,7 @@ impl ErlFnClause {
 
 impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}(", self.name)?;
+    write!(f, "{}(", self.name.unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
@@ -49,7 +50,7 @@ impl std::fmt::Display for ErlFnClause {
 
 impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}(", self.name)?;
+    write!(f, "{}(", self.name.unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {

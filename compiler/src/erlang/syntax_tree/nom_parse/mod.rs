@@ -13,6 +13,8 @@ pub mod parse_atom;
 pub mod parse_fn;
 pub mod parse_expr;
 pub mod parse_expr_op;
+pub mod parse_lit;
+pub mod parse_str;
 
 /// Parses an attribute or a function def
 pub fn parse_module_form(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {

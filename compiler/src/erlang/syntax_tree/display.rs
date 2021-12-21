@@ -123,6 +123,18 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::ListAppend => write!(f, "++"),
       ErlBinaryOp::ListSubtract => write!(f, "--"),
       ErlBinaryOp::Comma => write!(f, ","),
+      ErlBinaryOp::Semicolon => write!(f, ";"),
+      ErlBinaryOp::And => write!(f, "and"),
+      ErlBinaryOp::AndAlso => write!(f, "andalso"),
+      ErlBinaryOp::Or => write!(f, "or"),
+      ErlBinaryOp::OrElse => write!(f, "orelse"),
+      ErlBinaryOp::Xor => write!(f, "xor"),
+      ErlBinaryOp::BinaryAnd => write!(f, "band"),
+      ErlBinaryOp::BinaryOr => write!(f, "bor"),
+      ErlBinaryOp::BinaryXor => write!(f, "bxor"),
+      ErlBinaryOp::BinaryShiftLeft => write!(f, "bsl"),
+      ErlBinaryOp::BinaryShiftRight => write!(f, "bsr"),
+      ErlBinaryOp::Match => write!(f, "="),
     }
   }
 }
@@ -131,9 +143,11 @@ impl std::fmt::Display for ErlUnaryOp {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       ErlUnaryOp::Not => write!(f, "not"),
+      ErlUnaryOp::BinaryNot => write!(f, "bnot"),
       ErlUnaryOp::Negative => write!(f, "-"),
       ErlUnaryOp::Positive => write!(f, "+"),
       ErlUnaryOp::Catch => write!(f, "catch"),
+      ErlUnaryOp::Bang => write!(f, "!"),
     }
   }
 }

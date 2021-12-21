@@ -247,7 +247,7 @@ impl Module {
         .collect();
 
     let arity = clauses[0].args.len();
-    let funarity = MFArity::new_local_from_string(clauses[0].name.clone(), arity);
+    let funarity = MFArity::new_local_from_string(clauses[0].name.unwrap().clone(), arity);
 
     //self.add_function(fn_def.clone());
 
@@ -283,7 +283,7 @@ impl Module {
     };
 
     let args: Vec<Arc<ErlAst>> = nodes.into_iter().collect();
-    Ok(ErlFnClause::new(name, args, body))
+    Ok(ErlFnClause::new(Some(name), args, body))
   }
 
   /// Parse a generic comma separated list of expressions, if more than one element is found, wrap

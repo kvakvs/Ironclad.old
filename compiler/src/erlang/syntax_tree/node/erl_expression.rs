@@ -35,6 +35,8 @@ impl ErlUnaryOperatorExpr {
       | ErlUnaryOp::Positive => ErlType::number(),
 
       ErlUnaryOp::Catch => ErlType::any(),
+      ErlUnaryOp::Bang => self.expr.synthesize_type(),
+      ErlUnaryOp::BinaryNot => ErlType::boolean(),
     }
   }
 }

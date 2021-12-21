@@ -1,7 +1,8 @@
 //! Helper functions for Nom parsing
 
-use nom::{sequence, combinator, multi, branch,
-          character::complete::{alpha1, alphanumeric1, multispace0}, bytes::complete::{tag}};
+use nom::{sequence, combinator, multi, branch, character,
+          character::complete::{one_of, alpha1, alphanumeric1, multispace0},
+          bytes::complete::{tag}};
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
 /// trailing whitespace, returning the output of `inner`.
@@ -17,7 +18,7 @@ pub fn ws<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-pub fn ident(input: &str) -> nom::IResult<&str, String> {
+pub fn parse_ident(input: &str) -> nom::IResult<&str, String> {
   combinator::map(
     combinator::recognize(
       sequence::pair(
@@ -27,4 +28,64 @@ pub fn ident(input: &str) -> nom::IResult<&str, String> {
     ),
     |result: &str| result.to_string(),
   )(input)
+}
+
+/// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
+pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String> {
+  combinator::map(
+    combinator::recognize(
+      sequence::pair(
+        combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase()),
+        multi::many0(branch::alt((alphanumeric1, tag("_")))),
+      )
+    ),
+    |result: &str| result.to_string(),
+  )(input)
+}
+
+pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
+  combinator::recognize(
+    multi::many1(
+      sequence::terminated(one_of("0123456789"),
+                           multi::many0(character::complete::char('_')))
+    )
+  )(input)
+}
+
+pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
+  branch::alt((
+    // Case one: .42
+    combinator::recognize(
+      sequence::tuple((
+        character::complete::char('.'),
+        parse_int,
+        combinator::opt(sequence::tuple((
+          one_of("eE"),
+          combinator::opt(one_of("+-")),
+          parse_int
+        )))
+      ))
+    ),
+    // Case two: 42e42 and 42.42e42
+    combinator::recognize(
+      sequence::tuple((
+        parse_int,
+        combinator::opt(sequence::preceded(
+          character::complete::char('.'),
+          parse_int,
+        )),
+        one_of("eE"),
+        combinator::opt(one_of("+-")),
+        parse_int
+      ))
+    ),
+    // Case three: 42. and 42.42
+    combinator::recognize(
+      sequence::tuple((
+        parse_int,
+        character::complete::char('.'),
+        combinator::opt(parse_int)
+      ))
+    )
+  ))(input)
 }

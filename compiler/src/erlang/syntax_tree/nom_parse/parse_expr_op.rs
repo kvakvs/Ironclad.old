@@ -3,16 +3,36 @@ use nom::{combinator, sequence, multi, branch,
           bytes::complete::{tag}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
-use crate::erlang::syntax_tree::node::erl_expression::ErlBinaryOperatorExpr;
+use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
+use crate::erlang::syntax_tree::node::erl_expression::{ErlBinaryOperatorExpr, ErlUnaryOperatorExpr};
 use crate::erlang::syntax_tree::nom_parse::misc;
 use crate::erlang::syntax_tree::nom_parse::parse_expr::parse_expr;
+use crate::source_loc::SourceLoc;
 
-fn parse_unary_op_sign(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+fn unop_bang(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("!"), |_| ErlUnaryOp::Bang)(input)
+}
+fn unop_catch(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("!"), |_| ErlUnaryOp::Catch)(input)
+}
+fn unop_not(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("not"), |_| ErlUnaryOp::Not)(input)
+}
+fn unop_bnot(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("bnot"), |_| ErlUnaryOp::BinaryNot)(input)
+}
+fn unop_positive(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("+"), |_| ErlUnaryOp::Positive)(input)
+}
+fn unop_negative(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
+  combinator::map(tag("-"), |_| ErlUnaryOp::Negative)(input)
+}
+
+fn parse_unary_op_symbol(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
   branch::alt((
-    tag("!"), tag("catch"),
-    tag("not"), tag("bnot"),
-    tag("-"), tag("+"),
+    unop_bang, unop_catch,
+    unop_not, unop_bnot,
+    unop_positive, unop_negative,
   ))(input)
 }
 
@@ -64,6 +84,10 @@ fn binop_orelse(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
   combinator::map(tag("orelse"), |_| ErlBinaryOp::OrElse)(input)
 }
 
+fn binop_andalso(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag("andalso"), |_| ErlBinaryOp::AndAlso)(input)
+}
+
 fn binop_bor(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
   combinator::map(tag("bor"), |_| ErlBinaryOp::BinaryOr)(input)
 }
@@ -100,27 +124,60 @@ fn binop_hard_not_equals(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
   combinator::map(tag("=/="), |_| ErlBinaryOp::HardNotEq)(input)
 }
 
+fn binop_less(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag("<"), |_| ErlBinaryOp::Less)(input)
+}
+
+fn binop_less_eq(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag("=<"), |_| ErlBinaryOp::LessEq)(input)
+}
+
+fn binop_greater(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag(">"), |_| ErlBinaryOp::Greater)(input)
+}
+
+fn binop_greater_eq(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag(">="), |_| ErlBinaryOp::GreaterEq)(input)
+}
+
+fn binop_match(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag("="), |_| ErlBinaryOp::Match)(input)
+}
+
+fn binop_comma(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag(","), |_| ErlBinaryOp::Comma)(input)
+}
+
+fn binop_semicolon(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
+  combinator::map(tag(";"), |_| ErlBinaryOp::Semicolon)(input)
+}
+
 fn parse_binop(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
   branch::alt((
-    binop_floatdiv, binop_multiply, binop_intdiv, binop_rem,
-    binop_band, binop_and,
-    binop_list_append, binop_list_subtract,
-    binop_add, binop_subtract,
-    binop_bor, binop_bxor, binop_or, binop_xor,
-    binop_bsl, binop_bsr,
-    binop_equals, binop_not_equals, binop_hard_equals, binop_hard_not_equals,
-    tag("<"), tag(">"), tag("=<"), tag(">="),
-    tag("="),
-    tag(","),
-    tag("andalso"), tag("orelse"),
+    // binop_floatdiv, binop_multiply, binop_intdiv, binop_rem,
+    // binop_band, binop_and,
+    // binop_list_append, binop_list_subtract,
+    // binop_add, binop_subtract,
+    // binop_bor, binop_bxor, binop_or, binop_xor,
+    // binop_bsl, binop_bsr,
+    // binop_equals, binop_not_equals, binop_hard_equals, binop_hard_not_equals,
+    // binop_less, binop_greater, binop_less_eq, binop_greater_eq,
+    // binop_match,
+    // binop_comma, binop_semicolon,
+    binop_andalso, binop_orelse,
   ))(input)
 }
 
 pub fn parse_unop_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  sequence::tuple((
-    misc::ws(parse_unary_op_sign),
-    parse_expr
-  ))(input)
+  combinator::map(
+    sequence::tuple((
+      misc::ws(parse_unary_op_symbol),
+      parse_expr
+  )), |(unop, expr)| {
+      let uop = ErlUnaryOperatorExpr{ expr, operator: unop };
+      ErlAst::UnaryOp(SourceLoc::None, uop).into()
+    }
+  )(input)
 }
 
 pub fn parse_binop_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
@@ -136,7 +193,7 @@ pub fn parse_binop_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
         right,
         operator: op,
       };
-      ErlAst::BinaryOp(bop_expr)
+      ErlAst::BinaryOp(SourceLoc::None, bop_expr).into()
     },
   )(input)
 }
