@@ -1,6 +1,6 @@
 //! Parse an operator for binary or unary expressions
 use std::sync::Arc;
-use nom::{combinator, branch, bytes::complete::{tag}};
+use nom::{combinator, branch, character, bytes::complete::{tag}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -10,11 +10,11 @@ use crate::erlang::syntax_tree::nom_parse::parse_expr::parse_expr;
 use crate::source_loc::SourceLoc;
 
 fn unop_bang(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
-  combinator::map(tag("!"), |_| ErlUnaryOp::Bang)(input)
+  combinator::map(character::complete::char('!'), |_| ErlUnaryOp::Bang)(input)
 }
 
 fn unop_catch(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
-  combinator::map(tag("!"), |_| ErlUnaryOp::Catch)(input)
+  combinator::map(tag("catch"), |_| ErlUnaryOp::Catch)(input)
 }
 
 fn unop_not(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
@@ -26,11 +26,11 @@ fn unop_bnot(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
 }
 
 fn unop_positive(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
-  combinator::map(tag("+"), |_| ErlUnaryOp::Positive)(input)
+  combinator::map(character::complete::char('+'), |_| ErlUnaryOp::Positive)(input)
 }
 
 fn unop_negative(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
-  combinator::map(tag("-"), |_| ErlUnaryOp::Negative)(input)
+  combinator::map(character::complete::char('-'), |_| ErlUnaryOp::Negative)(input)
 }
 
 fn parse_unary_op_symbol(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
@@ -42,7 +42,7 @@ fn parse_unary_op_symbol(input: &str) -> nom::IResult<&str, ErlUnaryOp> {
 }
 
 fn binop_floatdiv(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag("/"), |_| ErlBinaryOp::Div)(input)
+  combinator::map(character::complete::char('/'), |_| ErlBinaryOp::Div)(input)
 }
 
 fn binop_intdiv(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
@@ -50,15 +50,15 @@ fn binop_intdiv(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
 }
 
 fn binop_multiply(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag("*"), |_| ErlBinaryOp::Mul)(input)
+  combinator::map(character::complete::char('*'), |_| ErlBinaryOp::Mul)(input)
 }
 
 fn binop_add(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag("+"), |_| ErlBinaryOp::Add)(input)
+  combinator::map(character::complete::char('+'), |_| ErlBinaryOp::Add)(input)
 }
 
 fn binop_subtract(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag("-"), |_| ErlBinaryOp::Sub)(input)
+  combinator::map(character::complete::char('-'), |_| ErlBinaryOp::Sub)(input)
 }
 
 fn binop_list_append(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
@@ -130,7 +130,7 @@ fn binop_hard_not_equals(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
 }
 
 fn binop_less(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag("<"), |_| ErlBinaryOp::Less)(input)
+  combinator::map(character::complete::char('<'), |_| ErlBinaryOp::Less)(input)
 }
 
 fn binop_less_eq(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
@@ -138,7 +138,7 @@ fn binop_less_eq(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
 }
 
 fn binop_greater(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
-  combinator::map(tag(">"), |_| ErlBinaryOp::Greater)(input)
+  combinator::map(character::complete::char('>'), |_| ErlBinaryOp::Greater)(input)
 }
 
 fn binop_greater_eq(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
@@ -166,7 +166,7 @@ fn parse_binop(input: &str) -> nom::IResult<&str, ErlBinaryOp> {
     branch::alt((binop_bor, binop_bxor, binop_or, binop_xor,
                  binop_bsl, binop_bsr,
                  binop_equals, binop_not_equals, binop_hard_equals, binop_hard_not_equals,
-                 binop_less, binop_greater, binop_less_eq, binop_greater_eq,
+                 binop_less_eq, binop_greater_eq, binop_less, binop_greater,
                  binop_match)),
     branch::alt((binop_comma, binop_semicolon,
                  binop_andalso, binop_orelse)),

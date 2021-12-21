@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, sequence, multi,
+use nom::{combinator, sequence, multi, character,
           bytes::complete::{tag}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
@@ -37,13 +37,16 @@ fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause> {
 
       // Args list: many bindable expressions, delimited by parentheses, separated by commas
       sequence::delimited(
-        misc::ws(tag("(")),
-        multi::separated_list0(misc::ws(tag(",")), parse_bindable_expr),
-        misc::ws(tag(")"))),
+        misc::ws(character::complete::char('(')),
+        multi::separated_list0(
+          misc::ws(character::complete::char(',')),
+          parse_bindable_expr),
+        misc::ws(character::complete::char(')'))),
       combinator::opt(parse_when_expr),
+      misc::ws(tag("->")),
       parse_expr,
     )),
-    |(name, args, when_expr, body)| {
+    |(name, args, when_expr, _arrow, body)| {
       ErlFnClause::new(name, args, body, when_expr)
     },
   )(input)
@@ -75,7 +78,7 @@ fn build_fndef_fn(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
 /// Parse function definition
 pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(multi::separated_list1(
-    misc::ws(tag(";")),
+    misc::ws(character::complete::char(';')),
     parse_fnclause,
   ), build_fndef_fn,
   )(input)
@@ -88,7 +91,7 @@ pub fn parse_lambda(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
     sequence::tuple((
       misc::ws(tag("fun")),
       multi::separated_list1(
-        misc::ws(tag(";")),
+        misc::ws(character::complete::char(';')),
         parse_fnclause,
       )
     )), |(_, fnclauses)| build_fndef_fn(fnclauses),
