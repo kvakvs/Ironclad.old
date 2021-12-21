@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::typing::erl_type::ErlType;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]
@@ -26,17 +25,17 @@ pub struct ErlUnaryOperatorExpr {
 }
 
 impl ErlUnaryOperatorExpr {
-  /// Get the type of an unary operation. Input type is same as return type.
-  pub fn synthesize_type(&self) -> Arc<ErlType> {
-    match self.operator {
-      ErlUnaryOp::Not => ErlType::boolean(),
-
-      ErlUnaryOp::Negative
-      | ErlUnaryOp::Positive => ErlType::number(),
-
-      ErlUnaryOp::Catch => ErlType::any(),
-      ErlUnaryOp::Bang => self.expr.synthesize_type(),
-      ErlUnaryOp::BinaryNot => ErlType::boolean(),
-    }
-  }
+  // /// Get the type of an unary operation. Input type is same as return type.
+  // pub fn synthesize_type(&self) -> Arc<ErlType> {
+  //   match self.operator {
+  //     ErlUnaryOp::Not => ErlType::boolean(),
+  //
+  //     ErlUnaryOp::Negative
+  //     | ErlUnaryOp::Positive => ErlType::number(),
+  //
+  //     ErlUnaryOp::Catch => ErlType::any(),
+  //     ErlUnaryOp::Bang => self.expr.synthesize_type(),
+  //     ErlUnaryOp::BinaryNot => ErlType::boolean(),
+  //   }
+  // }
 }

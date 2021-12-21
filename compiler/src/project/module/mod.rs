@@ -85,15 +85,15 @@ impl Module {
     Ok(module)
   }
 
-  /// Parses code fragment starting with "-module(...)." and containing some function definitions
-  /// and the usual module stuff.
-  pub fn from_module_source(input: &str) -> ErlResult<Self> {
-    Self::new_from_parse(input, Rule::module)
-  }
+  // /// Parses code fragment starting with "-module(...)." and containing some function definitions
+  // /// and the usual module stuff.
+  // pub fn from_module_source(input: &str) -> ErlResult<Self> {
+  //   Self::new_from_parse(input, Rule::module)
+  // }
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source_nom(input: &str) -> ErlResult<Self> {
+  pub fn from_module_source(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
     let (tail, forms) = nom_parse::nom_parse_module(input)?;
 

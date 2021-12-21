@@ -3,7 +3,6 @@
 use nom::{sequence, multi, branch, combinator, error,
           bytes::streaming::{is_not, take_while_m_n},
           character};
-use crate::erlang::syntax_tree::nom_parse::misc;
 
 // parser combinators are constructed from the bottom up:
 // first we write parsers for the smallest elements (escaped characters),

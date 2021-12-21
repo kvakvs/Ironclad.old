@@ -114,7 +114,7 @@ impl CoreAstBuilder {
     let clause_scope = Scope::empty(
       format!("fn_header_scope {}:{}",
               module.name,
-              erl_fnc.name.unwrap_or_else(|| "$unnamed-lambda".to_string())),
+              erl_fnc.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string())),
       Arc::downgrade(&module.scope),
     ).into_arc_rwlock();
 

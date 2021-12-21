@@ -21,8 +21,8 @@ pub struct ErlFnClause {
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
-    ErlFnClause { name, args, body, guard_expr: None }
+  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>, guard_expr: Option<Arc<ErlAst>>) -> Self {
+    ErlFnClause { name, args, body, guard_expr }
   }
 
   /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
@@ -38,7 +38,7 @@ impl ErlFnClause {
 
 impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}(", self.name.unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
+    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
@@ -50,7 +50,7 @@ impl std::fmt::Display for ErlFnClause {
 
 impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}(", self.name.unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
+    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {

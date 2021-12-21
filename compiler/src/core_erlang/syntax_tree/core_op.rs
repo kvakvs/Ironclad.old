@@ -39,6 +39,30 @@ pub enum CoreBinaryOp {
   ListAppend,
   /// Difference of two lists --
   ListSubtract,
+  /// Semicolon (or) operator for guard exprs
+  Semicolon,
+  /// Logical and
+  And,
+  /// Andalso operator
+  AndAlso,
+  /// Logical or
+  Or,
+  /// Orelse operatoir
+  OrElse,
+  /// Logical xor
+  Xor,
+  /// Binary and
+  BinaryAnd,
+  /// Binary or
+  BinaryOr,
+  /// Binary xor
+  BinaryXor,
+  /// Bsl binary
+  BinaryShiftLeft,
+  /// Bsr binary
+  BinaryShiftRight,
+  /// Assignment/match = operator
+  Match,
 }
 
 impl From<ErlBinaryOp> for CoreBinaryOp {
@@ -61,6 +85,18 @@ impl From<ErlBinaryOp> for CoreBinaryOp {
       ErlBinaryOp::HardNotEq => CoreBinaryOp::HardNotEq,
       ErlBinaryOp::ListAppend => CoreBinaryOp::ListAppend,
       ErlBinaryOp::ListSubtract => CoreBinaryOp::ListSubtract,
+      ErlBinaryOp::Semicolon => CoreBinaryOp::Semicolon,
+      ErlBinaryOp::And => CoreBinaryOp::And,
+      ErlBinaryOp::AndAlso => CoreBinaryOp::AndAlso,
+      ErlBinaryOp::Or => CoreBinaryOp::Or,
+      ErlBinaryOp::OrElse => CoreBinaryOp::OrElse,
+      ErlBinaryOp::Xor => CoreBinaryOp::Xor,
+      ErlBinaryOp::BinaryAnd => CoreBinaryOp::BinaryAnd,
+      ErlBinaryOp::BinaryOr => CoreBinaryOp::BinaryOr,
+      ErlBinaryOp::BinaryXor => CoreBinaryOp::BinaryXor,
+      ErlBinaryOp::BinaryShiftLeft => CoreBinaryOp::BinaryShiftLeft,
+      ErlBinaryOp::BinaryShiftRight => CoreBinaryOp::BinaryShiftRight,
+      ErlBinaryOp::Match => CoreBinaryOp::Match,
     }
   }
 }
@@ -99,6 +135,18 @@ impl std::fmt::Display for CoreBinaryOp {
       CoreBinaryOp::ListAppend => write!(f, "++"),
       CoreBinaryOp::ListSubtract => write!(f, "--"),
       CoreBinaryOp::Comma => write!(f, ","),
+      CoreBinaryOp::Semicolon => write!(f, ";"),
+      CoreBinaryOp::And => write!(f, "and"),
+      CoreBinaryOp::AndAlso => write!(f, "andalso"),
+      CoreBinaryOp::Or => write!(f, "or"),
+      CoreBinaryOp::OrElse => write!(f, "orelse"),
+      CoreBinaryOp::Xor => write!(f, "xor"),
+      CoreBinaryOp::BinaryAnd => write!(f, "band"),
+      CoreBinaryOp::BinaryOr => write!(f, "bor"),
+      CoreBinaryOp::BinaryXor => write!(f, "bxor"),
+      CoreBinaryOp::BinaryShiftLeft => write!(f, "bsl"),
+      CoreBinaryOp::BinaryShiftRight => write!(f, "bsr"),
+      CoreBinaryOp::Match => write!(f, "="),
     }
   }
 }

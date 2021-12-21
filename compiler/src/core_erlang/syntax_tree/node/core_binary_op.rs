@@ -57,10 +57,10 @@ impl BinaryOperatorExpr {
       }
       CoreBinaryOp::Comma => self.right.synthesize(scope),
 
-      // other => {
-      //   unimplemented!("Don't know how to synthesize binary operation type for operation {} on {:?}",
-      //                  other, self)
-      // },
+      other => {
+        unimplemented!("Don't know how to synthesize binary operation type for operation {} on {:?}",
+                       other, self)
+      },
     }
   }
 

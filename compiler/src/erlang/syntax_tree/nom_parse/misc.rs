@@ -43,6 +43,7 @@ pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String> {
   )(input)
 }
 
+/// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
   combinator::recognize(
     multi::many1(
@@ -52,6 +53,7 @@ pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
   )(input)
 }
 
+/// Parse a float with possibly scientific notation. Output is a string.
 pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
   branch::alt((
     // Case one: .42

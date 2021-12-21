@@ -23,6 +23,7 @@ fn parse_when_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   )(input)
 }
 
+/// Parse an expression which accepts an assignment (=) operator and will bind some values to unbound variables.
 pub fn parse_bindable_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // TODO: Are bindable expressions any different?
   parse_expr(input) // same as regular expr
@@ -43,7 +44,7 @@ fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause> {
       parse_expr,
     )),
     |(name, args, when_expr, body)| {
-      ErlFnClause::new(name, args, body)
+      ErlFnClause::new(name, args, body, when_expr)
     },
   )(input)
 }
@@ -54,10 +55,10 @@ fn build_fndef_fn(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
 
   let arity = fnclauses[0].args.len();
   let fn_name = match &fnclauses[0].name {
-    None => &String::from("TODO: lambda_name"),
-    Some(s) => s,
+    None => "TODO: lambda_name".to_string(),
+    Some(s) => s.clone(),
   };
-  let funarity = MFArity::new_local(fn_name, arity);
+  let funarity = MFArity::new_local(&fn_name, arity);
 
   if !fnclauses.iter().all(|fnc| fnc.args.len() == arity) {
     panic!("Not all clauses have same arity")
