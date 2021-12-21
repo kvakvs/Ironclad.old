@@ -97,7 +97,8 @@ impl Module {
     let mut module = Module::default();
     let (tail, forms) = nom_parse::nom_parse_module(input)?;
 
-    assert!(tail.is_empty(), "Not all input was consumed by parse. Tail: {}", tail);
+    assert!(tail.is_empty(),
+            "Not all input was consumed by parse.\n\tTail: {}\n\tForms: {:?}", tail, forms);
 
     module.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
     module.ast = ErlAst::ModuleForms(forms).into();

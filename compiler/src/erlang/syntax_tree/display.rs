@@ -111,7 +111,7 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::Mul => write!(f, "*"),
       ErlBinaryOp::Div => write!(f, "/"),
       ErlBinaryOp::IntegerDiv => write!(f, "div"),
-      ErlBinaryOp::Modulo => write!(f, "mod"),
+      ErlBinaryOp::Remainder => write!(f, "mod"),
       ErlBinaryOp::Less => write!(f, "<"),
       ErlBinaryOp::Greater => write!(f, ">"),
       ErlBinaryOp::LessEq => write!(f, "⩽"),

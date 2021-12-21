@@ -16,9 +16,19 @@ pub enum ErlBinaryOp {
   /// Integer division result of two integer numbers
   IntegerDiv,
   /// Division remainder of two integer numbers
-  Modulo,
+  Remainder,
   /// Left value is less than the right value
   Less,
+  /// Logical and
+  And,
+  /// Logical andalso
+  AndAlso,
+  /// Logical or
+  Or,
+  /// Logical orelse
+  OrElse,
+  /// Logical xor
+  Xor,
   /// Left value is greater than the right value
   Greater,
   /// Left value is less or equal to the right value
@@ -37,6 +47,16 @@ pub enum ErlBinaryOp {
   ListAppend,
   /// Difference of two lists --
   ListSubtract,
+  /// Bit and
+  BinaryAnd,
+  /// Bit or
+  BinaryOr,
+  /// Bit xor
+  BinaryXor,
+  /// Bit shift left
+  BinaryShiftLeft,
+  /// Bit shift right
+  BinaryShiftRight,
 }
 
 /// Unary operation takes 1 argument of bool or number, and returns same type
@@ -46,6 +66,8 @@ pub enum ErlUnaryOp {
   Catch,
   /// Logical negation
   Not,
+  /// Bit negation
+  BinaryNot,
   /// Numerical sign change, -X
   Negative,
   /// Numerical sign positive, no sign change: +X

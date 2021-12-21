@@ -50,7 +50,7 @@ impl From<ErlBinaryOp> for CoreBinaryOp {
       ErlBinaryOp::Mul => CoreBinaryOp::Mul,
       ErlBinaryOp::Div => CoreBinaryOp::Div,
       ErlBinaryOp::IntegerDiv => CoreBinaryOp::IntegerDiv,
-      ErlBinaryOp::Modulo => CoreBinaryOp::Modulo,
+      ErlBinaryOp::Remainder => CoreBinaryOp::Modulo,
       ErlBinaryOp::Less => CoreBinaryOp::Less,
       ErlBinaryOp::Greater => CoreBinaryOp::Greater,
       ErlBinaryOp::LessEq => CoreBinaryOp::LessEq,

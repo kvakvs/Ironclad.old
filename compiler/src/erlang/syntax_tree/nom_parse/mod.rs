@@ -2,44 +2,36 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, sequence, multi,
-          bytes::complete::{tag}};
+use nom::{combinator, sequence, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::source_loc::SourceLoc;
+use crate::erlang::syntax_tree::nom_parse::parse_attr::parse_module_attr;
 
 pub mod parse_attr;
 pub mod misc;
 pub mod parse_atom;
+pub mod parse_fn;
+pub mod parse_expr;
+pub mod parse_expr_op;
 
 /// Parses an attribute or a function def
 pub fn parse_module_form(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  parse_attr::nom_parse_generic_attr(input)
-}
-
-/// Parses a `-module(atom).` attribute
-pub fn parse_module_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  combinator::map(
-    sequence::tuple((
-      tag("-"),
-      misc::ws(tag("module")),
-      tag("("),
-      misc::ws(parse_atom::atom),
-      tag(")"),
-      misc::ws(tag(".")),
-    )),
-    |(_, _, _, name, _, _)| ErlAst::ModuleStartAttr {
-      location: SourceLoc::None,
-      name: name.to_string(),
-    }.into(),
-  )(input)
+  branch::alt((
+    parse_attr::parse_generic_attr,
+    parse_fn::parse_fndef,
+  ))(input)
 }
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
-  sequence::preceded(
-    parse_module_attr,
-    multi::many0(parse_module_form),
+  combinator::map(
+    sequence::tuple(
+      (parse_module_attr, multi::many0(parse_module_form), )
+    ),
+    |(m_attr, mut forms)| {
+      forms.insert(0, m_attr);
+      forms
+    },
   )(input)
 }
 

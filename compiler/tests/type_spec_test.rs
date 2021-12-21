@@ -7,7 +7,7 @@ use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
 use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
-use compiler::erlang::syntax_tree::nom_parse::parse_attr::nom_parse_generic_attr;
+use compiler::erlang::syntax_tree::nom_parse::parse_attr::parse_generic_attr;
 use compiler::mfarity::MFArity;
 
 #[named]
@@ -18,7 +18,7 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   {
     let attr1_src = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
     // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-    let (tail1, result1) = nom_parse_generic_attr(attr1_src)?;
+    let (tail1, result1) = parse_generic_attr(attr1_src)?;
     assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
     println!("ErlAst for attr1: {}", result1);
   }
@@ -26,7 +26,7 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   {
     let attr2_src = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
     // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-    let (tail2, result2) = nom_parse_generic_attr(attr2_src)?;
+    let (tail2, result2) = parse_generic_attr(attr2_src)?;
     assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
     println!("ErlAst for attr2: {}", result2);
   }
@@ -39,9 +39,9 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
 fn fn_typespec_parse() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for 1 and 2 clause fns");
 
-  let module_src = format!("-module({}).
-                                    -spec myfun(A :: integer()) -> any().
-                                    myfun(A) -> (A + 1) / 2.",
+  let module_src = format!("-module({}).\n\
+-spec myfun(A :: integer()) -> any().\n\
+myfun(A) -> (A + 1) / 2.\n",
                            function_name!());
   let module = Module::from_module_source_nom(&module_src)?;
   if let Ok(r_scope) = module.scope.read() {
