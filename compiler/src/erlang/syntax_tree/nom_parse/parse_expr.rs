@@ -38,36 +38,38 @@ fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 
 /// Parses a list of comma separated expressions in (parentheses)
 pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
+  let (input, _) = misc::ws(character::complete::char('('))(input)?;
   combinator::map(
-    sequence::tuple((
-      misc::ws_before(character::complete::char('(')),
+    sequence::pair(
       parse_comma_sep_exprs,
       misc::ws_before(character::complete::char(')')),
-    )),
-    |(_, elements, _)| elements,
+    ),
+    |(elements, _)| elements,
   )(input)
 }
 
 fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // TODO: list tail with |
+  let (input, _) = misc::ws(character::complete::char('['))(input)?;
   combinator::map(
-    sequence::tuple((
-      misc::ws(character::complete::char('[')),
+    sequence::pair(
       parse_comma_sep_exprs,
       misc::ws(character::complete::char(']')),
-    )),
-    |(_, elements, _)| ErlAst::new_list(SourceLoc::None, elements),
+    ),
+    // TODO: Unwrap comma tree into a vector of elements
+    |(elements, _)| ErlAst::new_list(SourceLoc::None, elements),
   )(input)
 }
 
 fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  let (input, _) = misc::ws(character::complete::char('{'))(input)?;
   combinator::map(
-    sequence::tuple((
-      misc::ws(character::complete::char('{')),
+    sequence::pair(
       parse_comma_sep_exprs,
       misc::ws(character::complete::char('}')),
-    )),
-    |(_, elements, _)| ErlAst::new_tuple(SourceLoc::None, elements),
+    ),
+    // TODO: Unwrap comma tree into a vector of elements
+    |(elements, _)| ErlAst::new_tuple(SourceLoc::None, elements),
   )(input)
 }
 
@@ -97,7 +99,7 @@ fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   misc::ws_before_mut(
     branch::alt((
-      parenthesized_expr,
+      parenthesized_expr, parse_list, parse_tuple,
       parse_var,
       parse_literal,
     ))
@@ -284,7 +286,7 @@ fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   )(input)
 }
 
-/// Lowest precedence 11: Catch operator, then continue to higher precedences
+/// Precedence 11: Catch operator, then continue to higher precedences
 pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // Try parse (catch Expr) otherwise try next precedence level
   combinator::map(
@@ -297,8 +299,17 @@ pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
       .or_else(|_err| misc::ws_before(parse_prec10)(input))
 }
 
+// /// Precedence 12: Lists, tuples, maps, etc
+// pub fn parse_prec12(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+//   // Try parse (catch Expr) otherwise try next precedence level
+//   misc::ws_before_mut(branch::alt((
+//     parse_list, parse_tuple,
+//   )))(input)
+//       .or_else(|_err| misc::ws_before(parse_prec11)(input))
+// }
+
 /// Parse an expression.
-/// Below 11 is special precedence 12, where we handle comma and semicolon as binary ops.
+/// Lowest precedence 13, where we handle comma and semicolon as binary ops.
 /// Note that semicolon is not valid for regular code only allowed in guards.
 #[inline]
 pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {

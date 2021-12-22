@@ -74,6 +74,18 @@ fn parse_expr_comma() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse a list and a tuple
+#[named]
+#[test]
+fn parse_expr_containers() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a list and a tuple");
+  let module = Module::from_expr_source("[1,2  ,3  ], {a, b ,C}")?;
+  println!("Parse \"[1,2,3],{{a,b,C}}\": {}", module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+
+  Ok(())
+}
+
 /// Try parse some function defs
 #[named]
 #[test]
