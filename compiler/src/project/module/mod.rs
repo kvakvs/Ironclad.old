@@ -15,6 +15,7 @@ use crate::erlang::syntax_tree::{erl_parser_prec_climber, nom_parse};
 use crate::erlang::syntax_tree::erl_parser_prec_climber::{Rule};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
+use crate::erlang::syntax_tree::nom_parse::parse_expr;
 use crate::project::module::func_registry::FuncRegistry;
 use crate::typing::scope::Scope;
 
@@ -97,8 +98,8 @@ impl Module {
     let mut module = Module::default();
     let (tail, forms) = nom_parse::nom_parse_module(input)?;
 
-    assert!(tail.is_empty(),
-            "Not all input was consumed by parse.\n\tTail: {}\n\tForms: {:?}", tail, forms);
+    assert!(tail.trim().is_empty(),
+            "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
 
     module.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
     module.ast = ErlAst::ModuleForms(forms).into();
@@ -109,7 +110,18 @@ impl Module {
 
   /// Creates a module, where its AST comes from an expression
   pub fn from_expr_source(input: &str) -> ErlResult<Self> {
-    Self::new_from_parse(input, Rule::expr)
+    // Self::new_from_parse(input, Rule::expr)
+    let mut module = Module::default();
+    let (tail, forms) = parse_expr::parse_expr(input)?;
+
+    assert!(tail.trim().is_empty(),
+            "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
+
+    module.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
+    module.ast = forms;
+    module.core_ast = CoreAstBuilder::build(&module, &module.ast)?;
+
+    Ok(module)
   }
 
   /// Creates a module, where its AST comes from a raw module attribute string (`-something().`)

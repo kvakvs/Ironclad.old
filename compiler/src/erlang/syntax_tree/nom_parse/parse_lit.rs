@@ -47,7 +47,7 @@ fn parse_float_to_ast(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 
 fn parse_int_to_ast(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    misc::parse_float,
+    misc::parse_int,
     |s| {
       ErlAst::Lit {
         location: SourceLoc::None,

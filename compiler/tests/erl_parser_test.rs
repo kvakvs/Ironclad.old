@@ -19,11 +19,27 @@ fn parse_string_test() -> ErlResult<()> {
   let module = Module::from_expr_source("\"abc\"").unwrap();
 
   if let ErlAst::Lit { value: lit, .. } = module.ast.deref() {
-    if let Literal::String(_value) = lit.deref() {
+    if let Literal::String(value) = lit.deref() {
+      assert_eq!(value, "abc");
       return Ok(());
     }
   }
   panic!("{} Expected: Literal(String) result, got {}", function_name!(), module.ast)
+}
+
+/// Try parse a 2+2 expression
+#[named]
+#[test]
+fn parse_expr_2_plus_2() -> ErlResult<()> {
+  let expr_2 = Module::from_expr_source(" 2")?;
+  println!("Parse \"2\": {}", expr_2.ast);
+  assert!(matches!(expr_2.ast.deref(), ErlAst::Lit {..}));
+
+  let expr_2_2 = Module::from_expr_source(" 2         + 2       ")?;
+  println!("Parse \"2+2\": {}", expr_2_2.ast);
+  assert!(matches!(expr_2_2.ast.deref(), ErlAst::BinaryOp { .. }));
+
+  Ok(())
 }
 
 /// Try parse a flat + expression
@@ -34,6 +50,7 @@ fn parse_expr_flat() -> ErlResult<()> {
 
   if let ErlAst::BinaryOp { .. } = module.ast.deref() {
     // ok
+    println!("{}", module.ast);
   } else {
     panic!("{} Expected: ErlAst::BinaryOp(+), got {}", function_name!(), module.ast);
   }

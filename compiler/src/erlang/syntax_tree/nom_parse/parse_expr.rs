@@ -2,8 +2,6 @@
 
 use std::sync::Arc;
 
-// use nom_locate::LocatedSpan;
-// use nom_recursive::{recursive_parser, RecursiveInfo};
 use nom::{error, character, combinator, sequence, multi, bytes::complete::{tag}, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
@@ -107,11 +105,13 @@ fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
 fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  branch::alt((
-    parenthesized_expr,
-    parse_literal,
-    parse_var,
-  ))(input)
+  misc::ws_before_mut(
+    branch::alt((
+      parenthesized_expr,
+      parse_var,
+      parse_literal,
+    ))
+  )(input)
 }
 
 // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
@@ -127,13 +127,13 @@ fn parse_prec02(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 /// Precedence 3: Unary + - bnot not
 fn parse_prec03(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    sequence::tuple((
-      branch::alt((
+    sequence::pair(
+      misc::ws_before_mut(branch::alt((
         parse_expr_op::unop_negative, parse_expr_op::unop_positive,
         parse_expr_op::unop_bnot, parse_expr_op::unop_not,
-      )),
-      parse_prec02
-    )),
+      ))),
+      misc::ws_before(parse_prec02),
+    ),
     |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, unop, expr),
   )(input)
       .or_else(|_err| parse_prec02(input))
@@ -142,20 +142,20 @@ fn parse_prec03(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 /// Precedence 4: / * div rem band and, left associative
 fn parse_prec04(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
-    sequence::tuple((
+    // Higher precedence expr, followed by 0 or more operators and higher prec exprs
+    sequence::pair(
       parse_prec03,
       multi::many0(
-        sequence::tuple((
-          branch::alt((
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
             parse_expr_op::binop_floatdiv, parse_expr_op::binop_multiply,
             parse_expr_op::binop_intdiv, parse_expr_op::binop_rem,
             parse_expr_op::binop_band, parse_expr_op::binop_and,
-          )),
-          parse_prec03,
-        ))
-      )
-    )),
+          ))),
+          misc::ws_before(parse_prec03),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -163,18 +163,18 @@ fn parse_prec04(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
 fn parse_prec05(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
+    // Higher precedence expr, followed by 0 or more operators and higher prec exprs
     sequence::tuple((
       parse_prec04,
       multi::many0(
-        sequence::tuple((
-          branch::alt((
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
             parse_expr_op::binop_add, parse_expr_op::binop_subtract, parse_expr_op::binop_bor,
             parse_expr_op::binop_bxor, parse_expr_op::binop_bsl, parse_expr_op::binop_bsr,
             parse_expr_op::binop_or, parse_expr_op::binop_xor,
-          )),
-          parse_prec04,
-        ))
+          ))),
+          misc::ws_before(parse_prec04),
+        )
       )
     )),
     |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -184,16 +184,18 @@ fn parse_prec05(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 /// Precedence 6: ++ --, right associative
 fn parse_prec06(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
-    sequence::tuple((
+    // Higher precedence expr, followed by 0 or more operators and higher prec exprs
+    sequence::pair(
       parse_prec05,
       multi::many0(
-        sequence::tuple((
-          branch::alt((parse_expr_op::binop_list_append, parse_expr_op::binop_list_subtract, )),
-          parse_prec05,
-        ))
-      )
-    )),
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
+            parse_expr_op::binop_list_append, parse_expr_op::binop_list_subtract,
+          ))),
+          misc::ws_before(parse_prec05),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -201,21 +203,21 @@ fn parse_prec06(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 /// Precedence 7: == /= =< < >= > =:= =/=
 fn parse_prec07(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
-    // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
-    sequence::tuple((
+    // Higher precedence expr, followed by 0 or more operators and higher prec exprs
+    sequence::pair(
       parse_prec06,
       multi::many0(
-        sequence::tuple((
-          branch::alt((
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
             parse_expr_op::binop_equals, parse_expr_op::binop_not_equals,
             parse_expr_op::binop_less_eq, parse_expr_op::binop_less,
             parse_expr_op::binop_greater_eq, parse_expr_op::binop_greater,
             parse_expr_op::binop_hard_equals, parse_expr_op::binop_hard_not_equals,
-          )),
-          parse_prec06,
-        ))
-      )
-    )),
+          ))),
+          misc::ws_before(parse_prec06),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -224,15 +226,15 @@ fn parse_prec07(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn parse_prec08(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
-    sequence::tuple((
+    sequence::pair(
       parse_prec07,
       multi::many0(
-        sequence::tuple((
-          parse_expr_op::binop_andalso,
-          parse_prec07,
-        ))
-      )
-    )),
+        sequence::pair(
+          misc::ws_before_mut(parse_expr_op::binop_andalso),
+          misc::ws_before(parse_prec07),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -241,15 +243,15 @@ fn parse_prec08(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn parse_prec09(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
-    sequence::tuple((
+    sequence::pair(
       parse_prec08,
       multi::many0(
-        sequence::tuple((
-          parse_expr_op::binop_orelse,
-          parse_prec08,
-        ))
-      )
-    )),
+        sequence::pair(
+          misc::ws_before_mut(parse_expr_op::binop_orelse),
+          misc::ws_before(parse_prec08),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -258,15 +260,17 @@ fn parse_prec09(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
-    sequence::tuple((
+    sequence::pair(
       parse_prec09,
       multi::many0(
-        sequence::tuple((
-          branch::alt((parse_expr_op::binop_match, parse_expr_op::binop_bang)),
-          parse_prec09,
-        ))
-      )
-    )),
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
+            parse_expr_op::binop_match, parse_expr_op::binop_bang
+          ))),
+          misc::ws_before(parse_prec09),
+        )
+      ),
+    ),
     |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
   )(input)
 }
@@ -277,8 +281,11 @@ fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // Try parse (catch Expr) otherwise try next precedence level
   combinator::map(
-    sequence::tuple((parse_expr_op::unop_catch, parse_prec10)),
+    sequence::pair(
+      misc::ws_before(parse_expr_op::unop_catch),
+      misc::ws_before(parse_prec10),
+    ),
     |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, catch_op, expr),
   )(input)
-      .or_else(|_err| parse_prec10(input))
+      .or_else(|_err| misc::ws_before(parse_prec10)(input))
 }
