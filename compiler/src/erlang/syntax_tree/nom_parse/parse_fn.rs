@@ -9,7 +9,7 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::erlang::syntax_tree::nom_parse::{misc, parse_atom};
-use crate::erlang::syntax_tree::nom_parse::parse_expr::{parse_expr, parse_guard_expr};
+use crate::erlang::syntax_tree::nom_parse::parse_expr::{parse_expr};
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
@@ -17,7 +17,7 @@ fn parse_when_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     sequence::tuple((
       misc::ws(tag("when")),
-      parse_guard_expr,
+      parse_expr,
     )),
     |(_, g)| g, // ignore 'when' tag, keep guard expr
   )(input)

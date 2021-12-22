@@ -61,13 +61,13 @@ pub enum ErlBinaryOp {
   BinaryShiftRight,
   /// Match operator =, also will assign unbound left variable expressions to right counterparts
   Match,
+  /// Send operator "!"
+  Bang,
 }
 
 /// Unary operation takes 1 argument of bool or number, and returns same type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlUnaryOp {
-  /// Send operator "!"
-  Bang,
   /// Prefixed by 'catch' keyword
   Catch,
   /// Logical negation

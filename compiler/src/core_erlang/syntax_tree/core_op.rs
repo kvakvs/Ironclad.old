@@ -63,6 +63,8 @@ pub enum CoreBinaryOp {
   BinaryShiftRight,
   /// Assignment/match = operator
   Match,
+  /// Send operator "!"
+  Bang,
 }
 
 impl From<ErlBinaryOp> for CoreBinaryOp {
@@ -97,6 +99,7 @@ impl From<ErlBinaryOp> for CoreBinaryOp {
       ErlBinaryOp::BinaryShiftLeft => CoreBinaryOp::BinaryShiftLeft,
       ErlBinaryOp::BinaryShiftRight => CoreBinaryOp::BinaryShiftRight,
       ErlBinaryOp::Match => CoreBinaryOp::Match,
+      ErlBinaryOp::Bang => CoreBinaryOp::Bang,
     }
   }
 }
@@ -147,6 +150,7 @@ impl std::fmt::Display for CoreBinaryOp {
       CoreBinaryOp::BinaryShiftLeft => write!(f, "bsl"),
       CoreBinaryOp::BinaryShiftRight => write!(f, "bsr"),
       CoreBinaryOp::Match => write!(f, "="),
+      CoreBinaryOp::Bang => write!(f, "!"),
     }
   }
 }

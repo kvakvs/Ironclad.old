@@ -135,6 +135,7 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::BinaryShiftLeft => write!(f, "bsl"),
       ErlBinaryOp::BinaryShiftRight => write!(f, "bsr"),
       ErlBinaryOp::Match => write!(f, "="),
+      ErlBinaryOp::Bang => write!(f, "!"),
     }
   }
 }
@@ -147,7 +148,6 @@ impl std::fmt::Display for ErlUnaryOp {
       ErlUnaryOp::Negative => write!(f, "-"),
       ErlUnaryOp::Positive => write!(f, "+"),
       ErlUnaryOp::Catch => write!(f, "catch"),
-      ErlUnaryOp::Bang => write!(f, "!"),
     }
   }
 }
