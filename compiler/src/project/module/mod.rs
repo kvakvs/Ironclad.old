@@ -15,7 +15,7 @@ use crate::erlang::syntax_tree::{erl_parser_prec_climber, nom_parse};
 use crate::erlang::syntax_tree::erl_parser_prec_climber::{Rule};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
-use crate::erlang::syntax_tree::nom_parse::parse_expr;
+use crate::erlang::syntax_tree::nom_parse::{parse_expr, parse_fn};
 use crate::project::module::func_registry::FuncRegistry;
 use crate::typing::scope::Scope;
 
@@ -131,7 +131,18 @@ impl Module {
 
   /// Creates a module, where its AST comes from a function
   pub fn from_fun_source(input: &str) -> ErlResult<Self> {
-    Self::new_from_parse(input, Rule::function_def)
+    // Self::new_from_parse(input, Rule::function_def)
+    let mut module = Module::default();
+    let (tail, forms) = parse_fn::parse_fndef(input)?;
+
+    assert!(tail.trim().is_empty(),
+            "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
+
+    module.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
+    module.ast = forms;
+    module.core_ast = CoreAstBuilder::build(&module, &module.ast)?;
+
+    Ok(module)
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code

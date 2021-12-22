@@ -47,14 +47,8 @@ fn parse_expr_2_plus_2() -> ErlResult<()> {
 #[test]
 fn parse_expr_flat() -> ErlResult<()> {
   let module = Module::from_expr_source("A + 123 + 333 + 6 + atom + Test")?;
-
-  if let ErlAst::BinaryOp { .. } = module.ast.deref() {
-    // ok
-    println!("{}", module.ast);
-  } else {
-    panic!("{} Expected: ErlAst::BinaryOp(+), got {}", function_name!(), module.ast);
-  }
-
+  println!("Parse \"A+123+333+6+atom+Test\": {}", module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
   Ok(())
 }
 
@@ -63,12 +57,8 @@ fn parse_expr_flat() -> ErlResult<()> {
 #[test]
 fn parse_expr_longer() -> ErlResult<()> {
   let module = Module::from_expr_source("123 + 1 / (2 * hello)")?;
-
-  if let ErlAst::BinaryOp { .. } = module.ast.deref() {
-    //ok
-  } else {
-    panic!("{} Expected: ErlAst::BinaryOp(+), got {}", function_name!(), module.ast);
-  }
+  println!("Parse \"123+1/(2*hello)\": {}", module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
   Ok(())
 }
 
@@ -78,12 +68,9 @@ fn parse_expr_longer() -> ErlResult<()> {
 fn parse_expr_comma() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a comma separated list of expressions");
   let module = Module::from_expr_source("A, B, 123 * C")?;
+  println!("Parse \"A,B,123*C\": {}", module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
 
-  if let ErlAst::BinaryOp(_loc, _expr) = module.ast.deref() {
-    // ok
-  } else {
-    panic!("{} Expected: ErlAst::BinaryOp with Comma, got {}", function_name!(), module.ast);
-  }
   Ok(())
 }
 
@@ -93,6 +80,7 @@ fn parse_expr_comma() -> ErlResult<()> {
 fn parse_fn1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
   let module = Module::from_fun_source("f(A) -> atom123.")?;
+  println!("Parse \"f(A) -> atom123.\": {}", module.ast);
 
   if let ErlAst::FnDef { .. } = module.ast.deref() {
     // ok

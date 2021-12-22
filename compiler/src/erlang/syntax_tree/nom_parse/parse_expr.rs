@@ -69,28 +69,6 @@ fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
     parse_expr)(input)
 }
 
-// /// Parse an expression
-// #[inline]
-// pub fn parse_expr_impl(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-//   parse_var(input)
-//       .or_else(|_err| primary(input)
-//           .or_else(|_err| parse_binop_expr(input)
-//               .or_else(|_err| parse_unop_expr(input))))
-//
-//   // branch::alt((
-//   //   parse_unop_expr,
-//   //   parse_binop_expr,
-//   //   parse_apply,
-//   //   parse_lambda,
-//   //   parse_var,
-//   //   parse_literal,
-//   //   parse_list,
-//   //   parse_tuple,
-//   //   // parse_map,
-//   //   //parse_record,
-//   // ))(input)
-// }
-
 fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   let (input, _opening) = character::complete::char('(')(input)?;
   let (input, expr) = misc::ws(parse_expr)(input)?;
@@ -275,17 +253,37 @@ fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   )(input)
 }
 
-/// Parse an expression.
-/// Try lowest precedence 11: Catch operator, then continue to higher precedences
-#[inline]
-pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+/// Lowest precedence 11: Catch operator, then continue to higher precedences
+pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // Try parse (catch Expr) otherwise try next precedence level
   combinator::map(
     sequence::pair(
-      misc::ws_before(parse_expr_op::unop_catch),
+      misc::ws_before_mut(parse_expr_op::unop_catch),
       misc::ws_before(parse_prec10),
     ),
     |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, catch_op, expr),
   )(input)
       .or_else(|_err| misc::ws_before(parse_prec10)(input))
+}
+
+/// Parse an expression.
+/// Below 11 is special precedence 12, where we handle comma and semicolon as binary ops.
+/// Note that semicolon is not valid for regular code only allowed in guards.
+#[inline]
+pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  combinator::map(
+    // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
+    sequence::pair(
+      misc::ws_before(parse_prec11),
+      multi::many0(
+        sequence::pair(
+          misc::ws_before_mut(branch::alt((
+            parse_expr_op::binop_semicolon, parse_expr_op::binop_comma
+          ))),
+          misc::ws_before(parse_prec11),
+        )
+      ),
+    ),
+    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+  )(input)
 }

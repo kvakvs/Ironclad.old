@@ -77,10 +77,15 @@ fn build_fndef_fn(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
 
 /// Parse function definition
 pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  combinator::map(multi::separated_list1(
-    misc::ws(character::complete::char(';')),
-    parse_fnclause,
-  ), build_fndef_fn,
+  combinator::map(
+    sequence::terminated(
+      multi::separated_list1(
+        misc::ws(character::complete::char(';')),
+        parse_fnclause,
+      ),
+      misc::ws_before(character::complete::char('.')),
+    ),
+    build_fndef_fn,
   )(input)
 }
 
