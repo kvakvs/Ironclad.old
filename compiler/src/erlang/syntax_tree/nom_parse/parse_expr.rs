@@ -36,6 +36,18 @@ fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   Ok((input, ast))
 }
 
+/// Parses a list of comma separated expressions in (parentheses)
+pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
+  combinator::map(
+    sequence::tuple((
+      misc::ws_before(character::complete::char('(')),
+      parse_comma_sep_exprs,
+      misc::ws_before(character::complete::char(')')),
+    )),
+    |(_, elements, _)| elements,
+  )(input)
+}
+
 fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // TODO: list tail with |
   combinator::map(
@@ -93,8 +105,27 @@ fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 }
 
 // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
+/// Parse expr followed by a parentheses with 0 or more args, to become a function call
+// TODO: module:function notation and maybe tuple notation?
 fn parse_prec01(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  primary(input)
+  combinator::map(
+    sequence::pair(
+      primary,
+      combinator::opt(parse_parenthesized_list),
+    ),
+    |(expr, args)| {
+      match args {
+        None => expr,
+        Some(args_vec) => {
+          let app = ErlApply {
+            location: SourceLoc::None,
+            expr,
+            args: args_vec,
+          };
+          ErlAst::Apply(app).into()
+        }
+      }
+    })(input)
 }
 
 // TODO: Precedence 2: # (record access operator)

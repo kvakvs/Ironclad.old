@@ -96,7 +96,7 @@ impl Module {
   /// and the usual module stuff.
   pub fn from_module_source(input: &str) -> ErlResult<Self> {
     let mut module = Module::default();
-    let (tail, forms) = nom_parse::nom_parse_module(input)?;
+    let (tail, forms) = nom_parse::parse_module(input)?;
 
     assert!(tail.trim().is_empty(),
             "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);

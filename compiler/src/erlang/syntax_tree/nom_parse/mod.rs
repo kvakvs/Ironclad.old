@@ -18,27 +18,23 @@ pub mod parse_str;
 
 /// Parses an attribute or a function def
 pub fn parse_module_form(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  branch::alt((
-    parse_attr::parse_generic_attr,
-    parse_fn::parse_fndef,
-  ))(input)
+  misc::ws_before_mut(
+    branch::alt((
+      parse_attr::parse_generic_attr,
+      parse_fn::parse_fndef,
+    )))(input)
 }
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
   combinator::map(
-    sequence::tuple(
-      (parse_module_attr, multi::many0(parse_module_form), )
+    sequence::pair(
+      parse_module_attr,
+      multi::many0(parse_module_form),
     ),
     |(m_attr, mut forms)| {
       forms.insert(0, m_attr);
       forms
     },
   )(input)
-}
-
-/// Given a string, try to read `-module()` attribute followed by more attributes and forms.
-pub fn nom_parse_module(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
-  let (tail, forms) = parse_module(input)?;
-  Ok((tail, forms))
 }

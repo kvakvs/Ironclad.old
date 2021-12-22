@@ -9,10 +9,7 @@ pub fn ws_before<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>
   inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
   where InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::preceded(
-    multispace0,
-    inner,
-  )
+  sequence::preceded(multispace0, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -21,10 +18,7 @@ pub fn ws_before_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a s
   inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
   where InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::preceded(
-    multispace0,
-    inner,
-  )
+  sequence::preceded(multispace0, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -33,11 +27,7 @@ pub fn ws<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
   inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
   where InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::delimited(
-    multispace0,
-    inner,
-    multispace0,
-  )
+  sequence::delimited(multispace0, inner, multispace0)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -46,11 +36,7 @@ pub fn ws_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
   inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
   where InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::delimited(
-    multispace0,
-    inner,
-    multispace0,
-  )
+  sequence::delimited(multispace0, inner, multispace0)
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
@@ -81,6 +67,7 @@ pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String> {
 }
 
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
+/// From Nom examples
 pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
   combinator::recognize(
     multi::many1(
@@ -91,6 +78,7 @@ pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
 }
 
 /// Parse a float with possibly scientific notation. Output is a string.
+/// From Nom examples
 pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
   branch::alt((
     // Case one: .42
@@ -127,4 +115,11 @@ pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
       ))
     )
   ))(input)
+}
+
+/// Matches newline \n or \r\n
+pub fn newline(input: &str) -> nom::IResult<&str, &str> {
+  combinator::recognize(
+    branch::alt((combinator::eof, tag("\n"), tag("\r\n")))
+  )(input)
 }

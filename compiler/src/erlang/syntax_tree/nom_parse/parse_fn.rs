@@ -8,8 +8,7 @@ use nom::{combinator, sequence, multi, character,
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
-use crate::erlang::syntax_tree::nom_parse::{misc, parse_atom};
-use crate::erlang::syntax_tree::nom_parse::parse_expr::{parse_expr};
+use crate::erlang::syntax_tree::nom_parse::{misc, parse_atom, parse_expr};
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
@@ -17,34 +16,28 @@ fn parse_when_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     sequence::tuple((
       misc::ws(tag("when")),
-      parse_expr,
+      parse_expr::parse_expr,
     )),
     |(_, g)| g, // ignore 'when' tag, keep guard expr
   )(input)
-}
-
-/// Parse an expression which accepts an assignment (=) operator and will bind some values to unbound variables.
-pub fn parse_bindable_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-  // TODO: Are bindable expressions any different?
-  parse_expr(input) // same as regular expr
 }
 
 /// Parses a named clause for a top level function
 fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause> {
   combinator::map(
     sequence::tuple((
-      combinator::opt(parse_atom::atom),
+      // Function clause name
+      misc::ws_before_mut(combinator::opt(parse_atom::atom)),
 
-      // Args list: many bindable expressions, delimited by parentheses, separated by commas
-      sequence::delimited(
-        misc::ws(character::complete::char('(')),
-        multi::separated_list0(
-          misc::ws(character::complete::char(',')),
-          parse_bindable_expr),
-        misc::ws(character::complete::char(')'))),
+      // Args list
+      parse_expr::parse_parenthesized_list,
+
+      // Optional: when <guard>
       combinator::opt(parse_when_expr),
       misc::ws(tag("->")),
-      parse_expr,
+
+      // Body
+      parse_expr::parse_expr,
     )),
     |(name, args, when_expr, _arrow, body)| {
       ErlFnClause::new(name, args, body, when_expr)
@@ -80,8 +73,8 @@ pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     sequence::terminated(
       multi::separated_list1(
-        misc::ws(character::complete::char(';')),
-        parse_fnclause,
+        misc::ws_before(character::complete::char(';')),
+        misc::ws_before(parse_fnclause),
       ),
       misc::ws_before(character::complete::char('.')),
     ),
@@ -94,10 +87,10 @@ pub fn parse_lambda(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
   combinator::map(
     sequence::tuple((
-      misc::ws(tag("fun")),
+      misc::ws_before(tag("fun")),
       multi::separated_list1(
-        misc::ws(character::complete::char(';')),
-        parse_fnclause,
+        misc::ws_before(character::complete::char(';')),
+        misc::ws_before(parse_fnclause),
       )
     )), |(_, fnclauses)| build_fndef_fn(fnclauses),
   )(input)

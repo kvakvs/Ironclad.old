@@ -122,9 +122,9 @@ fn synth_fun_call() -> ErlResult<()> {
   let code = format!(
     "-module({}).\n\
     add(A, B) -> A + B.\n\
-    main(A) -> add(A, 4).\n", function_name!());
+    main(A) -> add(A, 4).", function_name!());
   let module = Module::from_module_source(&code)?;
-  println!("AST: {}", &module.core_ast);
+  println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
     let add_fn_ast = CoreAst::find_function_def(
