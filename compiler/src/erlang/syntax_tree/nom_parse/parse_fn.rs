@@ -15,7 +15,7 @@ use crate::source_loc::SourceLoc;
 fn parse_when_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     sequence::tuple((
-      misc::ws(tag("when")),
+      misc::ws_before(tag("when")),
       parse_expr::parse_expr,
     )),
     |(_, g)| g, // ignore 'when' tag, keep guard expr
@@ -34,7 +34,7 @@ fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause> {
 
       // Optional: when <guard>
       combinator::opt(parse_when_expr),
-      misc::ws(tag("->")),
+      misc::ws_before(tag("->")),
 
       // Body
       parse_expr::parse_expr,
@@ -74,7 +74,7 @@ pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
     sequence::terminated(
       multi::separated_list1(
         misc::ws_before(character::complete::char(';')),
-        misc::ws_before(parse_fnclause),
+        parse_fnclause,
       ),
       misc::ws_before(character::complete::char('.')),
     ),

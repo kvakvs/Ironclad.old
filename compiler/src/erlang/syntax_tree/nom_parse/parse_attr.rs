@@ -53,7 +53,9 @@ fn parenthesized_attr(input: &str) -> nom::IResult<&str, &str> {
 pub fn parse_generic_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   combinator::map(
     combinator::recognize(
-      branch::alt((naked_attr, parenthesized_attr))
+      sequence::terminated(
+        branch::alt((naked_attr, parenthesized_attr)),
+        misc::newline)
     ),
     |attr| {
       let ast_node = ErlAst::UnparsedAttr {

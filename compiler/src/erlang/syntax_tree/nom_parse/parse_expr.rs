@@ -38,7 +38,7 @@ fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 
 /// Parses a list of comma separated expressions in (parentheses)
 pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
-  let (input, _) = misc::ws(character::complete::char('('))(input)?;
+  let (input, _) = misc::ws_before(character::complete::char('('))(input)?;
   combinator::map(
     sequence::pair(
       parse_comma_sep_exprs,
@@ -56,7 +56,6 @@ fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
       parse_comma_sep_exprs,
       misc::ws(character::complete::char(']')),
     ),
-    // TODO: Unwrap comma tree into a vector of elements
     |(elements, _)| ErlAst::new_list(SourceLoc::None, elements),
   )(input)
 }
@@ -68,7 +67,6 @@ fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
       parse_comma_sep_exprs,
       misc::ws(character::complete::char('}')),
     ),
-    // TODO: Unwrap comma tree into a vector of elements
     |(elements, _)| ErlAst::new_tuple(SourceLoc::None, elements),
   )(input)
 }
@@ -80,7 +78,8 @@ fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
   multi::separated_list0(
     misc::ws(character::complete::char(',')),
-    parse_expr)(input)
+    parse_prec11 // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+  )(input)
 }
 
 fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
@@ -287,6 +286,7 @@ fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 }
 
 /// Precedence 11: Catch operator, then continue to higher precedences
+/// This is also entry point to parse expression when you don't want to recognize comma and semicolon
 pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   // Try parse (catch Expr) otherwise try next precedence level
   combinator::map(
@@ -298,15 +298,6 @@ pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
   )(input)
       .or_else(|_err| misc::ws_before(parse_prec10)(input))
 }
-
-// /// Precedence 12: Lists, tuples, maps, etc
-// pub fn parse_prec12(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
-//   // Try parse (catch Expr) otherwise try next precedence level
-//   misc::ws_before_mut(branch::alt((
-//     parse_list, parse_tuple,
-//   )))(input)
-//       .or_else(|_err| misc::ws_before(parse_prec11)(input))
-// }
 
 /// Parse an expression.
 /// Lowest precedence 13, where we handle comma and semicolon as binary ops.

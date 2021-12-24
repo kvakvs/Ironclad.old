@@ -62,6 +62,16 @@ fn parse_expr_longer() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse an expression with parentheses and division
+#[named]
+#[test]
+fn parse_expr_2() -> ErlResult<()> {
+  let module = Module::from_expr_source("(A +1)/ 2")?;
+  println!("Parse \"(A+1)/2\": {}", module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  Ok(())
+}
+
 /// Try parse a comma expression with some simpler nested exprs
 #[named]
 #[test]

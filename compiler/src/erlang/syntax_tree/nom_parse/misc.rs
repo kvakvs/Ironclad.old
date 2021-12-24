@@ -106,12 +106,12 @@ pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
         parse_int
       ))
     ),
-    // Case three: 42. and 42.42
+    // Case three: 42. (disallowed because end of function is also period) and 42.42
     combinator::recognize(
       sequence::tuple((
         parse_int,
         character::complete::char('.'),
-        combinator::opt(parse_int)
+        parse_int
       ))
     )
   ))(input)
