@@ -83,9 +83,10 @@ fn parse_fnclause_spec(input: &str) -> nom::IResult<&str, FnClauseType> {
       // Optional: when <guard>
       combinator::opt(parse_when_expr),
     )),
-    |(name, args, _arrow, ret_ty, when_expr)| {
+    |(_name, args, _arrow, ret_ty, when_expr)| {
+      // TODO: Check name equals function name, for module level functions
       let merged_args = Typevar::merge_lists(&args, &when_expr.unwrap_or_else(|| vec![]));
-      FnClauseType::new(args, ret_ty)
+      FnClauseType::new(merged_args, ret_ty)
     },
   )(input)
 }

@@ -83,7 +83,7 @@ impl Module {
   {
     let mut module = Module::default();
     let (tail, forms) = parse_fn(input)?;
-    println!("Parsed input {}:\n{}", input, &forms);
+    println!("Parsed input «{}»\nAST: {}", input, &forms);
 
     assert!(tail.trim().is_empty(),
             "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);

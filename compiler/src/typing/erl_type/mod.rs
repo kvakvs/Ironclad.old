@@ -7,6 +7,11 @@ use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
 use crate::typing::typevar::Typevar;
 
+pub mod erl_type_is;
+pub mod erl_type_as;
+pub mod erl_type_new;
+pub mod erl_type_print;
+
 /// Describes an Erlang type, usually stored as Arc<ErlType>
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ErlType {

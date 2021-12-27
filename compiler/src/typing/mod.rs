@@ -1,9 +1,6 @@
 //! Contains types and typecheck related code
 pub mod erl_type;
-pub mod erl_type_is;
-pub mod erl_type_new;
 pub mod prefab;
-pub mod erl_type_print;
 pub mod type_synth;
 pub mod subtyping;
 pub mod fn_type;
