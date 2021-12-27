@@ -20,6 +20,9 @@ pub struct Scope {
   /// other internal scopes too)
   pub functions: HashMap<MFArity, Arc<ErlType>>,
 
+  /// Types defined in the global module scope. Using typename/arity as key in type hierarchy
+  pub typedefs: HashMap<MFArity, Arc<ErlType>>,
+
   /// Reference to the parent scope for name search
   pub parent_scope: Weak<RwLock<Scope>>,
 
@@ -32,6 +35,7 @@ impl Default for Scope {
       name: "default_scope".to_string(),
       variables: Default::default(),
       functions: Default::default(),
+      typedefs: Default::default(),
       parent_scope: Default::default(),
     }
   }
@@ -63,6 +67,7 @@ impl Scope {
       name,
       variables: Default::default(),
       functions: Default::default(),
+      typedefs: Default::default(),
       parent_scope,
     }
   }
@@ -75,6 +80,7 @@ impl Scope {
       name,
       variables,
       functions: Default::default(),
+      typedefs: Default::default(),
       parent_scope,
     }
   }

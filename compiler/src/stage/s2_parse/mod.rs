@@ -19,7 +19,7 @@ use crate::project::module::Module;
 pub fn run(project: &mut ErlProject,
            contents_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<Mutex<CodeCache>>> {
   // let mut ast_cache = ErlAstCache::new_empty();
-  let mut code_cache = CodeCache::default();
+  let code_cache = CodeCache::default();
 
   let contents_cache_r = contents_cache.lock().unwrap();
 
@@ -30,8 +30,9 @@ pub fn run(project: &mut ErlProject,
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
       let compile_options = project.get_compiler_options_for(path);
 
-      let mut module = Module::new(compile_options, source_file.clone());
-      module.parse_and_unify_erlang()?;
+      let module = Module::new(compile_options, source_file.clone());
+      // module.parse_and_unify_erlang()?;
+      unimplemented!("Parse and unify entrypoint is notimpl");
 
       code_cache.items.insert(module.name.clone(),
                               Arc::new(RwLock::new(module)));

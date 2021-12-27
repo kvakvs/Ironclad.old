@@ -5,6 +5,7 @@ use crate::mfarity::MFArity;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
+use crate::typing::typevar::Typevar;
 
 /// Describes an Erlang type, usually stored as Arc<ErlType>
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -112,6 +113,16 @@ pub enum ErlType {
 
   /// Contains multiple types + operations on these types
   Union(TypeUnion),
+
+  /// A user-defined type referred by a string, with 0 or more type parameters.
+  UserDefinedType {
+    /// User-defined type name
+    name: String,
+    /// Type variable arguments for `typename(arg1, arg2, ...)`
+    args: Vec<Typevar>,
+  },
+  /// Temporary type, list of typevars. Resolved later into a regular List or StronglyTypedList
+  TypevarList(Vec<Typevar>),
 }
 
 //

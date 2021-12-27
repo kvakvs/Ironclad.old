@@ -36,9 +36,9 @@ impl std::fmt::Display for ErlError {
       ErlError::ErlangParse { loc, msg } => {
         write!(f, "Erlang parse error: {} (at {})", msg, loc)
       }
-      ErlError::ErlangSyntax { parse_err, msg } => {
-        write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
-      }
+      // ErlError::ErlangSyntax { parse_err, msg } => {
+      //   write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)
+      // }
       ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
       ErlError::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
       ErlError::TypeErr(terr) => write!(f, "Type error: {}", terr),

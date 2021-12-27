@@ -13,6 +13,7 @@ use crate::mfarity::MFArity;
 use crate::ast_tree::{AstTree, AstCache};
 use std::sync::Arc;
 use std::ops::Deref;
+use crate::typing::erl_type::ErlType;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
@@ -54,6 +55,16 @@ pub enum ErlAst {
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.
   FnDef(ErlFnDef),
+
+  /// A function spec, written as `-spec myfun(...) -> <ret type> when ... <optional when>.`
+  FnSpec {
+    /// Code location
+    location: SourceLoc,
+    /// The function name and arity, module as None
+    funarity: MFArity,
+    /// Type for all function clauses
+    spec: Arc<ErlType>,
+  },
 
   /// Case clause for a `case x of` switch
   CClause(SourceLoc, ErlCaseClause),
@@ -169,13 +180,13 @@ impl ErlAst {
   /// Create a new literal AST node of a floating point number
   pub fn new_lit_float(location: SourceLoc, val: &str) -> Arc<ErlAst> {
     match String::from(val).trim().parse() {
-      Ok(flt) =>     ErlAst::Lit {
+      Ok(flt) => ErlAst::Lit {
         location,
         value: Literal::Float(flt).into(),
       }.into(),
       Err(e) => {
         panic!("Failed to parse float from \"{}\": error {}", val, e)
-      },
+      }
     }
   }
 

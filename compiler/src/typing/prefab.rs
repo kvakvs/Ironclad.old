@@ -14,8 +14,18 @@ lazy_static! {
   static ref PF_TYPE_ATOM: Arc<ErlType> = ErlType::Atom.into();
   static ref PF_TYPE_BOOLEAN: Arc<ErlType> = ErlType::Boolean.into();
 
+  static ref PF_TYPE_ANY_FUN: Arc<ErlType> = ErlType::AnyFn.into();
+
+  static ref PF_TYPE_ANY_TUPLE: Arc<ErlType> = ErlType::AnyTuple.into();
+
+  static ref PF_TYPE_ANY_BINARY: Arc<ErlType> = ErlType::AnyBinary.into();
+
   static ref PF_TYPE_ANYLIST: Arc<ErlType> = ErlType::AnyList.into();
   static ref PF_TYPE_NIL: Arc<ErlType> = ErlType::Nil.into();
+
+  static ref PF_TYPE_PID: Arc<ErlType> = ErlType::Pid.into();
+  static ref PF_TYPE_PORT: Arc<ErlType> = ErlType::Port.into();
+  static ref PF_TYPE_REFERENCE: Arc<ErlType> = ErlType::Reference.into();
 }
 
 impl ErlType {
@@ -37,8 +47,22 @@ impl ErlType {
   /// Return a cloned instance of Boolean-type
   pub fn boolean() -> Arc<ErlType> { PF_TYPE_BOOLEAN.clone() }
 
+  /// Return a cloned instance of fun()-type
+  pub fn any_fun() -> Arc<ErlType> { PF_TYPE_ANY_FUN.clone() }
+  /// Return a cloned instance of tuple()-type
+  pub fn any_tuple() -> Arc<ErlType> { PF_TYPE_ANY_TUPLE.clone() }
+  /// Return a cloned instance of binary()-type
+  pub fn any_binary() -> Arc<ErlType> { PF_TYPE_ANY_BINARY.clone() }
+
   /// Return a cloned instance of AnyList-type
   pub fn any_list() -> Arc<ErlType> { PF_TYPE_ANYLIST.clone() }
   /// Return a cloned instance of NIL-type
   pub fn nil() -> Arc<ErlType> { PF_TYPE_NIL.clone() }
+
+  /// Return a cloned instance of Pid-type
+  pub fn pid() -> Arc<ErlType> { PF_TYPE_PID.clone() }
+  /// Return a cloned instance of Port-type
+  pub fn port() -> Arc<ErlType> { PF_TYPE_PORT.clone() }
+  /// Return a cloned instance of Reference-type
+  pub fn reference() -> Arc<ErlType> { PF_TYPE_REFERENCE.clone() }
 }

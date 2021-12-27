@@ -6,6 +6,7 @@ mod test_util;
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use std::ops::Deref;
+use std::path::PathBuf;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
 use compiler::project::module::Module;
@@ -16,7 +17,8 @@ use compiler::core_erlang::syntax_tree::core_ast::CoreAst;
 fn synth_list_append() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
-  let module = Module::from_expr_source("[atom1] ++ [atom2]")?;
+  let filename = PathBuf::from(function_name!());
+  let module = Module::from_expr_source(&filename,"[atom1] ++ [atom2]")?;
   let expr_type = module.core_ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.core_ast, expr_type);
 
@@ -28,7 +30,8 @@ fn synth_list_append() -> ErlResult<()> {
 fn synth_simplefun_division() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for simple expression");
 
-  let module = Module::from_fun_source("myfun(A) -> (A + 1) / 2.")?;
+  let filename = PathBuf::from(function_name!());
+  let module = Module::from_fun_source(&filename,"myfun(A) -> (A + 1) / 2.")?;
   let ast = module.core_ast.clone();
 
   match ast.deref() {
@@ -54,7 +57,8 @@ fn synth_simplefun_division() -> ErlResult<()> {
 fn synth_simplefun_addition() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
-  let module = Module::from_fun_source("myfun(A) -> A + 1.")?;
+  let filename = PathBuf::from(function_name!());
+  let module = Module::from_fun_source(&filename,"myfun(A) -> A + 1.")?;
   let ast = module.core_ast.clone();
   let f_t = ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
@@ -119,11 +123,13 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 #[test]
 fn synth_fun_call() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a fun which calls another fun with a sum");
+  let filename = PathBuf::from(function_name!());
+
   let code = format!(
     "-module({}).\n\
     add(A, B) -> A + B.\n\
     main(A) -> add(A, 4).", function_name!());
-  let module = Module::from_module_source(&code)?;
+  let module = Module::from_module_source(&filename, &code)?;
   println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
@@ -155,7 +161,8 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
   let code = "-module(infer_multiple_clause).\n\
                    main(one) -> atom1;\n\
                    main(two) -> 222.\n";
-  let module = Module::from_module_source(code)?;
+  let filename = PathBuf::from(function_name!());
+  let module = Module::from_module_source(&filename, code)?;
 
   let main_fn_ast = CoreAst::find_function_def(
     &module.core_ast, &MFArity::new_local("main", 1),
@@ -171,14 +178,14 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
                "Synth type for main/1 must be a function type with two clauses, got {}", main_ty);
     let clause1 = fntype.clause(0);
     assert_eq!(clause1.arity(), 1);
-    assert!(clause1.args[0].eq(&ErlType::new_atom("one")),
+    assert!(clause1.args[0].ty.eq(&ErlType::new_atom("one")),
             "Clause1 arg0 must be atom 'one', got {}", clause1.args[0]);
     assert!(clause1.ret_ty().eq(&ErlType::new_atom("atom1")),
             "Clause1 must return literal 'atom1', got {}", clause1.ret_ty());
 
     let clause2 = fntype.clause(1);
     assert_eq!(clause2.arity(), 1);
-    assert!(clause2.args[0].eq(&ErlType::new_atom("two")),
+    assert!(clause2.args[0].ty.eq(&ErlType::new_atom("two")),
             "Clause2 arg0 must be atom 'two', got {}", clause2.args[0]);
     assert!(clause2.ret_ty().is_integer(),
             "Clause 2 must return '222' (or integer()), got {}", clause2.ret_ty());

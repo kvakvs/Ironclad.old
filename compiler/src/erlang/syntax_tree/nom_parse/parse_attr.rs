@@ -5,7 +5,8 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{misc, parse_atom};
 use crate::source_loc::SourceLoc;
 
-fn attr_terminator(input: &str) -> nom::IResult<&str, &str> {
+/// Matches ". <endline>" terminator for module attributes
+pub fn attr_terminator(input: &str) -> nom::IResult<&str, &str> {
   combinator::recognize(
     sequence::pair(
       misc::ws_before(character::complete::char('.')),

@@ -8,6 +8,7 @@ use crate::erl_error::ErlResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
+use crate::typing::typevar::Typevar;
 
 /// Core function clause.
 /// We keep the function clauses separate and split without merging it into one big case operator,
@@ -67,11 +68,12 @@ impl CoreFnClause {
 
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<FnClauseType>> {
+  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<FnClauseType> {
     // Synthesizing return type using the inner function scope, with added args
-    let args_types = self.args_ast.iter()
+    let args_types: Vec<Typevar> = self.args_ast.iter()
         .map(|arg| arg.synthesize(scope))
         .map(Result::unwrap)
+        .map(|t| Typevar::from_erltype(&t))
         .collect();
     let synthesized_t = FnClauseType::new(
       args_types,

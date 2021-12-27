@@ -221,7 +221,7 @@ impl SubtypeChecker {
   /// Checks whether sub_ty matches a regular Erlang function type with possibly multiple clauses
   /// and multiple return types.
   fn is_subtype_of_fn(sup_arity: usize,
-                      sup_clauses: &[Arc<FnClauseType>],
+                      sup_clauses: &[FnClauseType],
                       sub_ty: &ErlType) -> bool {
     match sub_ty {
       ErlType::Fn(sub_fntype) => {

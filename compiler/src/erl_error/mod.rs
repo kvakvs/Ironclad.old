@@ -4,7 +4,6 @@ use std::path::{Path};
 use pest::error::LineColLocation;
 
 use crate::source_loc::{ErrorLocation, SourceLoc};
-use crate::erlang::syntax_tree::erl_parser_prec_climber;
 use crate::mfarity::MFArity;
 use crate::preprocessor::syntax_tree::pp_parser;
 use crate::typing::type_error::TypeError;
@@ -60,13 +59,13 @@ pub enum ErlError {
     msg: String,
   },
 
-  /// Returned when Erlang syntax is not correct
-  ErlangSyntax {
-    /// Error from PEST parser
-    parse_err: pest::error::Error<erl_parser_prec_climber::Rule>,
-    /// Message from the compiler
-    msg: String,
-  },
+  // /// Returned when Erlang syntax is not correct
+  // ErlangSyntax {
+  //   /// Error from PEST parser
+  //   parse_err: pest::error::Error<erl_parser_prec_climber::Rule>,
+  //   /// Message from the compiler
+  //   msg: String,
+  // },
 
   /// A variable was referenced that's not in the scope
   VariableNotFound(String),

@@ -15,3 +15,4 @@ pub mod check;
 pub mod scope;
 pub mod extract_vars;
 pub mod record_field_type;
+pub mod typevar;

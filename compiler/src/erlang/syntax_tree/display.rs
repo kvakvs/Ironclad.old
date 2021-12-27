@@ -49,6 +49,9 @@ impl std::fmt::Display for ErlAst {
       }
       ErlAst::List { elements, .. } => Pretty::display_square_list(elements, f),
       ErlAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
+      ErlAst::FnSpec { funarity, spec, .. } => {
+        write!(f, "fun {} :: {}", funarity, spec)
+      }
     }
   }
 }

@@ -59,6 +59,13 @@ impl std::fmt::Display for ErlType {
       ErlType::Port => write!(f, "port()"),
       ErlType::Singleton { val } => write!(f, "{}", val),
       ErlType::Union(u) => Pretty::display_separated(u.types(), "|", f),
+      ErlType::UserDefinedType { name, args } => {
+        write!(f, "{}", name)?;
+        Pretty::display_paren_list(args, f)
+      }
+      ErlType::TypevarList(elems) => {
+        Pretty::display_square_list(elems, f)
+      }
     }
   }
 }

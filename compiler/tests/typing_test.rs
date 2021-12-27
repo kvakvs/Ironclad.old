@@ -4,6 +4,7 @@ extern crate function_name;
 mod test_util;
 
 use std::ops::Deref;
+use std::path::PathBuf;
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::project::module::Module;
@@ -15,10 +16,11 @@ use compiler::typing::scope::Scope;
 #[test]
 fn typing_synth() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.Synth");
+  let filename = PathBuf::from(function_name!());
 
   {
     let env = Scope::new_root_scope(function_name!().to_string());
-    let list1 = Module::from_expr_source("[3.14159265358979 , 2,atom]")?;
+    let list1 = Module::from_expr_source(&filename,"[3.14159265358979 , 2,atom]")?;
     let t = list1.core_ast.synthesize(&env)?;
     println!("Synth list1: {}", &t);
     if let ErlType::StronglyTypedList { elements, tail } = t.deref() {
@@ -36,7 +38,7 @@ fn typing_synth() -> ErlResult<()> {
 
   {
     let env = Scope::new_root_scope(function_name!().to_string());
-    let tup1 = Module::from_expr_source("{tuple_tag, 1.2, 3, \"hello\"}")?;
+    let tup1 = Module::from_expr_source(&filename,"{tuple_tag, 1.2, 3, \"hello\"}")?;
     let t = tup1.core_ast.synthesize(&env)?;
     println!("Synth tup1: {}", &t);
     if let ErlType::Tuple { elements } = t.deref() {
@@ -58,7 +60,8 @@ fn typing_expr_check_1() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.Atom");
 
   let env = Scope::new_root_scope(function_name!().to_string());
-  let expr1 = Module::from_expr_source("hello")?;
+  let filename = PathBuf::from(function_name!());
+  let expr1 = Module::from_expr_source(&filename,"hello")?;
   assert!(TypeCheck::check(&env, &expr1.core_ast, &ErlType::Atom)?,
           "Parsed atom 'hello' must be subtype of atom()");
   Ok(())
@@ -70,8 +73,9 @@ fn typing_expr_check_1() -> ErlResult<()> {
 fn typing_expr_check_noarg() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
   let env = Scope::new_root_scope(function_name!().to_string());
+  let filename = PathBuf::from(function_name!());
 
-  let int_fn1 = Module::from_fun_source("my_int_fun1() -> 10 + 20.")?;
+  let int_fn1 = Module::from_fun_source(&filename,"my_int_fun1() -> 10 + 20.")?;
   assert!(int_fn1.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn1.core_ast);
   // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
 
@@ -86,9 +90,10 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
 /// Create a fun with argument, which returns an integer(). See if its compatible with an integer().
 fn typing_check_int_arg_fn() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
+  let filename = PathBuf::from(function_name!());
   let env = Scope::new_root_scope(function_name!().to_string());
 
-  let int_fn2 = Module::from_fun_source("my_int_fun2(A) -> 10.0 + A.")?;
+  let int_fn2 = Module::from_fun_source(&filename,"my_int_fun2(A) -> 10.0 + A.")?;
   assert!(int_fn2.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn2.core_ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
 
@@ -103,9 +108,10 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
 /// Create a fun which returns a tuple of `{any(), integer()}` and see if it checks against a tuple
 fn typing_expr_check_tuple1() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
+  let filename = PathBuf::from(function_name!());
   let env = Scope::new_root_scope(function_name!().to_string());
 
-  let tuple_fn = Module::from_fun_source("mytuple_fun(A) -> {A, 123}.")?;
+  let tuple_fn = Module::from_fun_source(&filename,"mytuple_fun(A) -> {A, 123}.")?;
   assert!(tuple_fn.core_ast.is_fndef(), "Expected FnDef() received {:?}", tuple_fn.core_ast);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
 

@@ -10,12 +10,12 @@ pub struct FnType {
   /// For convenience arity is stored here, but each clause has same arity too
   arity: usize,
   /// Function clauses
-  clauses: Vec<Arc<FnClauseType>>,
+  clauses: Vec<FnClauseType>,
 }
 
 impl FnType {
   /// Create a new function type with clauses
-  pub fn new(arity: usize, clauses: &[Arc<FnClauseType>]) -> Self {
+  pub fn new(arity: usize, clauses: &[FnClauseType]) -> Self {
     if cfg!(debug_assertions) {
       let in_arities: Vec<String> = clauses.iter()
           .map(|fc| format!("{}", fc.arity()))
@@ -36,13 +36,13 @@ impl FnType {
   pub fn arity(&self) -> usize { self.arity }
 
   /// Read clauses vector
-  pub fn clauses(&self) -> &Vec<Arc<FnClauseType>> { &self.clauses }
+  pub fn clauses(&self) -> &[FnClauseType] { &self.clauses }
 
   /// Read one clause
-  pub fn clause(&self, index: usize) -> &Arc<FnClauseType> { &self.clauses[index] }
+  pub fn clause(&self, index: usize) -> &FnClauseType { &self.clauses[index] }
 
   /// Check whether argument list can be passed to any of the clauses
-  pub fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<Arc<FnClauseType>> {
+  pub fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<FnClauseType> {
     self.clauses.iter()
         .filter(|fc| fc.can_accept_args(args))
         .cloned()
