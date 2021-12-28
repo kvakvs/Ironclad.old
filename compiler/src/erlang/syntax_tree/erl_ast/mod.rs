@@ -10,10 +10,14 @@ use crate::erlang::syntax_tree::node::erl_token::ErlToken;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
-use crate::ast_tree::{AstTree, AstCache};
+use crate::ast_tree::{AstCache, AstTree};
 use std::sync::Arc;
 use std::ops::Deref;
 use crate::typing::erl_type::ErlType;
+
+pub mod ast_iter;
+pub mod ast_print;
+pub mod ast_as;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
@@ -235,14 +239,6 @@ impl ErlAst {
       ErlAst::Lit { value: lit, .. } => {
         if let Literal::Atom(s) = lit.deref() { Some(s.clone()) } else { None }
       }
-      _ => None,
-    }
-  }
-
-  /// Unwrap self as new function, returns index in the `ErlModule::functions` table on success
-  pub fn as_fn_def(&self) -> Option<&ErlFnDef> {
-    match self {
-      ErlAst::FnDef(func_def) => Some(func_def),
       _ => None,
     }
   }

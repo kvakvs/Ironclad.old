@@ -51,7 +51,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
       ErlAst::FnSpec { funarity, spec, .. } => {
         write!(f, "fun {}", funarity.name)?;
-        Pretty::display_semicolon_separated(spec.as_fn_def().clauses(), f)
+        Pretty::display_semicolon_separated(spec.as_fn_type().clauses(), f)
       }
     }
   }

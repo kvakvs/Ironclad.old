@@ -3,16 +3,19 @@ extern crate function_name;
 
 mod test_util;
 
+use std::ops::Deref;
 use std::path::PathBuf;
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
+use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::project::module::Module;
 use compiler::erlang::syntax_tree::nom_parse::parse_attr;
+use compiler::mfarity::MFArity;
 
 #[named]
 #[test]
 fn fn_generic_attr_parse() -> ErlResult<()> {
-  test_util::start(function_name!(), "Parse a generic attribute line");
+  test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
 
   {
     let attr1_src = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
@@ -38,24 +41,32 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
 fn fn_typespec_parse() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for 1 and 2 clause fns");
 
-  let spec_src = format!("-spec myfun(A :: integer()) -> any().");
   let filename = PathBuf::from(function_name!());
-  let spec_m = Module::from_fun_spec_source(&filename, &spec_src)?;
 
-  // match myfun_ast.deref() {
-  //   CoreAst::FnDef(fn_def) => {
-  //     // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-  //     assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
-  //     assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
-  //     // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
-  //   }
-  //   other1 => test_util::fail_unexpected(other1, "Expected CoreAst::FnDef"),
-  // }
-  // println!("Core: {}", &spec_m.core_ast);
+  { //----------------------------------
+    let spec1_src = format!("-spec myfun(A :: integer()) -> any().");
+    let spec1_m = Module::from_fun_spec_source(&filename, &spec1_src)?;
+    if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
+      assert_eq!(funarity, &MFArity::new_local("myfun", 1),
+                 "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
+      let fntype = spec.as_fn_type();
+      assert_eq!(fntype.clauses().len(), 1, "Expected 1 clause in typespec, got {}", spec1_m.ast);
+    } else {
+      panic!("Expected AST FnSpec node, but got {}", spec1_m.ast)
+    }
+  }
 
-  // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  // let synth_fn_type = myfun_ast.synthesize(&spec_m.scope)?;
-  // println!("{}: Synthesized {} 🡆 {}", function_name!(), &myfun_ast, synth_fn_type);
-
+  { //----------------------------------
+    let spec2_src = format!("-spec x(A :: integer()) -> any(); (B :: atom()) -> C when C :: tuple().");
+    let spec2_m = Module::from_fun_spec_source(&filename, &spec2_src)?;
+    if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
+      assert_eq!(funarity, &MFArity::new_local("myfun", 1),
+                 "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
+      let fntype = spec.as_fn_type();
+      assert_eq!(fntype.clauses().len(), 1, "Expected 1 clause in typespec, got {}", spec2_m.ast);
+    } else {
+      panic!("Expected AST FnSpec node, but got {}", spec2_m.ast)
+    }
+  }
   Ok(())
 }

@@ -1,8 +1,6 @@
 //! Erlang parse and AST facilities
 pub mod erl_ast;
-pub mod erl_ast_iter;
 pub mod erl_op;
-pub mod erl_ast_print;
 pub mod ast_processor;
 pub mod node;
 
