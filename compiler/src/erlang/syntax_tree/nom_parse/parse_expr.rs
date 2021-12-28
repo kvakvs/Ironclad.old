@@ -6,7 +6,8 @@ use nom::{error, character, combinator, sequence, multi, bytes::complete::{tag},
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
-use crate::erlang::syntax_tree::node::erl_expression::{ErlBinaryOperatorExpr, ErlUnaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::erlang::syntax_tree::nom_parse::{misc, parse_expr_op};
 use crate::erlang::syntax_tree::nom_parse::misc::{parse_ident_capitalized};
@@ -78,7 +79,7 @@ fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
 fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
   multi::separated_list0(
     misc::ws(character::complete::char(',')),
-    parse_prec11 // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+    parse_prec11, // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
   )(input)
 }
 

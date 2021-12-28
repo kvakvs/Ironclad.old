@@ -10,8 +10,6 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::{nom_parse};
-use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::core_ast_builder::CoreAstBuilder;
 use crate::erlang::syntax_tree::nom_parse::{parse_expr, parse_fn, parse_type};
 use crate::project::module::func_registry::FuncRegistry;
 use crate::typing::scope::Scope;
@@ -32,9 +30,6 @@ pub struct Module {
   /// AST tree of the module.
   pub ast: Arc<ErlAst>,
 
-  /// Core Erlang AST tree of the module
-  pub core_ast: Arc<CoreAst>,
-
   /// Collection of module functions and a lookup table
   pub registry: RwLock<FuncRegistry>,
   /// Module level scope, containing functions
@@ -53,7 +48,6 @@ impl Default for Module {
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
       ast: Arc::new(ErlAst::Empty),
-      core_ast: Arc::new(CoreAst::Empty),
       registry: RwLock::new(FuncRegistry::default()),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
@@ -90,8 +84,6 @@ impl Module {
     module.source_file = SourceFile::new(filename, String::from(input));
     module.ast = forms;
 
-    module.core_ast = CoreAstBuilder::build(&module, &module.ast)?;
-
     Ok(module)
   }
 
@@ -122,36 +114,4 @@ impl Module {
     self.errors.borrow_mut().push(err);
     self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }
-
-  // /// Parse self.source_file as Erlang syntax
-  // pub fn parse_and_unify_erlang(&mut self) -> ErlResult<()> {
-  //   let sf = self.source_file.clone(); // lure the borrow checker to letting us use text
-  //   // self.parse_and_unify_erl_str(erl_parser::Rule::module, &sf.text)
-  //   let mut module = Module::default();
-  //   module.parse_erl_str(Rule::module, &sf.text)?;
-  //   Ok(())
-  // }
-
-  // /// Create a dummy sourcefile and parse ANY given parser rule, do not call the unifier.
-  // /// This updates only self.ast
-  // #[named]
-  // fn parse_erl_str(&mut self, rule: erl_parser_prec_climber::Rule, input: &str) -> ErlResult<()> {
-  //   let parse_output = match erl_parser_prec_climber::ErlParser::parse(rule, input) {
-  //     Ok(mut root) => root.next().unwrap(),
-  //     Err(bad) => {
-  //       panic!("{}, failed {}", function_name!(), bad);
-  //       // return Err(ErlError::from(bad));
-  //     }
-  //   };
-  //
-  //   // Create a fake source file with no filename and copy of input (for error reporting)
-  //   self.source_file = SourceFile::new(&PathBuf::from("<test>"), String::from(input));
-  //
-  //   // build initial AST from parse
-  //   self.ast = self.build_ast_single_node(parse_output)?;
-  //
-  //   self.core_ast = CoreAstBuilder::build(self, &self.ast)?;
-  //
-  //   Ok(())
-  // }
 }

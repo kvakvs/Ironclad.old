@@ -1,17 +1,12 @@
 //! Parses Erlang source into AST
 
 use crate::project::ErlProject;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
 use crate::stage::code_cache::CodeCache;
 use crate::project::module::Module;
 
-// /// Run syntax parser on an ERL or HRL source file
-// fn parse_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<ErlAstTree>> {
-//   let tree = ErlAstTree::from_source_file(&source_file)?;
-//   Ok(Arc::new(tree))
-// }
 
 /// Parse stage
 /// * Parse loaded ERL files as Erlang.
@@ -30,12 +25,12 @@ pub fn run(project: &mut ErlProject,
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
       let compile_options = project.get_compiler_options_for(path);
 
-      let module = Module::new(compile_options, source_file.clone());
-      // module.parse_and_unify_erlang()?;
-      unimplemented!("Parse and unify entrypoint is notimpl");
+      let _parsed = Module::new(compile_options, source_file.clone());
 
-      code_cache.items.insert(module.name.clone(),
-                              Arc::new(RwLock::new(module)));
+      // module.parse_and_unify_erlang()?;
+      // unimplemented!("Parse and unify entrypoint is notimpl");
+      // code_cache.items.insert(parsed.name.clone(),
+      //                         Arc::new(RwLock::new(parsed)));
     }
   }
 

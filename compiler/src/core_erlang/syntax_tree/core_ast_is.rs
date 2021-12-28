@@ -1,4 +1,5 @@
 //! Checking CoreAst variants
+#![cfg(coreast)]
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 

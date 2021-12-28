@@ -1,4 +1,5 @@
 //! Defines core function clause
+#![cfg(coreast)]
 
 use std::fmt::Formatter;
 use std::sync::{Arc, RwLock};
@@ -13,6 +14,7 @@ use crate::typing::typevar::Typevar;
 /// Core function clause.
 /// We keep the function clauses separate and split without merging it into one big case operator,
 /// for type checking purposes.
+#[cfg(coreast)]
 #[derive(Debug)]
 pub struct CoreFnClause {
   /// Argument match expressions directly translated from `ErlAst`
@@ -25,6 +27,7 @@ pub struct CoreFnClause {
   pub scope: Arc<RwLock<Scope>>,
 }
 
+#[cfg(coreast)]
 impl CoreFnClause {
   fn update_scope(scope: &RwLock<Scope>, ast: &CoreAst) {
     if let CoreAst::Var(v) = ast {
@@ -65,29 +68,9 @@ impl CoreFnClause {
       scope: clause_scope,
     }
   }
-
-  /// Build `FnClauseType` from core function clause, together the clauses will form the full
-  /// function type
-  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<FnClauseType> {
-    // Synthesizing return type using the inner function scope, with added args
-    let args_types: Vec<Typevar> = self.args_ast.iter()
-        .map(|arg| arg.synthesize(scope))
-        .map(Result::unwrap)
-        .map(|t| Typevar::from_erltype(&t))
-        .collect();
-    let synthesized_t = FnClauseType::new(
-      args_types,
-      self.synthesize_clause_return_type(scope)?,
-    );
-    Ok(synthesized_t.into())
-  }
-
-  /// Return type from the body AST
-  pub fn synthesize_clause_return_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    self.body.synthesize(env)
-  }
 }
 
+#[cfg(coreast)]
 impl std::fmt::Display for CoreFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     Pretty::display_paren_list(&self.args_ast, f)?;

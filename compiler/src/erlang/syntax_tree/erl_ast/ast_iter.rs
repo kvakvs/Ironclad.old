@@ -43,11 +43,11 @@ impl ErlAst {
                   clause.guard.clone(),
                   clause.body.clone()])
       }
-      ErlAst::BinaryOp(_loc, binop) => {
-        Some(vec![binop.left.clone(),
-                  binop.right.clone()])
+      ErlAst::BinaryOp { expr: binop_expr, .. } => {
+        Some(vec![binop_expr.left.clone(),
+                  binop_expr.right.clone()])
       }
-      ErlAst::UnaryOp(_loc, unop) => Some(vec![unop.expr.clone()]),
+      ErlAst::UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
       ErlAst::List { elements, .. } => Some(elements.to_vec()),
       ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
 

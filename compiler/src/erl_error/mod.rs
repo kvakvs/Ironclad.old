@@ -84,11 +84,6 @@ impl ErlError {
     Err(ErlError::Internal(message))
   }
 
-  /// Wraps a `TypeError`
-  pub fn type_error<T>(terr: TypeError) -> ErlResult<T> {
-    Err(ErlError::TypeErr(terr))
-  }
-
   /// Wraps a `VariableNotFound`
   pub fn variable_not_found<T>(var_name: &str) -> ErlResult<T> {
     Err(ErlError::VariableNotFound(String::from(var_name)))

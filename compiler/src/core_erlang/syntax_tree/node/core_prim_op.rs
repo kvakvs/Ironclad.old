@@ -1,4 +1,6 @@
 //! Defines primitive operations for BEAM assembly and BEAM VM, which are not part of Core Erlang.
+#![cfg(coreast)]
+
 use ::function_name::named;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use std::sync::Arc;
@@ -6,6 +8,7 @@ use std::fmt::Formatter;
 
 /// Describes an exception kind
 #[derive(Debug)]
+#[cfg(coreast)]
 pub enum ExceptionType {
   /// `erlang:error`
   Error,
@@ -15,6 +18,7 @@ pub enum ExceptionType {
   Throw,
 }
 
+#[cfg(coreast)]
 impl std::fmt::Display for ExceptionType {
   #[named]
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -27,6 +31,7 @@ impl std::fmt::Display for ExceptionType {
 }
 
 /// Primitive operation, not part of Core Erlang language but is useful to express Erlang constructs
+#[cfg(coreast)]
 pub enum PrimOp {
   /// Raises an exception of type
   Raise {
@@ -39,12 +44,14 @@ pub enum PrimOp {
   ExcTrace,
 }
 
+#[cfg(coreast)]
 impl std::fmt::Debug for PrimOp {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", self)
   }
 }
 
+#[cfg(coreast)]
 impl std::fmt::Display for PrimOp {
   #[named]
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

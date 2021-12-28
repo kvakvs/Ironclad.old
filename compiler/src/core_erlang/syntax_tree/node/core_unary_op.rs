@@ -1,4 +1,5 @@
 //! Defines structs for AST nodes representing unary operators (+A, not A, -A, ...)
+#![cfg(coreast)]
 
 use std::sync::Arc;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;

@@ -4,7 +4,7 @@ use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::erlang::syntax_tree::node::erl_case::ErlCase;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use crate::literal::Literal;
-use crate::erlang::syntax_tree::node::erl_expression::{ErlBinaryOperatorExpr, ErlUnaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::erlang::syntax_tree::node::erl_token::ErlToken;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
@@ -13,11 +13,15 @@ use crate::mfarity::MFArity;
 use crate::ast_tree::{AstCache, AstTree};
 use std::sync::Arc;
 use std::ops::Deref;
+use crate::erl_error::ErlResult;
+use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::typing::erl_type::ErlType;
+use crate::typing::type_error::TypeError;
 
 pub mod ast_iter;
 pub mod ast_print;
 pub mod ast_as;
+pub mod ast_is;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
@@ -60,9 +64,18 @@ pub enum ErlAst {
   /// and a return type, initially Any.
   FnDef(ErlFnDef),
 
+  /// Points to a function, replaced from apply calls and fun exprs, where we know that the
+  /// expression must be callable
+  FnRef {
+    /// Code source location
+    location: SourceLoc,
+    /// Function name
+    mfa: MFArity,
+  },
+
   /// A function spec, written as `-spec myfun(...) -> <ret type> when ... <optional when>.`
   FnSpec {
-    /// Code location
+    /// Code source location
     location: SourceLoc,
     /// The function name and arity, module as None
     funarity: MFArity,
@@ -94,17 +107,27 @@ pub enum ErlAst {
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit {
-    /// Source location
+    /// Source code location
     location: SourceLoc,
     /// The literal value
     value: Arc<Literal>,
   },
 
   /// Binary operation with two arguments
-  BinaryOp(SourceLoc, ErlBinaryOperatorExpr),
+  BinaryOp {
+    /// Source code location
+    location: SourceLoc,
+    /// The contained binary A&B expression
+    expr: ErlBinaryOperatorExpr,
+  },
 
   /// Unary operation with 1 argument
-  UnaryOp(SourceLoc, ErlUnaryOperatorExpr),
+  UnaryOp {
+    /// Source code location
+    location: SourceLoc,
+    /// The contained unary &B expression
+    expr: ErlUnaryOperatorExpr,
+  },
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
   List {
@@ -159,10 +182,10 @@ impl ErlAst {
   /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(location: SourceLoc,
                    left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Arc<ErlAst> {
-    ErlAst::BinaryOp(
+    ErlAst::BinaryOp {
       location,
-      ErlBinaryOperatorExpr { left, right, operator: op },
-    ).into()
+      expr: ErlBinaryOperatorExpr { left, right, operator: op },
+    }.into()
   }
 
   /// Create a new literal AST node of an integer
@@ -243,12 +266,13 @@ impl ErlAst {
     }
   }
 
+  #[deprecated = "Not used since CoreAST is gone"]
   /// Given a comma operator, unroll the comma nested tree into a vector of AST, this is used for
   /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
   /// A non-comma AST-node becomes a single result element.
   pub fn comma_to_vec(comma_ast: &Arc<ErlAst>, dst: &mut Vec<Arc<ErlAst>>) {
     match comma_ast.deref() {
-      ErlAst::BinaryOp(_loc, binexpr) if binexpr.operator == ErlBinaryOp::Comma => {
+      ErlAst::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
         Self::comma_to_vec(&binexpr.left, dst);
         Self::comma_to_vec(&binexpr.right, dst);
       }
@@ -271,11 +295,34 @@ impl ErlAst {
       ErlAst::Apply(app) => app.location.clone(),
       ErlAst::Case(loc, _) => loc.clone(),
       ErlAst::Lit { location: loc, .. } => loc.clone(),
-      ErlAst::BinaryOp(loc, _) => loc.clone(),
-      ErlAst::UnaryOp(loc, _) => loc.clone(),
+      ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
+      ErlAst::UnaryOp { location: loc, .. } => loc.clone(),
 
       _ => SourceLoc::None,
     }
+  }
+
+  /// Scan forms and find a module definition AST node. For finding a function by funarity, check
+  /// function registry `ErlModule::env`
+  pub fn find_function_def(this: &Arc<ErlAst>, funarity: &MFArity) -> ErlResult<Arc<ErlAst>> {
+    match this.deref() {
+      ErlAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
+        return Ok(this.clone());
+      }
+      ErlAst::ModuleForms(forms) => {
+        // Find first in forms for which `find_function_def` returns something
+        let find_result = forms.iter()
+            .find(|&each_fndef| {
+              ErlAst::find_function_def(each_fndef, funarity).is_ok()
+            })
+            .cloned();
+        if find_result.is_some() {
+          return Ok(find_result.unwrap());
+        }
+      }
+      _ => {}
+    }
+    Err(TypeError::FunctionNotFound { mfa: funarity.clone() }.into())
   }
 }
 

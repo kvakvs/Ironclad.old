@@ -1,10 +1,16 @@
 //! Defines Application AST node for a function call
 use std::fmt::Formatter;
-use std::sync::Arc;
+use std::ops::Deref;
+use std::sync::{Arc, RwLock};
 use crate::display::Pretty;
+use crate::erl_error::{ErlResult};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::source_loc::SourceLoc;
+use crate::typing::erl_type::ErlType;
+use crate::typing::fn_type::FnType;
+use crate::typing::scope::Scope;
+use crate::typing::type_error::TypeError;
 
 /// AST node which contains a function call
 pub struct ErlApply {
@@ -33,55 +39,72 @@ impl std::fmt::Debug for ErlApply {
 }
 
 impl ErlApply {
-  // /// From argument types build a new ErlType::Function() with a single clause corresponding to
-  // /// that specific call `Apply` would be performing
-  // pub fn get_function_type(&self) -> ErlType {
-  //   let arg_types: Vec<ErlType> = self.args.iter()
-  //       .map(|arg| arg.get_type())
-  //       .collect();
-  //   let clause_type = FnClauseType::new(arg_types, self.ret_ty.into());
-  //   let f_type = FunctionType::new(None, vec![clause_type]);
-  //   ErlType::Fn(f_type)
-  // }
-
   /// Creates a new function call (application) AST node
   pub fn new(location: SourceLoc, expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Self {
     ErlApply { location, expr, args }
   }
 
-  // /// To use during the construction, from expression and arg expressions, assume that the
-  // /// expression must be callable and build a `fun(Args...) -> Ret` type
-  // fn create_expr_type(args: &[ErlAst], ret: &ErlType) -> ErlType {
-  //   let arg_types = args.iter()
-  //       .map(|a| a.get_type())
-  //       .collect();
-  //   let clause = FnClauseType::new(arg_types, ret.clone());
-  //   // unnamed function application, None for a name
-  //   ErlType::Fn(FunctionType::new(None, vec![clause]))
-  // }
+  /// Check the apply target it must be a callable.
+  /// Check the apply arguments, they must match the arguments of the callable, or at least arity.
+  /// The return type of the callable will be the apply synthesis result.
+  pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+    // Synthesize target and check its a function type
+    let target_ty = self.expr.synthesize(scope)?;
+    if !target_ty.is_function() {
+      let msg = format!("Attempt to call a value which is not a function: {}", self.expr);
+      return Err(TypeError::NotAFunction { msg }.into());
+    }
 
-  // /// During post-parse scan try check if our expression is a reference to a known function.
-  // /// If so, replace it with a pointer to that function.
-  // pub fn postprocess_edit_node(&self, module: &Module) -> ErlResult<()> {
-  //   // Check if expr (target) points to some existing function that we know
-  //   let find_result = module.find_function_by_expr_arity(&self.expr.borrow(), self.args.len());
-  //   match find_result {
-  //     None => {} // no changes, return same node
-  //     Some(index) => {
-  //       let fn_def: &ErlFnDef = &module.functions[index];
-  //
-  //       // Replace self.expr with the found fun pointer
-  //       let new_expr = ErlAst::MFA {
-  //         location: SourceLoc::None,
-  //         mfarity: fn_def.mfarity.clone(),
-  //         clause_types: fn_def.clauses.iter().map(|fc| fc.get_type()).collect(),
-  //         ret_ty: TypeVar::new(),
-  //       };
-  //
-  //       println!("ApplicationNode: Replacing {} with {}", self.expr.borrow(), new_expr);
-  //       self.expr.replace(new_expr);
-  //     }
-  //   }
-  //   Ok(())
-  // }
+    // Build argument type list and check every argument vs the target (the callee)
+    let arg_types_r: ErlResult<Vec<Arc<ErlType>>> = self.args.iter()
+        .map(|arg| arg.synthesize(scope))
+        .collect();
+    let arg_types = arg_types_r?;
+
+    match target_ty.deref() {
+      ErlType::Atom => unimplemented!("Callable is a local module function"),
+      ErlType::Tuple { .. } => unimplemented!("Callable is a tuple"),
+
+      // AnyFn is always callable and always returns any, for we do not know better
+      ErlType::AnyFn => Ok(ErlType::any()),
+
+      ErlType::Fn(fn_type) => self.synthesize_call_to_fn(&fn_type, &arg_types),
+      ErlType::FnRef { .. } => unimplemented!("Callable is a fun reference"),
+      ErlType::Lambda => unimplemented!("Callable is a lambda"),
+
+      other => {
+        let msg = format!("Attempt to call a non-function: {}", other);
+        Err(TypeError::NotAFunction { msg }.into())
+      }
+    }
+    // let clause_type = FnClauseType::new(arg_types?, ret_ty).into();
+    // let synthesized_t = ErlType::new_fn_type(vec![clause_type]).into();
+    // Ok(synthesized_t)
+  }
+
+  fn synthesize_call_to_fn(&self, fn_type: &FnType,
+                           arg_types: &[Arc<ErlType>]) -> ErlResult<Arc<ErlType>> {
+    if self.args.len() != fn_type.arity() {
+      let msg = format!(
+        "Attempt to call a function with wrong number of arguments: expected {}, got {}",
+        fn_type.arity(), self.args.len());
+      return Err(TypeError::BadArity { msg }.into());
+    }
+    let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
+    if compatible_clauses.is_empty() {
+      let args_str = self.args.iter()
+          .map(|arg| format!("{}", arg))
+          .collect::<Vec<String>>()
+          .join(", ");
+      let msg = format!("No compatible function clauses while calling {} with args ({})",
+                        self.expr, args_str);
+      return Err(TypeError::BadArguments { msg }.into());
+    }
+    // Return type only from compatible clauses
+    let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter()
+        .map(|fc| fc.ret_ty())
+        .cloned()
+        .collect();
+    Ok(ErlType::new_union(&ret_types))
+  }
 }

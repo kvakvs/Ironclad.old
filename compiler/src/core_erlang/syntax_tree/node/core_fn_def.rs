@@ -1,4 +1,5 @@
 //! Defines a new function in Core Erlang
+#![cfg(coreast)]
 use std::sync::{Arc, RwLock};
 
 use crate::mfarity::MFArity;
@@ -13,6 +14,7 @@ use crate::typing::scope::Scope;
 /// Defines a new function in Core Erlang
 /// Argument handling is moved from the clauses into the function body
 #[derive(Debug)]
+#[cfg(coreast)]
 pub struct FnDef {
   /// Source file pointer
   pub location: SourceLoc,
@@ -27,6 +29,7 @@ pub struct FnDef {
   pub clauses: Vec<CoreFnClause>,
 }
 
+#[cfg(coreast)]
 impl FnDef {
   /// Create a new function definition for Core Erlang AST
   pub fn new(loc: SourceLoc, funarity: MFArity, clauses: Vec<CoreFnClause>) -> Self {
@@ -36,27 +39,5 @@ impl FnDef {
       funarity,
       clauses,
     }
-  }
-
-  /// Produce `ErlType` for this function definition, with all clauses and their return types
-  pub fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    let clauses_r: ErlResult<Vec<FnClauseType>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
-        .collect();
-    let clauses = clauses_r?;
-
-    let fn_type = FnType::new(self.funarity.arity, &clauses);
-    let synthesized_t = ErlType::Fn(fn_type.into()).into();
-    Ok(synthesized_t)
-  }
-
-  /// Produce a function return type, as union of all clauses returns
-  pub fn synthesize_return_type(&self, _scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    // TODO: Filter out incompatible clauses
-    let clauses_ret: ErlResult<Vec<Arc<ErlType>>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
-        .collect();
-    let synthesized_t = ErlType::new_union(&clauses_ret?);
-    Ok(synthesized_t)
   }
 }

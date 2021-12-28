@@ -2,8 +2,13 @@
 use std::fmt::Formatter;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 use crate::display::Pretty;
+use crate::erl_error::ErlResult;
+use crate::typing::erl_type::ErlType;
+use crate::typing::fn_clause_type::FnClauseType;
+use crate::typing::scope::Scope;
+use crate::typing::typevar::Typevar;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
@@ -17,12 +22,27 @@ pub struct ErlFnClause {
   pub body: Arc<ErlAst>,
   /// Guard expression, if exists
   pub guard_expr: Option<Arc<ErlAst>>,
+  /// Function scope (variables and passed arguments)
+  pub scope: RwLock<Scope>,
 }
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>, guard_expr: Option<Arc<ErlAst>>) -> Self {
-    ErlFnClause { name, args, body, guard_expr }
+  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>,
+             guard_expr: Option<Arc<ErlAst>>) -> Self {
+    let scope_name = match &name {
+      None => "unnamed fn scope".into(),
+      Some(n) => n.clone(),
+    };
+    let variables = Default::default();
+    let clause_scope = Scope::new(scope_name, Weak::new(), variables).into();
+    ErlFnClause {
+      name,
+      args,
+      body,
+      guard_expr,
+      scope: clause_scope,
+    }
   }
 
   /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
@@ -30,10 +50,26 @@ impl ErlFnClause {
     self.args.iter().all(|a| a.is_var())
   }
 
-  // /// Return function clause type describing this single function clause arg types and return.
-  // pub fn get_type(&self) -> FnClauseType {
-  //   FnClauseType::new(self.arg_types.clone(), self.ret.clone())
-  // }
+  /// Build `FnClauseType` from core function clause, together the clauses will form the full
+  /// function type
+  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<FnClauseType> {
+    // Synthesizing return type using the inner function scope, with added args
+    let args_types: Vec<Typevar> = self.args.iter()
+        .map(|arg| arg.synthesize(scope))
+        .map(Result::unwrap)
+        .map(|t| Typevar::from_erltype(&t))
+        .collect();
+    let synthesized_t = FnClauseType::new(
+      args_types,
+      self.synthesize_clause_return_type(scope)?,
+    );
+    Ok(synthesized_t.into())
+  }
+
+  /// Return type from the body AST
+  pub fn synthesize_clause_return_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+    self.body.synthesize(env)
+  }
 }
 
 impl std::fmt::Display for ErlFnClause {

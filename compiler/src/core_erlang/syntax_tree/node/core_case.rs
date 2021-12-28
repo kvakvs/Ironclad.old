@@ -1,4 +1,5 @@
 //! Defines a case switch in Core Erlang
+#![cfg(coreast)]
 
 use std::fmt::Formatter;
 use std::sync::Arc;
@@ -11,6 +12,7 @@ use crate::source_loc::SourceLoc;
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.
 #[derive(Debug)]
+#[cfg(coreast)]
 pub struct Case {
   /// Source file pointer
   pub location: SourceLoc,
@@ -20,6 +22,7 @@ pub struct Case {
   pub clauses: Vec<CaseClause>,
 }
 
+#[cfg(coreast)]
 impl Case {
   /// Create a case struct, member of `CoreAst::Case`
   pub fn new(location: SourceLoc, exprs: Vec<Arc<CoreAst>>, clauses: Vec<CaseClause>) -> Case {
@@ -31,6 +34,7 @@ impl Case {
   }
 }
 
+#[cfg(coreast)]
 impl std::fmt::Display for Case {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self.exprs.len() {

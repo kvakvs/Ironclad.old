@@ -1,8 +1,8 @@
 //! Checks whether a type matches synthesized type for AST
 
 use std::sync::{Arc, RwLock};
-use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::erl_error::{ErlError, ErlResult};
+use crate::erl_error::{ErlResult};
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
@@ -14,17 +14,17 @@ impl TypeCheck {
   /// Checks whether synthesized type for expression `ast` contains ErlType `ty`.
   /// This is used to check (for example) whether an incoming value would be accepted by a function.
   /// This is essentially an Erlang "match" check.
-  pub fn check(env: &Arc<RwLock<Scope>>, ast: &CoreAst, match_ty: &ErlType) -> ErlResult<bool> {
+  pub fn check(env: &Arc<RwLock<Scope>>, ast: &ErlAst, match_ty: &ErlType) -> ErlResult<bool> {
     let synth_type = ast.synthesize(env)?;
 
     println!("Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
              ast, synth_type, match_ty);
 
     if !match_ty.is_subtype_of(&synth_type) {
-      ErlError::type_error(TypeError::ExpectedType {
+      Err(TypeError::ExpectedType {
         expected_type: format!("{}", match_ty),
         actual_type: format!("{}", synth_type),
-      })
+      }.into())
     } else {
       Ok(true)
     }

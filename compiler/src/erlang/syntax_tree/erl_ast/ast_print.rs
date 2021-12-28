@@ -22,6 +22,7 @@ impl std::fmt::Display for ErlAst {
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)
       // }
+      ErlAst::FnRef{mfa, ..} => write!(f, "fun {}", mfa),
       ErlAst::FnDef(erl_fndef) => {
         write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
         for fc in erl_fndef.clauses.iter() { write!(f, "{};", fc)?; }
@@ -35,11 +36,11 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Case(_loc, case) => write!(f, "{}", case),
       ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
 
-      ErlAst::BinaryOp(_loc, binop) => {
-        write!(f, "({} {} {})", binop.left, binop.operator, binop.right)
+      ErlAst::BinaryOp { expr: binop_expr, .. } => {
+        write!(f, "({} {} {})", binop_expr.left, binop_expr.operator, binop_expr.right)
       }
-      ErlAst::UnaryOp(_loc, unop) => {
-        write!(f, "({} {})", unop.operator, unop.expr)
+      ErlAst::UnaryOp { expr: unop_expr, .. } => {
+        write!(f, "({} {})", unop_expr.operator, unop_expr.expr)
       }
       ErlAst::MFA { mfarity: mfa, .. } => {
         match &mfa.module {

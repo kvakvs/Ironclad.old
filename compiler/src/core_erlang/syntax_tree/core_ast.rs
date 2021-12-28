@@ -1,19 +1,12 @@
 //! Defines AST tree for Core Erlang-like intermediate language. A more generalized and simplified
 //! intermediate language, allowing easier optimisations and easier code generation.
+#![cfg(coreast)]
+
 use ::function_name::named;
 use std::sync::{Arc};
 
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
-use crate::core_erlang::syntax_tree::node::core_apply::Apply;
-use crate::core_erlang::syntax_tree::node::core_call::Call;
-use crate::core_erlang::syntax_tree::node::core_case::Case;
-use crate::core_erlang::syntax_tree::node::core_binary_op::BinaryOperatorExpr;
-use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;
-use crate::core_erlang::syntax_tree::node::core_let_expr::LetExpr;
-use crate::core_erlang::syntax_tree::node::core_module_attr::ModuleAttr;
-use crate::core_erlang::syntax_tree::node::core_prim_op::{ExceptionType, PrimOp};
-use crate::core_erlang::syntax_tree::node::core_var::Var;
 use crate::literal::Literal;
 use std::ops::Deref;
 use crate::core_erlang::syntax_tree::node::core_unary_op::UnaryOperatorExpr;
@@ -22,6 +15,7 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::typing::type_error::TypeError;
 
 /// AST node in Core Erlang (parsed or generated)
+#[cfg(coreast)]
 #[derive(Debug)]
 pub enum CoreAst {
   /// Default value for AST tree not initialized
@@ -123,6 +117,7 @@ pub enum CoreAst {
   },
 }
 
+#[cfg(coreast)]
 impl CoreAst {
   /// Creates a new atom literal, and marks its type
   pub fn new_atom(name: &str) -> Self {
@@ -187,31 +182,9 @@ impl CoreAst {
       },
     }
   }
-
-  /// Scan forms and find a module definition AST node. For finding a function by funarity, check
-  /// function registry `ErlModule::env`
-  pub fn find_function_def(this: &Arc<CoreAst>, funarity: &MFArity) -> ErlResult<Arc<CoreAst>> {
-    match this.deref() {
-      CoreAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
-        return Ok(this.clone());
-      }
-      CoreAst::ModuleFuns(fndefs) => {
-        // Find first in forms for which `find_function_def` returns something
-        let find_result = fndefs.iter()
-            .find(|&each_fndef| {
-              CoreAst::find_function_def(each_fndef, funarity).is_ok()
-            })
-            .cloned();
-        if find_result.is_some() {
-          return Ok(find_result.unwrap());
-        }
-      }
-      _ => {}
-    }
-    ErlError::type_error(TypeError::FunctionNotFound { mfa: funarity.clone() })
-  }
 }
 
+#[cfg(coreast)]
 impl std::fmt::Display for CoreAst {
   #[named]
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

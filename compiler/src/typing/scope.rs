@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::sync::{Arc, RwLock, Weak};
-use crate::core_erlang::syntax_tree::node::core_var::Var;
+use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::mfarity::MFArity;
 use crate::typing::erl_type::ErlType;
 
@@ -111,7 +111,7 @@ impl Scope {
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
-  pub fn retrieve_var_from(scope: &RwLock<Scope>, var: &Var) -> Option<Arc<ErlType>> {
+  pub fn retrieve_var_from(scope: &RwLock<Scope>, var: &ErlVar) -> Option<Arc<ErlType>> {
     if let Ok(scope_read) = scope.read() {
       match scope_read.variables.get(&var.name) {
         Some(var_type) => Some(var_type.clone()),
@@ -146,29 +146,4 @@ impl Scope {
       scope_w.functions.insert(mfa.clone(), ty);
     }
   }
-
-  // /// Report usages of an expression in the current scope. This propagates up from deepest scopes.
-  // /// The result will be the scope updated to a possibly more narrow type.
-  // /// For example if initial variable was given type `any()` but after seeing it used in a `a+b`
-  // /// operation as `integer()` and maybe in another operation as `float()`, the type might be
-  // /// updated to a `number()`.
-  // pub fn record_value_usages(scope: &RwLock<Scope>, ast: &CoreAst, usages: &[Arc<ErlType>]) {
-  //   if let CoreAst::Var(v) = ast {
-  //     if let Ok(mut scope_w) = scope.write() {
-  //       scope_w.record_value_usages_1(v, usages);
-  //     }
-  //   }
-  // }
-
-  // /// Try narrow the variable type in the scope
-  // fn record_value_usages_1(&mut self, v: &Var, usages: &[Arc<ErlType>]) -> ErlResult<()> {
-  //   assert!(self.variables.contains_key(&v.name), "Scope must contain variable {}", v.name);
-  //
-  //   if let Some(var_type) = self.variables.get_mut(&v.name) {
-  //     if let Some(updated_type) = var_type.clone().narrow_type(usages)? {
-  //       self.variables.insert(v.name.clone(), updated_type);
-  //     }
-  //   }
-  //   Ok(())
-  // }
 }

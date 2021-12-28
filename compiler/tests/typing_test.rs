@@ -19,11 +19,12 @@ fn typing_synth() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
 
   {
-    let env = Scope::new_root_scope(function_name!().to_string());
-    let list1 = Module::from_expr_source(&filename,"[3.14159265358979 , 2,atom]")?;
-    let t = list1.core_ast.synthesize(&env)?;
-    println!("Synth list1: {}", &t);
-    if let ErlType::StronglyTypedList { elements, tail } = t.deref() {
+    let scope1 = Scope::new_root_scope(function_name!().to_string());
+    let parsed1 = Module::from_expr_source(&filename, "[3.14159265358979 , 2,atom]")?;
+    let synth_t1 = parsed1.ast.synthesize(&scope1)?;
+    println!("Synth list1: {}", &synth_t1);
+
+    if let ErlType::StronglyTypedList { elements, tail } = synth_t1.deref() {
       assert!(elements[0].is_float());
       assert!(elements[1].is_integer());
       assert!(elements[2].is_atom());
@@ -32,22 +33,23 @@ fn typing_synth() -> ErlResult<()> {
       assert!(tail2.is_nil());
       assert!(tail2.is_list());
     } else {
-      panic!("Expected: StronglyTypedList, got {}", t)
+      panic!("Expected: StronglyTypedList, got {}", synth_t1)
     }
   }
 
   {
-    let env = Scope::new_root_scope(function_name!().to_string());
-    let tup1 = Module::from_expr_source(&filename,"{tuple_tag, 1.2, 3, \"hello\"}")?;
-    let t = tup1.core_ast.synthesize(&env)?;
-    println!("Synth tup1: {}", &t);
-    if let ErlType::Tuple { elements } = t.deref() {
+    let scope2 = Scope::new_root_scope(function_name!().to_string());
+    let parsed2 = Module::from_expr_source(&filename, "{tuple_tag, 1.2, 3, \"hello\"}")?;
+    let synth_t2 = parsed2.ast.synthesize(&scope2)?;
+    println!("Synth tup1: {}", &synth_t2);
+
+    if let ErlType::Tuple { elements } = synth_t2.deref() {
       assert!(elements[0].is_lit_atom("tuple_tag"), "t[0] - expected 'tuple_tag', got {}", elements[0]);
       assert!(elements[1].is_float(), "t[1] - expected float, got {}", elements[1]);
       assert!(elements[2].is_integer(), "t[2] - expected integer, got {}", elements[2]);
       assert!(elements[3].is_list(), "t[3] - expected string, got {}", elements[3]);
     } else {
-      panic!("Expected: Tuple, got {}", t)
+      panic!("Expected: Tuple, got {}", synth_t2)
     }
   }
 
@@ -59,10 +61,10 @@ fn typing_synth() -> ErlResult<()> {
 fn typing_expr_check_1() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.Atom");
 
-  let env = Scope::new_root_scope(function_name!().to_string());
+  let scope = Scope::new_root_scope(function_name!().to_string());
   let filename = PathBuf::from(function_name!());
-  let expr1 = Module::from_expr_source(&filename,"hello")?;
-  assert!(TypeCheck::check(&env, &expr1.core_ast, &ErlType::Atom)?,
+  let parsed = Module::from_expr_source(&filename, "hello")?;
+  assert!(TypeCheck::check(&scope, &parsed.ast, &ErlType::Atom)?,
           "Parsed atom 'hello' must be subtype of atom()");
   Ok(())
 }
@@ -72,15 +74,15 @@ fn typing_expr_check_1() -> ErlResult<()> {
 /// Create a fun with 0 args, which returns an integer(). See if its compatible with an integer().
 fn typing_expr_check_noarg() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
-  let env = Scope::new_root_scope(function_name!().to_string());
+  let scope = Scope::new_root_scope(function_name!().to_string());
   let filename = PathBuf::from(function_name!());
+  let parsed = Module::from_fun_source(&filename, "my_int_fun1() -> 10 + 20.")?;
 
-  let int_fn1 = Module::from_fun_source(&filename,"my_int_fun1() -> 10 + 20.")?;
-  assert!(int_fn1.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn1.core_ast);
+  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(0, ErlType::integer());
-  assert!(TypeCheck::check(&env, &int_fn1.core_ast, match_ty)?,
+  assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "my_int_fun1()'s return type must be compatible with integer()");
   Ok(())
 }
@@ -91,14 +93,14 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
 fn typing_check_int_arg_fn() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let filename = PathBuf::from(function_name!());
-  let env = Scope::new_root_scope(function_name!().to_string());
+  let scope = Scope::new_root_scope(function_name!().to_string());
+  let parsed = Module::from_fun_source(&filename, "my_int_fun2(A) -> 10.0 + A.")?;
 
-  let int_fn2 = Module::from_fun_source(&filename,"my_int_fun2(A) -> 10.0 + A.")?;
-  assert!(int_fn2.core_ast.is_fndef(), "Expected FnDef() received {:?}", int_fn2.core_ast);
+  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(1, ErlType::integer());
-  assert!(TypeCheck::check(&env, &int_fn2.core_ast, match_ty)?,
+  assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "my_int_fun2()'s result type must be compatible with integer()");
   Ok(())
 }
@@ -109,15 +111,15 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
 fn typing_expr_check_tuple1() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
   let filename = PathBuf::from(function_name!());
-  let env = Scope::new_root_scope(function_name!().to_string());
+  let scope = Scope::new_root_scope(function_name!().to_string());
+  let parsed = Module::from_fun_source(&filename, "mytuple_fun(A) -> {A, 123}.")?;
 
-  let tuple_fn = Module::from_fun_source(&filename,"mytuple_fun(A) -> {A, 123}.")?;
-  assert!(tuple_fn.core_ast.is_fndef(), "Expected FnDef() received {:?}", tuple_fn.core_ast);
+  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
 
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
   let match_ty = &ErlType::new_fn_type_of_any_args(0, expected_type);
-  assert!(TypeCheck::check(&env, &tuple_fn.core_ast, match_ty)?,
+  assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "Parsed mytuple_fun() result type must match {{any(), integer()}}");
   Ok(())
 }

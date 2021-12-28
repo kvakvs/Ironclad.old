@@ -1,4 +1,5 @@
 //! Type unwrappers for CoreAST subtypes
+#![cfg(coreast)]
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;

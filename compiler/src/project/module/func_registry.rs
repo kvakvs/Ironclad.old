@@ -4,15 +4,15 @@ use std::sync::Arc;
 use crate::mfarity::MFArity;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::literal::Literal;
-use crate::core_erlang::syntax_tree::node::core_fn_def::FnDef;
 use std::ops::Deref;
 use std::collections::HashMap;
+use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 
 /// Collection of module functions and a lookup table
 #[derive(Default)]
 pub struct FuncRegistry {
   /// Function definitions of the module
-  pub functions: Vec<Arc<FnDef>>,
+  pub functions: Vec<Arc<ErlFnDef>>,
 
   /// Lookup by function_name/arity into `Self::functions`
   pub functions_lookup: HashMap<MFArity, usize>,
@@ -20,7 +20,7 @@ pub struct FuncRegistry {
 
 impl FuncRegistry {
   /// Pushes a function node into the functions vector, updates the lookup, and returns func index
-  pub fn add_function(&mut self, nf: Arc<FnDef>) {
+  pub fn add_function(&mut self, nf: Arc<ErlFnDef>) {
     let index = self.functions.len();
     let funarity = nf.funarity.clone();
 

@@ -1,4 +1,6 @@
 //! Contains iteration helpers for CoreAst
+#![cfg(coreast)]
+
 use function_name::named;
 use std::sync::Arc;
 

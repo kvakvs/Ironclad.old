@@ -1,4 +1,5 @@
 //! Core Erlang Case operator clause
+#![cfg(coreast)]
 use std::fmt::Formatter;
 use std::sync::Arc;
 

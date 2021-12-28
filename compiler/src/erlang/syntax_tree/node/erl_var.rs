@@ -2,7 +2,7 @@
 use crate::source_loc::SourceLoc;
 
 /// AST node for a variable
-#[derive(Derivative)]
+#[derive(Clone, Derivative)]
 #[derivative(PartialEq, Debug)]
 pub struct ErlVar {
   /// Source code pointer
