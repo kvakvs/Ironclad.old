@@ -10,10 +10,7 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser};
-use crate::project::module::func_registry::FuncRegistry;
 use crate::typing::scope::Scope;
-
-pub mod func_registry;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -29,8 +26,9 @@ pub struct Module {
   /// AST tree of the module.
   pub ast: Arc<ErlAst>,
 
-  /// Collection of module functions and a lookup table
-  pub registry: RwLock<FuncRegistry>,
+  // /// Collection of module functions and a lookup table
+  // pub registry: RwLock<FuncRegistry>,
+
   /// Module level scope, containing functions
   pub scope: Arc<RwLock<Scope>>,
 
@@ -47,7 +45,6 @@ impl Default for Module {
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
       ast: Arc::new(ErlAst::Empty),
-      registry: RwLock::new(FuncRegistry::default()),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
@@ -82,6 +79,9 @@ impl Module {
             "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
     module.source_file = SourceFile::new(filename, String::from(input));
     module.ast = forms;
+
+    // Scan AST and find FnDef nodes, update functions knowledge
+    Scope::update_from_ast(&module.scope, &module.ast);
 
     Ok(module)
   }

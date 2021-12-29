@@ -19,7 +19,7 @@ impl ErlAst {
       ErlAst::FnRef { mfa, .. } => {
         match Scope::retrieve_fn_from(scope, mfa) {
           None => ErlError::local_function_not_found(mfa),
-          Some(fntype) => Ok(fntype),
+          Some(fndef) => Ok(fndef.as_fn_def().synthesize_function_type(scope)?),
         }
       }
       ErlAst::Apply(apply) => apply.synthesize_type(scope),

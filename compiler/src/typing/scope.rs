@@ -2,7 +2,9 @@
 
 use std::collections::HashMap;
 use std::fmt::Formatter;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock, Weak};
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::mfarity::MFArity;
 use crate::typing::erl_type::ErlType;
@@ -18,7 +20,7 @@ pub struct Scope {
 
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
-  pub functions: HashMap<MFArity, Arc<ErlType>>,
+  pub function_defs: HashMap<MFArity, Arc<ErlAst>>,
 
   /// Types defined in the global module scope. Using typename/arity as key in type hierarchy
   pub typedefs: HashMap<MFArity, Arc<ErlType>>,
@@ -34,7 +36,7 @@ impl Default for Scope {
     Self {
       name: "default_scope".to_string(),
       variables: Default::default(),
-      functions: Default::default(),
+      function_defs: Default::default(),
       typedefs: Default::default(),
       parent_scope: Default::default(),
     }
@@ -47,7 +49,7 @@ impl std::fmt::Display for Scope {
         .map(|v| format!("{}={}", v.0, v.1))
         .collect::<Vec<String>>()
         .join(", ");
-    let funs_fmt = self.functions.iter()
+    let funs_fmt = self.function_defs.iter()
         .map(|fnc| format!("{}", fnc.0))
         .collect::<Vec<String>>()
         .join(", ");
@@ -66,7 +68,7 @@ impl Scope {
     Self {
       name,
       variables: Default::default(),
-      functions: Default::default(),
+      function_defs: Default::default(),
       typedefs: Default::default(),
       parent_scope,
     }
@@ -79,7 +81,7 @@ impl Scope {
     Self {
       name,
       variables,
-      functions: Default::default(),
+      function_defs: Default::default(),
       typedefs: Default::default(),
       parent_scope,
     }
@@ -126,10 +128,13 @@ impl Scope {
   }
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<Arc<ErlType>> {
+  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<Arc<ErlAst>> {
     if let Ok(scope_read) = scope.read() {
-      match scope_read.functions.get(mfa) {
-        Some(val) => Some(val.clone()),
+      match scope_read.function_defs.get(mfa) {
+        Some(val) => {
+          if val.is_fndef() { return Some(val.clone()); }
+          panic!("Only FnDef AST nodes must be stored in module scope")
+        }
         None => match scope_read.parent_scope.upgrade() {
           None => None,
           Some(parent) => Self::retrieve_fn_from(&parent, mfa)
@@ -141,9 +146,30 @@ impl Scope {
   }
 
   /// Add a function by MFA and its type
-  pub fn add_function(scope: &RwLock<Scope>, mfa: &MFArity, ty: Arc<ErlType>) {
+  pub fn add_fn(&mut self, mfa: &MFArity, ast: Arc<ErlAst>) {
+    self.function_defs.insert(mfa.clone(), ast.clone());
+  }
+
+  /// Recursive descend into AST saving FnDef nodes
+  fn do_update_from_ast(&mut self, ast: &Arc<ErlAst>) {
+    match ast.deref() {
+      ErlAst::FnDef(fndef) => {
+        self.add_fn(&fndef.funarity, ast.clone());
+      }
+      _ => {}
+    }
+    match ast.children() {
+      Some(children) => for c in children {
+        self.do_update_from_ast(&c)
+      }
+      None => {}
+    }
+  }
+
+  /// Scan AST and find FnDef nodes, update functions knowledge
+  pub fn update_from_ast(scope: &RwLock<Scope>, ast: &Arc<ErlAst>) {
     if let Ok(mut scope_w) = scope.write() {
-      scope_w.functions.insert(mfa.clone(), ty);
+      scope_w.do_update_from_ast(ast)
     }
   }
 }

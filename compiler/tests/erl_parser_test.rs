@@ -119,8 +119,8 @@ fn parse_fn1() -> ErlResult<()> {
     panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), module.ast);
   }
 
-  let func_count = if let Ok(registry) = module.registry.read() {
-    registry.functions.len()
+  let func_count = if let Ok(scope_r) = module.scope.read() {
+    scope_r.function_defs.len()
   } else {
     panic!()
   };
