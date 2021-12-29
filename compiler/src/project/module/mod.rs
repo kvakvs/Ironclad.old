@@ -9,8 +9,7 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::{nom_parse};
-use crate::erlang::syntax_tree::nom_parse::{parse_expr, parse_fn, parse_type};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser};
 use crate::project::module::func_registry::FuncRegistry;
 use crate::typing::scope::Scope;
 
@@ -90,22 +89,22 @@ impl Module {
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
   pub fn from_module_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, nom_parse::parse_module)
+    Self::parse_helper(filename, input, ErlParser::parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
   pub fn from_expr_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, parse_expr::parse_expr)
+    Self::parse_helper(filename, input, ErlParser::parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
   pub fn from_fun_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, parse_fn::parse_fndef)
+    Self::parse_helper(filename, input, ErlParser::parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
   pub fn from_fun_spec_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, parse_type::parse_fun_spec)
+    Self::parse_helper(filename, input, ErlParser::parse_fun_spec)
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
