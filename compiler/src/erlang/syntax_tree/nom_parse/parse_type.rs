@@ -13,15 +13,10 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 
 impl ErlParser {
-  /// Parse optional part of typevar: `:: type()`
-  fn parse_maybe_type(input: &str) -> nom::IResult<&str, Arc<ErlType>> {
-    combinator::map(
-      sequence::pair(
-        Self::ws_before(tag("::")),
-        Self::ws_before(Self::parse_type),
-      ),
-      |(_, t)| t,
-    )(input)
+  /// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
+  fn parse_coloncolon_type(input: &str) -> nom::IResult<&str, Arc<ErlType>> {
+    let (input, _tag) = Self::ws_before(tag("::"))(input)?;
+    Self::ws_before(Self::parse_type)(input)
   }
 
   /// Parse a capitalized type variable name with an optional `:: type()` part
@@ -29,26 +24,32 @@ impl ErlParser {
     combinator::map(
       sequence::pair(
         Self::parse_typevar,
-        combinator::opt(Self::parse_maybe_type),
+        combinator::opt(Self::parse_coloncolon_type),
       ),
       |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
     )(input)
   }
 
-  /// Parses a list of comma separated typevars (function arg specs)
-  fn parse_comma_sep_arg_specs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
-    multi::separated_list0(
-      Self::ws(character::complete::char(',')),
-      Self::parse_typevar_with_opt_type,
-    )(input)
-  }
+  // /// Parses a list of comma separated typevars (function arg specs)
+  // fn parse_comma_sep_arg_specs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
+  //   multi::separated_list0(
+  //     Self::ws(character::complete::char(',')),
+  //
+  //     // Comma separated arguments spec can be typevars with optional `::type()`s or just types
+  //     branch::alt((
+  //       Self::parse_typevar_with_opt_type,
+  //       combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
+  //     )),
+  //   )(input)
+  // }
 
   /// Parses a list of comma separated typevars enclosed in (parentheses)
   pub fn parse_parenthesized_arg_spec_list(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
     let (input, _) = Self::ws_before(character::complete::char('('))(input)?;
     combinator::map(
       sequence::pair(
-        Self::parse_comma_sep_arg_specs,
+        // Self::parse_comma_sep_arg_specs,
+        Self::parse_comma_sep_typeargs0,
         Self::ws_before(character::complete::char(')')),
       ),
       |(elements, _)| elements,
@@ -57,11 +58,11 @@ impl ErlParser {
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
   /// `-spec fun(A) -> A when A :: atom().`
-  fn parse_when_expr_for_type(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
+  pub fn parse_when_expr_for_type(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
     let (input, _) = Self::ws_before(tag("when"))(input)?;
     combinator::map(
       sequence::pair(
-        Self::parse_comma_sep_arg_specs,
+        Self::parse_comma_sep_typeargs1,
         Self::ws_before(character::complete::char('.')),
       ),
       |(typevars, _)| typevars,
@@ -75,14 +76,14 @@ impl ErlParser {
         // Function clause name
         Self::ws_before_mut(combinator::opt(AtomParser::atom)),
 
-        // Args list
+        // Args list (list of type variables with some types possibly)
         Self::parse_parenthesized_arg_spec_list,
         Self::ws_before(tag("->")),
 
-        // Body
-        Self::parse_type,
+        // Return type for fn clause
+        Self::parse_typevar_with_opt_type,
 
-        // Optional: when <guard>
+        // Optional: when <comma separated list of typevariables given types>
         combinator::opt(Self::parse_when_expr_for_type),
       )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
@@ -127,15 +128,28 @@ impl ErlParser {
     Self::ws_before(Self::parse_ident_capitalized)(input)
   }
 
-  /// Parses a comma separated list of type arguments.
+  fn parse_typevar_or_type(input: &str) -> nom::IResult<&str, Typevar> {
+    branch::alt((
+      combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
+      combinator::map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
+    ))(input)
+  }
+
+  /// Parses a comma separated list of 0 or more type arguments.
   /// A parametrized type accepts other types or typevar names
-  fn parse_comma_sep_typeargs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
+  fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
     multi::separated_list0(
       Self::ws(character::complete::char(',')),
-      branch::alt((
-        combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
-        combinator::map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
-      )),
+      Self::parse_typevar_or_type,
+    )(input)
+  }
+
+  /// Parses a comma separated list of 1 or more type arguments.
+  /// A parametrized type accepts other types or typevar names
+  fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
+    multi::separated_list1(
+      Self::ws(character::complete::char(',')),
+      Self::parse_typevar_or_type,
     )(input)
   }
 
@@ -145,7 +159,7 @@ impl ErlParser {
       sequence::tuple((
         Self::ws_before(Self::parse_ident),
         Self::ws_before(character::complete::char('(')),
-        Self::parse_comma_sep_typeargs,
+        Self::parse_comma_sep_typeargs0,
         Self::ws_before(character::complete::char(')')),
       )),
       |(type_name, _open, elements, _close)| {
@@ -160,7 +174,7 @@ impl ErlParser {
 
     combinator::map(
       sequence::terminated(
-        Self::parse_comma_sep_typeargs,
+        Self::parse_comma_sep_typeargs0,
         Self::ws_before(character::complete::char(']')),
       ),
       |elements| ErlType::TypevarList(elements).into(),
@@ -173,7 +187,7 @@ impl ErlParser {
 
     combinator::map(
       sequence::terminated(
-        Self::parse_comma_sep_typeargs,
+        Self::parse_comma_sep_typeargs0,
         Self::ws_before(character::complete::char('}')),
       ),
       |elements| ErlType::TypevarList(elements).into(),

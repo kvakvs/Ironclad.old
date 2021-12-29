@@ -9,7 +9,7 @@ impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
   fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
     ErlError::ErlangParse {
       loc: ErrorLocation::empty(),
-      msg: format!("Nom error: {}", value),
+      msg: format!("{}", value),
     }
   }
 }

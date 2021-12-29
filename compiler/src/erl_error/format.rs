@@ -34,7 +34,7 @@ impl std::fmt::Display for ErlError {
         write!(f, "Internal error: {}", msg)
       }
       ErlError::ErlangParse { loc, msg } => {
-        write!(f, "Erlang parse error: {} (at {})", msg, loc)
+        write!(f, "{} (at {})", msg, loc)
       }
       // ErlError::ErlangSyntax { parse_err, msg } => {
       //   write!(f, "Erlang syntax parse error: {} - {}", parse_err, msg)

@@ -12,24 +12,24 @@ pub struct FnClauseType {
   /// Argument types for this function clause: positional arguments corresponding to function
   /// arguments, but not necessarily having same names as argument names.
   pub args: Vec<Typevar>,
-  /// Return type of this function clause
-  pub ret_ty: Arc<ErlType>,
+  /// Return type of this function clause, with possibly a typevariable name
+  pub ret_type: Typevar,
 }
 
 impl std::fmt::Display for FnClauseType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     Pretty::display_paren_list(&self.args, f)?;
-    write!(f, " -> {}", self.ret_ty)
+    write!(f, " -> {}", self.ret_type)
   }
 }
 
 impl FnClauseType {
   /// Retrieve return type
-  pub fn ret_ty(&self) -> &Arc<ErlType> { &self.ret_ty }
+  pub fn ret_ty(&self) -> &Arc<ErlType> { &self.ret_type.ty }
 
   /// Create a new function clause from just args
-  pub fn new(args: Vec<Typevar>, ret_ty: Arc<ErlType>) -> Self {
-    Self { args, ret_ty }
+  pub fn new(args: Vec<Typevar>, ret_ty: Typevar) -> Self {
+    Self { args, ret_type: ret_ty }
   }
 
   /// Get the function clause argument count
@@ -48,7 +48,7 @@ impl FnClauseType {
     self.args.iter()
         .zip(super_clause.args.iter())
         .all(|(sub_arg, super_arg)| sub_arg.ty.is_subtype_of(&super_arg.ty))
-    && self.ret_ty.is_subtype_of(&super_clause.ret_ty)
+    && self.ret_type.ty.is_subtype_of(&super_clause.ret_type.ty)
   }
 
   /// Check whether argument list can be passed to this clause

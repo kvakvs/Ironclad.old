@@ -61,7 +61,7 @@ impl ErlFnClause {
         .collect();
     let synthesized_t = FnClauseType::new(
       args_types,
-      self.synthesize_clause_return_type(scope)?,
+      Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?),
     );
     Ok(synthesized_t.into())
   }

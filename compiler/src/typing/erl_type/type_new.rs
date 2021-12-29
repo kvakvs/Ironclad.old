@@ -49,11 +49,11 @@ impl ErlType {
   }
 
   /// Creates a new function type with 1 clause, a count of `any()` args and a given return type
-  pub fn new_fn_type_of_any_args(arity: usize, ret_ty: Arc<ErlType>) -> ErlType {
+  pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &Arc<ErlType>) -> ErlType {
     let any_args = iter::repeat(()).take(arity)
         .map(|_| Typevar::new(None, None))
         .collect();
-    let clause = FnClauseType::new(any_args, ret_ty).into();
+    let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty)).into();
     let fn_type = FnType::new(arity, &vec![clause]);
     ErlType::Fn(fn_type.into())
   }

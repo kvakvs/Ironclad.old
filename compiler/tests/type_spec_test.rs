@@ -9,7 +9,7 @@ use ::function_name::named;
 use compiler::erl_error::ErlResult;
 use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::project::module::Module;
-use compiler::erlang::syntax_tree::nom_parse::parse_attr;
+use compiler::erlang::syntax_tree::nom_parse::{ErlParser};
 use compiler::mfarity::MFArity;
 
 #[named]
@@ -20,7 +20,7 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   {
     let attr1_src = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
     // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-    let (tail1, result1) = parse_attr::parse_generic_attr(attr1_src)?;
+    let (tail1, result1) = ErlParser::parse_generic_attr(attr1_src)?;
     assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
     println!("ErlAst for attr1: {}", result1);
   }
@@ -28,7 +28,7 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   {
     let attr2_src = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
     // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-    let (tail2, result2) = parse_attr::parse_generic_attr(attr2_src)?;
+    let (tail2, result2) = ErlParser::parse_generic_attr(attr2_src)?;
     assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
     println!("ErlAst for attr2: {}", result2);
   }
@@ -38,35 +38,70 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_typespec_parse() -> ErlResult<()> {
-  test_util::start(function_name!(), "Parse typespec syntax for 1 and 2 clause fns");
+fn fn_typespec_parse_1() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse typespec syntax for a 1-clause fn");
 
   let filename = PathBuf::from(function_name!());
 
-  { //----------------------------------
-    let spec1_src = format!("-spec myfun(A :: integer()) -> any().");
-    let spec1_m = Module::from_fun_spec_source(&filename, &spec1_src)?;
-    if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
-      assert_eq!(funarity, &MFArity::new_local("myfun", 1),
-                 "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
-      let fntype = spec.as_fn_type();
-      assert_eq!(fntype.clauses().len(), 1, "Expected 1 clause in typespec, got {}", spec1_m.ast);
-    } else {
-      panic!("Expected AST FnSpec node, but got {}", spec1_m.ast)
-    }
-  }
+  let spec1_src = format!("-spec {}(A :: integer()) -> any().", function_name!());
+  let spec1_m = Module::from_fun_spec_source(&filename, &spec1_src)?;
 
-  { //----------------------------------
-    let spec2_src = format!("-spec x(A :: integer()) -> any(); (B :: atom()) -> C when C :: tuple().");
-    let spec2_m = Module::from_fun_spec_source(&filename, &spec2_src)?;
-    if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
-      assert_eq!(funarity, &MFArity::new_local("myfun", 1),
-                 "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
-      let fntype = spec.as_fn_type();
-      assert_eq!(fntype.clauses().len(), 1, "Expected 1 clause in typespec, got {}", spec2_m.ast);
-    } else {
-      panic!("Expected AST FnSpec node, but got {}", spec2_m.ast)
-    }
+  if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
+    assert_eq!(funarity, &MFArity::new_local(function_name!(), 1),
+               "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
+    let fntype = spec.as_fn_type();
+    assert_eq!(fntype.clauses().len(), 1,
+               "Expected 1 clause in typespec, got {}", spec1_m.ast);
+  } else {
+    panic!("Expected AST FnSpec node, but got {}", spec1_m.ast)
   }
   Ok(())
+}
+
+#[named]
+#[test]
+fn fn_typespec_parse_2() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse typespec syntax for a 2-clause fn");
+
+  let filename = PathBuf::from(function_name!());
+  let spec2_src = format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
+  let spec2_m = Module::from_fun_spec_source(&filename, &spec2_src)?;
+
+  if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
+    assert_eq!(funarity, &MFArity::new_local(function_name!(), 1),
+               "Expected fnspec for 'myfun'/2, got spec for {}", funarity);
+    let fntype = spec.as_fn_type();
+    assert_eq!(fntype.clauses().len(), 2,
+               "Expected 2 clauses in typespec, got {}", spec2_m.ast);
+  } else {
+    panic!("Expected AST FnSpec node, but got {}", spec2_m.ast)
+  }
+
+  Ok(())
+}
+
+#[named]
+#[test]
+fn fn_typespec_parse_when() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse when-part of a function type spec");
+
+  let filename = PathBuf::from(function_name!());
+  let spec_src = format!("-spec {}(atom()) -> A when A :: tuple().", function_name!());
+  let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
+
+  assert!(parsed.ast.is_fndef());
+
+  Ok(())
+}
+
+#[named]
+#[test]
+#[should_panic(expected = "All function clauses must have same arity in a typespec")]
+fn fn_typespec_parse_1_2() {
+  test_util::start(function_name!(), "Parse typespec syntax for 1 and 2 clause fns, must fail because mismatching arity");
+
+  let filename = PathBuf::from(function_name!());
+  let spec2_src = format!("-spec {}(A) -> any(); (B, C) -> any().", function_name!());
+  let result = Module::from_fun_spec_source(&filename, &spec2_src);
+  assert!(result.is_err(), "Parse error is expected");
 }
