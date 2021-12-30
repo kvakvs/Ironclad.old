@@ -132,7 +132,7 @@ impl Scope {
     if let Ok(scope_read) = scope.read() {
       match scope_read.function_defs.get(mfa) {
         Some(val) => {
-          if val.is_fndef() { return Some(val.clone()); }
+          if val.is_fn_def() { return Some(val.clone()); }
           panic!("Only FnDef AST nodes must be stored in module scope")
         }
         None => match scope_read.parent_scope.upgrade() {

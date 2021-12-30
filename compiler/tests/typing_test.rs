@@ -78,7 +78,7 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
   let parsed = Module::from_fun_source(&filename, "my_int_fun1() -> 10 + 20.")?;
 
-  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
+  assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(0, ErlType::integer());
@@ -96,7 +96,7 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
   let scope = Scope::new_root_scope(function_name!().to_string());
   let parsed = Module::from_fun_source(&filename, "my_int_fun2(A) -> 10.0 + A.")?;
 
-  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
+  assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(1, ErlType::integer());
@@ -114,7 +114,7 @@ fn typing_expr_check_tuple1() -> ErlResult<()> {
   let scope = Scope::new_root_scope(function_name!().to_string());
   let parsed = Module::from_fun_source(&filename, "mytuple_fun(A) -> {A, 123}.")?;
 
-  assert!(parsed.ast.is_fndef(), "Expected FnDef() received {:?}", parsed.ast);
+  assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
 
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);

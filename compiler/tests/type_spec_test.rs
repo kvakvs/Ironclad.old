@@ -12,6 +12,7 @@ use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::project::module::Module;
 use compiler::erlang::syntax_tree::nom_parse::{ErlParser};
 use compiler::mfarity::MFArity;
+use compiler::typing::erl_type::ErlType;
 
 #[named]
 #[test]
@@ -98,8 +99,12 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   let spec_src = format!("-spec {}(atom()) -> A when A :: tuple().", function_name!());
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 
-  assert!(parsed.ast.is_fndef());
-  // TODO: Check that the spec parsed contains the types for A substituted as tuple()
+  assert!(parsed.ast.is_fn_spec());
+  // TODO: Check that the spec parsed return type is tuple()
+  let fn_spec = parsed.ast.as_fn_spec();
+  let c0 = fn_spec.as_fn_type().clause(0);
+  let t0 = c0.ret_type.ty.clone();
+  assert!(t0.is_subtype_of(&ErlType::any_tuple()), "Return type of the function spec must be tuple-compatible, but got {}", t0);
 
   Ok(())
 }
@@ -114,7 +119,7 @@ fn fn_typespec_parse_union() -> ErlResult<()> {
                          function_name!());
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 
-  assert!(parsed.ast.is_fndef());
+  assert!(parsed.ast.is_fn_def());
   // TODO: Check that the spec parsed contains the unions as written
 
   Ok(())

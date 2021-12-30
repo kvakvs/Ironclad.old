@@ -62,13 +62,7 @@ impl ErlParser {
   /// `-spec fun(A) -> A when A :: atom().`
   pub fn parse_when_expr_for_type(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = Self::ws_before(tag("when"))(input)?;
-    combinator::map(
-      sequence::pair(
-        Self::parse_comma_sep_typeargs1,
-        Self::ws_before(character::complete::char('.')),
-      ),
-      |(typevars, _)| typevars,
-    )(input)
+    Self::parse_comma_sep_typeargs1(input)
   }
 
   /// Parses a function clause args specs, return spec and optional `when`
@@ -86,7 +80,8 @@ impl ErlParser {
         Self::parse_typevar_with_opt_type,
 
         // Optional: when <comma separated list of typevariables given types>
-        context("fgsfds", combinator::opt(Self::parse_when_expr_for_type)),
+        context("when expression for typespec",
+                combinator::opt(Self::parse_when_expr_for_type)),
       )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
         // TODO: Check name equals function name, for module level functions
@@ -105,7 +100,7 @@ impl ErlParser {
         Self::ws_before(AtomParser::parse_atom),
         multi::separated_list1(
           Self::ws_before(character::complete::char(';')),
-          context("parsing function clause in a function spec",
+          context("function spec | clause",
                   cut(Self::ws_before(Self::parse_fnclause_spec))),
         ),
         Self::attr_terminator,
@@ -133,6 +128,7 @@ impl ErlParser {
 
   fn parse_typevar_or_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
     branch::alt((
+      Self::parse_typevar_with_opt_type,
       combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
       combinator::map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
     ))(input)
