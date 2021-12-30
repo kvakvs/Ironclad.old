@@ -1,15 +1,17 @@
 //! Creating ErlErrors from other types
 use std::num::ParseIntError;
 use crate::erl_error::ErlError;
+use crate::erlang::syntax_tree::nom_parse::ErlParserError;
 use crate::preprocessor::syntax_tree::pp_parser;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::typing::type_error::TypeError;
 
-impl From<nom::Err<nom::error::Error<&str>>> for ErlError {
-  fn from(value: nom::Err<nom::error::Error<&str>>) -> Self {
+impl ErlError {
+  /// Builds ErlError with nice error details from input string and Nom's verbose error
+  pub fn from_nom_error(input: &str, value: ErlParserError) -> Self {
     ErlError::ErlangParse {
       loc: ErrorLocation::empty(),
-      msg: format!("{}", value),
+      msg: format!("{}", nom::error::convert_error(input, value)),
     }
   }
 }

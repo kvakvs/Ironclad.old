@@ -4,12 +4,13 @@ use std::fmt::Debug;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
+use nom::Finish;
 
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::typing::scope::Scope;
 
 /// Erlang Module consists of
@@ -69,21 +70,26 @@ impl Module {
 
   /// Generic parse helper for any Nom entry point
   fn parse_helper<'a, T>(filename: &PathBuf, input: &'a str, parse_fn: T) -> ErlResult<Self>
-    where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>>
+    where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
   {
     let mut module = Module::default();
-    let (tail, forms) = parse_fn(input)?;
-    println!("Parsed input «{}»\nAST: {}", input, &forms);
 
-    assert!(tail.trim().is_empty(),
-            "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
-    module.source_file = SourceFile::new(filename, String::from(input));
-    module.ast = forms;
+    match parse_fn(input).finish() {
+      Ok((tail, forms)) => {
+        println!("Parsed input «{}»\nAST: {}", input, &forms);
 
-    // Scan AST and find FnDef nodes, update functions knowledge
-    Scope::update_from_ast(&module.scope, &module.ast);
+        assert!(tail.trim().is_empty(),
+                "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
+        module.source_file = SourceFile::new(filename, String::from(input));
+        module.ast = forms;
 
-    Ok(module)
+        // Scan AST and find FnDef nodes, update functions knowledge
+        Scope::update_from_ast(&module.scope, &module.ast);
+
+        Ok(module)
+      }
+      Err(err) => Err(ErlError::from_nom_error(input, err)),
+    }
   }
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions

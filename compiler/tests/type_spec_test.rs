@@ -6,7 +6,8 @@ mod test_util;
 use std::ops::Deref;
 use std::path::PathBuf;
 use ::function_name::named;
-use compiler::erl_error::ErlResult;
+use nom::Finish;
+use compiler::erl_error::{ErlError, ErlResult};
 use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::project::module::Module;
 use compiler::erlang::syntax_tree::nom_parse::{ErlParser};
@@ -18,19 +19,27 @@ fn fn_generic_attr_parse() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
 
   {
-    let attr1_src = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
+    let input = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
     // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-    let (tail1, result1) = ErlParser::parse_generic_attr(attr1_src)?;
-    assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
-    println!("ErlAst for attr1: {}", result1);
+    match ErlParser::parse_generic_attr(input).finish() {
+      Ok((tail1, result1)) => {
+        assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
+        println!("ErlAst for attr1: {}", result1);
+      }
+      Err(err) => return Err(ErlError::from_nom_error(input, err))
+    }
   }
 
   {
-    let attr2_src = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
+    let input = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
     // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-    let (tail2, result2) = ErlParser::parse_generic_attr(attr2_src)?;
-    assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
-    println!("ErlAst for attr2: {}", result2);
+    match ErlParser::parse_generic_attr(input).finish() {
+      Ok((tail2, result2)) => {
+        assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
+        println!("ErlAst for attr2: {}", result2);
+      }
+      Err(err) => return Err(ErlError::from_nom_error(input, err))
+    }
   }
   Ok(())
 }
@@ -90,6 +99,23 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 
   assert!(parsed.ast.is_fndef());
+  // TODO: Check that the spec parsed contains the types for A substituted as tuple()
+
+  Ok(())
+}
+
+#[named]
+#[test]
+fn fn_typespec_parse_union() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function spec with type union in it");
+
+  let filename = PathBuf::from(function_name!());
+  let spec_src = format!("-spec {}(atom() | 42 | integer()) -> {{ok, any()}} | {{error, any()}}.",
+                         function_name!());
+  let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
+
+  assert!(parsed.ast.is_fndef());
+  // TODO: Check that the spec parsed contains the unions as written
 
   Ok(())
 }

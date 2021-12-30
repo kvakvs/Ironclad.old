@@ -8,13 +8,13 @@ use nom::{combinator, sequence, multi, character,
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
-  fn parse_when_expr_for_fn(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_when_expr_for_fn(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::tuple((
         Self::ws_before(tag("when")),
@@ -25,11 +25,11 @@ impl ErlParser {
   }
 
   /// Parses a named clause for a top level function
-  fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause> {
+  fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
         // Function clause name
-        Self::ws_before_mut(combinator::opt(AtomParser::atom)),
+        Self::ws_before_mut(combinator::opt(AtomParser::parse_atom)),
 
         // Args list
         Self::parse_parenthesized_list,
@@ -71,7 +71,7 @@ impl ErlParser {
   }
 
   /// Parse function definition
-  pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::terminated(
         multi::separated_list1(
@@ -85,7 +85,7 @@ impl ErlParser {
   }
 
   /// Lambda is an inline function definition
-  pub fn parse_lambda(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  pub fn parse_lambda(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     combinator::map(
       sequence::tuple((

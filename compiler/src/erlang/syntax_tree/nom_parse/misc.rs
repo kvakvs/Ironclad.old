@@ -2,7 +2,7 @@
 
 use nom::{sequence, combinator, multi, branch, character,
           character::complete::{one_of, alphanumeric1, multispace0}, bytes::complete::{tag}};
-use crate::erlang::syntax_tree::nom_parse::ErlParser;
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 
 impl ErlParser {
   /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -42,7 +42,7 @@ impl ErlParser {
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  pub fn parse_ident(input: &str) -> nom::IResult<&str, String> {
+  pub fn parse_ident(input: &str) -> nom::IResult<&str, String, ErlParserError> {
     combinator::map(
       combinator::recognize(
         sequence::pair(
@@ -56,7 +56,7 @@ impl ErlParser {
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String> {
+  pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String, ErlParserError> {
     combinator::map(
       combinator::recognize(
         sequence::pair(
@@ -70,7 +70,7 @@ impl ErlParser {
 
   /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
   /// From Nom examples
-  pub fn parse_int(input: &str) -> nom::IResult<&str, &str> {
+  pub fn parse_int(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     combinator::recognize(
       multi::many1(
         sequence::terminated(one_of("0123456789"),
@@ -81,7 +81,7 @@ impl ErlParser {
 
   /// Parse a float with possibly scientific notation. Output is a string.
   /// From Nom examples
-  pub fn parse_float(input: &str) -> nom::IResult<&str, &str> {
+  pub fn parse_float(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     branch::alt((
       // Case one: .42
       combinator::recognize(
@@ -120,7 +120,7 @@ impl ErlParser {
   }
 
   /// Matches newline \n or \r\n
-  pub fn newline(input: &str) -> nom::IResult<&str, &str> {
+  pub fn newline(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     combinator::recognize(
       branch::alt((combinator::eof, tag("\n"), tag("\r\n")))
     )(input)

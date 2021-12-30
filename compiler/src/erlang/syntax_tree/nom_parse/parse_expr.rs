@@ -9,12 +9,12 @@ use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
   /// Parse a function call (application of args to a callable value)
-  fn parse_apply(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_apply(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     // Application consists of a callable expression, "(", list of args, and ")"
     combinator::map(
       sequence::tuple((
@@ -30,14 +30,14 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     let (input, name) = Self::parse_ident_capitalized(input)?;
     let ast = ErlAst::Var(ErlVar::new(SourceLoc::None, &name)).into();
     Ok((input, ast))
   }
 
   /// Parses a list of comma separated expressions in (parentheses)
-  pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
+  pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     let (input, _) = Self::ws_before(character::complete::char('('))(input)?;
     combinator::map(
       sequence::pair(
@@ -48,7 +48,7 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     // TODO: list tail with |
     let (input, _) = Self::ws(character::complete::char('['))(input)?;
     combinator::map(
@@ -60,7 +60,7 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     let (input, _) = Self::ws(character::complete::char('{'))(input)?;
     combinator::map(
       sequence::pair(
@@ -75,14 +75,14 @@ impl ErlParser {
 
 // fn parse_map(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {}
 
-  fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>> {
+  fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list0(
       Self::ws(character::complete::char(',')),
       Self::parse_prec11, // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
     )(input)
   }
 
-  fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     let (input, _opening) = character::complete::char('(')(input)?;
     let (input, expr) = Self::ws(Self::parse_expr)(input)?;
     let (input, _closing) = error::context(
@@ -95,7 +95,7 @@ impl ErlParser {
   }
 
   /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
-  fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     Self::ws_before_mut(
       branch::alt((
         Self::parenthesized_expr, Self::parse_list, Self::parse_tuple,
@@ -108,7 +108,7 @@ impl ErlParser {
   // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
 // TODO: module:function notation and maybe tuple notation?
-  fn parse_prec01(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec01(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::pair(
         Self::primary,
@@ -130,12 +130,12 @@ impl ErlParser {
   }
 
   // TODO: Precedence 2: # (record access operator)
-  fn parse_prec02(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec02(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     Self::parse_prec01(input)
   }
 
   /// Precedence 3: Unary + - bnot not
-  fn parse_prec03(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec03(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::pair(
         Self::ws_before_mut(branch::alt((
@@ -150,7 +150,7 @@ impl ErlParser {
   }
 
   /// Precedence 4: / * div rem band and, left associative
-  fn parse_prec04(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec04(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -171,7 +171,7 @@ impl ErlParser {
   }
 
   /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
-  fn parse_prec05(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec05(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::tuple((
@@ -192,7 +192,7 @@ impl ErlParser {
   }
 
   /// Precedence 6: ++ --, right associative
-  fn parse_prec06(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec06(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -211,7 +211,7 @@ impl ErlParser {
   }
 
   /// Precedence 7: == /= =< < >= > =:= =/=
-  fn parse_prec07(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec07(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -233,7 +233,7 @@ impl ErlParser {
   }
 
   /// Precedence 8: andalso
-  fn parse_prec08(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec08(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
       sequence::pair(
@@ -250,7 +250,7 @@ impl ErlParser {
   }
 
   /// Precedence 9: orelse
-  fn parse_prec09(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec09(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
       sequence::pair(
@@ -267,7 +267,7 @@ impl ErlParser {
   }
 
   /// Precedence 10: assignment/match = operator, and send operator "!", right associative
-  fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       sequence::pair(
@@ -287,7 +287,7 @@ impl ErlParser {
 
   /// Precedence 11: Catch operator, then continue to higher precedences
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
-  pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     // Try parse (catch Expr) otherwise try next precedence level
     combinator::map(
       sequence::pair(
@@ -303,7 +303,7 @@ impl ErlParser {
   /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
   #[inline]
-  pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {
+  pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       sequence::pair(

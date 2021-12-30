@@ -4,7 +4,7 @@
 use nom::{sequence, multi, branch, combinator, error,
           bytes::streaming::{is_not, take_while_m_n},
           character};
-use crate::erlang::syntax_tree::nom_parse::{ErlParser};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single
@@ -167,7 +167,7 @@ impl AtomParser {
 
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
   /// delitmited string
-  pub fn atom(input: &str) -> nom::IResult<&str, String> {
+  pub fn parse_atom(input: &str) -> nom::IResult<&str, String, ErlParserError> {
     branch::alt(
       (ErlParser::parse_ident, Self::parse_quoted_atom, )
     )(input)
