@@ -76,7 +76,7 @@ impl Module {
 
     match parse_fn(input).finish() {
       Ok((tail, forms)) => {
-        println!("Parsed input «{}»\nAST: {}", input, &forms);
+        println!("Parser input «{}»\nParse result AST: «{}»", input, &forms);
 
         assert!(tail.trim().is_empty(),
                 "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);

@@ -15,6 +15,69 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 
 impl ErlParser {
+  /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
+  pub fn parse_fun_spec(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(tag("spec")),
+        Self::ws_before(AtomParser::parse_atom),
+        multi::separated_list1(
+          Self::ws_before(character::complete::char(';')),
+          context("function spec | clause",
+                  cut(Self::ws_before(Self::parse_fnclause_spec))),
+        ),
+        Self::attr_terminator,
+      )),
+      |(_minus, _spec, name, clauses, _term)| {
+        let arity = clauses[0].arity();
+        assert!(clauses.iter().all(|c| c.arity() == arity),
+                "All function clauses must have same arity in a typespec");
+        let funarity = MFArity::new_local(&name, arity);
+        let fntypespec = ErlType::new_fn_type(&clauses);
+        let fnspec = ErlAst::FnSpec {
+          location: SourceLoc::None,
+          funarity,
+          spec: fntypespec.into(),
+        };
+        fnspec.into()
+      },
+    )(input)
+  }
+
+  /// Parses a function clause args specs, return spec and optional `when`
+  fn parse_fnclause_spec(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        // Function clause name
+        Self::ws_before_mut(combinator::opt(AtomParser::parse_atom)),
+
+        // Args list (list of type variables with some types possibly)
+        Self::parse_parenthesized_arg_spec_list,
+        Self::ws_before(tag("->")),
+
+        // Return type for fn clause
+        Self::parse_typevar_with_opt_type,
+
+        // Optional: when <comma separated list of typevariables given types>
+        context("when expression for typespec",
+                combinator::opt(Self::parse_when_expr_for_type)),
+      )),
+      |(_name, args, _arrow, ret_ty, when_expr)| {
+        // TODO: Check name equals function name, for module level functions
+        if when_expr.is_some() {
+          let when_expr_val = when_expr.unwrap();
+          FnClauseType::new(
+            Typevar::merge_lists(&args, &when_expr_val),
+            Typevar::substitute_var_from_when_clause(&ret_ty, &when_expr_val).clone(),
+          )
+        } else {
+          FnClauseType::new(args, ret_ty.clone())
+        }
+      },
+    )(input)
+  }
+
   /// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
   fn parse_coloncolon_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     let (input, _tag) = Self::ws_before(tag("::"))(input)?;
@@ -63,62 +126,6 @@ impl ErlParser {
   pub fn parse_when_expr_for_type(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = Self::ws_before(tag("when"))(input)?;
     Self::parse_comma_sep_typeargs1(input)
-  }
-
-  /// Parses a function clause args specs, return spec and optional `when`
-  fn parse_fnclause_spec(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
-    combinator::map(
-      sequence::tuple((
-        // Function clause name
-        Self::ws_before_mut(combinator::opt(AtomParser::parse_atom)),
-
-        // Args list (list of type variables with some types possibly)
-        Self::parse_parenthesized_arg_spec_list,
-        Self::ws_before(tag("->")),
-
-        // Return type for fn clause
-        Self::parse_typevar_with_opt_type,
-
-        // Optional: when <comma separated list of typevariables given types>
-        context("when expression for typespec",
-                combinator::opt(Self::parse_when_expr_for_type)),
-      )),
-      |(_name, args, _arrow, ret_ty, when_expr)| {
-        // TODO: Check name equals function name, for module level functions
-        let merged_args = Typevar::merge_lists(&args, &when_expr.unwrap_or_else(|| vec![]));
-        FnClauseType::new(merged_args, ret_ty)
-      },
-    )(input)
-  }
-
-  /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
-  pub fn parse_fun_spec(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
-    combinator::map(
-      sequence::tuple((
-        Self::ws_before(character::complete::char('-')),
-        Self::ws_before(tag("spec")),
-        Self::ws_before(AtomParser::parse_atom),
-        multi::separated_list1(
-          Self::ws_before(character::complete::char(';')),
-          context("function spec | clause",
-                  cut(Self::ws_before(Self::parse_fnclause_spec))),
-        ),
-        Self::attr_terminator,
-      )),
-      |(_minus, _spec, name, clauses, _term)| {
-        let arity = clauses[0].arity();
-        assert!(clauses.iter().all(|c| c.arity() == arity),
-                "All function clauses must have same arity in a typespec");
-        let funarity = MFArity::new_local(&name, arity);
-        let fntypespec = ErlType::new_fn_type(&clauses);
-        let fnspec = ErlAst::FnSpec {
-          location: SourceLoc::None,
-          funarity,
-          spec: fntypespec.into(),
-        };
-        fnspec.into()
-      },
-    )(input)
   }
 
   /// Parse only capitalized type variable name

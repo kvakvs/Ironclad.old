@@ -89,13 +89,19 @@ impl ErlType {
         match name.as_ref() {
           "any" => return ErlType::any(),
           "none" => return ErlType::none(),
+
           "number" => return ErlType::number(),
           "integer" => return ErlType::integer(),
           "float" => return ErlType::float(),
+
           "atom" => return ErlType::atom(),
           "boolean" => return ErlType::boolean(),
+
           "list" => return ErlType::any_list(),
           "nil" => return ErlType::nil(),
+
+          "tuple" => return ErlType::any_tuple(),
+
           "pid" => return ErlType::pid(),
           "port" => return ErlType::port(),
           "reference" => return ErlType::reference(),

@@ -34,7 +34,8 @@ impl Typevar {
   /// Create an unnamed anytype.
   pub fn new_unnamed_any() -> Self { Self { name: None, ty: ErlType::any() } }
 
-  fn merge_lists_each_a_fn<'a>(item_a: &'a Typevar, b: &'a [Typevar]) -> &'a Typevar {
+  /// Given a var, and a list of typevars in when clause, try find one matching
+  pub fn substitute_var_from_when_clause<'a>(item_a: &'a Typevar, b: &'a [Typevar]) -> &'a Typevar {
     // if element in A has a name, and...
     if item_a.name.is_some() {
       if let Some(found_b) = b.iter().find(|item_b| {
@@ -55,12 +56,15 @@ impl Typevar {
   }
 
 
-/// Merges lists a and b, by finding typevar names from a in b
+  /// Merges lists a and b, by finding typevar names from a in b
   pub fn merge_lists(a: &[Typevar], b: &[Typevar]) -> Vec<Typevar> {
-    a.iter()
-        .map(|each_a| Self::merge_lists_each_a_fn(each_a, b))
+    println!("Merge {:?} and {:?}", a, b);
+    let result = a.iter()
+        .map(|each_a| Self::substitute_var_from_when_clause(each_a, b))
         .cloned()
-        .collect()
+        .collect();
+    println!("Merge result {:?}", result);
+    result
   }
 }
 

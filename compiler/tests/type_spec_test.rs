@@ -104,7 +104,8 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   let fn_spec = parsed.ast.as_fn_spec();
   let c0 = fn_spec.as_fn_type().clause(0);
   let t0 = c0.ret_type.ty.clone();
-  assert!(t0.is_subtype_of(&ErlType::any_tuple()), "Return type of the function spec must be tuple-compatible, but got {}", t0);
+  assert!(t0.eq(&ErlType::any_tuple()),
+          "Return type of the function spec must be tuple, but got {}", t0);
 
   Ok(())
 }
