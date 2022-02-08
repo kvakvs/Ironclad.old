@@ -8,6 +8,7 @@ use nom::{combinator, sequence, multi, character, bytes::complete::{tag}, branch
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
+use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
@@ -220,7 +221,26 @@ impl ErlParser {
                 Self::parse_comma_sep_typeargs0),
         Self::ws_before(character::complete::char('}')),
       ),
-      |elements| ErlType::TypevarList(elements).into(),
+      |elements| ErlType::TypevarTuple(elements).into(),
+    )(input)
+  }
+
+  /// Parse an integer and produce a literal integer type
+  pub fn parse_int_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+    combinator::map(
+      Self::parse_int,
+      |i_str| {
+        let i = i_str.parse().unwrap(); // TODO: Support big integers
+        ErlType::new_singleton(&Literal::Integer(i).into())
+      },
+    )(input)
+  }
+
+  /// Parse an atom, and produce a literal atom type
+  pub fn parse_atom_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+    combinator::map(
+      AtomParser::parse_atom,
+      |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()),
     )(input)
   }
 
@@ -230,6 +250,8 @@ impl ErlParser {
       Self::parse_type_list,
       Self::parse_type_tuple,
       Self::parse_user_defined_type,
+      Self::parse_int_lit_type,
+      Self::parse_atom_lit_type,
     ))(input)
   }
 
@@ -237,26 +259,11 @@ impl ErlParser {
   /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     combinator::map(
-      sequence::pair(
+      multi::separated_list1(
+        Self::ws_before(character::complete::char('|')),
         Self::ws_before(Self::parse_nonunion_type),
-        context("union type",
-                multi::many0(
-                  sequence::pair(
-                    Self::ws_before(character::complete::char('|')),
-                    context("union type continuation",
-                            Self::ws_before(Self::parse_nonunion_type)),
-                  )),
-        ),
       ),
-      |(t1, tail)| {
-        let mut types: Vec<Arc<ErlType>> = tail.iter()
-            .map(|(_, ty)| ty)
-            .cloned()
-            .collect();
-        types.insert(0, t1);
-        // Merge maybe-union t1 and maybe-union t2 into one
-        ErlType::new_union(&types)
-      },
+      |types| ErlType::new_union(&types),
     )(input)
   }
 

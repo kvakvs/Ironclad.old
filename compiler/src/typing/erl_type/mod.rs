@@ -126,8 +126,11 @@ pub enum ErlType {
     /// Type variable arguments for `typename(arg1, arg2, ...)`
     args: Vec<Typevar>,
   },
-  /// Temporary type, list of typevars. Resolved later into a regular List or StronglyTypedList
+  /// Temporary type, list of typevars: `[type1(), type2(), ...]`. Resolved after parse into a
+  /// strongly typed list or a generic list.
   TypevarList(Vec<Typevar>),
+  /// Temporary type, tuple of typevars: `{type1(), type2(), ...}`. Resolved after parse into a tuple type.
+  TypevarTuple(Vec<Typevar>),
 }
 
 //

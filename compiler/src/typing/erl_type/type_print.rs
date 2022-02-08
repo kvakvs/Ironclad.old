@@ -35,11 +35,11 @@ impl std::fmt::Display for ErlType {
             write!(f, "strong_list(")?;
             Pretty::display_comma_separated(elements, f)?;
             write!(f, " | {})", t)
-          },
+          }
           None => {
             write!(f, "strong_list")?;
             Pretty::display_paren_list(elements, f)
-          },
+          }
         }
       }
       ErlType::Nil => write!(f, "[]"),
@@ -64,7 +64,12 @@ impl std::fmt::Display for ErlType {
         Pretty::display_paren_list(args, f)
       }
       ErlType::TypevarList(elems) => {
+        write!(f, "typevarList:")?;
         Pretty::display_square_list(elems, f)
+      }
+      ErlType::TypevarTuple(elems) => {
+        write!(f, "typevarTuple:")?;
+        Pretty::display_curly_list(elems, f)
       }
     }
   }

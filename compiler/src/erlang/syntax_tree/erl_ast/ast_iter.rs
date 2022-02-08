@@ -15,6 +15,7 @@ impl ErlAst {
       | ErlAst::FnSpec { .. }
       | ErlAst::Lit { .. }
       | ErlAst::MFA { .. }
+      | ErlAst::Type { .. }
       | ErlAst::Var { .. } => None,
 
       ErlAst::ModuleForms(f) => Some(f.to_vec()),

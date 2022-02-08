@@ -61,7 +61,7 @@ impl SubtypeChecker {
       // only can be subtype of self (equality checked at the top)
       ErlType::Pid | ErlType::Reference | ErlType::Port | ErlType::Singleton { .. } => false,
 
-      _ => unimplemented!("Subtype check for <{}> in <{}>", sub_ty, super_ty),
+      _ => unimplemented!("Subtype check for sub={:?} in super={:?}", sub_ty, super_ty),
     }
   }
 
