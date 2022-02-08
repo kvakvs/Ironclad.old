@@ -92,6 +92,11 @@ impl ErlType {
     matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
   }
 
+  /// Checks whether type is an union type
+  pub fn is_union(&self) -> bool {
+    matches!(self, ErlType::Union { .. })
+  }
+
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     return match self {

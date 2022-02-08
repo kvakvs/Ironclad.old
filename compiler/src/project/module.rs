@@ -110,7 +110,12 @@ impl Module {
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
   pub fn from_fun_spec_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_fun_spec)
+    Self::parse_helper(filename, input, ErlParser::parse_fn_spec)
+  }
+
+  /// Creates a 'module', where its AST comes from a type `integer() | 42`
+  pub fn from_type_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+    Self::parse_helper(filename, input, ErlParser::parse_type_node)
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code

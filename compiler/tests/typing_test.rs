@@ -81,7 +81,7 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
 
-  let match_ty = &ErlType::new_fn_type_of_any_args(0, ErlType::integer());
+  let match_ty = &ErlType::new_fn_type_of_any_args(0, &ErlType::integer());
   assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "my_int_fun1()'s return type must be compatible with integer()");
   Ok(())
@@ -99,7 +99,7 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
 
-  let match_ty = &ErlType::new_fn_type_of_any_args(1, ErlType::integer());
+  let match_ty = &ErlType::new_fn_type_of_any_args(1, &ErlType::integer());
   assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "my_int_fun2()'s result type must be compatible with integer()");
   Ok(())
@@ -118,7 +118,7 @@ fn typing_expr_check_tuple1() -> ErlResult<()> {
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
 
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
-  let match_ty = &ErlType::new_fn_type_of_any_args(0, expected_type);
+  let match_ty = &ErlType::new_fn_type_of_any_args(0, &expected_type);
   assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
           "Parsed mytuple_fun() result type must match {{any(), integer()}}");
   Ok(())

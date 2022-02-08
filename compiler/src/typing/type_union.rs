@@ -21,14 +21,22 @@ impl TypeUnion {
   /// Access the readonly types list
   pub fn types(&self) -> &Vec<Arc<ErlType>> { &self.types }
 
-  /// Create a type union from a vec of types
+  /// Create a type union from a vec of types. Nested unions are unwrapped and joined
   pub fn new(types: &[Arc<ErlType>]) -> Self {
     // throw away none() types
-    let filtered = types.iter()
+    let types = types.iter()
         .filter(|t| !t.is_none())
-        .cloned()
-        .collect();
-    Self { types: filtered }
+        // Fold the input type list and flatten nested unions
+        .fold(Vec::<Arc<ErlType>>::new(),
+              |mut accum, item| {
+                if item.is_union() {
+                  accum.extend(item.as_union().types.iter().cloned())
+                } else {
+                  accum.push(item.clone())
+                }
+                accum
+              });
+    Self { types }
   }
 
   /// Filters through the types in the union and throws away those which are subtypes of other type

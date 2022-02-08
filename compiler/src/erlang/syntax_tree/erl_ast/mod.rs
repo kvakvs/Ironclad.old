@@ -83,6 +83,14 @@ pub enum ErlAst {
     spec: Arc<ErlType>,
   },
 
+  /// A temporary node wrapper for parsed types. TODO: Use more extensively in typespecs and maybe in the augmented syntax?
+  Type {
+    /// Code source location
+    location: SourceLoc,
+    /// The type
+    ty: Arc<ErlType>,
+  },
+
   /// Case clause for a `case x of` switch
   CClause(SourceLoc, ErlCaseClause),
 

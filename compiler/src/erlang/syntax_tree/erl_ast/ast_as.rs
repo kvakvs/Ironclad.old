@@ -21,4 +21,12 @@ impl ErlAst {
       _ => panic!("Expected FnSpec AST node, but got {}", self),
     }
   }
+
+  /// Unwrap self as erltype
+  pub fn as_type(&self) -> Arc<ErlType> {
+    match self {
+      ErlAst::Type{ ty, .. } => ty.clone(),
+      _ => panic!("Expected Type AST node, but got {}", self),
+    }
+  }
 }

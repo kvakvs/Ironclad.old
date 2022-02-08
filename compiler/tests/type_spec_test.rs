@@ -58,7 +58,7 @@ fn fn_typespec_parse_1() -> ErlResult<()> {
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
     assert_eq!(funarity, &MFArity::new_local(function_name!(), 1),
-               "Expected fnspec for 'myfun'/1, got spec for {}", funarity);
+               "Expected fnspec for '{}'/1, got spec for {}", function_name!(), funarity);
     let fntype = spec.as_fn_type();
     assert_eq!(fntype.clauses().len(), 1,
                "Expected 1 clause in typespec, got {}", spec1_m.ast);
@@ -106,6 +106,21 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   let t0 = c0.ret_type.ty.clone();
   assert!(t0.eq(&ErlType::any_tuple()),
           "Return type of the function spec must be tuple, but got {}", t0);
+
+  Ok(())
+}
+
+#[named]
+#[test]
+fn type_parse_union() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a type union");
+
+  let filename = PathBuf::from(function_name!());
+  let src = "atom() | 42 | integer()";
+  let parsed = Module::from_type_source(&filename, &src)?;
+
+  assert!(parsed.ast.is_type());
+  assert!(parsed.ast.as_type().is_union());
 
   Ok(())
 }

@@ -55,6 +55,7 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_semicolon_separated(spec.as_fn_type().clauses(), f)?;
         write!(f, ".")
       }
+      ErlAst::Type { ty, .. } => write!(f, "{}", ty),
     }
   }
 }

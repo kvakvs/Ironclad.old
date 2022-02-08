@@ -8,4 +8,7 @@ impl ErlAst {
 
   /// Checks whether an ErlAst node is a function spec
   pub fn is_fn_spec(&self) -> bool { matches!(self, ErlAst::FnSpec{..}) }
+
+  /// Checks whether an ErlAst node is an Erlang Type
+  pub fn is_type(&self) -> bool { matches!(self, ErlAst::Type {..}) }
 }

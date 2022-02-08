@@ -65,7 +65,9 @@ impl ErlType {
       1 => types[0].clone(),
       _ => {
         let mut u = TypeUnion::new(types);
+
         u.normalize();
+
         match u.types().len() {
           0 => panic!("Can't create type union of 0 types after normalization"),
           1 => u.types()[0].clone(),
