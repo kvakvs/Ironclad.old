@@ -207,7 +207,10 @@ impl ErlParser {
                 Self::parse_comma_sep_typeargs0),
         Self::ws_before(character::complete::char(']')),
       ),
-      |elements| ErlType::TypevarList(elements).into(),
+      |elements| {
+        let typevar_types = Typevar::vec_of_typevars_into_types(elements);
+        ErlType::list_of_types(typevar_types).into()
+      },
     )(input)
   }
 
@@ -221,7 +224,10 @@ impl ErlParser {
                 Self::parse_comma_sep_typeargs0),
         Self::ws_before(character::complete::char('}')),
       ),
-      |elements| ErlType::TypevarTuple(elements).into(),
+      |elements| {
+        let typevar_types = Typevar::vec_of_typevars_into_types(elements);
+        ErlType::new_tuple_move(typevar_types).into()
+      },
     )(input)
   }
 

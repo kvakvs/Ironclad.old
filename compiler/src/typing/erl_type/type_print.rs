@@ -63,14 +63,7 @@ impl std::fmt::Display for ErlType {
         write!(f, "{}", name)?;
         Pretty::display_paren_list(args, f)
       }
-      ErlType::TypevarList(elems) => {
-        write!(f, "typevarList:")?;
-        Pretty::display_square_list(elems, f)
-      }
-      ErlType::TypevarTuple(elems) => {
-        write!(f, "typevarTuple:")?;
-        Pretty::display_curly_list(elems, f)
-      }
+      ErlType::Typevar(tv) => write!(f, "{}", tv)
     }
   }
 }

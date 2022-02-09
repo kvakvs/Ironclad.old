@@ -55,7 +55,6 @@ impl Typevar {
     }
   }
 
-
   /// Merges lists a and b, by finding typevar names from a in b
   pub fn merge_lists(a: &[Typevar], b: &[Typevar]) -> Vec<Typevar> {
     println!("Merge {:?} and {:?}", a, b);
@@ -65,6 +64,14 @@ impl Typevar {
         .collect();
     println!("Merge result {:?}", result);
     result
+  }
+
+  /// Consumes argument.
+  /// Converts vector of typevar into vector of erltype::typevars
+  pub fn vec_of_typevars_into_types(typevars: Vec<Typevar>) -> Vec<Arc<ErlType>> {
+    typevars.into_iter()
+        .map(|tv| ErlType::new_typevar(tv))
+        .collect()
   }
 }
 

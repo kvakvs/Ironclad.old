@@ -23,6 +23,13 @@ impl SubtypeChecker {
   pub fn is_subtype(sub_ty: &ErlType, super_ty: &ErlType) -> bool {
     match super_ty.deref() {
       equal_supertype if equal_supertype.eq(sub_ty) => true, // equal types are mutual subtypes
+      ErlType::Typevar(super_tv) => {
+        // unwrap typevar for sub and super into nested types and try again
+        match sub_ty.deref() {
+          ErlType::Typevar(sub_tv) => Self::is_subtype(&sub_tv.ty, &super_tv.ty),
+          _ => Self::is_subtype(sub_ty, &super_tv.ty),
+        }
+      }
       ErlType::Any => true, // any includes all subtypes
       ErlType::None => false, // none includes nothing
       ErlType::Atom => Self::is_subtype_of_atom(sub_ty),
@@ -61,7 +68,8 @@ impl SubtypeChecker {
       // only can be subtype of self (equality checked at the top)
       ErlType::Pid | ErlType::Reference | ErlType::Port | ErlType::Singleton { .. } => false,
 
-      _ => unimplemented!("Subtype check for sub={:?} in super={:?}", sub_ty, super_ty),
+      _ => unimplemented!("Subtype check for sub={} in super={}\nsub={:?}\nsuper={:?}",
+                          sub_ty, super_ty, sub_ty, super_ty),
     }
   }
 

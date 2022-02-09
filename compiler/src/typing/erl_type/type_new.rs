@@ -35,6 +35,15 @@ impl ErlType {
     result.into()
   }
 
+  /// Creates a type for a proper list with a NIL tail.
+  pub fn list_of_types(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+    let result = ErlType::StronglyTypedList {
+      elements: types,
+      tail: None,
+    };
+    result.into()
+  }
+
   /// Creates new function type with clauses
   pub fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
@@ -82,6 +91,17 @@ impl ErlType {
     ErlType::Tuple {
       elements: elements.into()
     }.into()
+  }
+
+  /// Consumes argument.
+  /// Construct a new tuple-type
+  pub fn new_tuple_move(elements: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+    ErlType::Tuple { elements }.into()
+  }
+
+  /// Construct a new type variable wrapper
+  pub fn new_typevar(tv: Typevar) -> Arc<ErlType> {
+    ErlType::Typevar(tv).into()
   }
 
   /// Try match type name and arity vs known basic types
