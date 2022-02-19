@@ -19,7 +19,7 @@ impl Typevar {
   pub fn new(name: Option<String>, maybe_type: Option<Arc<ErlType>>) -> Self {
     Self {
       name,
-      ty: maybe_type.unwrap_or_else(|| ErlType::any()),
+      ty: maybe_type.unwrap_or_else(ErlType::any),
     }
   }
 
@@ -70,7 +70,7 @@ impl Typevar {
   /// Converts vector of typevar into vector of erltype::typevars
   pub fn vec_of_typevars_into_types(typevars: Vec<Typevar>) -> Vec<Arc<ErlType>> {
     typevars.into_iter()
-        .map(|tv| ErlType::new_typevar(tv))
+        .map(ErlType::new_typevar)
         .collect()
   }
 }

@@ -11,7 +11,7 @@ impl ErlError {
   pub fn from_nom_error(input: &str, value: ErlParserError) -> Self {
     ErlError::ErlangParse {
       loc: ErrorLocation::empty(),
-      msg: format!("{}", nom::error::convert_error(input, value)),
+      msg: nom::error::convert_error(input, value),
     }
   }
 }
@@ -66,7 +66,7 @@ impl From<ParseIntError> for ErlError {
   fn from(pie: ParseIntError) -> Self {
     ErlError::ErlangParse {
       loc: ErrorLocation::new(None, SourceLoc::None),
-      msg: format!("Cannot parse integer: {}", pie.to_string()),
+      msg: format!("Cannot parse integer: {}", pie),
     }
   }
 }

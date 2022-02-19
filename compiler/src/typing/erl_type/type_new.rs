@@ -62,8 +62,8 @@ impl ErlType {
     let any_args = iter::repeat(()).take(arity)
         .map(|_| Typevar::new(None, None))
         .collect();
-    let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty)).into();
-    let fn_type = FnType::new(arity, &vec![clause]);
+    let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
+    let fn_type = FnType::new(arity, &[clause]);
     ErlType::Fn(fn_type.into())
   }
 
@@ -106,6 +106,7 @@ impl ErlType {
 
   /// Try match type name and arity vs known basic types
   pub fn from_name(name: String, args: &[Typevar]) -> Arc<ErlType> {
+    #[allow(clippy::single_match)]
     match args.len() {
       0 => {
         match name.as_ref() {
@@ -135,7 +136,7 @@ impl ErlType {
     // We were not able to find a basic type of that name and arity
     UserDefinedType {
       name,
-      args: args.iter().cloned().collect(),
+      args: args.to_vec(),
     }.into()
   }
 }

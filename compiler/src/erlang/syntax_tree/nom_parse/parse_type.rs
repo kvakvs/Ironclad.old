@@ -72,14 +72,13 @@ impl ErlParser {
       )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
         // TODO: Check name equals function name, for module level functions
-        if when_expr.is_some() {
-          let when_expr_val = when_expr.unwrap();
+        if let Some(when_expr_val) = when_expr {
           FnClauseType::new(
             Typevar::merge_lists(&args, &when_expr_val),
             Typevar::substitute_var_from_when_clause(&ret_ty, &when_expr_val).clone(),
           )
         } else {
-          FnClauseType::new(args, ret_ty.clone())
+          FnClauseType::new(args, ret_ty)
         }
       },
     )(input)
@@ -192,7 +191,7 @@ impl ErlParser {
         Self::ws_before(character::complete::char(')')),
       )),
       |(type_name, _open, elements, _close)| {
-        ErlType::from_name(type_name, &elements).into()
+        ErlType::from_name(type_name, &elements)
       },
     )(input)
   }
@@ -209,7 +208,7 @@ impl ErlParser {
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
-        ErlType::list_of_types(typevar_types).into()
+        ErlType::list_of_types(typevar_types)
       },
     )(input)
   }
@@ -226,7 +225,7 @@ impl ErlParser {
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
-        ErlType::new_tuple_move(typevar_types).into()
+        ErlType::new_tuple_move(typevar_types)
       },
     )(input)
   }

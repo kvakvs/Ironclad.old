@@ -324,8 +324,8 @@ impl ErlAst {
               ErlAst::find_function_def(each_fndef, funarity).is_ok()
             })
             .cloned();
-        if find_result.is_some() {
-          return Ok(find_result.unwrap());
+        if let Some(fr) = find_result {
+          return Ok(fr);
         }
       }
       _ => {}

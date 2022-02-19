@@ -2,7 +2,7 @@
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path};
 use std::sync::{Arc, RwLock};
 use nom::Finish;
 
@@ -69,7 +69,7 @@ impl Module {
   }
 
   /// Generic parse helper for any Nom entry point
-  fn parse_helper<'a, T>(filename: &PathBuf, input: &'a str, parse_fn: T) -> ErlResult<Self>
+  fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> ErlResult<Self>
     where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
   {
     let mut module = Module::default();
@@ -94,27 +94,27 @@ impl Module {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+  pub fn from_module_source(filename: &Path, input: &str) -> ErlResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+  pub fn from_expr_source(filename: &Path, input: &str) -> ErlResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+  pub fn from_fun_source(filename: &Path, input: &str) -> ErlResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+  pub fn from_fun_spec_source(filename: &Path, input: &str) -> ErlResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_fn_spec)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &PathBuf, input: &str) -> ErlResult<Self> {
+  pub fn from_type_source(filename: &Path, input: &str) -> ErlResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_type_node)
   }
 

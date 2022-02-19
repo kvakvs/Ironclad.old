@@ -63,7 +63,7 @@ impl ErlFnClause {
       args_types,
       Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?),
     );
-    Ok(synthesized_t.into())
+    Ok(synthesized_t)
   }
 
   /// Return type from the body AST

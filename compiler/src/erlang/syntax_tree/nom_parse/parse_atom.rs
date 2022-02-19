@@ -61,7 +61,8 @@ impl AtomParser {
     // convert to char with from_u32.
     combinator::map_opt(
       parse_u32,
-      |value| std::char::from_u32(value))(input)
+      std::char::from_u32,
+    )(input)
   }
 
   /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.

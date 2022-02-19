@@ -68,7 +68,7 @@ impl ErlApply {
       // AnyFn is always callable and always returns any, for we do not know better
       ErlType::AnyFn => Ok(ErlType::any()),
 
-      ErlType::Fn(fn_type) => self.synthesize_call_to_fn(&fn_type, &arg_types),
+      ErlType::Fn(fn_type) => self.synthesize_call_to_fn(fn_type, &arg_types),
       ErlType::FnRef { .. } => unimplemented!("Callable is a fun reference"),
       ErlType::Lambda => unimplemented!("Callable is a lambda"),
 
@@ -90,7 +90,7 @@ impl ErlApply {
         fn_type.arity(), self.args.len());
       return Err(TypeError::BadArity { msg }.into());
     }
-    let compatible_clauses = fn_type.get_compatible_clauses(&arg_types);
+    let compatible_clauses = fn_type.get_compatible_clauses(arg_types);
     if compatible_clauses.is_empty() {
       let args_str = self.args.iter()
           .map(|arg| format!("{}", arg))

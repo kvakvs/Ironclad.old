@@ -135,7 +135,7 @@ fn fn_typespec_parse_union() -> ErlResult<()> {
                          function_name!());
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 
-  assert!(parsed.ast.is_fn_def());
+  assert!(parsed.ast.is_fn_spec());
   // TODO: Check that the spec parsed contains the unions as written
 
   Ok(())

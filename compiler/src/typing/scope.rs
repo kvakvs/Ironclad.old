@@ -108,8 +108,9 @@ impl Scope {
 
   /// Retrieve variable type from scope
   pub fn get(&self, var_name: &str) -> Option<Arc<ErlType>> {
-    self.variables.get(&var_name.to_string())
-        .map(|var_type| var_type.clone())
+    self.variables
+        .get(&var_name.to_string())
+        .cloned()
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
@@ -147,22 +148,19 @@ impl Scope {
 
   /// Add a function by MFA and its type
   pub fn add_fn(&mut self, mfa: &MFArity, ast: Arc<ErlAst>) {
-    self.function_defs.insert(mfa.clone(), ast.clone());
+    self.function_defs.insert(mfa.clone(), ast);
   }
 
   /// Recursive descend into AST saving FnDef nodes
   fn do_update_from_ast(&mut self, ast: &Arc<ErlAst>) {
-    match ast.deref() {
-      ErlAst::FnDef(fndef) => {
-        self.add_fn(&fndef.funarity, ast.clone());
-      }
-      _ => {}
+    if let ErlAst::FnDef(fndef) = ast.deref() {
+      self.add_fn(&fndef.funarity, ast.clone());
     }
-    match ast.children() {
-      Some(children) => for c in children {
+
+    if let Some(children) = ast.children() {
+      for c in children {
         self.do_update_from_ast(&c)
       }
-      None => {}
     }
   }
 

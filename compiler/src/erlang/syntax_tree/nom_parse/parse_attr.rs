@@ -82,7 +82,7 @@ impl ErlParser {
       )),
       |(_, _, _, name, _, _)| ErlAst::ModuleStartAttr {
         location: SourceLoc::None,
-        name: name.to_string(),
+        name,
       }.into(),
     )(input)
   }
