@@ -14,16 +14,16 @@ impl TypeCheck {
   /// Checks whether synthesized type for expression `ast` contains ErlType `ty`.
   /// This is used to check (for example) whether an incoming value would be accepted by a function.
   /// This is essentially an Erlang "match" check.
-  pub fn check(env: &Arc<RwLock<Scope>>, ast: &ErlAst, match_ty: &ErlType) -> ErlResult<bool> {
-    let synth_type = ast.synthesize(env)?;
+  pub fn check(env: &Arc<RwLock<Scope>>, ast: &ErlAst, expected_ty: &ErlType) -> ErlResult<bool> {
+    let synthesized_ty = ast.synthesize(env)?;
 
     println!("Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
-             ast, synth_type, match_ty);
+             ast, synthesized_ty, expected_ty);
 
-    if !synth_type.is_subtype_of(match_ty) {
+    if !synthesized_ty.is_subtype_of(expected_ty) {
       Err(TypeError::ExpectedType {
-        expected_type: format!("{}", match_ty),
-        actual_type: format!("{}", synth_type),
+        expected_type: format!("{}", expected_ty),
+        actual_type: format!("{}", synthesized_ty),
       }.into())
     } else {
       Ok(true)

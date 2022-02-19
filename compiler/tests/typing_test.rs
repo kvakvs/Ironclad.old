@@ -118,9 +118,9 @@ fn typing_expr_check_tuple1() -> ErlResult<()> {
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
 
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
-  let match_ty = &ErlType::new_fn_type_of_any_args(0, &expected_type);
+  let match_ty = &ErlType::new_fn_type_of_any_args(1, &expected_type);
   assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,
-          "Parsed mytuple_fun() result type must match {{any(), integer()}}");
+          "Parsed mytuple_fun(A) result type must match {{any(), integer()}}");
   Ok(())
 }
 

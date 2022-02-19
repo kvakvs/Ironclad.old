@@ -66,7 +66,9 @@ impl SubtypeChecker {
       ErlType::FnRef { .. } | ErlType::Lambda => false,
 
       // only can be subtype of self (equality checked at the top)
-      ErlType::Pid | ErlType::Reference | ErlType::Port | ErlType::Singleton { .. } => false,
+      ErlType::Pid | ErlType::Reference | ErlType::Port => false,
+
+      ErlType::Singleton { val } => val.is_subtype_of(super_ty),
 
       _ => unimplemented!("Subtype check for sub={} in super={}\nsub={:?}\nsuper={:?}",
                           sub_ty, super_ty, sub_ty, super_ty),
