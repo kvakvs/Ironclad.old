@@ -6,6 +6,7 @@ use crate::typing::subtyping::SubtypeChecker;
 
 impl ErlType {
   /// Shortcut to the subtype checker
+  #[inline]
   pub fn is_subtype_of(&self, other: &ErlType) -> bool {
     SubtypeChecker::is_subtype(self, other)
   }
@@ -82,7 +83,7 @@ impl ErlType {
     return match self {
       ErlType::Float => true,
       ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Float(_) | Literal::Integer(_) | Literal::BigInteger)
+        matches!(val.deref(), Literal::Float(_)) // | Literal::Integer(_) | Literal::BigInteger
       }
       _ => false,
     };

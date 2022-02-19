@@ -14,18 +14,19 @@ use compiler::typing::erl_type::ErlType;
 fn union_auto_shrink_numbers() -> ErlResult<()> {
   test_util::start(function_name!(), "TypeUnion.ShrinkNum");
   let union_t = ErlType::new_union(
-    &vec![ErlType::integer(),
-          ErlType::float(),
-          ErlType::new_atom("atom").into()]);
+    &[ErlType::integer(),
+      ErlType::float(),
+      ErlType::new_atom("atomliteral").into()]);
 
   if let ErlType::Union(u) = union_t.deref() {
-    assert_eq!(u.types().len(), 2, "Union of int|float|'atom': ");
-    assert!(u.contains(&ErlType::Float),
-            "Union of int|float|'atom' does not contain float(): got {}", union_t);
-    assert!(u.contains(&ErlType::new_atom("atom")),
-            "Union of int|float|'atom' does not contain 'atom': got {}", union_t);
+    assert_eq!(u.types.len(), 2,
+               "Union of int|float|'atomliteral' length must be 2 (number() and 'atomliteral')");
+    assert!(u.contains(&ErlType::Number),
+            "Union of int|float|'atomliteral' must contain number(): got {}", union_t);
+    assert!(u.contains(&ErlType::new_atom("atomliteral")),
+            "Union of int|float|'atomliteral' must contain 'atomliteral': got {}", union_t);
   } else {
-    panic!("Union of int|float|'atom' should be a type union, got {}", &union_t)
+    panic!("Union of int|float|'atomliteral' should be a type union, got {}", &union_t)
   }
 
   Ok(())

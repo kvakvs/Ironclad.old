@@ -1,25 +1,19 @@
 //! Union type (a flat list of multiple types) support
 
+use std::ops::Deref;
 use std::sync::Arc;
 use crate::typing::erl_type::ErlType;
 
 /// Contains multiple types
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeUnion {
-  types: Vec<Arc<ErlType>>,
-  // lists: Vec<Arc<ErlType>>,
-  // tuples: Vec<Arc<ErlType>>,
-  // records: Vec<Arc<ErlType>>,
-  // maps: Vec<Arc<ErlType>>,
-  // binaries: Vec<Arc<ErlType>>,
+  /// Member types of a type union
+  pub types: Vec<Arc<ErlType>>,
 }
 
 impl TypeUnion {
   /// True if union contains no types and is equal to none() type
   pub fn is_empty(&self) -> bool { self.types.is_empty() }
-
-  /// Access the readonly types list
-  pub fn types(&self) -> &Vec<Arc<ErlType>> { &self.types }
 
   /// Create a type union from a vec of types. Nested unions are unwrapped and joined
   pub fn new(types: &[Arc<ErlType>]) -> Self {
@@ -39,35 +33,51 @@ impl TypeUnion {
     Self { types }
   }
 
+  /// Function to filter type union members.
+  /// An union member is kept if for every other union member it's not a subtype of the other member.
+  /// Or it is an equivalent to the other member and this is the first equivalent arm
+  fn is_subtype_of_another_union_member(&self, every_index: usize, every_type: &Arc<ErlType>) -> bool {
+    for every_other_index in every_index+1..self.types.len() {
+      let every_other_type= &self.types[every_other_index];
+      if every_type.is_subtype_of(every_other_type) {
+        return true
+      }
+    }
+    false
+  }
+
   /// Filters through the types in the union and throws away those which are subtypes of other type
   /// in the same union
   pub fn normalize(&mut self) {
-    // let self_clone = self.types.clone();
+    // Merge int()|float() into number()
+    if self.contains_strict(&ErlType::integer()) && self.contains_strict(&ErlType::float()) {
+      self.types = self.types.iter()
+          .filter(|t| !t.is_integer() && !t.is_float()) // throw away int and floats
+          .cloned()
+          .collect();
+      self.types.push(ErlType::number()); // replace int and float with number()
+    }
+
+    // Remove the subtypes for other types in the union
     self.types = self.types.iter()
         .filter(|t| !t.is_none()) // throw away none() types
         .enumerate()
         .filter(|(index1, type1)| {
-          // an arm is kept if for every arm (except itself) it's not a subtype of the other arm
-          // or it's equivalent to the other arm and this is the first equivalent arm
-          return self.types.iter().enumerate()
-              .all(|(index2, type2)|
-                       *index1 == index2
-                           || !type1.is_subtype_of(type2)
-                           || (type2.is_subtype_of(type1) && *index1 < index2),
-              );
+          !self.is_subtype_of_another_union_member(*index1, type1)
         })
-        .map(|(_index, ty)| ty.clone())
+        .map(|(_index, ty)| ty.clone()) // unwrap type value from enumerate pairs
         .collect();
-    // match new_types.len() {
-    //   0 => ErlType::None.into(),
-    //   1 => new_types[0].clone(),
-    //   _ => ErlType::Union(TypeUnion::new(new_types)).into() // rebuild from remaining types
-    // }
   }
 
-  /// Whether type t is found in any of the union contents
+  /// Whether type t is found in any of the union contents (is_subtype_of equality)
   pub fn contains(&self, t: &ErlType) -> bool {
     self.types.iter()
-        .any(|union_t| t.is_subtype_of(union_t))
+        .any(|member| t.is_subtype_of(member))
+  }
+
+  /// Whether type t is found in any of the union contents (strict equality)
+  pub fn contains_strict(&self, t: &ErlType) -> bool {
+    self.types.iter()
+        .any(|member| t == member.deref())
   }
 }

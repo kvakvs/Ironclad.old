@@ -113,20 +113,20 @@ impl Literal {
     }
   }
 
-  /// Subtype check for literal against builtin types
-  pub fn is_subtype_of(&self, super_ty: &ErlType) -> bool {
-    match self {
-      Literal::BigInteger
-      | Literal::Integer(_) => super_ty.is_integer(),
-      Literal::Float(_) => super_ty.is_float(),
-      Literal::Atom(_)
-      | Literal::Bool(_) => super_ty.is_atom(),
-      Literal::Nil
-      | Literal::String(_)
-      | Literal::List { .. } => super_ty.is_list(),
-      Literal::Tuple(_) => super_ty.is_tuple(),
-    }
-  }
+  // /// Subtype check for literal against builtin types
+  // pub fn is_subtype_of(&self, super_ty: &ErlType) -> bool {
+  //   match self {
+  //     Literal::BigInteger
+  //     | Literal::Integer(_) => super_ty.is_integer(),
+  //     Literal::Float(_) => super_ty.is_float(),
+  //     Literal::Atom(_)
+  //     | Literal::Bool(_) => super_ty.is_atom(),
+  //     Literal::Nil
+  //     | Literal::String(_)
+  //     | Literal::List { .. } => super_ty.is_list(),
+  //     Literal::Tuple(_) => super_ty.is_tuple(),
+  //   }
+  // }
 }
 
 impl Eq for Literal {}

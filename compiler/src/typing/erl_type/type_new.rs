@@ -70,16 +70,19 @@ impl ErlType {
   /// Wrapper to access type union construction
   pub fn new_union(types: &[Arc<ErlType>]) -> Arc<ErlType> {
     match types.len() {
+      // Union of 0 types is empty type
       0 => ErlType::none(),
+      // Union of 1 type is type itself
       1 => types[0].clone(),
+      // Union of many types
       _ => {
         let mut u = TypeUnion::new(types);
-
         u.normalize();
 
-        match u.types().len() {
+        // After normalization see if the type did shrink to none() or a singular type
+        match u.types.len() {
           0 => panic!("Can't create type union of 0 types after normalization"),
-          1 => u.types()[0].clone(),
+          1 => u.types[0].clone(),
           _ => ErlType::Union(u).into()
         }
       }

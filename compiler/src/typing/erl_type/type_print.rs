@@ -58,7 +58,7 @@ impl std::fmt::Display for ErlType {
       ErlType::Reference => write!(f, "reference()"),
       ErlType::Port => write!(f, "port()"),
       ErlType::Singleton { val } => write!(f, "{}", val),
-      ErlType::Union(u) => Pretty::display_separated(u.types(), "|", f),
+      ErlType::Union(u) => Pretty::display_separated(&u.types, "|", f),
       ErlType::UserDefinedType { name, args } => {
         write!(f, "{}", name)?;
         Pretty::display_paren_list(args, f)
