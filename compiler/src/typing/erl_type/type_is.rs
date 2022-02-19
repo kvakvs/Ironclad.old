@@ -49,19 +49,20 @@ impl ErlType {
     };
   }
 
-  /// Checks whether `self` potentially can be an integer
+  /// Checks whether `self` is an integer or belongs to a complex type where integer is present too
   pub fn is_supertype_of_integer(&self) -> bool {
-    ErlType::Integer.is_subtype_of(self)
+    self.is_integer() || ErlType::Integer.is_subtype_of(self)
   }
 
-  /// Checks whether `self` potentially can be a floating point number
+  /// Checks whether `self` is a float or belongs to a complex type where float is present too
   pub fn is_supertype_of_float(&self) -> bool {
-    ErlType::Float.is_subtype_of(self)
+    self.is_float() || ErlType::Float.is_subtype_of(self)
   }
 
-  /// Checks whether `self` potentially can be an integer or a float
+  /// Checks whether `self` is an integer or a float, or belongs to a complex type where integer or
+  /// float are present.
   pub fn is_supertype_of_number(&self) -> bool {
-    ErlType::Number.is_subtype_of(self)
+    self.is_number() || ErlType::Number.is_subtype_of(self)
   }
 
   /// Checks whether type is an integer number

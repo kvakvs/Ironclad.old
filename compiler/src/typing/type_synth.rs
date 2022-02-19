@@ -26,7 +26,10 @@ impl ErlAst {
       ErlAst::Var(v) => {
         if let Ok(env_read) = scope.read() {
           match env_read.variables.get(&v.name) {
-            None => ErlError::variable_not_found(&v.name),
+            None => {
+              println!("Var not found; Scope={:?}", &env_read);
+              ErlError::variable_not_found(&v.name)
+            },
             Some(val) => Ok(val.clone()),
           }
         } else {

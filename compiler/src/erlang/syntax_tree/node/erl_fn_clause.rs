@@ -34,8 +34,15 @@ impl ErlFnClause {
       None => "unnamed fn scope".into(),
       Some(n) => n.clone(),
     };
-    let variables = Default::default();
+
+    // Extract all bindable variables which introduce a new variable name in the scope
+    let mut variables = Default::default();
+    for arg in &args {
+      ErlAst::extract_variables(arg, &mut variables).unwrap();
+    }
+
     let clause_scope = Scope::new(scope_name, Weak::new(), variables).into();
+
     ErlFnClause {
       name,
       args,
@@ -54,11 +61,17 @@ impl ErlFnClause {
   /// function type
   pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> ErlResult<FnClauseType> {
     // Synthesizing return type using the inner function scope, with added args
-    let args_types: Vec<Typevar> = self.args.iter()
-        .map(|arg| arg.synthesize(scope))
-        .map(Result::unwrap)
-        .map(|t| Typevar::from_erltype(&t))
-        .collect();
+    // let args_types: Vec<Typevar> = self.args.iter()
+    //     .map(|arg| arg.synthesize(scope))
+    //     .map(Result::unwrap)
+    //     .map(|t| Typevar::from_erltype(&t))
+    //     .collect();
+    let mut args_types = Vec::new();
+    for arg in &self.args {
+      let synth = arg.synthesize(scope)?;
+      args_types.push(Typevar::from_erltype(&synth));
+    }
+
     let synthesized_t = FnClauseType::new(
       args_types,
       Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?),

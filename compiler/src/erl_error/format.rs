@@ -42,6 +42,9 @@ impl std::fmt::Display for ErlError {
       ErlError::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
       ErlError::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
       ErlError::TypeErr(terr) => write!(f, "Type error: {}", terr),
+      ErlError::Unacceptable { ast_repr, context } => {
+        write!(f, "{} is not acceptable in {}", ast_repr, context)
+      }
     }
   }
 }

@@ -73,6 +73,13 @@ pub enum ErlError {
   LocalFunctionNotFound(MFArity),
   /// Returned when a type error or mismatching types were found
   TypeErr(TypeError),
+  /// Error raised when unsupported AST node occured where it shouldn't
+  Unacceptable {
+    /// Printable representation of the bad AST node
+    ast_repr: String,
+    /// Context to suggest the user where this was found
+    context: String,
+  },
 }
 
 impl ErlError {
@@ -92,6 +99,11 @@ impl ErlError {
   /// Wraps a `FunctionNotFound`
   pub fn local_function_not_found<T>(mfa: &MFArity) -> ErlResult<T> {
     Err(ErlError::LocalFunctionNotFound(mfa.clone()))
+  }
+
+  /// Creates an unacceptable AST error, this type of AST is not allowed here.
+  pub fn unacceptable_ast<T>(ast_repr: String, context: String) -> ErlResult<T> {
+    Err(ErlError::Unacceptable { ast_repr, context })
   }
 
   /// Creates a preprocessor error from a filename and a message

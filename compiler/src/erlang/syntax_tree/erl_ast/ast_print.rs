@@ -56,6 +56,9 @@ impl std::fmt::Display for ErlAst {
         write!(f, ".")
       }
       ErlAst::Type { ty, .. } => write!(f, "{}", ty),
+      ErlAst::Map { .. } => {
+        unimplemented!("Display for ErlAst::Map")
+      }
     }
   }
 }

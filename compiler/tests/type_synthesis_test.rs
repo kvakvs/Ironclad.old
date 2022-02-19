@@ -58,10 +58,8 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let module = Module::from_fun_source(&filename,"myfun(A) -> A + 1.")?;
-  let ast = module.ast.clone();
-  let f_t = ast.synthesize(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &ast, f_t);
-
+  let synth_type = module.ast.synthesize(&module.scope)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, synth_type);
 
   Ok(())
 }

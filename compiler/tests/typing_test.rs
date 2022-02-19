@@ -74,12 +74,12 @@ fn typing_expr_check_1() -> ErlResult<()> {
 /// Create a fun with 0 args, which returns an integer(). See if its compatible with an integer().
 fn typing_expr_check_noarg() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
+
   let scope = Scope::new_root_scope(function_name!().to_string());
   let filename = PathBuf::from(function_name!());
   let parsed = Module::from_fun_source(&filename, "my_int_fun1() -> 10 + 20.")?;
 
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
-  // println!("Synth my_int_fun1: {}", int_fn1.core_ast.synthesize(&env)?);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(0, &ErlType::integer());
   assert!(TypeCheck::check(&scope, &parsed.ast, match_ty)?,

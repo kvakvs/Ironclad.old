@@ -22,6 +22,7 @@ pub mod ast_iter;
 pub mod ast_print;
 pub mod ast_as;
 pub mod ast_is;
+pub mod ast_extract_var;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
@@ -153,6 +154,16 @@ pub enum ErlAst {
     location: SourceLoc,
     /// Tuple elements
     elements: Vec<Arc<ErlAst>>,
+  },
+
+  /// A map of some keys and some values
+  Map {
+    /// Source code location
+    location: SourceLoc,
+    /// Map keys, matching values by index
+    keys: Vec<Arc<ErlAst>>,
+    /// Map values, matching keys by index
+    values: Vec<Arc<ErlAst>>,
   },
 }
 

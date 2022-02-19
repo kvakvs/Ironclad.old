@@ -78,12 +78,12 @@ impl ErlBinaryOperatorExpr {
         if !left.is_supertype_of_number() || !right.is_supertype_of_number() {
           // Either left or right are not compatible with number
           Ok(ErlType::none())
-        } else if left.is_supertype_of_number() && right.is_supertype_of_number() {
-          Ok(ErlType::number())
-        } else if left.is_supertype_of_float() || right.is_supertype_of_float() {
-          Ok(ErlType::float())
-        } else {
+        // } else if left.is_supertype_of_number() && right.is_supertype_of_number() {
+        //   Ok(ErlType::number())
+        } else if left.is_supertype_of_integer() && right.is_supertype_of_integer() {
           Ok(ErlType::integer())
+        } else {
+          Ok(ErlType::float())
         }
       }
 
@@ -106,7 +106,7 @@ impl ErlBinaryOperatorExpr {
       other => {
         unimplemented!("Don't know how to synthesize binary operation type for operation {} on {:?}",
                        other, self)
-      },
+      }
     }
   }
 
