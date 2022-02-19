@@ -69,12 +69,19 @@ impl Module {
   }
 
   /// Generic parse helper for any Nom entry point
-  fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> ErlResult<Self>
+  pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> ErlResult<Self>
     where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
   {
     let mut module = Module::default();
 
-    match parse_fn(input).finish() {
+    let parse_result = parse_fn(input);
+
+    #[cfg(debug_assertions)]
+    if parse_result.is_err() {
+      println!("NomError: {:?}", parse_result);
+    }
+
+    match parse_result.finish() {
       Ok((tail, forms)) => {
         println!("Parser input «{}»\nParse result AST: «{}»", input, &forms);
 

@@ -57,7 +57,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let filename = PathBuf::from(function_name!());
-  let module = Module::from_fun_source(&filename,"myfun(A) -> A + 1.")?;
+  let module = Module::from_fun_source(&filename, "myfun(A) -> A + 1.")?;
   let synth_type = module.ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, synth_type);
 
@@ -122,10 +122,9 @@ fn synth_fun_call() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a fun which calls another fun with a sum");
   let filename = PathBuf::from(function_name!());
 
-  let code = format!(
-    "-module({}).\n\
-    add(A, B) -> A + B.\n\
-    main(A) -> add(A, 4).", function_name!());
+  let code = format!("-module({}).
+    add(A, B) -> A + B.
+    main(A) -> add(A, 4).\n", function_name!());
   let module = Module::from_module_source(&filename, &code)?;
   println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
@@ -155,11 +154,11 @@ fn synth_fun_call() -> ErlResult<()> {
 /// Expected: -spec main(one) -> 'atom1'; (two) -> 222.
 fn synth_multiple_clause_test() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a multi-clause function");
-  let source = "-module(infer_multiple_clause).\n\
-                     main(one) -> atom1;\n\
-                     main(two) -> 222.\n";
+  let source = format!("-module({}).
+    main(one) -> atom1;
+    main(two) -> 222.", function_name!());
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_module_source(&filename, source)?;
+  let parsed = Module::from_module_source(&filename, &source)?;
 
   let main_fn_ast = ErlAst::find_function_def(
     &parsed.ast, &MFArity::new_local("main", 1),

@@ -122,7 +122,9 @@ impl ErlParser {
   /// Matches newline \n or \r\n
   pub fn newline(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     combinator::recognize(
-      branch::alt((combinator::eof, tag("\n"), tag("\r\n")))
+      Self::ws_before_mut(
+        branch::alt((combinator::eof, tag("\n"), tag("\r\n")))
+      )
     )(input)
   }
 }
