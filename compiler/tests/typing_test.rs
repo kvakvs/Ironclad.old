@@ -94,7 +94,7 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let filename = PathBuf::from(function_name!());
   let scope = Scope::new_root_scope(function_name!().to_string());
-  let parsed = Module::from_fun_source(&filename, "my_int_fun2(A) -> 10.0 + A.")?;
+  let parsed = Module::from_fun_source(&filename, "my_int_fun2(A) -> 10 + A.")?;
 
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);

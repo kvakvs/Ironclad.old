@@ -30,6 +30,7 @@ impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
   pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>,
              guard_expr: Option<Arc<ErlAst>>) -> Self {
+    // TODO: For root level function defs assert that name is Some. For lambdas: that name is None
     let scope_name = match &name {
       None => "unnamed fn scope".into(),
       Some(n) => n.clone(),

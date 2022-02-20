@@ -48,8 +48,9 @@ impl ErlParser {
   }
 
   /// Builds a function definition from multiple parsed clauses
-  fn _parse_fndef_build_fndef(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
+  fn _construct_fndef(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
     assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even..."); // unreachable
+    println!("Construct fdef: {:?}", fnclauses);
 
     let arity = fnclauses[0].args.len();
     let fn_name = match &fnclauses[0].name {
@@ -80,7 +81,7 @@ impl ErlParser {
         ),
         Self::ws_before(character::complete::char('.')),
       ),
-      Self::_parse_fndef_build_fndef,
+      Self::_construct_fndef,
     )(input)
   }
 
@@ -92,9 +93,9 @@ impl ErlParser {
         Self::ws_before(tag("fun")),
         multi::separated_list1(
           Self::ws_before(character::complete::char(';')),
-          Self::ws_before(Self::parse_fnclause),
+          Self::parse_fnclause,
         )
-      )), |(_, fnclauses)| Self::_parse_fndef_build_fndef(fnclauses),
+      )), |(_, fnclauses)| Self::_construct_fndef(fnclauses),
     )(input)
   }
 }

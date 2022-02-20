@@ -8,22 +8,17 @@ use crate::source_loc::SourceLoc;
 
 impl ErlParser {
   /// Matches ". <endline>" terminator for module attributes
-  pub fn attr_terminator(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
-    combinator::recognize(
-      sequence::pair(
-        Self::ws_before(character::complete::char('.')),
-        Self::newline,
-      )
+  pub fn attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
+    combinator::map(
+      Self::ws(character::complete::char('.')),
+      |_| (),
     )(input)
   }
 
-  fn parenthesized_attr_terminator(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
-    combinator::recognize(
-      sequence::tuple((
-        Self::ws_before(character::complete::char(')')),
-        Self::ws_before(character::complete::char('.')),
-        Self::newline
-      ))
+  fn parenthesized_attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
+    sequence::preceded(
+      Self::ws_before(character::complete::char(')')),
+      Self::attr_terminator,
     )(input)
   }
 
@@ -58,7 +53,7 @@ impl ErlParser {
       combinator::recognize(
         sequence::terminated(
           branch::alt((Self::naked_attr, Self::parenthesized_attr)),
-          Self::newline)
+          Self::attr_terminator)
       ),
       |attr| {
         let ast_node = ErlAst::UnparsedAttr {

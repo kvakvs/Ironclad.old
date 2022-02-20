@@ -44,6 +44,22 @@ fn parse_empty_module_forms_collection() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse module forms collection with 2 functions in it
+#[named]
+#[test]
+fn parse_2_module_forms_collection() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a string with 2 function defs in it as module forms collection");
+  let code = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
+  let parse_result = ErlParser::parse_module_forms_collection(code);
+  match parse_result.finish() {
+    Ok((_tail, forms)) => {
+      println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), code, forms)
+    },
+    Err(err) => return Err(ErlError::from_nom_error(code, err)),
+  }
+  Ok(())
+}
+
 /// Try parse string
 #[named]
 #[test]

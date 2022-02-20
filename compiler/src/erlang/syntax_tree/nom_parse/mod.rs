@@ -31,9 +31,7 @@ impl ErlParser {
       return Ok((input, Vec::default()));
     }
 
-    combinator::complete(
-      multi::many0(Self::parse_module_form),
-    )(input)
+    multi::many0(combinator::complete(Self::parse_module_form))(input)
   }
 
   /// Parses an attribute or a function def

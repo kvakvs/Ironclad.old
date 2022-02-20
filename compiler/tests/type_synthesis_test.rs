@@ -126,7 +126,7 @@ fn synth_fun_call() -> ErlResult<()> {
     add(A, B) -> A + B.
     main(A) -> add(A, 4).\n", function_name!());
   let module = Module::from_module_source(&filename, &code)?;
-  println!("Parsing: «{}»\nAST: {}", code, &module.ast);
+  // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
     let add_fn_ast = ErlAst::find_function_def(

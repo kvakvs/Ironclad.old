@@ -119,12 +119,15 @@ impl ErlParser {
     ))(input)
   }
 
-  /// Matches newline \n or \r\n
-  pub fn newline(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
-    combinator::recognize(
-      Self::ws_before_mut(
-        branch::alt((combinator::eof, tag("\n"), tag("\r\n")))
-      )
-    )(input)
-  }
+  // /// Matches newline \n or \r\n
+  // pub fn newline(input: &str) -> nom::IResult<&str, (), ErlParserError> {
+  //   combinator::map(
+  //     branch::alt((
+  //       combinator::eof,
+  //       Self::ws(tag("\r\n")),
+  //       Self::ws(tag("\n"))
+  //     )),
+  //     |_| (),
+  //   )(input)
+  // }
 }
