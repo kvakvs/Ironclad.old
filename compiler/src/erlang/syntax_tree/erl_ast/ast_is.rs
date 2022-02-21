@@ -1,6 +1,7 @@
 //! AST node-type checks
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 
 impl ErlAst {
   /// Checks whether an ErlAst node is a function definition
@@ -11,4 +12,9 @@ impl ErlAst {
 
   /// Checks whether an ErlAst node is an Erlang Type
   pub fn is_type(&self) -> bool { matches!(self, ErlAst::Type {..}) }
+
+  /// Checks whether an ErlAst node is a Binary Op of given kind
+  pub fn is_binop(&self, op: ErlBinaryOp) -> bool {
+    matches!(self, ErlAst::BinaryOp {expr, ..} if expr.operator == op)
+  }
 }

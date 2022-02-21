@@ -8,6 +8,7 @@ use compiler::erl_error::ErlResult;
 use std::ops::Deref;
 use std::path::PathBuf;
 use compiler::erlang::syntax_tree::erl_ast::ErlAst;
+use compiler::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
 use compiler::project::module::Module;
@@ -20,7 +21,10 @@ fn synth_list_append() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
   let parsed = Module::from_expr_source(&filename, "[atom1] ++ [atom2]")?;
   let expr_type = parsed.ast.synthesize(&parsed.scope)?;
+
   println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed.ast, expr_type);
+
+  assert!(parsed.ast.is_binop(ErlBinaryOp::ListAppend));
 
   Ok(())
 }
