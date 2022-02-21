@@ -114,9 +114,7 @@ impl ErlType {
   }
 
   /// Checks whether type is an empty list (NIL)
-  pub fn is_nil(&self) -> bool {
-    matches!(self, ErlType::Nil)
-  }
+  pub fn is_nil(&self) -> bool { matches!(self, ErlType::Nil) }
 
   /// Checks whether type is a binary
   pub fn is_binary(&self) -> bool {

@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::typing::erl_type::ErlType;
 
@@ -27,6 +28,14 @@ impl ErlAst {
     match self {
       ErlAst::Type{ ty, .. } => ty.clone(),
       _ => panic!("Expected Type AST node, but got {}", self),
+    }
+  }
+
+  /// Unwrap self as binary operation expr
+  pub fn as_binop(&self) -> &ErlBinaryOperatorExpr {
+    match self {
+      ErlAst::BinaryOp{ expr, .. } => expr,
+      _ => panic!("Expected BinOp AST node, but got {}", self),
     }
   }
 }

@@ -22,7 +22,7 @@ impl ErlAst {
           Some(fndef) => Ok(fndef.as_fn_def().synthesize_function_type(scope)?),
         }
       }
-      ErlAst::Apply(apply) => apply.synthesize_type(scope),
+      ErlAst::Apply(apply) => apply.synthesize_application_type(scope),
       ErlAst::Var(v) => {
         if let Ok(env_read) = scope.read() {
           match env_read.variables.get(&v.name) {
@@ -37,7 +37,7 @@ impl ErlAst {
         }
       }
       ErlAst::Lit { value, .. } => Ok(ErlType::new_singleton(value)),
-      ErlAst::BinaryOp { expr, .. } => expr.synthesize_type(scope),
+      ErlAst::BinaryOp { expr, .. } => expr.synthesize_binop_type(scope),
       ErlAst::List { elements, tail, .. } => {
         Self::synthesize_list_type(scope, elements, tail)
       }

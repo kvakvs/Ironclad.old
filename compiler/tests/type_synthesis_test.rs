@@ -26,6 +26,11 @@ fn synth_list_append() -> ErlResult<()> {
 
   assert!(parsed.ast.is_binop(ErlBinaryOp::ListAppend));
 
+  // let op = parsed.ast.as_binop();
+  assert!(matches!(expr_type.deref(),
+      ErlType::StronglyTypedList { elements, tail } if tail.is_none() && elements.len() == 2),
+          "Synth type must be a strongly typed list without a tail");
+
   Ok(())
 }
 

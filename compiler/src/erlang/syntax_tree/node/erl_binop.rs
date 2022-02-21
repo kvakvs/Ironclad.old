@@ -68,7 +68,7 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// Gets the result type of a binary operation
-  pub fn synthesize_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+  pub fn synthesize_binop_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
     let left = self.left.synthesize(scope)?;
     let right = self.right.synthesize(scope)?;
 
