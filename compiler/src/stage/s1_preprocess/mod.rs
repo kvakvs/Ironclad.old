@@ -246,10 +246,10 @@ impl PpState {
       let interpreted: Vec<Rc<PpAst>> = nodes.iter()
           .filter_map(|node| {
             let result = self.interpret_pp_rule_map(node, source_file);
-            match &result {
-              Some(r) => println!("Interpret: {:40} → {}", node.to_dbg_str(), r.to_dbg_str()),
-              None => println!("Interpret: {:40} → ×", node.to_dbg_str()),
-            }
+            // match &result {
+            //   Some(r) => println!("Interpret: {:40} → {}", node.to_dbg_str(), r.to_dbg_str()),
+            //   None => println!("Interpret: {:40} → ×", node.to_dbg_str()),
+            // }
             result
           })
           .collect();

@@ -135,6 +135,7 @@ impl std::fmt::Display for PpAst {
       PpAst::Undef(name) => write!(f, "-undef({}).", name),
       PpAst::Error(t) => write!(f, "-error({}).", t),
       PpAst::Warning(t) => write!(f, "-warning({}).", t),
+      PpAst::Comment(t) => write!(f, "% {}", t),
 
       _ => unreachable!("PpAst::to_string() can't process {:?}", self),
     }

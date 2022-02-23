@@ -16,31 +16,34 @@ use compiler::typing::erl_type::ErlType;
 
 #[named]
 #[test]
-fn fn_generic_attr_parse() -> ErlResult<()> {
-  test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
+fn fn_generic_attr_parse1() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a spec-like attribute line, consuming all as string");
+  let input = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
 
-  {
-    let input = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
-    // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-    match ErlParser::parse_generic_attr(input).finish() {
-      Ok((tail1, result1)) => {
-        assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
-        println!("ErlAst for attr1: {}", result1);
-      }
-      Err(err) => return Err(ErlError::from_nom_error(input, err))
+  // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
+  match ErlParser::parse_generic_attr(input).finish() {
+    Ok((tail1, result1)) => {
+      assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
+      println!("ErlAst for attr1: {}", result1);
     }
+    Err(err) => return Err(ErlError::from_nom_error(input, err))
   }
+  Ok(())
+}
 
-  {
-    let input = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
-    // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-    match ErlParser::parse_generic_attr(input).finish() {
-      Ok((tail2, result2)) => {
-        assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
-        println!("ErlAst for attr2: {}", result2);
-      }
-      Err(err) => return Err(ErlError::from_nom_error(input, err))
+#[named]
+#[test]
+fn fn_generic_attr_parse2() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
+  let input = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
+
+  // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
+  match ErlParser::parse_generic_attr(input).finish() {
+    Ok((tail2, result2)) => {
+      assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
+      println!("ErlAst for attr2: {}", result2);
     }
+    Err(err) => return Err(ErlError::from_nom_error(input, err))
   }
   Ok(())
 }
