@@ -23,9 +23,10 @@ pub fn run(project: &mut ErlProject,
 
     // Take only .erl and .hrl files
     if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
-      let compile_options = project.get_compiler_options_for(path);
+      let compiler_opts = project.get_compiler_options_for(path);
 
-      let _parsed = Module::new(compile_options, source_file.clone());
+      let mut parsed = Module::from_module_source(&source_file.file_name, &source_file.text)?;
+      parsed.compiler_options = compiler_opts;
 
       // module.parse_and_unify_erlang()?;
       // unimplemented!("Parse and unify entrypoint is notimpl");

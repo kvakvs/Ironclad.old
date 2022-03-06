@@ -72,8 +72,9 @@ impl Module {
   pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> ErlResult<Self>
     where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
   {
-    let mut module = Module::default();
+    println!("Parsing from {}", filename.to_string_lossy());
 
+    let mut module = Module::default();
     let parse_result = parse_fn(input);
 
     #[cfg(debug_assertions)]

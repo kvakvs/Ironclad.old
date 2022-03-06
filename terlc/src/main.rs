@@ -5,7 +5,7 @@ use compiler::project::conf::ProjectConf;
 use compiler::erl_error::{ErlResult};
 use std::process::exit;
 
-fn main_1() -> ErlResult<()> {
+fn main_do() -> ErlResult<()> {
   // Test default project from ""
   let default_project: ErlProject = ProjectConf::from_string("")?.into();
   println!("default {:?}", default_project);
@@ -18,7 +18,7 @@ fn main_1() -> ErlResult<()> {
 }
 
 fn main() {
-  match main_1() {
+  match main_do() {
     Ok(_) => {
       println!("...finished.");
       exit(0);
