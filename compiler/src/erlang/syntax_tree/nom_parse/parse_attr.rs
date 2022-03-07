@@ -99,7 +99,7 @@ impl ErlParser {
   }
 
   /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
-  fn parse_export_attr_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
+  fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     sequence::delimited(
       Self::ws_before(character::complete::char('[')),
       multi::separated_list1(
@@ -110,7 +110,7 @@ impl ErlParser {
     )(input)
   }
 
-  /// Parses a `-export([fn/arity, ...]).` attribute
+  /// Parses an `-export([fn/arity, ...]).` attribute
   pub fn parse_export_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::tuple((
@@ -119,13 +119,37 @@ impl ErlParser {
         Self::ws_before(bytes::complete::tag("export")),
         sequence::delimited(
           Self::ws_before(character::complete::char('(')),
-          Self::ws_before(Self::parse_export_attr_list1),
+          Self::ws_before(Self::parse_square_funarity_list1),
           Self::ws_before(character::complete::char(')')),
         ),
         Self::attr_terminator,
       )),
       |(_dash, _export, exports, _term)| {
         ErlAst::new_export_attr(exports)
+      },
+    )(input)
+  }
+
+  /// Parses an `-import([fn/arity, ...]).` attribute
+  pub fn parse_import_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
+        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(bytes::complete::tag("import")),
+        sequence::delimited(
+          Self::ws_before(character::complete::char('(')),
+          sequence::tuple((
+            AtomParser::parse_atom,
+            Self::ws_before(character::complete::char(',')),
+            Self::ws_before(Self::parse_square_funarity_list1),
+          )),
+          Self::ws_before(character::complete::char(')')),
+        ),
+        Self::attr_terminator,
+      )),
+      |(_dash, _import, (mod_name, _comma1, imports), _term)| {
+        ErlAst::new_import_attr(mod_name, imports)
       },
     )(input)
   }

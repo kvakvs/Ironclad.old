@@ -22,6 +22,11 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
       },
+      ErlAst::ImportAttr { import_from, imports, .. } => {
+        write!(f, "-import({}, ", import_from)?;
+        Pretty::display_square_list(imports, f)?;
+        writeln!(f, ").")
+      },
       ErlAst::UnparsedAttr { text, .. } => writeln!(f, "attr: {}", text),
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)

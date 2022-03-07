@@ -51,6 +51,7 @@ impl ErlAst {
       | ErlAst::MFA { .. }
       | ErlAst::ModuleStartAttr { .. }
       | ErlAst::ExportAttr { .. }
+      | ErlAst::ImportAttr { .. }
       | ErlAst::ModuleForms(_)
       | ErlAst::FnRef { .. }
       | ErlAst::FnDef(_)

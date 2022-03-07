@@ -14,6 +14,7 @@ impl ErlAst {
     match self {
       ErlAst::ModuleStartAttr { .. }
       | ErlAst::ExportAttr { .. }
+      | ErlAst::ImportAttr { .. }
       | ErlAst::FnSpec { .. }
       | ErlAst::Lit { .. }
       | ErlAst::MFA { .. }

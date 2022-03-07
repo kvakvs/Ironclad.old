@@ -58,6 +58,16 @@ pub enum ErlAst {
     exports: Vec<MFArity>,
   },
 
+  /// `-import([f/a, ......]).` attribute, defines imports
+  ImportAttr {
+    /// Source file pointer
+    location: SourceLoc,
+    /// Module to import from
+    import_from: String,
+    /// List of funarities to import (MFAs with module=None)
+    imports: Vec<MFArity>,
+  },
+
   /// A generic attribute `"-name" ... "."\n` extracted from the source, parsed at a later stage
   UnparsedAttr {
     /// Source file pointer

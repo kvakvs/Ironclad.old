@@ -104,4 +104,13 @@ impl ErlAst {
       exports,
     }.into()
   }
+
+  /// Create a new `-import(modulename, [...]).` module attr.
+  pub fn new_import_attr(import_from: String, imports: Vec<MFArity>) -> Arc<ErlAst> {
+    ErlAst::ImportAttr {
+      location: SourceLoc::None,
+      import_from,
+      imports,
+    }.into()
+  }
 }
