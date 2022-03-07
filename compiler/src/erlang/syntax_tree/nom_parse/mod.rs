@@ -68,6 +68,7 @@ impl ErlParser {
   /// Parses an attribute or a function def
   pub fn parse_module_form(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     branch::alt((
+      Self::parse_export_attr,
       Self::parse_generic_attr,
       Self::parse_fndef,
     ))(input)

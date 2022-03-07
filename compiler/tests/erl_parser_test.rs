@@ -28,6 +28,25 @@ fn parse_empty_module() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse `-export([])` attr
+#[named]
+#[test]
+fn parse_export_attr() -> ErlResult<()> {
+  test_util::start(function_name!(), "parse an export attr");
+
+  let (_tail, pfna) = ErlParser::parse_funarity("name/123").unwrap();
+  assert_eq!(pfna.name, "name");
+  assert_eq!(pfna.arity, 123usize);
+
+  let filename = PathBuf::from(function_name!());
+  let code = format!("-module({}).
+-export([module/2, format_error/1]).
+", function_name!());
+  let parsed = Module::from_module_source(&filename, &code)?;
+  println!("Parsed module with export attr: «{}»\nAST: {}", code, &parsed.ast);
+  Ok(())
+}
+
 /// Try parse empty module forms collection (from empty input)
 #[named]
 #[test]

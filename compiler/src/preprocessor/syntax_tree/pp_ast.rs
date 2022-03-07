@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
+use ::function_name::named;
 
 use crate::project::ErlProject;
 use crate::ast_tree::{AstCache, AstTree};
@@ -112,6 +113,7 @@ impl PpAst {
 
 impl std::fmt::Display for PpAst {
   /// Format AST as a string
+  #[named]
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       PpAst::File(items) => {
@@ -137,7 +139,7 @@ impl std::fmt::Display for PpAst {
       PpAst::Warning(t) => write!(f, "-warning({}).", t),
       PpAst::Comment(t) => write!(f, "% {}", t),
 
-      _ => unreachable!("PpAst::to_string() can't process {:?}", self),
+      _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }
 }

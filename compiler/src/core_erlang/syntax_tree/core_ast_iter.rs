@@ -69,8 +69,7 @@ impl CoreAst {
       }
 
       _ => {
-        println!("{}: Can't process {:?}", function_name!(), self);
-        unreachable!()
+        unreachable!("{}(): Can't process {:?}", function_name!(), self);
       }
     }
   }

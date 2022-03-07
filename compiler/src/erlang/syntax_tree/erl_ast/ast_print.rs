@@ -17,6 +17,11 @@ impl std::fmt::Display for ErlAst {
         Ok(())
       }
       ErlAst::ModuleStartAttr { name, .. } => writeln!(f, "-module('{}').", name),
+      ErlAst::ExportAttr { exports, .. } => {
+        write!(f, "-export(")?;
+        Pretty::display_square_list(exports, f)?;
+        writeln!(f, ").")
+      },
       ErlAst::UnparsedAttr { text, .. } => writeln!(f, "attr: {}", text),
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)

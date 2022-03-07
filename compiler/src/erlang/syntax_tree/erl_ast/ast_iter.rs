@@ -1,5 +1,6 @@
 //! Contains iteration helpers for ErlAst
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use ::function_name::named;
 
 use std::sync::Arc;
 
@@ -8,9 +9,11 @@ impl ErlAst {
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
+  #[named]
   pub fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
     match self {
       ErlAst::ModuleStartAttr { .. }
+      | ErlAst::ExportAttr { .. }
       | ErlAst::FnSpec { .. }
       | ErlAst::Lit { .. }
       | ErlAst::MFA { .. }
@@ -56,7 +59,7 @@ impl ErlAst {
       ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
-      _ => unreachable!("Can't process {}", self),
+      _ => unreachable!("{}(): Can't process {}", function_name!(), self),
     }
   }
 }

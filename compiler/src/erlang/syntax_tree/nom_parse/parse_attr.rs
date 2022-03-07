@@ -1,9 +1,10 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use std::sync::Arc;
-use nom::{combinator, sequence, branch, multi, character::complete::{anychar}, bytes::complete::{tag}, character};
+use nom::{combinator, sequence, branch, multi, character::complete::{anychar}, character, bytes};
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
+use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
@@ -68,17 +69,64 @@ impl ErlParser {
   pub fn parse_module_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::tuple((
+        // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
         Self::ws_before(character::complete::char('-')),
-        Self::ws_before(tag("module")),
-        Self::ws_before(character::complete::char('(')),
-        Self::ws_before(AtomParser::parse_atom),
-        Self::ws_before(character::complete::char(')')),
+        Self::ws_before(bytes::complete::tag("module")),
+        sequence::delimited(
+          Self::ws_before(character::complete::char('(')),
+          Self::ws_before(AtomParser::parse_atom),
+          Self::ws_before(character::complete::char(')')),
+        ),
         Self::attr_terminator,
       )),
-      |(_, _, _, name, _, _)| ErlAst::ModuleStartAttr {
-        location: SourceLoc::None,
-        name,
-      }.into(),
+      |(_dash, _, name, _terminator)| ErlAst::new_module_start_attr(name),
+    )(input)
+  }
+
+  /// Parses a `fun/arity` atom with an integer.
+  pub fn parse_funarity(input: &str) -> nom::IResult<&str, MFArity, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        AtomParser::parse_atom,
+        character::complete::char('/'),
+        Self::parse_int,
+      )),
+      |(name, _slash, arity_s)| {
+        let arity = arity_s.parse::<usize>().unwrap_or(0);
+        MFArity::new_local_from_string(name, arity)
+      },
+    )(input)
+  }
+
+  /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
+  fn parse_export_attr_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
+    sequence::delimited(
+      Self::ws_before(character::complete::char('[')),
+      multi::separated_list1(
+        Self::ws_before(character::complete::char(',')),
+        Self::ws_before(Self::parse_funarity),
+      ),
+      Self::ws_before(character::complete::char(']')),
+    )(input)
+  }
+
+  /// Parses a `-export([fn/arity, ...]).` attribute
+  pub fn parse_export_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
+        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(bytes::complete::tag("export")),
+        sequence::delimited(
+          Self::ws_before(character::complete::char('(')),
+          Self::ws_before(Self::parse_export_attr_list1),
+          Self::ws_before(character::complete::char(')')),
+        ),
+        Self::attr_terminator,
+      )),
+      |(_dash, _export, exports, _term)| {
+        ErlAst::new_export_attr(exports)
+      },
     )(input)
   }
 }
