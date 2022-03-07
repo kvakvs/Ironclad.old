@@ -196,6 +196,21 @@ fn parse_fn1() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse some function defs
+#[named]
+#[test]
+fn parse_fn2() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function from OTP lib/compiler");
+  let filename = PathBuf::from(function_name!());
+  let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
+    Fs = [function(F) || F <- Fs0],
+    {ok,{Mod,Exp,Attr,Fs,Lc}}.";
+  let module = Module::from_fun_source(&filename, source)?;
+
+  println!("Parsed result: {}", module.ast);
+  Ok(())
+}
+
 /// Try parse a function apply expr. This can be any expression immediately followed by
 /// a parenthesized comma expression.
 #[named]

@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use nom::{error, character, combinator, sequence, multi, bytes::complete::{tag}, branch};
+use nom::{error,
+          character::complete::{char},
+          combinator, sequence, multi,
+          bytes::complete::{tag}, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
@@ -19,11 +22,15 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         Self::parse_expr,
-        Self::ws(character::complete::char('(')),
-        multi::separated_list0(Self::ws(tag(",")), Self::parse_expr),
-        Self::ws(character::complete::char(')')),
+        sequence::delimited(
+          Self::ws_before(char('(')),
+          multi::separated_list0(
+            Self::ws_before(tag(",")),
+            Self::parse_expr),
+          Self::ws_before(char(')')),
+        ),
       )),
-      |(expr, _, args, _)| {
+      |(expr, args)| {
         let application = ErlApply::new(SourceLoc::None, expr, args);
         ErlAst::Apply(application).into()
       },
@@ -37,68 +44,60 @@ impl ErlParser {
   }
 
   /// Parses a list of comma separated expressions in (parentheses)
-  pub fn parse_parenthesized_list(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
-    let (input, _) = Self::ws_before(character::complete::char('('))(input)?;
-    combinator::map(
-      sequence::pair(
-        Self::parse_comma_sep_exprs,
-        Self::ws_before(character::complete::char(')')),
-      ),
-      |(elements, _)| elements,
+  pub fn parse_parenthesized_list_of_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
+    sequence::delimited(
+      Self::ws_before(char('(')),
+      Self::parse_comma_sep_exprs,
+      Self::ws_before(char(')')),
     )(input)
   }
 
-  fn parse_list(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_list_of_exprs(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     // TODO: list tail with |
-    let (input, _) = Self::ws(character::complete::char('['))(input)?;
     combinator::map(
-      sequence::pair(
+      sequence::delimited(
+        Self::ws_before(char('[')),
         Self::parse_comma_sep_exprs,
-        Self::ws(character::complete::char(']')),
+        Self::ws_before(char(']')),
       ),
-      |(elements, _)| ErlAst::new_list(SourceLoc::None, elements),
+      |elements| ErlAst::new_list(SourceLoc::None, elements),
     )(input)
   }
 
-  fn parse_tuple(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
-    let (input, _) = Self::ws(character::complete::char('{'))(input)?;
+  fn parse_tuple_of_exprs(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
-      sequence::pair(
+      sequence::delimited(
+        Self::ws_before(char('{')),
         Self::parse_comma_sep_exprs,
-        Self::ws(character::complete::char('}')),
+        Self::ws_before(char('}')),
       ),
-      |(elements, _)| ErlAst::new_tuple(SourceLoc::None, elements),
+      |elements| ErlAst::new_tuple(SourceLoc::None, elements),
     )(input)
   }
-
-// fn parse_record(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {}
-
-// fn parse_map(input: &str) -> nom::IResult<&str, Arc<ErlAst>> {}
 
   fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list0(
-      Self::ws(character::complete::char(',')),
-      Self::parse_prec11, // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+      Self::ws_before(char(',')),
+      // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+      Self::parse_prec11,
     )(input)
   }
 
   fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
-    let (input, _opening) = character::complete::char('(')(input)?;
-    let (input, expr) = Self::ws(Self::parse_expr)(input)?;
-    let (input, _closing) = error::context(
-      "closing paren",
-      combinator::cut(
-        Self::ws(character::complete::char(')'))),
-    )(input)?;
-
-    Ok((input, expr))
+    sequence::delimited(
+      Self::ws_before(char('(')),
+      Self::ws_before(Self::parse_expr),
+      Self::ws_before(char(')')),
+    )(input)
   }
 
   /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
-  fn primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec_primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     Self::ws_before_mut(
       branch::alt((
-        Self::parenthesized_expr, Self::parse_list, Self::parse_tuple,
+        Self::parenthesized_expr,
+        Self::parse_list_of_exprs,
+        Self::parse_tuple_of_exprs,
         Self::parse_var,
         Self::parse_literal,
       ))
@@ -106,13 +105,13 @@ impl ErlParser {
   }
 
   // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
+  // TODO: module:function notation and maybe tuple notation?
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
-// TODO: module:function notation and maybe tuple notation?
   fn parse_prec01(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::pair(
-        Self::primary,
-        combinator::opt(Self::parse_parenthesized_list),
+        Self::parse_prec_primary,
+        combinator::opt(Self::parse_parenthesized_list_of_exprs),
       ),
       |(expr, args)| {
         match args {
@@ -302,7 +301,6 @@ impl ErlParser {
   /// Parse an expression.
   /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
-  #[inline]
   pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs

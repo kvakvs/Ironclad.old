@@ -1,9 +1,8 @@
 //! File contents cache stores all loaded files in memory
-use std::collections::HashMap;
+use std::collections::{BTreeMap};
 use std::path::{PathBuf, Path};
 
 use crate::erl_error::ErlResult;
-use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
 use std::sync::Arc;
 
@@ -13,7 +12,7 @@ pub struct FileContentsCache {
   /// Statistics of bytes read
   pub read_bytes_count: usize,
   /// File contents stored here
-  pub all_files: HashMap<PathBuf, Arc<SourceFile>>,
+  pub all_files: BTreeMap<PathBuf, Arc<SourceFile>>,
 }
 
 impl Default for FileContentsCache {
@@ -21,7 +20,7 @@ impl Default for FileContentsCache {
   fn default() -> Self {
     Self {
       read_bytes_count: 0,
-      all_files: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY),
+      all_files: Default::default(),
     }
   }
 }

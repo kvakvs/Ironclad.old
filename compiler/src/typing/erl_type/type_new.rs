@@ -108,11 +108,13 @@ impl ErlType {
   }
 
   /// Try match type name and arity vs known basic types
-  pub fn from_name(name: String, args: &[Typevar]) -> Arc<ErlType> {
+  pub fn from_name(_maybe_module: Option<String>,
+                   type_name: String,
+                   args: &[Typevar]) -> Arc<ErlType> {
     #[allow(clippy::single_match)]
     match args.len() {
       0 => {
-        match name.as_ref() {
+        match type_name.as_ref() {
           "any" => return ErlType::any(),
           "none" => return ErlType::none(),
 
@@ -138,7 +140,7 @@ impl ErlType {
     }
     // We were not able to find a basic type of that name and arity
     UserDefinedType {
-      name,
+      name: type_name,
       args: args.to_vec(),
     }.into()
   }

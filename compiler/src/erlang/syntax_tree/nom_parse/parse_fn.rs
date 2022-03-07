@@ -2,7 +2,8 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, sequence, multi, character,
+use nom::{combinator, sequence, multi,
+          character::complete::{char},
           bytes::complete::{tag}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
@@ -31,18 +32,21 @@ impl ErlParser {
         // Function clause name
         Self::ws_before_mut(combinator::opt(AtomParser::parse_atom)),
 
-        // Args list
-        Self::parse_parenthesized_list,
+        // Function arguments
+        nom::error::context("function clause arguments",
+                            Self::parse_parenthesized_list_of_exprs),
 
         // Optional: when <guard>
-        combinator::opt(Self::parse_when_expr_for_fn),
-        Self::ws_before(tag("->")),
+        nom::error::context("when expression",
+                            combinator::opt(Self::parse_when_expr_for_fn)),
 
-        // Body
-        Self::parse_expr,
+        sequence::preceded(
+          Self::ws_before(tag("->")),
+          Self::parse_expr, // Body
+        )
       )),
-      |(name, args, when_expr, _arrow, body)| {
-        ErlFnClause::new(name, args, body, when_expr)
+      |(maybe_name, args, when_expr, body)| {
+        ErlFnClause::new(maybe_name, args, body, when_expr)
       },
     )(input)
   }
@@ -76,10 +80,10 @@ impl ErlParser {
     combinator::map(
       sequence::terminated(
         multi::separated_list1(
-          Self::ws_before(character::complete::char(';')),
+          Self::ws_before(char(';')),
           Self::parse_fnclause,
         ),
-        Self::ws_before(character::complete::char('.')),
+        Self::ws_before(char('.')),
       ),
       Self::_construct_fndef,
     )(input)
@@ -92,7 +96,7 @@ impl ErlParser {
       sequence::tuple((
         Self::ws_before(tag("fun")),
         multi::separated_list1(
-          Self::ws_before(character::complete::char(';')),
+          Self::ws_before(char(';')),
           Self::parse_fnclause,
         )
       )), |(_, fnclauses)| Self::_construct_fndef(fnclauses),

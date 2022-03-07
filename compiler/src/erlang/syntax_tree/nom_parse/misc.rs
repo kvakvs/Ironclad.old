@@ -1,7 +1,8 @@
 //! Helper functions for Nom parsing
 
-use nom::{sequence, combinator, multi, branch, character,
-          character::complete::{one_of, alphanumeric1}, bytes::complete::{tag}};
+use nom::{sequence, combinator, multi, branch, 
+          character, character::complete::{char, one_of, alphanumeric1},
+          bytes::complete::{tag}};
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 
 impl ErlParser {
@@ -47,8 +48,8 @@ impl ErlParser {
     where InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
     sequence::delimited(Self::spaces_or_comments0,
-      inner,
-      character::complete::multispace0)
+                        inner,
+                        character::complete::multispace0)
   }
 
   /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -95,7 +96,7 @@ impl ErlParser {
     combinator::recognize(
       multi::many1(
         sequence::terminated(one_of("0123456789"),
-                             multi::many0(character::complete::char('_')))
+                             multi::many0(char('_')))
       )
     )(input)
   }
@@ -107,7 +108,7 @@ impl ErlParser {
       // Case one: .42
       combinator::recognize(
         sequence::tuple((
-          character::complete::char('.'),
+          char('.'),
           Self::parse_int,
           combinator::opt(sequence::tuple((
             one_of("eE"),
@@ -121,7 +122,7 @@ impl ErlParser {
         sequence::tuple((
           Self::parse_int,
           combinator::opt(sequence::preceded(
-            character::complete::char('.'),
+            char('.'),
             Self::parse_int,
           )),
           one_of("eE"),
@@ -133,7 +134,7 @@ impl ErlParser {
       combinator::recognize(
         sequence::tuple((
           Self::parse_int,
-          character::complete::char('.'),
+          char('.'),
           Self::parse_int
         ))
       )

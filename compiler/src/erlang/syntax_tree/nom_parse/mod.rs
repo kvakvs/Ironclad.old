@@ -71,6 +71,7 @@ impl ErlParser {
       Self::parse_export_attr,
       Self::parse_import_attr,
       Self::parse_generic_attr,
+      Self::parse_fn_spec,
       Self::parse_fndef,
     ))(input)
   }

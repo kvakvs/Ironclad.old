@@ -1,6 +1,8 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use std::sync::Arc;
-use nom::{combinator, sequence, branch, multi, character::complete::{anychar}, character, bytes};
+use nom::{combinator, sequence, branch, multi,
+          character::complete::{char, anychar},
+          bytes};
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
@@ -11,14 +13,14 @@ impl ErlParser {
   /// Matches ". <endline>" terminator for module attributes
   pub fn attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
     combinator::map(
-      Self::ws(character::complete::char('.')),
+      Self::ws(char('.')),
       |_| (),
     )(input)
   }
 
   fn parenthesized_attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
     sequence::preceded(
-      Self::ws_before(character::complete::char(')')),
+      Self::ws_before(char(')')),
       Self::attr_terminator,
     )(input)
   }
@@ -27,7 +29,7 @@ impl ErlParser {
   fn naked_attr(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     combinator::recognize(
       sequence::tuple((
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(Self::parse_ident),
         multi::many_till(anychar, Self::attr_terminator)
       ))
@@ -38,9 +40,9 @@ impl ErlParser {
   fn parenthesized_attr(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
     combinator::recognize(
       sequence::tuple((
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(Self::parse_ident),
-        Self::ws_before(character::complete::char('(')),
+        Self::ws_before(char('(')),
         multi::many_till(anychar, Self::parenthesized_attr_terminator)
       ))
     )(input)
@@ -70,12 +72,12 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(bytes::complete::tag("module")),
         sequence::delimited(
-          Self::ws_before(character::complete::char('(')),
+          Self::ws_before(char('(')),
           Self::ws_before(AtomParser::parse_atom),
-          Self::ws_before(character::complete::char(')')),
+          Self::ws_before(char(')')),
         ),
         Self::attr_terminator,
       )),
@@ -88,7 +90,7 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         AtomParser::parse_atom,
-        character::complete::char('/'),
+        char('/'),
         Self::parse_int,
       )),
       |(name, _slash, arity_s)| {
@@ -101,12 +103,12 @@ impl ErlParser {
   /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
   fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     sequence::delimited(
-      Self::ws_before(character::complete::char('[')),
+      Self::ws_before(char('[')),
       multi::separated_list1(
-        Self::ws_before(character::complete::char(',')),
+        Self::ws_before(char(',')),
         Self::ws_before(Self::parse_funarity),
       ),
-      Self::ws_before(character::complete::char(']')),
+      Self::ws_before(char(']')),
     )(input)
   }
 
@@ -115,12 +117,12 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(bytes::complete::tag("export")),
         sequence::delimited(
-          Self::ws_before(character::complete::char('(')),
+          Self::ws_before(char('(')),
           Self::ws_before(Self::parse_square_funarity_list1),
-          Self::ws_before(character::complete::char(')')),
+          Self::ws_before(char(')')),
         ),
         Self::attr_terminator,
       )),
@@ -135,16 +137,16 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(bytes::complete::tag("import")),
         sequence::delimited(
-          Self::ws_before(character::complete::char('(')),
+          Self::ws_before(char('(')),
           sequence::tuple((
             AtomParser::parse_atom,
-            Self::ws_before(character::complete::char(',')),
+            Self::ws_before(char(',')),
             Self::ws_before(Self::parse_square_funarity_list1),
           )),
-          Self::ws_before(character::complete::char(')')),
+          Self::ws_before(char(')')),
         ),
         Self::attr_terminator,
       )),

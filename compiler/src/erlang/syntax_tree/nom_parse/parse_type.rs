@@ -1,9 +1,8 @@
 //! Contains parsers for function typespecs and type syntax.
 
 use std::sync::Arc;
-use nom::{combinator, sequence, multi, character, bytes::complete::{tag}, branch,
-          combinator::{cut},
-          error::{context}};
+use nom::{combinator, sequence, multi, character::complete::{char},
+          bytes::complete::{tag}, branch, combinator::{cut}, error::{context}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
@@ -20,11 +19,11 @@ impl ErlParser {
   pub fn parse_fn_spec(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     combinator::map(
       sequence::tuple((
-        Self::ws_before(character::complete::char('-')),
+        Self::ws_before(char('-')),
         Self::ws_before(tag("spec")),
         Self::ws_before(AtomParser::parse_atom),
         multi::separated_list1(
-          Self::ws_before(character::complete::char(';')),
+          Self::ws_before(char(';')),
           context("function clause spec",
                   cut(Self::ws_before(Self::parse_fn_spec_fnclause))),
         ),
@@ -112,7 +111,7 @@ impl ErlParser {
   // /// Parses a list of comma separated typevars (function arg specs)
   // fn parse_comma_sep_arg_specs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
   //   multi::separated_list0(
-  //     Self::ws(character::complete::char(',')),
+  //     Self::ws(char(',')),
   //
   //     // Comma separated arguments spec can be typevars with optional `::type()`s or just types
   //     branch::alt((
@@ -124,11 +123,11 @@ impl ErlParser {
 
   /// Parses a list of comma separated typevars enclosed in (parentheses)
   pub fn parse_parenthesized_arg_spec_list(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    let (input, _) = Self::ws_before(character::complete::char('('))(input)?;
+    let (input, _) = Self::ws_before(char('('))(input)?;
 
     sequence::terminated(
       Self::parse_comma_sep_typeargs0,
-      Self::ws_before(character::complete::char(')')),
+      Self::ws_before(char(')')),
     )(input)
   }
 
@@ -166,7 +165,7 @@ impl ErlParser {
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     multi::separated_list0(
-      Self::ws_before(character::complete::char(',')),
+      Self::ws_before(char(',')),
       context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
     )(input)
   }
@@ -175,36 +174,48 @@ impl ErlParser {
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     multi::separated_list1(
-      Self::ws(character::complete::char(',')),
+      Self::ws(char(',')),
       context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
     )(input)
   }
 
+  /// Optional `module:` before typename in `module:type()`.
+  fn parse_type_modulename_colon(input: &str) -> nom::IResult<&str, String, ErlParserError> {
+    sequence::terminated(
+      Self::ws_before(AtomParser::parse_atom),
+      Self::ws(char(':')),
+    )(input)
+  }
+
   /// Parse a user defined type with `name()` and 0 or more typevar args.
+  /// Optional with module name `module:name()`.
   fn parse_user_defined_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     combinator::map(
       sequence::tuple((
-        Self::ws_before(Self::parse_ident),
-        Self::ws_before(character::complete::char('(')),
-        context("type arguments for a user-defined type",
-                Self::parse_comma_sep_typeargs0),
-        Self::ws_before(character::complete::char(')')),
+        combinator::opt(Self::parse_type_modulename_colon),
+        Self::ws_before(AtomParser::parse_atom),
+        sequence::delimited(
+          Self::ws_before(char('(')),
+          context("type arguments for a user-defined type",
+                  Self::parse_comma_sep_typeargs0),
+          Self::ws_before(char(')')),
+        )
       )),
-      |(type_name, _open, elements, _close)| {
-        ErlType::from_name(type_name, &elements)
+      |(maybe_module, type_name, elements)| {
+        ErlType::from_name(maybe_module, type_name, &elements)
       },
     )(input)
   }
 
   /// Parse a list of types, returns a temporary list-type
   fn parse_type_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    let (input, _open_tag) = Self::ws_before(character::complete::char('['))(input)?;
+    let (input, _open_tag) = Self::ws_before(char('['))(input)?;
 
     combinator::map(
       sequence::terminated(
         context("type arguments for a list() type",
                 Self::parse_comma_sep_typeargs0),
-        Self::ws_before(character::complete::char(']')),
+        Self::ws_before(char(']')),
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -215,13 +226,13 @@ impl ErlParser {
 
   /// Parse a tuple of types, returns a temporary tuple-type
   fn parse_type_tuple(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    let (input, _open_tag) = Self::ws_before(character::complete::char('{'))(input)?;
+    let (input, _open_tag) = Self::ws_before(char('{'))(input)?;
 
     combinator::map(
       sequence::terminated(
         context("type arguments for a tuple() type",
                 Self::parse_comma_sep_typeargs0),
-        Self::ws_before(character::complete::char('}')),
+        Self::ws_before(char('}')),
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -265,7 +276,7 @@ impl ErlParser {
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     combinator::map(
       multi::separated_list1(
-        Self::ws_before(character::complete::char('|')),
+        Self::ws_before(char('|')),
         Self::ws_before(Self::parse_nonunion_type),
       ),
       |types| ErlType::new_union(&types),
