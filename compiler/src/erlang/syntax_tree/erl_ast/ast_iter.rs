@@ -11,7 +11,6 @@ impl ErlAst {
   pub fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
     match self {
       ErlAst::ModuleStartAttr { .. }
-      | ErlAst::Comment { .. }
       | ErlAst::FnSpec { .. }
       | ErlAst::Lit { .. }
       | ErlAst::MFA { .. }

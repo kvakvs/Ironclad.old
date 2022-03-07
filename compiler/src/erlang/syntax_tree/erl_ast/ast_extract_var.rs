@@ -41,7 +41,6 @@ impl ErlAst {
       }
 
       ErlAst::Empty
-      | ErlAst::Comment(_)
       | ErlAst::Lit { .. }
       | ErlAst::Token { .. } => {
         Ok(())  // do nothing

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, multi, branch};
+use nom::{combinator, sequence, multi, branch, character};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
@@ -34,6 +34,37 @@ impl ErlParser {
     multi::many0(combinator::complete(Self::parse_module_form))(input)
   }
 
+  /// Recognizes newline or end of input
+  fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
+    input: &'a str
+  ) -> nom::IResult<&str, &str, ErrType> {
+    combinator::recognize(
+      branch::alt((
+        nom::bytes::complete::tag("\r\n"),
+        nom::bytes::complete::tag("\r"),
+        nom::bytes::complete::tag("\n"),
+        combinator::eof,
+      ))
+    )(input)
+  }
+
+  /// Recognizes `% text <newline>` consuming text
+  fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
+    input: &'a str
+  ) -> nom::IResult<&str, &str, ErrType> {
+    combinator::recognize(
+      sequence::pair(
+        multi::many1(
+          character::complete::char('%'),
+        ),
+        multi::many_till(
+          character::complete::anychar,
+          Self::newline_or_eof,
+        ),
+      )
+    )(input)
+  }
+
   /// Parses an attribute or a function def
   pub fn parse_module_form(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     branch::alt((
@@ -45,7 +76,7 @@ impl ErlParser {
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
   pub fn parse_module(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
     let (input, m_attr) = Self::parse_module_attr(input)?;
-    println!("Parsed module attr: {}; input=«{}»", m_attr, input);
+    println!("Parsed module attr: {}", m_attr);
 
     let (input, mut forms) = Self::parse_module_forms_collection(input)?;
 

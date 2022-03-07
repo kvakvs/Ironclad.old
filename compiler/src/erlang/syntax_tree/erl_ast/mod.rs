@@ -30,9 +30,6 @@ pub enum ErlAst {
   /// Default value for when AST tree is empty. Should create error, not a valid AST node.
   Empty,
 
-  /// Comment text eliminated.
-  Comment(SourceLoc),
-
   /// A token to be consumed by AST builder, temporary, must not exist in final AST
   Token {
     /// Source file pointer
@@ -302,7 +299,6 @@ impl ErlAst {
   /// Retrieve source file location for an AST element
   pub fn location(&self) -> SourceLoc {
     match self {
-      ErlAst::Comment(loc) => loc.clone(),
       ErlAst::Token { location: loc, .. } => loc.clone(),
       ErlAst::ModuleStartAttr { location: loc, .. } => loc.clone(),
       // ErlAst::Comma { location: loc, .. } => loc.clone(),

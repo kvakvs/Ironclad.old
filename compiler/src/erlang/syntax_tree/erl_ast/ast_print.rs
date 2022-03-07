@@ -8,7 +8,6 @@ use crate::literal::Literal;
 impl std::fmt::Display for ErlAst {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      ErlAst::Comment { .. } => writeln!(f, "% comment"),
       ErlAst::Empty => writeln!(f, "% empty"),
       ErlAst::Token { token: t, .. } => writeln!(f, "% token {}", t),
       ErlAst::ModuleForms(forms) => {

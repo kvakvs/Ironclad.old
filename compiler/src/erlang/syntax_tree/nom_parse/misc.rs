@@ -1,17 +1,34 @@
 //! Helper functions for Nom parsing
 
 use nom::{sequence, combinator, multi, branch, character,
-          character::complete::{one_of, alphanumeric1, multispace0}, bytes::complete::{tag}};
+          character::complete::{one_of, alphanumeric1}, bytes::complete::{tag}};
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 
 impl ErlParser {
+  /// Recognizes 0 or more whitespaces and line comments
+  fn spaces_or_comments0<'a, ErrType: nom::error::ParseError<&'a str>>(
+    input: &'a str
+  ) -> nom::IResult<&str, &str, ErrType> {
+    combinator::recognize(
+      multi::many0(
+        branch::alt((
+          character::complete::multispace1,
+          Self::parse_line_comment,
+        ))
+      )
+    )(input)
+  }
+
   /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
   /// whitespace, returning the output of `inner`.
   pub fn ws_before<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
-    inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
+    inner: InnerFn
+  ) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
     where InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
-    sequence::preceded(multispace0, inner)
+    sequence::preceded::<&'a str, &str, Out, ErrType, _, InnerFn>(
+      Self::spaces_or_comments0,
+      inner)
   }
 
   /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -20,7 +37,7 @@ impl ErlParser {
     inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
     where InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
-    sequence::preceded(multispace0, inner)
+    sequence::preceded(Self::spaces_or_comments0, inner)
   }
 
   /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -29,7 +46,9 @@ impl ErlParser {
     inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
     where InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
-    sequence::delimited(multispace0, inner, multispace0)
+    sequence::delimited(Self::spaces_or_comments0,
+      inner,
+      character::complete::multispace0)
   }
 
   /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -38,7 +57,9 @@ impl ErlParser {
     inner: InnerFn) -> impl FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>
     where InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
-    sequence::delimited(multispace0, inner, multispace0)
+    sequence::delimited(Self::spaces_or_comments0,
+                        inner,
+                        character::complete::multispace0)
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress

@@ -84,10 +84,10 @@ impl Module {
 
     match parse_result.finish() {
       Ok((tail, forms)) => {
-        println!("Parser input «{}»\nParse result AST: «{}»", input, &forms);
+        println!("Parse result AST: «{}»", &forms);
 
         assert!(tail.trim().is_empty(),
-                "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {:?}", tail, forms);
+                "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}", tail, forms);
         module.source_file = SourceFile::new(filename, String::from(input));
         module.ast = forms;
 
