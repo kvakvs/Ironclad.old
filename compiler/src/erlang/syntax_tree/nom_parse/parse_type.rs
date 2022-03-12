@@ -5,7 +5,7 @@ use nom::{combinator, sequence, multi, character::complete::{char},
           bytes::complete::{tag}, branch, combinator::{cut}, error::{context}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
@@ -16,7 +16,7 @@ use crate::typing::typevar::Typevar;
 
 impl ErlParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
-  pub fn parse_fn_spec(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_fn_spec(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
         Self::ws_before(char('-')),
@@ -284,7 +284,7 @@ impl ErlParser {
   }
 
   /// Wraps parsed type into a type-AST-node
-  pub fn parse_type_node(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_type_node(input: &str) -> AstParserResult {
     combinator::map(
       Self::parse_type,
       |t| ErlAst::Type { location: SourceLoc::None, ty: t }.into(),

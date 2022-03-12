@@ -9,13 +9,13 @@ use nom::{combinator, sequence, multi,
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
-  fn parse_when_expr_for_fn(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
         Self::ws_before(tag("when")),
@@ -76,7 +76,7 @@ impl ErlParser {
   }
 
   /// Parse function definition
-  pub fn parse_fndef(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_fndef(input: &str) -> AstParserResult {
     combinator::map(
       sequence::terminated(
         multi::separated_list1(
@@ -90,7 +90,7 @@ impl ErlParser {
   }
 
   /// Lambda is an inline function definition
-  pub fn parse_lambda(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_lambda(input: &str) -> AstParserResult {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     combinator::map(
       sequence::tuple((

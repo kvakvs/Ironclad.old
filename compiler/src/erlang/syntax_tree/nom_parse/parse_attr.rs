@@ -1,24 +1,23 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
-use std::sync::Arc;
 use nom::{combinator, sequence, branch, multi,
           character::complete::{char, anychar},
           bytes};
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, StrSliceParserResult, VoidParserResult};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
   /// Matches ". <endline>" terminator for module attributes
-  pub fn attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
+  pub fn attr_terminator(input: &str) -> VoidParserResult {
     combinator::map(
       Self::ws(char('.')),
       |_| (),
     )(input)
   }
 
-  fn parenthesized_attr_terminator(input: &str) -> nom::IResult<&str, (), ErlParserError> {
+  fn parenthesized_attr_terminator(input: &str) -> VoidParserResult {
     sequence::preceded(
       Self::ws_before(char(')')),
       Self::attr_terminator,
@@ -51,7 +50,7 @@ impl ErlParser {
   /// Parses a generic `- "something" ... ".\n"` attribute, consuming everything as a string
   /// Given a string, try and consume a generic attribute line starting with `-ident` and ending with
   /// a `"." NEWLINE`
-  pub fn parse_generic_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_generic_attr(input: &str) -> AstParserResult {
     combinator::map(
       combinator::recognize(
         sequence::terminated(
@@ -68,7 +67,7 @@ impl ErlParser {
   }
 
   /// Parses a `-module(atom).` attribute
-  pub fn parse_module_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_module_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
@@ -113,7 +112,7 @@ impl ErlParser {
   }
 
   /// Parses an `-export([fn/arity, ...]).` attribute
-  pub fn parse_export_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_export_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks
@@ -133,7 +132,7 @@ impl ErlParser {
   }
 
   /// Parses an `-import([fn/arity, ...]).` attribute
-  pub fn parse_import_attr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_import_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
         // TODO: Check whether attrs can contain %comments, and then simplify with just whitespace checks

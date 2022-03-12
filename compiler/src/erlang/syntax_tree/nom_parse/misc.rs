@@ -3,7 +3,7 @@
 use nom::{sequence, combinator, multi, branch, 
           character, character::complete::{char, one_of, alphanumeric1},
           bytes::complete::{tag}};
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError, StringParserResult, StrSliceParserResult};
 
 impl ErlParser {
   /// Recognizes 0 or more whitespaces and line comments
@@ -64,7 +64,7 @@ impl ErlParser {
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  pub fn parse_ident(input: &str) -> nom::IResult<&str, String, ErlParserError> {
+  pub fn parse_ident(input: &str) -> StringParserResult {
     combinator::map(
       combinator::recognize(
         sequence::pair(
@@ -78,7 +78,7 @@ impl ErlParser {
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  pub fn parse_ident_capitalized(input: &str) -> nom::IResult<&str, String, ErlParserError> {
+  pub fn parse_ident_capitalized(input: &str) -> StringParserResult {
     combinator::map(
       combinator::recognize(
         sequence::pair(
@@ -92,7 +92,7 @@ impl ErlParser {
 
   /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
   /// From Nom examples
-  pub fn parse_int(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
+  pub fn parse_int(input: &str) -> StrSliceParserResult {
     combinator::recognize(
       multi::many1(
         sequence::terminated(one_of("0123456789"),
@@ -103,7 +103,7 @@ impl ErlParser {
 
   /// Parse a float with possibly scientific notation. Output is a string.
   /// From Nom examples
-  pub fn parse_float(input: &str) -> nom::IResult<&str, &str, ErlParserError> {
+  pub fn parse_float(input: &str) -> StrSliceParserResult {
     branch::alt((
       // Case one: .42
       combinator::recognize(

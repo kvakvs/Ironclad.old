@@ -2,22 +2,19 @@
 
 use std::sync::Arc;
 
-use nom::{error,
-          character::complete::{char},
-          combinator, sequence, multi,
-          bytes::complete::{tag}, branch};
+use nom::{character::complete::{char}, combinator, sequence, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
   /// Parse a function call (application of args to a callable value)
-  fn parse_apply(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_apply(input: &str) -> AstParserResult {
     // Application consists of a callable expression, "(", list of args, and ")"
     combinator::map(
       sequence::tuple((
@@ -25,8 +22,8 @@ impl ErlParser {
         sequence::delimited(
           Self::ws_before(char('(')),
           multi::separated_list0(
-            Self::ws_before(tag(",")),
-            Self::parse_expr),
+            Self::ws_before(char(',')),
+            Self::parse_expr_no_comma_no_semi),
           Self::ws_before(char(')')),
         ),
       )),
@@ -37,7 +34,7 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_var(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_var(input: &str) -> AstParserResult {
     let (input, name) = Self::parse_ident_capitalized(input)?;
     let ast = ErlAst::Var(ErlVar::new(SourceLoc::None, &name)).into();
     Ok((input, ast))
@@ -52,7 +49,7 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_list_of_exprs(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_list_of_exprs(input: &str) -> AstParserResult {
     // TODO: list tail with |
     combinator::map(
       sequence::delimited(
@@ -64,7 +61,7 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_tuple_of_exprs(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_tuple_of_exprs(input: &str) -> AstParserResult {
     combinator::map(
       sequence::delimited(
         Self::ws_before(char('{')),
@@ -79,11 +76,11 @@ impl ErlParser {
     multi::separated_list0(
       Self::ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-      Self::parse_prec11,
+      Self::parse_expr_no_comma_no_semi,
     )(input)
   }
 
-  fn parenthesized_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parenthesized_expr(input: &str) -> AstParserResult {
     sequence::delimited(
       Self::ws_before(char('(')),
       Self::ws_before(Self::parse_expr),
@@ -92,7 +89,7 @@ impl ErlParser {
   }
 
   /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
-  fn parse_prec_primary(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec_primary(input: &str) -> AstParserResult {
     Self::ws_before_mut(
       branch::alt((
         Self::parenthesized_expr,
@@ -107,7 +104,7 @@ impl ErlParser {
   // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
   // TODO: module:function notation and maybe tuple notation?
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
-  fn parse_prec01(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec01(input: &str) -> AstParserResult {
     combinator::map(
       sequence::pair(
         Self::parse_prec_primary,
@@ -129,12 +126,12 @@ impl ErlParser {
   }
 
   // TODO: Precedence 2: # (record access operator)
-  fn parse_prec02(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec02(input: &str) -> AstParserResult {
     Self::parse_prec01(input)
   }
 
   /// Precedence 3: Unary + - bnot not
-  fn parse_prec03(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec03(input: &str) -> AstParserResult {
     combinator::map(
       sequence::pair(
         Self::ws_before_mut(branch::alt((
@@ -149,7 +146,7 @@ impl ErlParser {
   }
 
   /// Precedence 4: / * div rem band and, left associative
-  fn parse_prec04(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec04(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -170,7 +167,7 @@ impl ErlParser {
   }
 
   /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
-  fn parse_prec05(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec05(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::tuple((
@@ -191,7 +188,7 @@ impl ErlParser {
   }
 
   /// Precedence 6: ++ --, right associative
-  fn parse_prec06(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec06(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -210,7 +207,7 @@ impl ErlParser {
   }
 
   /// Precedence 7: == /= =< < >= > =:= =/=
-  fn parse_prec07(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec07(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
@@ -232,7 +229,7 @@ impl ErlParser {
   }
 
   /// Precedence 8: andalso
-  fn parse_prec08(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec08(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
       sequence::pair(
@@ -249,7 +246,7 @@ impl ErlParser {
   }
 
   /// Precedence 9: orelse
-  fn parse_prec09(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec09(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
       sequence::pair(
@@ -266,7 +263,7 @@ impl ErlParser {
   }
 
   /// Precedence 10: assignment/match = operator, and send operator "!", right associative
-  fn parse_prec10(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec10(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       sequence::pair(
@@ -286,7 +283,7 @@ impl ErlParser {
 
   /// Precedence 11: Catch operator, then continue to higher precedences
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
-  pub fn parse_prec11(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  fn parse_prec11(input: &str) -> AstParserResult {
     // Try parse (catch Expr) otherwise try next precedence level
     combinator::map(
       sequence::pair(
@@ -298,10 +295,16 @@ impl ErlParser {
         .or_else(|_err| Self::ws_before(Self::parse_prec10)(input))
   }
 
+  /// Public entry point to parse expression that cannot include comma or semicolon
+  #[inline]
+  pub fn parse_expr_no_comma_no_semi(input: &str) -> AstParserResult {
+    Self::parse_prec11(input)
+  }
+
   /// Parse an expression.
   /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
-  pub fn parse_expr(input: &str) -> nom::IResult<&str, Arc<ErlAst>, ErlParserError> {
+  pub fn parse_expr(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       sequence::pair(
