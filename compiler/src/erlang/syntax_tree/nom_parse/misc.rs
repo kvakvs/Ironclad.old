@@ -3,7 +3,7 @@
 use nom::{sequence, combinator, multi, branch, 
           character, character::complete::{char, one_of, alphanumeric1},
           bytes::complete::{tag}};
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError, StringParserResult, StrSliceParserResult};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, StringParserResult, StrSliceParserResult};
 
 impl ErlParser {
   /// Recognizes 0 or more whitespaces and line comments
@@ -81,8 +81,11 @@ impl ErlParser {
   pub fn parse_ident_capitalized(input: &str) -> StringParserResult {
     combinator::map(
       combinator::recognize(
-        sequence::pair(
-          combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase()),
+        sequence::pair( // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
+          combinator::verify(
+            character::complete::anychar,
+            |c: &char| c.is_uppercase() || *c == '_'
+          ),
           multi::many0(branch::alt((alphanumeric1, tag("_")))),
         )
       ),

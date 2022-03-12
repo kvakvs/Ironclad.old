@@ -4,7 +4,7 @@
 use nom::{sequence, multi, branch, combinator, error,
           bytes::streaming::{is_not, take_while_m_n},
           character};
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError, StringParserResult};
+use crate::erlang::syntax_tree::nom_parse::{ErlParser, StringParserResult};
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single

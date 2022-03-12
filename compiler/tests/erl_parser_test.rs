@@ -57,7 +57,7 @@ fn parse_empty_module_forms_collection() -> ErlResult<()> {
   match parse_result.finish() {
     Ok((_tail, forms)) => {
       println!("Parsed empty module forms collection: «{}»\nResult: {:?}", code, forms)
-    },
+    }
     Err(err) => return Err(ErlError::from_nom_error(code, err)),
   }
   Ok(())
@@ -73,7 +73,7 @@ fn parse_2_module_forms_collection() -> ErlResult<()> {
   match parse_result.finish() {
     Ok((_tail, forms)) => {
       println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), code, forms)
-    },
+    }
     Err(err) => return Err(ErlError::from_nom_error(code, err)),
   }
   Ok(())

@@ -1,5 +1,6 @@
 //! Parse expressions and guard expressions (with added ;, operators)
 
+use std::ops::Deref;
 use std::sync::Arc;
 
 use nom::{character::complete::{char}, combinator, sequence, multi, branch};
@@ -19,13 +20,14 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         Self::parse_expr,
-        sequence::delimited(
-          Self::ws_before(char('(')),
-          multi::separated_list0(
-            Self::ws_before(char(',')),
-            Self::parse_expr_no_comma_no_semi),
-          Self::ws_before(char(')')),
-        ),
+        Self::parse_parenthesized_list_of_exprs,
+        // sequence::delimited(
+        //   Self::ws_before(char('(')),
+        //   multi::separated_list0(
+        //     Self::ws_before(char(',')),
+        //     Self::parse_expr_no_comma_no_semi),
+        //   Self::ws_before(char(')')),
+        // ),
       )),
       |(expr, args)| {
         let application = ErlApply::new(SourceLoc::None, expr, args);
@@ -299,6 +301,14 @@ impl ErlParser {
   #[inline]
   pub fn parse_expr_no_comma_no_semi(input: &str) -> AstParserResult {
     Self::parse_prec11(input)
+    // println!("parse_expr_no_comma_no_semi: {}", input);
+    // match Self::parse_prec11(input) {
+    //   Ok((tail, result)) => {
+    //     println!("OK r={}", result.deref());
+    //     Ok((tail, result))
+    //   }
+    //   Err(e) => Err(e)
+    // }
   }
 
   /// Parse an expression.
