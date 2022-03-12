@@ -18,7 +18,7 @@ pub struct ErlFnClause {
   pub name: Option<String>,
   /// Function clause arguments, binding/match expressions
   pub args: Vec<Arc<ErlAst>>,
-  /// Function clause body
+  /// Function clause body: a comma-expression which is a vec of expressions, and result is the last one
   pub body: Arc<ErlAst>,
   /// Guard expression, if exists
   pub guard_expr: Option<Arc<ErlAst>>,

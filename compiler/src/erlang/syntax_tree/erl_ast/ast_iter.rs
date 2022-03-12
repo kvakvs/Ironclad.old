@@ -59,6 +59,15 @@ impl ErlAst {
       ErlAst::List { elements, .. } => Some(elements.to_vec()),
       ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
+      ErlAst::ListComprehension { expr, generators, .. } => {
+        let mut result = vec![expr.clone()];
+        result.extend(generators.iter().cloned());
+        Some(result)
+      }
+      ErlAst::ListComprehensionGenerator { left, right, .. } => {
+        Some(vec![left.clone(), right.clone()])
+      }
+
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       _ => unreachable!("{}(): Can't process {}", function_name!(), self),
     }

@@ -89,6 +89,25 @@ impl ErlAst {
         .into()
   }
 
+  /// Create a new AST node for a comma-expression
+  pub fn new_comma_expr(location: SourceLoc, elements: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::CommaExpr { location, elements }.into()
+  }
+
+  /// Create a new AST node for a list comprehension
+  pub fn new_list_comprehension(location: SourceLoc,
+                                expr: Arc<ErlAst>,
+                                generators: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::ListComprehension { location, expr, generators }.into()
+  }
+
+  /// Create a new AST node for a list comprehension generator `Expr <- Expr`
+  pub fn new_list_comprehension_generator(location: SourceLoc,
+                                          left: Arc<ErlAst>,
+                                          right: Arc<ErlAst>) -> Arc<ErlAst> {
+    ErlAst::ListComprehensionGenerator { location, left, right }.into()
+  }
+
   /// Create a new `-module(m).` module attr.
   pub fn new_module_start_attr(name: String) -> Arc<ErlAst> {
     ErlAst::ModuleStartAttr {

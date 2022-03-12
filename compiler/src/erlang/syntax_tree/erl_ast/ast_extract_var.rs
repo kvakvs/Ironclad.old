@@ -17,6 +17,23 @@ impl ErlAst {
         variables.insert(v.name.clone(), ErlType::any());
         Ok(())
       }
+      ErlAst::CommaExpr { elements, .. } => {
+        for e in elements {
+          Self::extract_variables(e, variables)?;
+        }
+        Ok(())
+      }
+      ErlAst::ListComprehension { expr, generators, .. } => {
+        Self::extract_variables(expr, variables)?;
+        for g in generators {
+          Self::extract_variables(g, variables)?;
+        }
+        Ok(())
+      }
+      ErlAst::ListComprehensionGenerator { left, right, .. } => {
+        Self::extract_variables(left, variables)?;
+        Self::extract_variables(right, variables)
+      }
       ErlAst::List { elements, tail, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;

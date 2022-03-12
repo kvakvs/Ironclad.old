@@ -7,8 +7,8 @@ use nom::combinator::not;
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 
-type UnaryOpParserResult<'a> = nom::IResult<&'a str, ErlUnaryOp, ErlParserError<'a>>; 
-type BinaryOpParserResult<'a> = nom::IResult<&'a str, ErlBinaryOp, ErlParserError<'a>>; 
+type UnaryOpParserResult<'a> = nom::IResult<&'a str, ErlUnaryOp, ErlParserError<'a>>;
+type BinaryOpParserResult<'a> = nom::IResult<&'a str, ErlBinaryOp, ErlParserError<'a>>;
 
 impl ErlParser {
   pub fn unop_catch(input: &str) -> UnaryOpParserResult {
@@ -32,7 +32,9 @@ impl ErlParser {
   }
 
   pub fn binop_floatdiv(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('/'), |_| ErlBinaryOp::Div)(input)
+    combinator::map(char('/')
+                        .and(not(char('='))),
+                    |_| ErlBinaryOp::Div)(input)
   }
 
   pub fn binop_intdiv(input: &str) -> BinaryOpParserResult {
@@ -136,7 +138,8 @@ impl ErlParser {
   }
 
   pub fn binop_greater(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('>'), |_| ErlBinaryOp::Greater)(input)
+    combinator::map(char('>')
+                        .and(not(char('='))), |_| ErlBinaryOp::Greater)(input)
   }
 
   pub fn binop_greater_eq(input: &str) -> BinaryOpParserResult {
@@ -145,7 +148,7 @@ impl ErlParser {
 
   pub fn binop_match(input: &str) -> BinaryOpParserResult {
     combinator::map(tag("=")
-                        .and(not(branch::alt((char(':'), char('/'))))),
+                        .and(not(branch::alt((char(':'), char('/'), char('<'))))),
                     |_| ErlBinaryOp::Match)(input)
   }
 

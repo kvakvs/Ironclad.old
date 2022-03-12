@@ -39,13 +39,16 @@ impl ErlParser {
         // Optional: when <guard>
         nom::error::context("when expression",
                             combinator::opt(Self::parse_when_expr_for_fn)),
-
-        sequence::preceded(
-          Self::ws_before(tag("->")),
-          Self::parse_expr, // Body
-        )
+        nom::error::context("function clause body",
+                            sequence::preceded(
+                              Self::ws_before(tag("->")),
+                              Self::parse_expr, // Body as list of exprs
+                              // Self::parse_comma_sep_exprs, // Body as list of exprs
+                            ))
       )),
       |(maybe_name, args, when_expr, body)| {
+        // let body_ast = ErlAst::new_comma_expr(SourceLoc::None, body);
+        // ErlFnClause::new(maybe_name, args, body_ast, when_expr)
         ErlFnClause::new(maybe_name, args, body, when_expr)
       },
     )(input)

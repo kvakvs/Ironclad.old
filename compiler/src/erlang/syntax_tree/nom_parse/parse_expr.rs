@@ -2,14 +2,14 @@
 
 use std::sync::Arc;
 
-use nom::{character::complete::{char}, combinator, sequence, multi, branch};
+use nom::{bytes, character::complete::{char}, combinator, sequence, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
-use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
@@ -62,6 +62,51 @@ impl ErlParser {
     )(input)
   }
 
+  /// Parses a `Expr <- Expr` generator
+  pub fn parse_list_comprehension_generator(input: &str) -> AstParserResult {
+    combinator::map(
+      sequence::separated_pair(
+        Self::parse_expr_no_comma_no_semi,
+        Self::ws_before(bytes::complete::tag("<-")),
+        Self::parse_expr_no_comma_no_semi,
+      ),
+      |(a, b)| ErlAst::new_list_comprehension_generator(SourceLoc::None, a, b),
+    )(input)
+  }
+
+  /// Parses mix of generators and conditions for a list comprehension
+  pub fn parse_list_comprehension_exprs_and_generators(input: &str) -> VecAstParserResult {
+    multi::separated_list0(
+      Self::ws_before(char(',')),
+      // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+      branch::alt((
+        Self::parse_expr_no_comma_no_semi,
+        Self::parse_list_comprehension_generator
+      )),
+    )(input)
+  }
+
+  fn parse_list_comprehension_1(input: &str) -> AstParserResult {
+    combinator::map(
+      sequence::separated_pair(
+        Self::parse_expr_no_comma_no_semi,
+        Self::ws_before(bytes::complete::tag("||")),
+        Self::parse_list_comprehension_exprs_and_generators,
+      ),
+      |(expr, generators)| {
+        ErlAst::new_list_comprehension(SourceLoc::None, expr, generators)
+      },
+    )(input)
+  }
+
+  fn parse_list_comprehension(input: &str) -> AstParserResult {
+    sequence::delimited(
+      Self::ws_before(char('[')),
+      Self::parse_list_comprehension_1,
+      Self::ws_before(char(']')),
+    )(input)
+  }
+
   fn parse_tuple_of_exprs(input: &str) -> AstParserResult {
     combinator::map(
       sequence::delimited(
@@ -73,7 +118,8 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
+  /// Parses comma separated sequence of expressions
+  pub fn parse_comma_sep_exprs(input: &str) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list0(
       Self::ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
@@ -94,6 +140,7 @@ impl ErlParser {
     Self::ws_before_mut(
       branch::alt((
         Self::parenthesized_expr,
+        Self::parse_list_comprehension,
         Self::parse_list_of_exprs,
         Self::parse_tuple_of_exprs,
         Self::parse_var,

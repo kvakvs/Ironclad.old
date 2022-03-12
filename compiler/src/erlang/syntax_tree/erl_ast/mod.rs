@@ -181,6 +181,34 @@ pub enum ErlAst {
     /// Map values, matching keys by index
     values: Vec<Arc<ErlAst>>,
   },
+
+  /// Comma-separated list of expressions, final expression is the result
+  CommaExpr {
+    /// Source code location
+    location: SourceLoc,
+    /// Comma-expression elements
+    elements: Vec<Arc<ErlAst>>,
+  },
+
+  /// A list comprehension expression
+  ListComprehension {
+    /// Source code location
+    location: SourceLoc,
+    /// The result expression
+    expr: Arc<ErlAst>,
+    /// The generators which produce the list comprehension inpits, and the conditions
+    generators: Vec<Arc<ErlAst>>,
+  },
+
+  /// A list comprehension generator expression `Expr <- Expr`
+  ListComprehensionGenerator {
+    /// Source code location
+    location: SourceLoc,
+    /// The output match expression
+    left: Arc<ErlAst>,
+    /// The input expression (source of the values)
+    right: Arc<ErlAst>,
+  },
 }
 
 impl ErlAst {
