@@ -1,6 +1,5 @@
 //! Parse expressions and guard expressions (with added ;, operators)
 
-use std::ops::Deref;
 use std::sync::Arc;
 
 use nom::{character::complete::{char}, combinator, sequence, multi, branch};

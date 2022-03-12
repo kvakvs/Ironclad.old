@@ -1,7 +1,7 @@
 //! Parse an operator for binary or unary expressions
 #![allow(missing_docs)]
 
-use nom::{combinator, character::complete::{char}, bytes::complete::{tag}, Parser};
+use nom::{branch, combinator, character::complete::{char}, bytes::complete::{tag}, Parser};
 use nom::combinator::not;
 
 use crate::erlang::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -54,7 +54,9 @@ impl ErlParser {
   }
 
   pub fn binop_subtract(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('-'), |_| ErlBinaryOp::Sub)(input)
+    combinator::map(char('-')
+                        .and(not(char('-'))),
+                    |_| ErlBinaryOp::Sub)(input)
   }
 
   pub fn binop_list_append(input: &str) -> BinaryOpParserResult {
@@ -142,7 +144,9 @@ impl ErlParser {
   }
 
   pub fn binop_match(input: &str) -> BinaryOpParserResult {
-    combinator::map(tag("="), |_| ErlBinaryOp::Match)(input)
+    combinator::map(tag("=")
+                        .and(not(branch::alt((char(':'), char('/'))))),
+                    |_| ErlBinaryOp::Match)(input)
   }
 
   pub fn binop_comma(input: &str) -> BinaryOpParserResult {
