@@ -9,3 +9,4 @@ pub mod erl_fn_def;
 pub mod erl_fn_clause;
 pub mod erl_token;
 pub mod erl_catch_clause;
+pub mod erl_exception_pattern;

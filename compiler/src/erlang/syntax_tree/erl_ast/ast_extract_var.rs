@@ -46,10 +46,10 @@ impl ErlAst {
           }
         }
         for cc in catch_clauses {
-          Self::extract_variables(&cc.class_pattern, variables)?;
-          Self::extract_variables(&cc.exc_pattern, variables)?;
+          Self::extract_variables(&cc.exc_pattern.class, variables)?;
+          Self::extract_variables(&cc.exc_pattern.error, variables)?;
           Self::extract_variables(&cc.body, variables)?;
-          if let Some(stk) = &cc.stack_pattern {
+          if let Some(stk) = &cc.exc_pattern.stack {
             Self::extract_variables(stk, variables)?;
           }
           if let Some(wheng) = &cc.when_guard {

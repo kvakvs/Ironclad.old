@@ -169,8 +169,23 @@ impl AtomParser {
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
   /// delitmited string
   pub fn parse_atom(input: &str) -> StringParserResult {
-    branch::alt(
-      (ErlParser::parse_ident, Self::parse_quoted_atom, )
-    )(input)
+    branch::alt((
+      combinator::verify(ErlParser::parse_ident, |s| !Self::is_erl_keyword(s)),
+      Self::parse_quoted_atom,
+    ))(input)
+  }
+
+  fn is_erl_keyword(s: &str) -> bool {
+    match s {
+      "after" | "and" | "andalso" | "band" |
+      "begin" | "bnot" | "bor" | "bsl" |
+      "bsr" | "bxor" | "case" | "catch" |
+      "cond" | "div" | "end" | "fun" |
+      "if" | "let" | "not" | "of" |
+      "or" | "orelse" | "receive" | "rem" |
+      "try" | "when" | "xor" => true,
+      // TODO: Erlang 25 new keyword `maybe`
+      _ => false,
+    }
   }
 }
