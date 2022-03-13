@@ -5,6 +5,8 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
+use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
+use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
@@ -130,6 +132,15 @@ impl ErlAst {
       location: SourceLoc::None,
       import_from,
       imports,
+    }.into()
+  }
+
+  /// Create a new try-catch AST node
+  pub fn new_try_catch(location: SourceLoc, body: Arc<ErlAst>,
+                       of_branches: Option<Vec<ErlCaseClause>>,
+                       catch_clauses: Vec<CatchClause>) -> Arc<ErlAst> {
+    ErlAst::TryCatch {
+      location, body, of_branches, catch_clauses
     }.into()
   }
 }

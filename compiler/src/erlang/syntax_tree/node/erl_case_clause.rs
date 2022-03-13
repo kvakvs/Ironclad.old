@@ -8,15 +8,25 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 #[derive(Debug)]
 pub struct ErlCaseClause {
   /// A match expression, matched vs. case arg
-  pub cond: Arc<ErlAst>,
+  pub pattern: Arc<ErlAst>,
   /// Must resolve to bool, or an exception
-  pub guard: Arc<ErlAst>,
+  pub guard: Option<Arc<ErlAst>>,
   /// Case clause body expression
   pub body: Arc<ErlAst>,
 }
 
+impl ErlCaseClause {
+  /// Create a new case clause branch
+  pub fn new(pattern: Arc<ErlAst>, guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+    Self { pattern, guard, body }
+  }
+}
+
 impl std::fmt::Display for ErlCaseClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} when {} -> {};", self.cond, self.guard, self.body)
+    match &self.guard {
+      Some(g) => write!(f, "{} when {} -> {};", self.pattern, g, self.body),
+      None => write!(f, "{} -> {};", self.pattern, self.body),
+    }
   }
 }

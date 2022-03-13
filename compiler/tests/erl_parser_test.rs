@@ -200,11 +200,27 @@ fn parse_fn1() -> ErlResult<()> {
 #[named]
 #[test]
 fn parse_fn2() -> ErlResult<()> {
-  test_util::start(function_name!(), "Parse a function from OTP lib/compiler");
+  test_util::start(function_name!(), "Parse a function from OTP lib/compiler with list comprehension");
   let filename = PathBuf::from(function_name!());
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
     Fs = [function(F) || F <- Fs0],
     {ok,{Mod,Exp,Attr,Fs,Lc}}.";
+  let module = Module::from_fun_source(&filename, source)?;
+
+  println!("Parsed result: {}", module.ast);
+  Ok(())
+}
+
+/// Try parse some function defs
+#[named]
+#[test]
+fn parse_fn_try_catch() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function with try/catch");
+  let filename = PathBuf::from(function_name!());
+  let source = "function({function,Name,Arity,CLabel,Is0}) ->
+    try {function,Name,Arity,CLabel,Is}
+    catch Class:Error:Stack -> erlang:raise(Class, Error, Stack)
+    end.";
   let module = Module::from_fun_source(&filename, source)?;
 
   println!("Parsed result: {}", module.ast);

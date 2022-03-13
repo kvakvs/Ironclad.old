@@ -38,7 +38,10 @@ impl std::fmt::Display for ErlAst {
         write!(f, "}}")
       }
       ErlAst::CClause(_loc, clause) => {
-        write!(f, "{} when {} -> {}", clause.cond, clause.guard, clause.body)
+        match &clause.guard {
+          Some(g) => write!(f, "{} when {} -> {}", clause.pattern, g, clause.body),
+          None => write!(f, "{} -> {}", clause.pattern, clause.body),
+        }
       }
       ErlAst::Var(var) => write!(f, "{}", var.name),
       ErlAst::Apply(app) => write!(f, "{}", app),
@@ -76,6 +79,14 @@ impl std::fmt::Display for ErlAst {
       }
       ErlAst::ListComprehensionGenerator {left, right, ..} => {
         write!(f, "{} <- {}", left, right)
+      }
+      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+        write!(f, "try {}", body)?;
+        if let Some(ofb) = of_branches {
+          write!(f, "of")?;
+          Pretty::display_semicolon_separated(ofb, f)?;
+        }
+        Pretty::display_semicolon_separated(catch_clauses, f)
       }
     }
   }

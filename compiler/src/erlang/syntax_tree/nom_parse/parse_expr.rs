@@ -7,6 +7,7 @@ use nom::{bytes, character::complete::{char}, combinator, sequence, multi, branc
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
@@ -357,10 +358,9 @@ impl ErlParser {
     // }
   }
 
-  /// Parse an expression.
   /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
-  pub fn parse_expr(input: &str) -> AstParserResult {
+  fn parse_prec13(input: &str) -> AstParserResult {
     combinator::map(
       // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       sequence::pair(
@@ -376,5 +376,70 @@ impl ErlParser {
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
     )(input)
+  }
+
+  fn parse_catch_clause(input: &str) -> nom::IResult<&str, CatchClause, ErlParserError> {
+    combinator::map(
+      sequence::tuple((
+        bytes::complete::tag("catch"),
+        Self::parse_expr_no_comma_no_semi,
+        Self::ws_before(char(':')),
+        Self::parse_expr_no_comma_no_semi,
+        combinator::opt(
+          sequence::preceded(
+            Self::ws_before(char(':')),
+            Self::parse_expr_no_comma_no_semi,
+          )),
+        combinator::opt(
+          sequence::preceded(
+            Self::ws_before(bytes::complete::tag("when")),
+            Self::parse_expr,
+          )
+        ),
+        sequence::preceded(
+          Self::ws_before(bytes::complete::tag("->")),
+          Self::parse_expr,
+        )
+      )),
+      |(_catch,
+         class_pattern, _colon1, exc_pattern, stack_pattern,
+         maybe_when, body)| {
+        CatchClause::new(class_pattern, exc_pattern, stack_pattern,
+                         maybe_when, body)
+      },
+    )(input)
+  }
+
+  fn parse_try_catch(input: &str) -> AstParserResult {
+    combinator::map(
+      sequence::delimited(
+        bytes::complete::tag("try"),
+        sequence::tuple((
+          Self::parse_expr,
+
+          // Optional OF followed by match clauses
+          combinator::opt(
+            sequence::preceded(
+              Self::ws_before(bytes::complete::tag("of")),
+              multi::many1(Self::ws_before(Self::parse_case_clause)),
+            )
+          ),
+
+          // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
+          multi::many1(Self::parse_catch_clause),
+        )),
+        bytes::complete::tag("end"),
+      ), |(body, of_branches, catch_clauses)| {
+        ErlAst::new_try_catch(SourceLoc::None, body, of_branches, catch_clauses)
+      },
+    )(input)
+  }
+
+  /// Parse an expression. Expression can also be a block which produces a value.
+  pub fn parse_expr(input: &str) -> AstParserResult {
+    branch::alt((
+      Self::parse_try_catch,
+      Self::parse_prec13
+    ))(input)
   }
 }

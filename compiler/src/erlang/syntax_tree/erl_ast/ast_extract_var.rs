@@ -34,6 +34,30 @@ impl ErlAst {
         Self::extract_variables(left, variables)?;
         Self::extract_variables(right, variables)
       }
+      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+        Self::extract_variables(body, variables)?;
+        if let Some(ofb) = of_branches {
+          for b in ofb {
+            Self::extract_variables(&b.body, variables)?;
+            Self::extract_variables(&b.pattern, variables)?;
+            if let Some(bguard) = &b.guard {
+              Self::extract_variables(bguard, variables)?;
+            }
+          }
+        }
+        for cc in catch_clauses {
+          Self::extract_variables(&cc.class_pattern, variables)?;
+          Self::extract_variables(&cc.exc_pattern, variables)?;
+          Self::extract_variables(&cc.body, variables)?;
+          if let Some(stk) = &cc.stack_pattern {
+            Self::extract_variables(stk, variables)?;
+          }
+          if let Some(wheng) = &cc.when_guard {
+            Self::extract_variables(wheng, variables)?;
+          }
+        }
+        Ok(())
+      }
       ErlAst::List { elements, tail, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;

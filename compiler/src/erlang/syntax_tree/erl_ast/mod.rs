@@ -14,6 +14,7 @@ use crate::ast_tree::{AstCache, AstTree};
 use std::sync::Arc;
 use std::ops::Deref;
 use crate::erl_error::ErlResult;
+use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::typing::erl_type::ErlType;
 use crate::typing::type_error::TypeError;
@@ -209,6 +210,18 @@ pub enum ErlAst {
     /// The input expression (source of the values)
     right: Arc<ErlAst>,
   },
+
+  /// Try/Catch block with optional OF... branches and multiple catch clauses
+  TryCatch {
+    /// Source code location
+    location: SourceLoc,
+    /// The expression to be tried
+    body: Arc<ErlAst>,
+    /// Optional `try ... of Pattern -> ...` clauses
+    of_branches: Option<Vec<ErlCaseClause>>,
+    /// One or more `catch Class:Exc:Stack -> ...` clauses
+    catch_clauses: Vec<CatchClause>,
+  }
 }
 
 impl ErlAst {

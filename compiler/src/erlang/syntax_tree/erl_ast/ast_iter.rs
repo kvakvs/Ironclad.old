@@ -39,17 +39,24 @@ impl ErlAst {
       ErlAst::Case(_loc, case) => {
         let mut r: Vec<Arc<ErlAst>> = vec![case.arg.clone()];
         case.clauses.iter().for_each(|cc| {
-          r.push(cc.cond.clone());
-          r.push(cc.guard.clone());
+          r.push(cc.pattern.clone());
+          if let Some(g) = &cc.guard {
+            r.push(g.clone());
+          }
           r.push(cc.body.clone());
         });
         Some(r)
       }
 
       ErlAst::CClause(_loc, clause) => {
-        Some(vec![clause.cond.clone(),
-                  clause.guard.clone(),
-                  clause.body.clone()])
+        if let Some(g) = &clause.guard {
+          Some(vec![clause.pattern.clone(),
+                    g.clone(),
+                    clause.body.clone()])
+        } else {
+          Some(vec![clause.pattern.clone(),
+                    clause.body.clone()])
+        }
       }
       ErlAst::BinaryOp { expr: binop_expr, .. } => {
         Some(vec![binop_expr.left.clone(),
