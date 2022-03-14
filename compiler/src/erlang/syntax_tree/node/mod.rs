@@ -5,6 +5,7 @@ pub mod erl_binop;
 pub mod erl_unop;
 pub mod erl_var;
 pub mod erl_apply;
+pub mod erl_callable_target;
 pub mod erl_fn_def;
 pub mod erl_fn_clause;
 pub mod erl_token;

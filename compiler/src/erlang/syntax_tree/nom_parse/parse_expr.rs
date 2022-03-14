@@ -6,8 +6,8 @@ use nom::{bytes, character::complete::{char}, combinator, sequence, multi, branc
 use nom::error::context;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
+use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
@@ -30,8 +30,8 @@ impl ErlParser {
         // ),
       )),
       |(expr, args)| {
-        let application = ErlApply::new(SourceLoc::None, expr, args);
-        ErlAst::Apply(application).into()
+        let target = CallableTarget::new_expr(expr);
+        ErlAst::new_application(SourceLoc::None, target, args)
       },
     )(input)
   }
@@ -157,20 +157,26 @@ impl ErlParser {
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
   fn parse_expr_prec01(input: &str) -> AstParserResult {
     combinator::map(
-      sequence::pair(
+      sequence::tuple((
         Self::parse_expr_prec_primary,
+
+        // An optional second expression after a ':'
+        combinator::opt(sequence::preceded(
+          char(':'),
+          Self::parse_expr_prec_primary)),
         combinator::opt(Self::parse_parenthesized_list_of_exprs),
-      ),
-      |(expr, args)| {
-        match args {
-          None => expr,
-          Some(args_vec) => {
-            let app = ErlApply {
-              location: SourceLoc::None,
-              expr,
-              args: args_vec,
-            };
-            ErlAst::Apply(app).into()
+      )),
+      |(expr1, maybe_expr2, maybe_args)| {
+        match (maybe_expr2, maybe_args) {
+          (_, None) => expr1,
+          (Some(expr2), Some(args_vec)) => {
+            // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
+            let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args_vec.len());
+            ErlAst::new_application(SourceLoc::None, target, args_vec)
+          }
+          (None, Some(args_vec)) => {
+            let target = CallableTarget::new_expr(expr1);
+            ErlAst::new_application(SourceLoc::None, target, args_vec)
           }
         }
       })(input)

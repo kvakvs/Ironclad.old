@@ -1,7 +1,9 @@
 //! AST node-type checks
 
+use std::ops::Deref;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
+use crate::literal::Literal;
 
 impl ErlAst {
   /// Checks whether an ErlAst node is a function definition
@@ -12,6 +14,17 @@ impl ErlAst {
 
   /// Checks whether an ErlAst node is an Erlang Type
   pub fn is_type(&self) -> bool { matches!(self, ErlAst::Type {..}) }
+
+  /// Checks whether an ErlAst node is an Erlang Type
+  pub fn is_atom(&self) -> bool {
+    match self {
+      ErlAst::Lit { value, .. } => match value.deref() {
+        Literal::Atom(_) => true,
+        _ => false,
+      },
+      _ => false,
+    }
+  }
 
   /// Checks whether an ErlAst node is a Binary Op of given kind
   pub fn is_binop(&self, op: ErlBinaryOp) -> bool {

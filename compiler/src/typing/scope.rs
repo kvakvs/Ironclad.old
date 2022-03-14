@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock, Weak};
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::mfarity::MFArity;

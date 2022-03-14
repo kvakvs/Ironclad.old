@@ -31,6 +31,15 @@ impl MFArity {
       arity,
     }
   }
+
+  /// Creates a new local (no module) funarity, cloning the name
+  pub fn new(module: Option<&str>, function: &str, arity: usize) -> Self {
+    MFArity {
+      module: module.map(String::from),
+      name: String::from(function),
+      arity,
+    }
+  }
 }
 
 impl std::fmt::Debug for MFArity {

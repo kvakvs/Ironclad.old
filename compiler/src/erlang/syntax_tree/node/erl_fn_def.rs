@@ -1,6 +1,8 @@
 //! Define a ErlFnDef struct for a new function AST node
 use std::sync::{Arc, RwLock};
 use crate::erl_error::ErlResult;
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
@@ -54,5 +56,14 @@ impl ErlFnDef {
         .collect();
     let synthesized_t = ErlType::new_union(&clauses_ret?);
     Ok(synthesized_t)
+  }
+}
+
+impl AstNode for ErlFnDef {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+    let r: Vec<Arc<ErlAst>> = self.clauses.iter()
+        .map(|fclause| fclause.body.clone())
+        .collect();
+    Some(r)
   }
 }

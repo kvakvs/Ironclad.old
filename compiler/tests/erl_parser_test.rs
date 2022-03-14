@@ -211,12 +211,41 @@ fn parse_fn2() -> ErlResult<()> {
   Ok(())
 }
 
-/// Try parse some function defs
+#[named]
+#[test]
+fn parse_try_catch_exceptionpattern() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse an exception pattern for try/catch");
+
+  let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error:Stack").unwrap();
+  assert!(exc_tail.is_empty(), "Could not parse exception pattern");
+  assert!(exc.class.is_var());
+  assert!(exc.error.is_var());
+  assert!(exc.stack.is_some());
+  println!("Parsed ExceptionPattern: {:?}", &exc);
+  Ok(())
+}
+
+#[named]
+#[test]
+fn parse_try_catch_clause() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a try-catch catch-clause");
+
+  let (tail, clause) = ErlParser::parse_catch_clause("A:B:C when true -> ok").unwrap();
+  assert!(tail.is_empty(), "Could not parse exception pattern");
+  assert!(clause.exc_pattern.class.is_var());
+  assert!(clause.when_guard.is_some());
+  assert!(clause.body.is_atom());
+  println!("Parsed Catch clause: {:?}", &clause);
+  Ok(())
+}
+
 #[named]
 #[test]
 fn parse_fn_try_catch() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function with try/catch");
+
   let filename = PathBuf::from(function_name!());
+  // let source = "function(X) -> try X/0 end.";
   let source = "function({function,Name,Arity,CLabel,Is0}) ->
     try {function,Name,Arity,CLabel,Is}
     catch Class:Error:Stack -> erlang:raise(Class, Error, Stack)
@@ -243,6 +272,21 @@ fn parse_apply_1() -> ErlResult<()> {
   } else {
     panic!("{} Expected: ErlAst::App, got {}", function_name!(), module.ast);
   }
+
+  Ok(())
+}
+
+#[named]
+#[test]
+fn parse_fun_call() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse an function call with or without module name");
+
+  let filename = PathBuf::from(function_name!());
+  let mod1 = Module::from_expr_source(&filename, "function_name()")?;
+  println!("{}: parsed {}", function_name!(), mod1.ast);
+
+  let mod2 = Module::from_expr_source(&filename, "mod_name:function_name()")?;
+  println!("{}: parsed {}", function_name!(), mod2.ast);
 
   Ok(())
 }

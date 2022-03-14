@@ -45,14 +45,6 @@ impl PpAstTree {
     Self::string_from(pair.into_inner().next().unwrap())
   }
 
-  // fn parse_expr(&self, pair: Pair<Rule>) -> ErlResult<PpExpr> {
-  //   // String::from(pair.into_inner().as_str())
-  //   match self.pp_parse_tokens_to_ast(pair) {
-  //     Ok(PpAst::Expr(out)) => Ok(out),
-  //     _ => ErlError::pp_parse(&self.source.file_name,"Expression expected")
-  //   }
-  // }
-
   /// Convert Pest syntax token tree produced by the Pest PEG parser into Preprocessor AST tree
   pub fn pp_parse_tokens_to_ast(&self, pair: Pair<Rule>) -> ErlResult<Rc<PpAst>> {
     let result: Rc<PpAst> = match pair.as_rule() {

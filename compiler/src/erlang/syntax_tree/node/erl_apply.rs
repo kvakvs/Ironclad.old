@@ -4,8 +4,10 @@ use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use crate::display::Pretty;
 use crate::erl_error::{ErlResult};
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FnType;
@@ -16,15 +18,15 @@ use crate::typing::type_error::TypeError;
 pub struct ErlApply {
   /// Code location in the Erlang AST
   pub location: SourceLoc,
-  /// Target, to be called, expected to have function or lambda type fun((arg, arg,...) -> ret)
-  pub expr: Arc<ErlAst>,
+  /// Target, to be called, a callable, for example can be a function or lambda type `fun((arg, arg,...) -> ret)`
+  pub target: CallableTarget,
   /// Function application arguments, list of expressions
   pub args: Vec<Arc<ErlAst>>,
 }
 
 impl std::fmt::Display for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}(", self.expr)?;
+    write!(f, "{}(", self.target)?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ")")
   }
@@ -32,7 +34,7 @@ impl std::fmt::Display for ErlApply {
 
 impl std::fmt::Debug for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "apply({:?}, (", self.expr)?;
+    write!(f, "apply({}, (", self.target)?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, "))")
   }
@@ -40,18 +42,18 @@ impl std::fmt::Debug for ErlApply {
 
 impl ErlApply {
   /// Creates a new function call (application) AST node
-  pub fn new(location: SourceLoc, expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Self {
-    ErlApply { location, expr, args }
+  pub fn new(location: SourceLoc, target: CallableTarget, args: Vec<Arc<ErlAst>>) -> Self {
+    ErlApply { location, target, args }
   }
 
   /// Check the apply target it must be a callable.
   /// Check the apply arguments, they must match the arguments of the callable, or at least arity.
   /// The return type of the callable will be the apply synthesis result.
   pub fn synthesize_application_type(&self, scope: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
-    // Synthesize target and check its a function type
-    let target_ty = self.expr.synthesize(scope)?;
+    // Synthesize target and check that it is a function type
+    let target_ty = self.target.synthesize(scope)?;
     if !target_ty.is_function() {
-      let msg = format!("Attempt to call a value which is not a function: {}", self.expr);
+      let msg = format!("Attempt to call a value which is not a function: {}", self.target);
       return Err(TypeError::NotAFunction { msg }.into());
     }
 
@@ -97,7 +99,7 @@ impl ErlApply {
           .collect::<Vec<String>>()
           .join(", ");
       let msg = format!("No compatible function clauses while calling {} with args ({})",
-                        self.expr, args_str);
+                        self.target, args_str);
       return Err(TypeError::BadArguments { msg }.into());
     }
     // Return type only from compatible clauses
@@ -106,5 +108,18 @@ impl ErlApply {
         .cloned()
         .collect();
     Ok(ErlType::new_union(&ret_types))
+  }
+}
+
+impl AstNode for ErlApply {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+    let mut r: Vec<Arc<ErlAst>> = match self.target.children() {
+      Some(target_children) => target_children,
+      None => Vec::default(),
+    };
+
+    r.extend(self.args.iter().cloned());
+
+    Some(r)
   }
 }

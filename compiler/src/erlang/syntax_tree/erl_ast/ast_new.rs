@@ -3,8 +3,9 @@
 use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
-use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
+use crate::erlang::syntax_tree::node::erl_apply::{ErlApply};
 use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
+use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
@@ -20,14 +21,14 @@ impl ErlAst {
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
-  pub fn new_application(location: SourceLoc, expr: Arc<ErlAst>, args: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
-    ErlAst::Apply(ErlApply::new(location, expr, args))
+  pub fn new_application(location: SourceLoc, target: CallableTarget, args: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::Apply(ErlApply::new(location, target, args))
         .into()
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
-  pub fn new_application0(location: SourceLoc, expr: Arc<ErlAst>) -> Arc<ErlAst> {
-    ErlAst::Apply(ErlApply::new(location, expr, vec![]))
+  pub fn new_application0(location: SourceLoc, target: CallableTarget) -> Arc<ErlAst> {
+    ErlAst::Apply(ErlApply::new(location, target, Vec::default()))
         .into()
   }
 
@@ -140,7 +141,10 @@ impl ErlAst {
                        of_branches: Option<Vec<ErlCaseClause>>,
                        catch_clauses: Vec<CatchClause>) -> Arc<ErlAst> {
     ErlAst::TryCatch {
-      location, body, of_branches, catch_clauses
+      location,
+      body,
+      of_branches,
+      catch_clauses,
     }.into()
   }
 }

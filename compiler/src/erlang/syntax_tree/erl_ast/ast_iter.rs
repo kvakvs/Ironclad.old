@@ -4,13 +4,19 @@ use ::function_name::named;
 
 use std::sync::Arc;
 
-impl ErlAst {
+/// A trait for AST nodes which can contain nested nodes
+pub trait AstNode {
+  /// Return nested AST nodes for this node
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>>;
+}
+
+impl AstNode for ErlAst {
   /// Const iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
   #[named]
-  pub fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
     match self {
       ErlAst::ModuleStartAttr { .. }
       | ErlAst::ExportAttr { .. }
@@ -22,19 +28,8 @@ impl ErlAst {
       | ErlAst::Var { .. } => None,
 
       ErlAst::ModuleForms(f) => Some(f.to_vec()),
-
-      ErlAst::FnDef(fn_def) => {
-        let r: Vec<Arc<ErlAst>> = fn_def.clauses.iter()
-            .map(|fclause| fclause.body.clone())
-            .collect();
-        Some(r)
-      }
-
-      ErlAst::Apply(app) => {
-        let mut r: Vec<Arc<ErlAst>> = vec![app.expr.clone()];
-        r.extend(app.args.iter().cloned());
-        Some(r)
-      }
+      ErlAst::FnDef(fn_def) => fn_def.children(),
+      ErlAst::Apply(app) => app.children(),
 
       ErlAst::Case(_loc, case) => {
         let mut r: Vec<Arc<ErlAst>> = vec![case.arg.clone()];

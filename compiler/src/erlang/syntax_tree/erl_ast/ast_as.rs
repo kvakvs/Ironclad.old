@@ -1,9 +1,11 @@
 //! Access to sub-values in ErlAst
 
+use std::ops::Deref;
 use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
+use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 
 impl ErlAst {
@@ -36,6 +38,19 @@ impl ErlAst {
     match self {
       ErlAst::BinaryOp{ expr, .. } => expr,
       _ => panic!("Expected BinOp AST node, but got {}", self),
+    }
+  }
+
+  /// Unwrap self as an atom (return string slice or `panic`)
+  pub fn as_atom(&self) -> &str {
+    match self {
+      ErlAst::Lit{ value, .. } => {
+        match value.deref() {
+          Literal::Atom(s) => return s,
+          _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
+        }
+      },
+      _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
     }
   }
 }

@@ -9,7 +9,8 @@ use crate::erlang::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
-  fn parse_exception_pattern(input: &str) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
+  /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
+  pub fn parse_exception_pattern(input: &str) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
     combinator::map(
       sequence::tuple((
         Self::parse_expr_no_comma_no_semi,
@@ -27,16 +28,20 @@ impl ErlParser {
     )(input)
   }
 
-  fn parse_catch_clause(input: &str) -> nom::IResult<&str, CatchClause, ErlParserError> {
+  /// Parses a repeated catch-clause part after `catch` keyword: `Expr when Expr -> Expr`
+  pub fn parse_catch_clause(input: &str) -> nom::IResult<&str, CatchClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
+        // Class:Error:Stacktrace
         Self::parse_exception_pattern,
+        // when <Expression>
         combinator::opt(
           sequence::preceded(
             Self::ws_before(tag("when")),
             Self::parse_expr,
           )
         ),
+        // -> Expression
         sequence::preceded(
           Self::ws_before(tag("->")),
           Self::parse_expr,
@@ -80,6 +85,7 @@ impl ErlParser {
     sequence::delimited(
       Self::ws_before(tag("try")),
       context("try-catch or try-of-catch block",
+              // Self::parse_expr),
               Self::parse_try_catch_inner),
       Self::ws_before(tag("end")),
     )(input)
