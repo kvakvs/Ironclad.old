@@ -14,15 +14,17 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         Self::parse_matchexpr,
-        Self::ws_before(char(':')),
-        Self::parse_matchexpr,
+        sequence::preceded(
+          Self::ws_before(char(':')),
+          Self::parse_matchexpr,
+        ),
         combinator::opt(
           sequence::preceded(
             Self::ws_before(char(':')),
             Self::parse_matchexpr,
           )),
       )),
-      |(class_pattern, _colon1, err_pattern, stack_pattern)| {
+      |(class_pattern, err_pattern, stack_pattern)| {
         ExceptionPattern::new(class_pattern, err_pattern, stack_pattern)
       },
     )(input)

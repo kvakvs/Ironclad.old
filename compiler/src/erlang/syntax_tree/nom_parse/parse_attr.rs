@@ -70,21 +70,16 @@ impl ErlAttrParser {
   }
 
   /// Parses a `-module(atom).` attribute.
+  /// Dash `-` and terminating `.` are matched outside by the caller.
   pub fn parse_module_attr(input: &str) -> AstParserResult {
     combinator::map(
-      sequence::terminated(
-        sequence::preceded(
-          ErlParser::ws_before(char('-')),
-          sequence::preceded(
-            ErlParser::ws_before(bytes::complete::tag("module")),
-            sequence::delimited(
-              ErlParser::ws_before(char('(')),
-              ErlParser::ws_before(AtomParser::parse_atom),
-              ErlParser::ws_before(char(')')),
-            ),
-          )),
-        ErlParser::ws_before(char('.')),
-      ),
+      sequence::preceded(
+        ErlParser::ws_before(bytes::complete::tag("module")),
+        sequence::delimited(
+          ErlParser::ws_before(char('(')),
+          ErlParser::ws_before(AtomParser::parse_atom),
+          ErlParser::ws_before(char(')')),
+        )),
       |name| ErlAst::new_module_start_attr(name),
     )(input)
   }
@@ -217,11 +212,16 @@ impl ErlAttrParser {
           Self::parse_export_attr,
           Self::parse_import_attr,
           Self::parse_type_attr,
-          Self::parse_generic_attr,
+          Self::parse_module_attr,
           ErlTypeParser::parse_fn_spec,
+          // Generic parser will try consume any `-IDENT(EXPR).`
+          Self::parse_generic_attr,
         )),
       ),
+      // sequence::terminated(
       ErlParser::ws_before(char('.')),
+      // newline,
+      // ),
     )(input)
   }
 }

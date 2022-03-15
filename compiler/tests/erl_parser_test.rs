@@ -245,12 +245,24 @@ fn parse_fn2() -> ErlResult<()> {
 fn parse_try_catch_exceptionpattern() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
-  let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error:Stack").unwrap();
-  assert!(exc_tail.is_empty(), "Could not parse exception pattern");
-  assert!(exc.class.is_var());
-  assert!(exc.error.is_var());
-  assert!(exc.stack.is_some());
-  println!("Parsed ExceptionPattern: {:?}", &exc);
+  {
+    let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error").unwrap();
+    println!("Parsed ExceptionPattern: {:?}", &exc);
+
+    assert!(exc_tail.is_empty(), "Could not parse exception pattern");
+    assert!(exc.class.is_var());
+    assert!(exc.error.is_var());
+    assert!(exc.stack.is_none());
+  }
+  {
+    let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error:Stack").unwrap();
+    println!("Parsed ExceptionPattern: {:?}", &exc);
+
+    assert!(exc_tail.is_empty(), "Could not parse exception pattern");
+    assert!(exc.class.is_var());
+    assert!(exc.error.is_var());
+    assert!(exc.stack.is_some());
+  }
   Ok(())
 }
 

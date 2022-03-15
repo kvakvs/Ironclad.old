@@ -40,12 +40,7 @@ impl ErlTypeParser {
                 "All function clauses must have same arity in a typespec");
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        let fnspec = ErlAst::FnSpec {
-          location: SourceLoc::None,
-          funarity,
-          spec: fntypespec.into(),
-        };
-        fnspec.into()
+        ErlAst::new_fn_spec(SourceLoc::None, funarity, fntypespec.into())
       },
     )(input)
   }

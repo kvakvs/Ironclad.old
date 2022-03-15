@@ -112,6 +112,11 @@ impl ErlAst {
     ErlAst::ListComprehension { location, expr, generators }.into()
   }
 
+  /// Create a new AST node for a function `-spec FN(ARG, ...) -> RETURN.`
+  pub fn new_fn_spec(location: SourceLoc, funarity: MFArity, spec: Arc<ErlType>) -> Arc<ErlAst> {
+    ErlAst::FnSpec { location, funarity, spec }.into()
+  }
+
   /// Create a new AST node for a list comprehension generator `Expr <- Expr`
   pub fn new_list_comprehension_generator(location: SourceLoc,
                                           left: Arc<ErlAst>,

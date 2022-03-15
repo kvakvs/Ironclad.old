@@ -97,12 +97,7 @@ impl ErlParser {
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
   pub fn parse_module(input: &str) -> AstParserResult {
-    let (input, m_attr) = ErlAttrParser::parse_module_attr(input)?;
-    println!("Parsed module attr: {}", m_attr);
-
-    let (input, mut forms) = Self::parse_module_forms_collection(input)?;
-
-    forms.insert(0, m_attr);
+    let (input, forms) = Self::parse_module_forms_collection(input)?;
     Ok((input, ErlAst::ModuleForms(forms).into()))
   }
 }

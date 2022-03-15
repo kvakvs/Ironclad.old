@@ -208,13 +208,18 @@ impl ErlParser {
   // TODO: module:function notation and maybe tuple notation?
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
   fn parse_expr_prec01<const STYLE: usize>(input: &str) -> AstParserResult {
+    if STYLE == Self::EXPR_STYLE_MATCHEXPR {
+      // Match expressions cannot contain module:function() style calls
+      return Self::parse_expr_prec_primary::<STYLE>(input);
+    }
+
     combinator::map(
       sequence::tuple((
         Self::parse_expr_prec_primary::<STYLE>,
 
         // An optional second expression after a ':'
         combinator::opt(sequence::preceded(
-          char(':'),
+          ErlParser::ws_before(char(':')),
           Self::parse_expr_prec_primary::<STYLE>)),
         combinator::opt(context("function arguments", Self::parse_parenthesized_list_of_exprs::<STYLE>)),
       )),
