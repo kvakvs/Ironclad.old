@@ -104,6 +104,8 @@ impl ErlAst {
       | ErlAst::MFA { .. }
       | ErlAst::ModuleStartAttr { .. }
       | ErlAst::ExportAttr { .. }
+      | ErlAst::ExportTypeAttr { .. }
+      | ErlAst::TypeAttr { .. }
       | ErlAst::ImportAttr { .. }
       | ErlAst::ModuleForms(_)
       | ErlAst::FnRef { .. }
@@ -112,7 +114,7 @@ impl ErlAst {
       | ErlAst::Case(_, _)
       | ErlAst::Apply(_)
       | ErlAst::UnaryOp { .. }
-      | ErlAst::UnparsedAttr { .. } => {
+      | ErlAst::GenericAttr { .. } => {
         ErlError::unacceptable_ast(format!("{}", node), "function argument".to_string())
       }
     }

@@ -60,6 +60,26 @@ pub enum ErlAst {
     exports: Vec<MFArity>,
   },
 
+  /// `-export_type([f/a, ......]).` attribute, defines exports for types
+  ExportTypeAttr {
+    /// Source file pointer
+    location: SourceLoc,
+    /// List of typename/arities (MFAs with module=None)
+    exports: Vec<MFArity>,
+  },
+
+  /// `-type ATOM(ARG, ...) :: TYPE` attribute, defines a new type
+  TypeAttr {
+    /// Source file pointer
+    location: SourceLoc,
+    /// Type name
+    name: String,
+    /// List of type variables
+    vars: Vec<String>,
+    /// The defined new type
+    ty: Arc<ErlType>,
+  },
+
   /// `-import([f/a, ......]).` attribute, defines imports
   ImportAttr {
     /// Source file pointer
@@ -71,11 +91,13 @@ pub enum ErlAst {
   },
 
   /// A generic attribute `"-name" ... "."\n` extracted from the source, parsed at a later stage
-  UnparsedAttr {
+  GenericAttr {
     /// Source file pointer
     location: SourceLoc,
-    /// Module name atom, stored as string
-    text: String,
+    /// Attr name atom, stored as string
+    tag: String,
+    /// Attr value (any expression)
+    term: Option<Arc<ErlAst>>
   },
 
   /// Defines a new function, with clauses, or an inline lambda (then name will be `None`).

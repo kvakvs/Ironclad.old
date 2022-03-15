@@ -41,7 +41,7 @@ impl ErlParser {
   }
 
   fn parse_var(input: &str) -> AstParserResult {
-    let (input, name) = Self::parse_ident_capitalized(input)?;
+    let (input, name) = Self::parse_varname(input)?;
     let ast = ErlAst::Var(ErlVar::new(SourceLoc::None, &name)).into();
     Ok((input, ast))
   }

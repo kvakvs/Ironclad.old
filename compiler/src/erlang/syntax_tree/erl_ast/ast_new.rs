@@ -15,6 +15,7 @@ use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
+use crate::typing::erl_type::ErlType;
 
 impl ErlAst {
   /// Create a new variable AST node
@@ -126,11 +127,34 @@ impl ErlAst {
     }.into()
   }
 
+  /// Create a new `-TAG(TERM).` generic module attribute.
+  pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::GenericAttr { location, tag, term }.into()
+  }
+
   /// Create a new `-export([...]).` module attr.
   pub fn new_export_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
     ErlAst::ExportAttr {
       location: SourceLoc::None,
       exports,
+    }.into()
+  }
+
+  /// Create a new `-export_type([...]).` module attr.
+  pub fn new_export_type_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
+    ErlAst::ExportTypeAttr {
+      location: SourceLoc::None,
+      exports,
+    }.into()
+  }
+
+  /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.
+  pub fn new_type_attr(name: String, vars: Vec<String>, ty: Arc<ErlType>) -> Arc<ErlAst> {
+    ErlAst::TypeAttr {
+      location: SourceLoc::None,
+      name,
+      vars,
+      ty,
     }.into()
   }
 

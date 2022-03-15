@@ -10,21 +10,25 @@ use nom::Finish;
 use compiler::erl_error::{ErlError, ErlResult};
 use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::project::module::Module;
-use compiler::erlang::syntax_tree::nom_parse::{ErlParser};
+use compiler::erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use compiler::mfarity::MFArity;
 use compiler::typing::erl_type::ErlType;
 
 #[named]
 #[test]
-fn fn_generic_attr_parse1() -> ErlResult<()> {
-  test_util::start(function_name!(), "Parse a spec-like attribute line, consuming all as string");
-  let input = "-fgsfds ffsmmm(GGG :: integer()) -> bbb().\n";
-
-  // let attr1_mod = Module::from_module_attr_source(&attr1_src)?;
-  match ErlParser::parse_generic_attr(input).finish() {
+fn union_type_parse() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a multiline union type");
+  // No leading `-`, and no trailing `.`, because `ErlAttrParser::parse` strips them
+  let input = "type src() :: beam_reg() |
+	       {'literal',term()} |
+	       {'atom',atom()} |
+	       {'integer',integer()} |
+	       'nil' |
+	       {'float',float()}";
+  match ErlAttrParser::parse_type_attr(input).finish() {
     Ok((tail1, result1)) => {
-      assert!(tail1.is_empty(), "Not all input consumed from attr1_src, tail: {}", tail1);
-      println!("ErlAst for attr1: {}", result1);
+      assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
+      println!("Parsed: {}", result1);
     }
     Err(err) => return Err(ErlError::from_nom_error(input, err))
   }
@@ -33,12 +37,31 @@ fn fn_generic_attr_parse1() -> ErlResult<()> {
 
 #[named]
 #[test]
+fn fn_generic_attr_parse1() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a generic attribute without args");
+
+  // Dash `-` and terminating `.` are matched outside by the caller.
+  let src = " fgsfds\n";
+
+  match ErlAttrParser::parse_generic_attr(src).finish() {
+    Ok((tail1, result1)) => {
+      assert!(tail1.trim().is_empty(), "Not all input consumed from attr1_src, tail: «{}»", tail1);
+      println!("ErlAst for «{}»: {}", src, result1);
+    }
+    Err(err) => return Err(ErlError::from_nom_error(src, err))
+  }
+  Ok(())
+}
+
+#[named]
+#[test]
 fn fn_generic_attr_parse2() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
-  let input = " -bbbggg (ababagalamaga () [] {{}}!!! --- ).\n";
 
-  // let attr2_mod = Module::from_module_attr_source(&attr2_src)?;
-  match ErlParser::parse_generic_attr(input).finish() {
+  // Dash `-` and terminating `.` are matched outside by the caller.
+  let input = " bbbggg (ababagalamaga()) ";
+
+  match ErlAttrParser::parse_generic_attr(input).finish() {
     Ok((tail2, result2)) => {
       assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
       println!("ErlAst for attr2: {}", result2);

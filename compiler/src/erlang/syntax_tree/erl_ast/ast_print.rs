@@ -22,15 +22,29 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
       }
+      ErlAst::ExportTypeAttr { exports, .. } => {
+        write!(f, "-export_type(")?;
+        Pretty::display_square_list(exports, f)?;
+        writeln!(f, ").")
+      }
       ErlAst::ImportAttr { import_from, imports, .. } => {
         write!(f, "-import({}, ", import_from)?;
         Pretty::display_square_list(imports, f)?;
         writeln!(f, ").")
       }
-      ErlAst::UnparsedAttr { text, .. } => writeln!(f, "attr: {}", text),
-      // ErlAst::Comma { left, right, .. } => {
-      //   write!(f, "{}, {}", left, right)
-      // }
+      ErlAst::TypeAttr { name, vars, ty, .. } => {
+        write!(f, "-type {}", name)?;
+        Pretty::display_paren_list(vars, f)?;
+        writeln!(f, " :: {}", ty)?;
+        writeln!(f, ".")
+      }
+      ErlAst::GenericAttr { tag, term, .. } => {
+        if let Some(t) = term {
+          writeln!(f, "-{}({}).", tag, t)
+        } else {
+          writeln!(f, "-{}.", tag)
+        }
+      },
       ErlAst::FnRef { mfa, .. } => write!(f, "fun {}", mfa),
       ErlAst::FnDef(erl_fndef) => {
         write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;

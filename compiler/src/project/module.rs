@@ -11,6 +11,7 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::parse_type::ErlTypeParser;
 use crate::typing::scope::Scope;
 
 /// Erlang Module consists of
@@ -118,12 +119,12 @@ impl Module {
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
   pub fn from_fun_spec_source(filename: &Path, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_fn_spec)
+    Self::parse_helper(filename, input, ErlTypeParser::parse_fn_spec)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
   pub fn from_type_source(filename: &Path, input: &str) -> ErlResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_type_node)
+    Self::parse_helper(filename, input, ErlTypeParser::parse_type_node)
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code

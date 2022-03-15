@@ -78,7 +78,7 @@ impl ErlParser {
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  pub fn parse_ident_capitalized(input: &str) -> StringParserResult {
+  pub fn parse_varname(input: &str) -> StringParserResult {
     combinator::map(
       combinator::recognize(
         sequence::pair( // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
