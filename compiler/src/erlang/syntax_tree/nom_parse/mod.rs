@@ -16,6 +16,7 @@ pub mod parse_lit;
 pub mod parse_str;
 pub mod parse_type;
 pub mod parse_case;
+pub mod parse_if_stmt;
 pub mod parse_try_catch;
 
 /// Gathers multiple errors and contexts together

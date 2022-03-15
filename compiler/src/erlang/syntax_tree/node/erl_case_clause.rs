@@ -1,5 +1,4 @@
 //! Declares AST node for a clause in `case of` expression
-use std::fmt::Formatter;
 use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 
@@ -24,7 +23,7 @@ impl ErlCaseClause {
 }
 
 impl std::fmt::Display for ErlCaseClause {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self.guard {
       Some(g) => write!(f, "{} when {} -> {};", self.pattern, g, self.body),
       None => write!(f, "{} -> {};", self.pattern, self.body),
@@ -40,6 +39,6 @@ impl AstNode for ErlCaseClause {
         r.extend(g_children.iter().cloned());
       }
     }
-    Some(r)
+    if r.is_empty() { None } else { Some(r) }
   }
 }

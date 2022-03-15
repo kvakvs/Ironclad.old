@@ -351,6 +351,25 @@ rename_instr(I) -> I.";
 
 #[named]
 #[test]
+fn parse_fun_with_if() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function with if statement");
+  let filename = PathBuf::from(function_name!());
+  let src = "rename_instrs([{get_list,S,D1,D2}|Is]) ->
+    %% Only happens when compiling from old .S files.
+    if
+        D1 =:= S ->
+            [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
+        true ->
+            [{get_hd,S,D1},{get_tl,S,D2}|rename_instrs(Is)]
+    end.";
+  let mod1 = Module::from_fun_source(&filename, src)?;
+  println!("{}: parsed {}", function_name!(), mod1.ast);
+
+  Ok(())
+}
+
+#[named]
+#[test]
 fn parse_fun_call() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
 

@@ -21,17 +21,17 @@ impl std::fmt::Display for ErlAst {
         write!(f, "-export(")?;
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
-      },
+      }
       ErlAst::ImportAttr { import_from, imports, .. } => {
         write!(f, "-import({}, ", import_from)?;
         Pretty::display_square_list(imports, f)?;
         writeln!(f, ").")
-      },
+      }
       ErlAst::UnparsedAttr { text, .. } => writeln!(f, "attr: {}", text),
       // ErlAst::Comma { left, right, .. } => {
       //   write!(f, "{}, {}", left, right)
       // }
-      ErlAst::FnRef{mfa, ..} => write!(f, "fun {}", mfa),
+      ErlAst::FnRef { mfa, .. } => write!(f, "fun {}", mfa),
       ErlAst::FnDef(erl_fndef) => {
         write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
         for fc in erl_fndef.clauses.iter() { write!(f, "{};", fc)?; }
@@ -79,12 +79,12 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Map { .. } => {
         unimplemented!("Display for ErlAst::Map")
       }
-      ErlAst::ListComprehension {expr, generators, ..} => {
+      ErlAst::ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;
         Pretty::display_comma_separated(generators, f)?;
         write!(f, "]")
       }
-      ErlAst::ListComprehensionGenerator {left, right, ..} => {
+      ErlAst::ListComprehensionGenerator { left, right, .. } => {
         write!(f, "{} <- {}", left, right)
       }
       ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
@@ -94,6 +94,11 @@ impl std::fmt::Display for ErlAst {
           Pretty::display_semicolon_separated(ofb, f)?;
         }
         Pretty::display_semicolon_separated(catch_clauses, f)
+      }
+      ErlAst::IfStatement { clauses, .. } => {
+        write!(f, "if ")?;
+        Pretty::display_semicolon_separated(clauses, f)?;
+        write!(f, " end")
       }
     }
   }

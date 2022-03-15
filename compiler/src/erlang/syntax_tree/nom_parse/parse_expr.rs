@@ -3,8 +3,8 @@
 use ::function_name::named;
 use std::sync::Arc;
 
-use nom::{bytes, character::complete::{char}, combinator, sequence, multi, branch};
-use nom::error::context;
+use nom::{bytes, character::complete::{char}, error::{context},
+          combinator, sequence, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
@@ -65,7 +65,7 @@ impl ErlParser {
         combinator::opt(
           sequence::preceded(
             Self::ws_before(char('|')),
-            Self::parse_expr
+            Self::parse_expr,
           )
         ),
         Self::ws_before(char(']')),
@@ -170,6 +170,7 @@ impl ErlParser {
                 Self::ws_before_mut(
                   branch::alt((
                     Self::parse_try_catch,
+                    Self::parse_if_statement,
                     Self::parenthesized_expr::<STYLE>,
                     Self::parse_list_comprehension,
                     Self::parse_list_of_exprs::<STYLE>,
@@ -422,11 +423,11 @@ impl ErlParser {
   fn parse_expr_prec13<const STYLE: usize>(input: &str) -> AstParserResult {
     match STYLE {
       Self::EXPR_STYLE_MATCHEXPR | Self::EXPR_STYLE_FULL =>
-        // Skip comma and semicolon operator
+      // Skip comma and semicolon operator
         return Self::parse_expr_prec11::<STYLE>(input),
 
       Self::EXPR_STYLE_GUARD =>
-        // Guard-style expressions allow both comma and semicolons
+      // Guard-style expressions allow both comma and semicolons
         combinator::map(
           // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
           sequence::pair(

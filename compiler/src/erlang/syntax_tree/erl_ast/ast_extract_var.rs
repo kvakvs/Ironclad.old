@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 use crate::erl_error::{ErlError, ErlResult};
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 
@@ -33,6 +34,16 @@ impl ErlAst {
       ErlAst::ListComprehensionGenerator { left, right, .. } => {
         Self::extract_variables(left, variables)?;
         Self::extract_variables(right, variables)
+      }
+      ErlAst::IfStatement { clauses, .. } => {
+        for clause in clauses {
+          if let Some(children) = clause.children() {
+            for child in children {
+              Self::extract_variables(&child, variables)?;
+            }
+          }
+        }
+        Ok(())
       }
       ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
         Self::extract_variables(body, variables)?;

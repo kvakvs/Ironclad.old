@@ -8,6 +8,7 @@ use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
+use crate::erlang::syntax_tree::node::erl_if_clause::ErlIfClause;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::literal::Literal;
 use crate::mfarity::MFArity;
@@ -150,5 +151,10 @@ impl ErlAst {
       of_branches,
       catch_clauses,
     }.into()
+  }
+
+  /// Create a new `if` AST Node for `if COND -> EXPR; ... end`
+  pub fn new_if_statement(location: SourceLoc, clauses: Vec<ErlIfClause>) -> Arc<ErlAst> {
+    ErlAst::IfStatement { location, clauses }.into()
   }
 }

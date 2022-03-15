@@ -2,8 +2,7 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, sequence, multi,
-          character::complete::{char},
+use nom::{combinator, sequence, multi, error::{context}, character::complete::{char},
           bytes::complete::{tag}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
@@ -105,7 +104,9 @@ impl ErlParser {
       sequence::terminated(
         multi::separated_list1(
           Self::ws_before(char(';')),
-          Self::parse_fnclause::<true>,
+          // if parse fails under here, will show this context message in error
+          context("function clause in a function",
+                  combinator::cut(Self::parse_fnclause::<true>)),
         ),
         Self::ws_before(char('.')),
       ),

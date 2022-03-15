@@ -15,6 +15,7 @@ use std::sync::Arc;
 use std::ops::Deref;
 use crate::erl_error::ErlResult;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
+use crate::erlang::syntax_tree::node::erl_if_clause::ErlIfClause;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::typing::erl_type::ErlType;
 use crate::typing::type_error::TypeError;
@@ -221,7 +222,15 @@ pub enum ErlAst {
     of_branches: Option<Vec<ErlCaseClause>>,
     /// One or more `catch Class:Exc:Stack -> ...` clauses
     catch_clauses: Vec<CatchClause>,
-  }
+  },
+
+  /// IF statement: `if COND -> EXPR; ... end`
+  IfStatement {
+    /// Source code location
+    location: SourceLoc,
+    /// The branches to be tried till `true` is found
+    clauses: Vec<ErlIfClause>,
+  },
 }
 
 impl ErlAst {
