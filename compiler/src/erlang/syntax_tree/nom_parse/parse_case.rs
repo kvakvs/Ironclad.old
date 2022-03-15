@@ -9,7 +9,7 @@ impl ErlParser {
   pub fn parse_case_clause(input: &str) -> nom::IResult<&str, ErlCaseClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
-        Self::parse_expr_no_comma_no_semi,
+        Self::parse_matchexpr,
         combinator::opt(
           sequence::preceded(
             Self::ws_before(bytes::complete::tag("when")),
@@ -19,7 +19,7 @@ impl ErlParser {
         // The body after ->
         sequence::preceded(
           Self::ws_before(bytes::complete::tag("->")),
-          Self::parse_expr_no_comma_no_semi,
+          Self::parse_expr,
         )
       )),
       |(pattern, maybe_when, body)| {

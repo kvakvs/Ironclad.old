@@ -82,6 +82,7 @@ impl ErlAst {
       }
 
       ErlAst::Empty
+      | ErlAst::BinaryOp { .. }
       | ErlAst::Lit { .. }
       | ErlAst::Token { .. } => {
         Ok(())  // do nothing
@@ -99,7 +100,6 @@ impl ErlAst {
       | ErlAst::CClause(_, _)
       | ErlAst::Case(_, _)
       | ErlAst::Apply(_)
-      | ErlAst::BinaryOp { .. }
       | ErlAst::UnaryOp { .. }
       | ErlAst::UnparsedAttr { .. } => {
         ErlError::unacceptable_ast(format!("{}", node), "function argument".to_string())

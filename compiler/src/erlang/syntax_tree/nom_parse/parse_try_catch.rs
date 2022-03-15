@@ -13,13 +13,13 @@ impl ErlParser {
   pub fn parse_exception_pattern(input: &str) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
     combinator::map(
       sequence::tuple((
-        Self::parse_expr_no_comma_no_semi,
+        Self::parse_matchexpr,
         Self::ws_before(char(':')),
-        Self::parse_expr_no_comma_no_semi,
+        Self::parse_matchexpr,
         combinator::opt(
           sequence::preceded(
             Self::ws_before(char(':')),
-            Self::parse_expr_no_comma_no_semi,
+            Self::parse_matchexpr,
           )),
       )),
       |(class_pattern, _colon1, err_pattern, stack_pattern)| {

@@ -34,7 +34,7 @@ impl ErlParser {
 
         // Function arguments
         nom::error::context("function clause arguments",
-                            Self::parse_parenthesized_list_of_exprs),
+                            Self::parse_parenthesized_list_of_exprs::<{ ErlParser::EXPR_STYLE_MATCHEXPR }>),
 
         // Optional: when <guard>
         nom::error::context("when expression",
