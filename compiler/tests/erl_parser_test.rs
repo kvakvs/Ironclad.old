@@ -123,6 +123,18 @@ fn parse_expr_flat() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse a list builder expression
+#[named]
+#[test]
+fn parse_expr_list_builder() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a list builder");
+  let filename = PathBuf::from(function_name!());
+  let input = "[1, 2, {3, 4} | 5]";
+  let module = Module::from_expr_source(&filename, input)?;
+  println!("Parsed from «{}»: {}", input, module.ast);
+  Ok(())
+}
+
 /// Try parse a more complex expression
 #[named]
 #[test]

@@ -58,14 +58,21 @@ impl ErlParser {
   }
 
   fn parse_list_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
-    // TODO: list tail with |
     combinator::map(
-      sequence::delimited(
+      sequence::tuple((
         Self::ws_before(char('[')),
         Self::parse_comma_sep_exprs::<STYLE>,
+        combinator::opt(
+          sequence::preceded(
+            Self::ws_before(char('|')),
+            Self::parse_expr
+          )
+        ),
         Self::ws_before(char(']')),
-      ),
-      |elements| ErlAst::new_list(SourceLoc::None, elements),
+      )),
+      |(_open, elements, maybe_tail, _close)| {
+        ErlAst::new_list(SourceLoc::None, elements, maybe_tail)
+      },
     )(input)
   }
 

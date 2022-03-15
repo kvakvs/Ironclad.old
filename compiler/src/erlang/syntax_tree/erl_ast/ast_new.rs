@@ -79,9 +79,9 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list of some expressions
-  pub fn new_list(location: SourceLoc, elements: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+  pub fn new_list(location: SourceLoc, elements: Vec<Arc<ErlAst>>, tail: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
-    ErlAst::List { location, elements, tail: None }
+    ErlAst::List { location, elements, tail }
         .into()
   }
 
