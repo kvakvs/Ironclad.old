@@ -7,7 +7,6 @@ use nom::{combinator, sequence, multi, error::{context}, character::complete::{c
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
-use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::mfarity::MFArity;
@@ -93,12 +92,7 @@ impl ErlParser {
       panic!("Not all clauses have same arity")
     }
 
-    let fndef = ErlFnDef {
-      location: SourceLoc::None,
-      funarity,
-      clauses: fnclauses,
-    };
-    ErlAst::FnDef(fndef).into()
+    ErlAst::new_fndef(SourceLoc::None, funarity, fnclauses)
   }
 
   /// Parse function definition
@@ -121,13 +115,17 @@ impl ErlParser {
   pub fn parse_lambda(input: &str) -> AstParserResult {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     combinator::map(
-      sequence::tuple((
+      sequence::preceded(
         Self::ws_before(tag("fun")),
-        multi::separated_list1(
-          Self::ws_before(char(';')),
-          Self::parse_fnclause::<false>,
-        )
-      )), |(_, fnclauses)| Self::_construct_fndef(fnclauses),
+        sequence::terminated(
+          context("",
+                  multi::separated_list1(
+                    Self::ws_before(char(';')),
+                    Self::parse_fnclause::<false>,
+                  )),
+          Self::ws_before(tag("end")),
+        )),
+      |fnclauses| Self::_construct_fndef(fnclauses),
     )(input)
   }
 }

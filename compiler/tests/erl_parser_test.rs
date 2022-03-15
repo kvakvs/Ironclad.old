@@ -380,6 +380,24 @@ fn parse_fun_with_if() -> ErlResult<()> {
 
 #[named]
 #[test]
+fn parse_fun_with_lambda() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function with a lambda");
+  let filename = PathBuf::from(function_name!());
+  let src = "coalesce_consecutive_labels([{label,L}=Lbl,{label,Alias}|Is], Replace, Acc) ->
+    coalesce_consecutive_labels([Lbl|Is], [{Alias,L}|Replace], Acc);
+coalesce_consecutive_labels([I|Is], Replace, Acc) ->
+    coalesce_consecutive_labels(Is, Replace, [I|Acc]);
+coalesce_consecutive_labels([], Replace, Acc) ->
+    D = maps:from_list(Replace),
+    beam_utils:replace_labels(Acc, [], D, fun(L) -> L end).";
+  let mod1 = Module::from_fun_source(&filename, src)?;
+  println!("{}: parsed {}", function_name!(), mod1.ast);
+
+  Ok(())
+}
+
+#[named]
+#[test]
 fn parse_fun_call() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
 

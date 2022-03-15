@@ -3,7 +3,8 @@
 use ::function_name::named;
 use std::sync::Arc;
 
-use nom::{bytes, character::complete::{char}, error::{context}, combinator, sequence, multi, branch};
+use nom::{bytes, character::complete::{char}, error::{context}, combinator, sequence, multi, branch,
+          combinator::{cut}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
@@ -51,7 +52,7 @@ impl ErlParser {
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     sequence::delimited(
       Self::ws_before(char('(')),
-      Self::parse_comma_sep_exprs0::<STYLE>,
+      cut(Self::parse_comma_sep_exprs0::<STYLE>),
       Self::ws_before(char(')')),
     )(input)
   }
@@ -168,6 +169,7 @@ impl ErlParser {
         context("parse expression (primary precedence)",
                 Self::ws_before_mut(
                   branch::alt((
+                    Self::parse_lambda,
                     Self::parse_try_catch,
                     Self::parse_if_statement,
                     Self::parenthesized_expr::<STYLE>,
@@ -214,7 +216,7 @@ impl ErlParser {
         combinator::opt(sequence::preceded(
           char(':'),
           Self::parse_expr_prec_primary::<STYLE>)),
-        combinator::opt(Self::parse_parenthesized_list_of_exprs::<STYLE>),
+        combinator::opt(context("function arguments", Self::parse_parenthesized_list_of_exprs::<STYLE>)),
       )),
       |(expr1, maybe_expr2, maybe_args)| {
         match (maybe_expr2, maybe_args) {
