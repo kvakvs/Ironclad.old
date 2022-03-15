@@ -25,12 +25,33 @@ impl ErlParser {
     )(input)
   }
 
+  /// Function will succeed if an atom is parsed and FN_NAME is true, will return Some<Value>.
+  /// Function will succeed if no atom found but also FN_NAME is false, will return None.
+  /// Function will fail otherwise.
+  fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
+    input: &str
+  ) -> nom::IResult<&str, Option<String>, ErlParserError> {
+    if REQUIRE_FN_NAME {
+      // Succeed if FN_NAME=true and there is an atom
+      return combinator::map(
+        AtomParser::parse_atom,
+        Option::Some,
+      )(input);
+    }
+    // Succeed if FN_NAME=false and there is no atom
+    combinator::map(
+      combinator::peek(combinator::not(AtomParser::parse_atom)),
+      |_| Option::None,
+    )(input)
+  }
+
   /// Parses a named clause for a top level function
-  fn parse_fnclause(input: &str) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
+  /// * FN_NAME: true if the parser must require function name
+  fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: &str) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
         // Function clause name
-        Self::ws_before_mut(combinator::opt(AtomParser::parse_atom)),
+        Self::ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
 
         // Function arguments
         nom::error::context("function clause arguments",
@@ -43,12 +64,9 @@ impl ErlParser {
                             sequence::preceded(
                               Self::ws_before(tag("->")),
                               Self::parse_expr, // Body as list of exprs
-                              // Self::parse_comma_sep_exprs, // Body as list of exprs
                             ))
       )),
       |(maybe_name, args, when_expr, body)| {
-        // let body_ast = ErlAst::new_comma_expr(SourceLoc::None, body);
-        // ErlFnClause::new(maybe_name, args, body_ast, when_expr)
         ErlFnClause::new(maybe_name, args, body, when_expr)
       },
     )(input)
@@ -84,7 +102,7 @@ impl ErlParser {
       sequence::terminated(
         multi::separated_list1(
           Self::ws_before(char(';')),
-          Self::parse_fnclause,
+          Self::parse_fnclause::<true>,
         ),
         Self::ws_before(char('.')),
       ),
@@ -100,7 +118,7 @@ impl ErlParser {
         Self::ws_before(tag("fun")),
         multi::separated_list1(
           Self::ws_before(char(';')),
-          Self::parse_fnclause,
+          Self::parse_fnclause::<false>,
         )
       )), |(_, fnclauses)| Self::_construct_fndef(fnclauses),
     )(input)

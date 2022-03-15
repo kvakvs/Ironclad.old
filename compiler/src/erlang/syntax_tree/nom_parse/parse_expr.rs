@@ -1,5 +1,6 @@
 //! Parse expressions and guard expressions (with added ;, operators)
 
+use ::function_name::named;
 use std::sync::Arc;
 
 use nom::{bytes, character::complete::{char}, combinator, sequence, multi, branch};
@@ -399,28 +400,49 @@ impl ErlParser {
 
   /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
-  #[inline]
+  #[named]
   fn parse_expr_prec13<const STYLE: usize>(input: &str) -> AstParserResult {
-    if STYLE == Self::EXPR_STYLE_MATCHEXPR {
-      // Skip comma and semicolon operator
-      return Self::parse_expr_prec11::<STYLE>(input);
-    }
+    match STYLE {
+      Self::EXPR_STYLE_MATCHEXPR =>
+        // Skip comma and semicolon operator
+        return Self::parse_expr_prec11::<STYLE>(input),
 
-    combinator::map(
-      // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
-      sequence::pair(
-        Self::ws_before(Self::parse_expr_prec11::<STYLE>),
-        multi::many0(
+      Self::EXPR_STYLE_FULL =>
+        // Full style expressions do not allow semicolons, they are used in blocks and function clauses
+        combinator::map(
+          // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
           sequence::pair(
-            Self::ws_before_mut(branch::alt((
-              Self::binop_semicolon, Self::binop_comma
-            ))),
             Self::ws_before(Self::parse_expr_prec11::<STYLE>),
-          )
-        ),
-      ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
-    )(input)
+            multi::many0(
+              sequence::pair(
+                Self::ws_before_mut(Self::binop_comma),
+                Self::ws_before(Self::parse_expr_prec11::<STYLE>),
+              )
+            ),
+          ),
+          |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+        )(input),
+
+      Self::EXPR_STYLE_GUARD =>
+        // Guard-style expressions allow both comma and semicolons
+        combinator::map(
+          // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
+          sequence::pair(
+            Self::ws_before(Self::parse_expr_prec11::<STYLE>),
+            multi::many0(
+              sequence::pair(
+                Self::ws_before_mut(branch::alt((
+                  Self::binop_semicolon, Self::binop_comma
+                ))),
+                Self::ws_before(Self::parse_expr_prec11::<STYLE>),
+              )
+            ),
+          ),
+          |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+        )(input),
+
+      _ => unimplemented!("STYLE={} is not implemented in {}", STYLE, function_name!())
+    }
   }
 
   /// Parse an expression. Expression can also be a block which produces a value.
