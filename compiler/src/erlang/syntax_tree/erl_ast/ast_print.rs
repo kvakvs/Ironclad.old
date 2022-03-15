@@ -61,14 +61,14 @@ impl std::fmt::Display for ErlAst {
         }
       }
       ErlAst::CommaExpr { elements, .. } => Pretty::display_comma_separated(elements, f),
-      ErlAst::List { elements, tail, .. } => {
+      ErlAst::List { elements, tail: maybe_tail, .. } => {
         write!(f, "[")?;
         Pretty::display_comma_separated(elements, f)?;
-        if let Some(t) = tail {
-          write!(f, " | {}", t)?;
+        if let Some(tail) = maybe_tail {
+          write!(f, " | {}", tail)?;
         }
         write!(f, "]")
-      },
+      }
       ErlAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
       ErlAst::FnSpec { funarity, spec, .. } => {
         write!(f, "-spec {}", funarity.name)?;

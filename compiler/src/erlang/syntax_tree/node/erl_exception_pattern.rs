@@ -1,6 +1,7 @@
 //! Exception pattern for `try-catch Class:Exception:Stack -> ...`
 
 use std::sync::Arc;
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 /// Represents an exception pattern in catch clause for `try-catch Class:Exception:Stack -> ...`
@@ -24,5 +25,23 @@ impl ExceptionPattern {
       error: err_pattern,
       stack: stack_pattern,
     }
+  }
+}
+
+impl AstNode for ExceptionPattern {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+    let mut r = Vec::default();
+    if let Some(c) = self.class.children() {
+      r.extend(c.iter().cloned());
+    }
+    if let Some(c) = self.error.children() {
+      r.extend(c.iter().cloned());
+    }
+    if let Some(stack) = &self.stack {
+      if let Some(c) = stack.children() {
+        r.extend(c.iter().cloned());
+      }
+    }
+    if r.is_empty() { None } else { Some(r) }
   }
 }

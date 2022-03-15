@@ -1,6 +1,7 @@
 //! Declares AST node for a clause in `case of` expression
 use std::fmt::Formatter;
 use std::sync::Arc;
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
@@ -28,5 +29,17 @@ impl std::fmt::Display for ErlCaseClause {
       Some(g) => write!(f, "{} when {} -> {};", self.pattern, g, self.body),
       None => write!(f, "{} -> {};", self.pattern, self.body),
     }
+  }
+}
+
+impl AstNode for ErlCaseClause {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+    let mut r = self.pattern.children().unwrap_or_else(Vec::default);
+    if let Some(g) = &self.guard {
+      if let Some(g_children) = g.children() {
+        r.extend(g_children.iter().cloned());
+      }
+    }
+    Some(r)
   }
 }

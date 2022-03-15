@@ -40,7 +40,7 @@ impl AstNode for ErlAst {
           }
           r.push(cc.body.clone());
         });
-        Some(r)
+        if r.is_empty() { None } else { Some(r) }
       }
 
       ErlAst::CClause(_loc, clause) => {
@@ -71,6 +71,32 @@ impl AstNode for ErlAst {
       }
 
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
+      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+        let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_else(Vec::default);
+        // For all of-branches, extend the result with each branch
+        if let Some(ofb) = of_branches {
+          for cc in ofb {
+            if let Some(cc_children) = cc.children() {
+              r.extend(cc_children.iter().cloned())
+            }
+          }
+        }
+        for cc in catch_clauses {
+          if let Some(cc_children) = cc.children() {
+            r.extend(cc_children.iter().cloned())
+          }
+        }
+        if r.is_empty() { None } else { Some(r) }
+      }
+      ErlAst::CommaExpr {elements, ..} => {
+        let mut r = Vec::default();
+        elements.iter().for_each(|e| {
+          if let Some(c) = e.children() {
+            r.extend(c.iter().cloned());
+          }
+        });
+        if r.is_empty() { None } else { Some(r) }
+      }
       _ => unreachable!("{}(): Can't process {}", function_name!(), self),
     }
   }

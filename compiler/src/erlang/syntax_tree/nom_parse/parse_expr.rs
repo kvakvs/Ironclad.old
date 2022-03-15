@@ -52,7 +52,7 @@ impl ErlParser {
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     sequence::delimited(
       Self::ws_before(char('(')),
-      Self::parse_comma_sep_exprs::<STYLE>,
+      Self::parse_comma_sep_exprs0::<STYLE>,
       Self::ws_before(char(')')),
     )(input)
   }
@@ -61,7 +61,7 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         Self::ws_before(char('[')),
-        Self::parse_comma_sep_exprs::<STYLE>,
+        Self::parse_comma_sep_exprs0::<STYLE>,
         combinator::opt(
           sequence::preceded(
             Self::ws_before(char('|')),
@@ -125,7 +125,7 @@ impl ErlParser {
     combinator::map(
       sequence::delimited(
         Self::ws_before(char('{')),
-        Self::parse_comma_sep_exprs::<STYLE>,
+        Self::parse_comma_sep_exprs0::<STYLE>,
         Self::ws_before(char('}')),
       ),
       |elements| ErlAst::new_tuple(SourceLoc::None, elements),
@@ -133,10 +133,21 @@ impl ErlParser {
   }
 
   /// Parses comma separated sequence of expressions
-  pub fn parse_comma_sep_exprs<const STYLE: usize>(
+  pub fn parse_comma_sep_exprs0<const STYLE: usize>(
     input: &str
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list0(
+      Self::ws_before(char(',')),
+      // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+      Self::parse_expr_prec13::<STYLE>,
+    )(input)
+  }
+
+  /// Parses comma separated sequence of expressions, at least one or more
+  pub fn parse_comma_sep_exprs1<const STYLE: usize>(
+    input: &str
+  ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
+    multi::separated_list1(
       Self::ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
@@ -410,25 +421,9 @@ impl ErlParser {
   #[named]
   fn parse_expr_prec13<const STYLE: usize>(input: &str) -> AstParserResult {
     match STYLE {
-      Self::EXPR_STYLE_MATCHEXPR =>
+      Self::EXPR_STYLE_MATCHEXPR | Self::EXPR_STYLE_FULL =>
         // Skip comma and semicolon operator
         return Self::parse_expr_prec11::<STYLE>(input),
-
-      Self::EXPR_STYLE_FULL =>
-        // Full style expressions do not allow semicolons, they are used in blocks and function clauses
-        combinator::map(
-          // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
-          sequence::pair(
-            Self::ws_before(Self::parse_expr_prec11::<STYLE>),
-            multi::many0(
-              sequence::pair(
-                Self::ws_before_mut(Self::binop_comma),
-                Self::ws_before(Self::parse_expr_prec11::<STYLE>),
-              )
-            ),
-          ),
-          |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
-        )(input),
 
       Self::EXPR_STYLE_GUARD =>
         // Guard-style expressions allow both comma and semicolons

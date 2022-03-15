@@ -259,8 +259,8 @@ fn parse_fn_try_catch() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
   // let source = "function(X) -> try X/0 end.";
   let source = "function({function,Name,Arity,CLabel,Is0}) ->
-    try {function,Name,Arity,CLabel,Is}
-    catch Class:Error:Stack -> erlang:raise(Class, Error, Stack)
+    try atom1, {function,Name,Arity,CLabel,Is}
+    catch Class:Error:Stack -> erlang:raise(Class, Error, Stack), ok
     end.";
   let module = Module::from_fun_source(&filename, source)?;
 

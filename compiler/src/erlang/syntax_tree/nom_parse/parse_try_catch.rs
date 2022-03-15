@@ -38,17 +38,18 @@ impl ErlParser {
         combinator::opt(
           sequence::preceded(
             Self::ws_before(tag("when")),
-            Self::parse_expr,
+            Self::parse_guardexpr,
           )
         ),
         // -> Expression
         sequence::preceded(
           Self::ws_before(tag("->")),
-          Self::parse_expr,
+          Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>,
         )
       )),
       |(exc_pattern, maybe_when, body)| {
-        CatchClause::new(exc_pattern, maybe_when, body)
+        CatchClause::new(exc_pattern, maybe_when,
+                         ErlAst::new_comma_expr(SourceLoc::None, body))
       },
     )(input)
   }
@@ -56,7 +57,8 @@ impl ErlParser {
   fn parse_try_catch_inner(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
-        context("try-catch expression", Self::parse_expr),
+        context("try-catch expression",
+                Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
 
         // Optional OF followed by match clauses
         combinator::opt(
@@ -75,7 +77,9 @@ impl ErlParser {
         )
       )),
       |(body, of_branches, catch_clauses)| {
-        ErlAst::new_try_catch(SourceLoc::None, body, of_branches, catch_clauses)
+        ErlAst::new_try_catch(SourceLoc::None,
+                              ErlAst::new_comma_expr(SourceLoc::None, body),
+                              of_branches, catch_clauses)
       },
     )(input)
   }

@@ -63,11 +63,14 @@ impl ErlParser {
         nom::error::context("function clause body",
                             sequence::preceded(
                               Self::ws_before(tag("->")),
-                              Self::parse_expr, // Body as list of exprs
+                              // Body as list of exprs
+                              Self::parse_comma_sep_exprs1::<{ErlParser::EXPR_STYLE_FULL}>,
                             ))
       )),
       |(maybe_name, args, when_expr, body)| {
-        ErlFnClause::new(maybe_name, args, body, when_expr)
+        ErlFnClause::new(maybe_name, args,
+                         ErlAst::new_comma_expr(SourceLoc::None, body),
+                         when_expr)
       },
     )(input)
   }
@@ -75,7 +78,7 @@ impl ErlParser {
   /// Builds a function definition from multiple parsed clauses
   fn _construct_fndef(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
     assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even..."); // unreachable
-    println!("Construct fdef: {:?}", fnclauses);
+    // println!("Construct fdef: {:?}", fnclauses);
 
     let arity = fnclauses[0].args.len();
     let fn_name = match &fnclauses[0].name {

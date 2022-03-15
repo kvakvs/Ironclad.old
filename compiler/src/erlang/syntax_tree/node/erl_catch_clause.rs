@@ -2,6 +2,7 @@
 
 use std::fmt::Formatter;
 use std::sync::Arc;
+use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
 
@@ -38,5 +39,23 @@ impl std::fmt::Display for CatchClause {
       write!(f, "when {}", wheng)?;
     }
     write!(f, " -> {}", self.body)
+  }
+}
+
+impl AstNode for CatchClause {
+  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+    let mut r = Vec::default();
+    if let Some(c) = self.exc_pattern.children() {
+      r.extend(c.iter().cloned());
+    }
+    if let Some(wheng) = &self.when_guard {
+      if let Some(wheng_children) = wheng.children() {
+        r.extend(wheng_children.iter().cloned());
+      }
+    }
+    if let Some(b_children) = self.body.children() {
+      r.extend(b_children.iter().cloned());
+    }
+    if r.is_empty() { None } else { Some(r) }
   }
 }

@@ -94,7 +94,11 @@ impl ErlAst {
 
   /// Create a new AST node for a comma-expression
   pub fn new_comma_expr(location: SourceLoc, elements: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
-    ErlAst::CommaExpr { location, elements }.into()
+    match elements.len() {
+      0 => panic!("Empty elements when creating a ErlAst::CommaExpr"),
+      1 => elements[0].clone(),
+      _ => ErlAst::CommaExpr { location, elements }.into()
+    }
   }
 
   /// Create a new AST node for a list comprehension
