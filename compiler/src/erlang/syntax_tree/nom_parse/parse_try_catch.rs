@@ -1,8 +1,8 @@
 //! Parsers to recognize try-catch and try-of-catch blocks
 
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
-use nom::{character::complete::{char}, bytes::complete::{tag}, combinator, error::{context},
-          sequence, multi};
+use nom::{character::complete::{char}, bytes::complete::{tag}, combinator, combinator::{cut},
+          error::{context}, sequence, multi};
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
@@ -58,7 +58,7 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         context("try-catch expression",
-                Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
+                cut(Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>)),
 
         // Optional OF followed by match clauses
         combinator::opt(

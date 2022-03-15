@@ -97,6 +97,15 @@ impl AstNode for ErlAst {
         });
         if r.is_empty() { None } else { Some(r) }
       }
+      ErlAst::IfStatement {clauses, ..} => {
+        let mut r = Vec::default();
+        clauses.iter().for_each(|ifc| {
+          if let Some(c) = ifc.children() {
+            r.extend(c.iter().cloned());
+          }
+        });
+        if r.is_empty() { None } else { Some(r) }
+      }
       _ => unreachable!("{}(): Can't process {}", function_name!(), self),
     }
   }

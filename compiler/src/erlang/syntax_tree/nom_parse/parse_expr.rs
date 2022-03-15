@@ -3,8 +3,7 @@
 use ::function_name::named;
 use std::sync::Arc;
 
-use nom::{bytes, character::complete::{char}, error::{context},
-          combinator, sequence, multi, branch};
+use nom::{bytes, character::complete::{char}, error::{context}, combinator, sequence, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
@@ -65,7 +64,7 @@ impl ErlParser {
         combinator::opt(
           sequence::preceded(
             Self::ws_before(char('|')),
-            Self::parse_expr,
+            Self::parse_expr_prec13::<STYLE>,
           )
         ),
         Self::ws_before(char(']')),
@@ -283,9 +282,14 @@ impl ErlParser {
         multi::many0(
           sequence::pair(
             Self::ws_before_mut(branch::alt((
-              Self::binop_add, Self::binop_subtract, Self::binop_bor,
-              Self::binop_bxor, Self::binop_bsl, Self::binop_bsr,
-              Self::binop_or, Self::binop_xor,
+              Self::binop_add,
+              Self::binop_bor,
+              Self::binop_bsl,
+              Self::binop_bsr,
+              Self::binop_bxor,
+              Self::binop_or,
+              Self::binop_subtract,
+              Self::binop_xor,
             ))),
             Self::ws_before(Self::parse_expr_prec04::<STYLE>),
           )
@@ -304,7 +308,8 @@ impl ErlParser {
         multi::many0(
           sequence::pair(
             Self::ws_before_mut(branch::alt((
-              Self::binop_list_append, Self::binop_list_subtract,
+              Self::binop_list_append,
+              Self::binop_list_subtract,
             ))),
             Self::ws_before(Self::parse_expr_prec05::<STYLE>),
           )
@@ -323,10 +328,14 @@ impl ErlParser {
         multi::many0(
           sequence::pair(
             Self::ws_before_mut(branch::alt((
-              Self::binop_equals, Self::binop_not_equals,
-              Self::binop_less_eq, Self::binop_less,
-              Self::binop_greater_eq, Self::binop_greater,
-              Self::binop_hard_equals, Self::binop_hard_not_equals,
+              Self::binop_hard_equals,
+              Self::binop_hard_not_equals,
+              Self::binop_not_equals,
+              Self::binop_equals,
+              Self::binop_less_eq,
+              Self::binop_less,
+              Self::binop_greater_eq,
+              Self::binop_greater,
             ))),
             Self::ws_before(Self::parse_expr_prec06::<STYLE>),
           )

@@ -12,12 +12,12 @@ impl ErlParser {
   pub fn parse_if_statement(input: &str) -> AstParserResult {
     combinator::map(
       sequence::delimited(
-        tag("if"),
+        Self::ws_before(tag("if")),
         multi::separated_list1(
-          char(';'),
-          context("if statement clause", cut(Self::parse_if_clause))
+          Self::ws_before(char(';')),
+          context("if statement clause", cut(Self::parse_if_clause)),
         ),
-        tag("end"),
+        Self::ws_before(tag("end")),
       ),
       |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),
     )(input)
@@ -26,15 +26,15 @@ impl ErlParser {
   /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
   pub fn parse_if_clause(input: &str) -> nom::IResult<&str, ErlIfClause, ErlParserError> {
     combinator::map(
-      sequence::tuple((
+      sequence::pair(
         Self::parse_expr,
 
         // The body after ->
         sequence::preceded(
           Self::ws_before(bytes::complete::tag("->")),
           Self::parse_expr,
-        )
-      )),
+        ),
+      ),
       |(cond, body)| ErlIfClause::new(cond, body),
     )(input)
   }

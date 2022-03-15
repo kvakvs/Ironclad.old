@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use nom::{combinator, sequence, multi, error::{context}, character::complete::{char},
-          bytes::complete::{tag}};
+          bytes::complete::{tag}, combinator::{cut}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
@@ -18,7 +18,7 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         Self::ws_before(tag("when")),
-        Self::parse_expr,
+        cut(Self::parse_expr),
       )),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
     )(input)
@@ -53,18 +53,21 @@ impl ErlParser {
         Self::ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
 
         // Function arguments
-        nom::error::context("function clause arguments",
-                            Self::parse_parenthesized_list_of_exprs::<{ ErlParser::EXPR_STYLE_MATCHEXPR }>),
+        nom::error::context(
+          "function clause arguments",
+          Self::parse_parenthesized_list_of_exprs::<{ ErlParser::EXPR_STYLE_MATCHEXPR }>),
 
         // Optional: when <guard>
-        nom::error::context("when expression",
-                            combinator::opt(Self::parse_when_expr_for_fn)),
-        nom::error::context("function clause body",
-                            sequence::preceded(
-                              Self::ws_before(tag("->")),
-                              // Body as list of exprs
-                              Self::parse_comma_sep_exprs1::<{ErlParser::EXPR_STYLE_FULL}>,
-                            ))
+        nom::error::context(
+          "when expression",
+          combinator::opt(Self::parse_when_expr_for_fn)),
+        nom::error::context(
+          "function clause body",
+          sequence::preceded(
+            Self::ws_before(tag("->")),
+            // Body as list of exprs
+            cut(Self::parse_comma_sep_exprs1::<{ ErlParser::EXPR_STYLE_FULL }>),
+          ))
       )),
       |(maybe_name, args, when_expr, body)| {
         ErlFnClause::new(maybe_name, args,

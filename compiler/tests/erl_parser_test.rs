@@ -183,6 +183,20 @@ fn parse_expr_containers() -> ErlResult<()> {
   Ok(())
 }
 
+/// Try parse a hard-equals expression
+#[named]
+#[test]
+fn parse_expr_hard_eq() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a hard-equals expr");
+  let filename = PathBuf::from(function_name!());
+  let src = "A =:= B2";
+  let module = Module::from_expr_source(&filename, src)?;
+  println!("Parse «{}»: {}", src, module.ast);
+  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+
+  Ok(())
+}
+
 /// Try parse some function defs
 #[named]
 #[test]
@@ -355,12 +369,8 @@ fn parse_fun_with_if() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function with if statement");
   let filename = PathBuf::from(function_name!());
   let src = "rename_instrs([{get_list,S,D1,D2}|Is]) ->
-    %% Only happens when compiling from old .S files.
-    if
-        D1 =:= S ->
-            [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
-        true ->
-            [{get_hd,S,D1},{get_tl,S,D2}|rename_instrs(Is)]
+    if D1 =:= S -> [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
+        true -> [{get_hd,S,D1},{get_tl,S,D2}|rename_instrs(Is)]
     end.";
   let mod1 = Module::from_fun_source(&filename, src)?;
   println!("{}: parsed {}", function_name!(), mod1.ast);
