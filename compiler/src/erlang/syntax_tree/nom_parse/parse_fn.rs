@@ -58,7 +58,7 @@ impl ErlParser {
 
         // Optional: when <guard>
         nom::error::context(
-          "when expression",
+          "when expression in a function clause",
           combinator::opt(Self::parse_when_expr_for_fn)),
         nom::error::context(
           "function clause body",
@@ -102,7 +102,7 @@ impl ErlParser {
         multi::separated_list1(
           Self::ws_before(char(';')),
           // if parse fails under here, will show this context message in error
-          context("function clause in a function",
+          context("function clause",
                   combinator::cut(Self::parse_fnclause::<true>)),
         ),
         Self::ws_before(char('.')),

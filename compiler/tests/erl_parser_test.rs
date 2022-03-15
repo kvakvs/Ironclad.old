@@ -395,6 +395,20 @@ fn parse_fun_with_if() -> ErlResult<()> {
 
 #[named]
 #[test]
+fn parse_fun_with_case() -> ErlResult<()> {
+  test_util::start(function_name!(), "Parse a function with case statement");
+  let filename = PathBuf::from(function_name!());
+  let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
+        false -> Swap = beam_opcodes:opcode(swap, 2), beam_dict:opcode(Swap, Dict);
+        true -> Dict end";
+  let mod1 = Module::from_fun_source(&filename, src)?;
+  println!("{}: parsed {}", function_name!(), mod1.ast);
+
+  Ok(())
+}
+
+#[named]
+#[test]
 fn parse_fun_with_lambda() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function with a lambda");
   let filename = PathBuf::from(function_name!());
@@ -415,14 +429,18 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 #[test]
 fn parse_fun_call() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
-
   let filename = PathBuf::from(function_name!());
-  let mod1 = Module::from_expr_source(&filename, "function_name()")?;
-  println!("{}: parsed {}", function_name!(), mod1.ast);
 
-  let mod2 = Module::from_expr_source(&filename, "mod_name:function_name()")?;
-  println!("{}: parsed {}", function_name!(), mod2.ast);
-
+  {
+    let src = "function_name()";
+    let mod1 = Module::from_expr_source(&filename, src)?;
+    println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
+  }
+  {
+    let src = "mod_name:function_name()";
+    let mod2 = Module::from_expr_source(&filename, src)?;
+    println!("{}: from «{}» parsed {}", function_name!(), src, mod2.ast);
+  }
   Ok(())
 }
 

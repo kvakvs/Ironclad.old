@@ -44,7 +44,7 @@ impl std::fmt::Display for ErlAst {
         } else {
           writeln!(f, "-{}.", tag)
         }
-      },
+      }
       ErlAst::FnRef { mfa, .. } => write!(f, "fun {}", mfa),
       ErlAst::FnDef(erl_fndef) => {
         write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
@@ -59,7 +59,11 @@ impl std::fmt::Display for ErlAst {
       }
       ErlAst::Var(var) => write!(f, "{}", var.name),
       ErlAst::Apply(app) => write!(f, "{}", app),
-      ErlAst::Case(_loc, case) => write!(f, "{}", case),
+      ErlAst::CaseStatement { expr, clauses, .. } => {
+        write!(f, "case {} of", expr)?;
+        Pretty::display_semicolon_separated(clauses, f)?;
+        write!(f, "end")
+      },
       ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
 
       ErlAst::BinaryOp { expr: binop_expr, .. } => {

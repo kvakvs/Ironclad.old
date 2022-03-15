@@ -1,7 +1,6 @@
 //! AST syntax structure of an Erlang file
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
-use crate::erlang::syntax_tree::node::erl_case::ErlCase;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use crate::literal::Literal;
 use crate::erlang::syntax_tree::node::erl_binop::{ErlBinaryOperatorExpr};
@@ -97,7 +96,7 @@ pub enum ErlAst {
     /// Attr name atom, stored as string
     tag: String,
     /// Attr value (any expression)
-    term: Option<Arc<ErlAst>>
+    term: Option<Arc<ErlAst>>,
   },
 
   /// Defines a new function, with clauses, or an inline lambda (then name will be `None`).
@@ -152,7 +151,14 @@ pub enum ErlAst {
   Apply(ErlApply),
 
   /// Case switch containing the argument to check, and case clauses
-  Case(SourceLoc, ErlCase),
+  CaseStatement {
+    /// Source code location
+    location: SourceLoc,
+    /// Argument X in `case X of`
+    expr: Arc<ErlAst>,
+    /// All case clauses in order
+    clauses: Vec<ErlCaseClause>,
+  },
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit {
@@ -321,7 +327,7 @@ impl ErlAst {
       ErlAst::MFA { location: loc, .. } => loc.clone(),
       ErlAst::Var(var) => var.location.clone(),
       ErlAst::Apply(app) => app.location.clone(),
-      ErlAst::Case(loc, _) => loc.clone(),
+      ErlAst::CaseStatement {location, ..} => location.clone(),
       ErlAst::Lit { location: loc, .. } => loc.clone(),
       ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
       ErlAst::UnaryOp { location: loc, .. } => loc.clone(),

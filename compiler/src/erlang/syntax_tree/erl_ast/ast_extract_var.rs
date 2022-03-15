@@ -111,7 +111,7 @@ impl ErlAst {
       | ErlAst::FnRef { .. }
       | ErlAst::FnDef(_)
       | ErlAst::CClause(_, _)
-      | ErlAst::Case(_, _)
+      | ErlAst::CaseStatement {..}
       | ErlAst::Apply(_)
       | ErlAst::UnaryOp { .. }
       | ErlAst::GenericAttr { .. } => {

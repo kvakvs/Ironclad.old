@@ -2,7 +2,6 @@
 pub mod erl_apply;
 pub mod erl_binop;
 pub mod erl_callable_target;
-pub mod erl_case;
 pub mod erl_case_clause;
 pub mod erl_catch_clause;
 pub mod erl_exception_pattern;

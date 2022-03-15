@@ -189,6 +189,11 @@ impl ErlAst {
     ErlAst::IfStatement { location, clauses }.into()
   }
 
+  /// Create a new `case` AST Node for `case EXPR of MATCH -> EXPR; ... end`
+  pub fn new_case_statement(location: SourceLoc, expr: Arc<ErlAst>, clauses: Vec<ErlCaseClause>) -> Arc<ErlAst> {
+    ErlAst::CaseStatement { location, expr, clauses }.into()
+  }
+
   /// Create a new function AST node, or a lambda AST node.
   pub fn new_fndef(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
     let fndef = ErlFnDef {

@@ -31,15 +31,17 @@ impl AstNode for ErlAst {
       ErlAst::FnDef(fn_def) => fn_def.children(),
       ErlAst::Apply(app) => app.children(),
 
-      ErlAst::Case(_loc, case) => {
-        let mut r: Vec<Arc<ErlAst>> = vec![case.arg.clone()];
-        case.clauses.iter().for_each(|cc| {
+      ErlAst::CaseStatement {expr, clauses, ..} => {
+        let mut r: Vec<Arc<ErlAst>> = vec![expr.clone()];
+
+        for cc in clauses {
           r.push(cc.pattern.clone());
           if let Some(g) = &cc.guard {
             r.push(g.clone());
           }
           r.push(cc.body.clone());
-        });
+        }
+
         if r.is_empty() { None } else { Some(r) }
       }
 

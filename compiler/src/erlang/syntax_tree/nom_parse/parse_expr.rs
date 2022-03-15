@@ -166,12 +166,13 @@ impl ErlParser {
   fn parse_expr_prec_primary<const STYLE: usize>(input: &str) -> AstParserResult {
     match STYLE {
       Self::EXPR_STYLE_FULL =>
-        context("parse expression (primary precedence)",
+        context("parse expression (highest precedence)",
                 Self::ws_before_mut(
                   branch::alt((
                     Self::parse_lambda,
                     Self::parse_try_catch,
                     Self::parse_if_statement,
+                    Self::parse_case_statement,
                     Self::parenthesized_expr::<STYLE>,
                     Self::parse_list_comprehension,
                     Self::parse_list_of_exprs::<STYLE>,
@@ -181,7 +182,7 @@ impl ErlParser {
                   ))
                 ))(input),
       Self::EXPR_STYLE_MATCHEXPR =>
-        context("parse match expression (primary precedence)",
+        context("parse match expression (highest precedence)",
                 Self::ws_before_mut(
                   branch::alt((
                     Self::parenthesized_expr::<STYLE>,
@@ -192,7 +193,7 @@ impl ErlParser {
                   ))
                 ))(input),
       Self::EXPR_STYLE_GUARD =>
-        context("parse guard expression (primary precedence)",
+        context("parse guard expression (highest precedence)",
                 Self::ws_before_mut(
                   branch::alt((
                     Self::parenthesized_expr::<STYLE>,
@@ -221,7 +222,8 @@ impl ErlParser {
         combinator::opt(sequence::preceded(
           ErlParser::ws_before(char(':')),
           Self::parse_expr_prec_primary::<STYLE>)),
-        combinator::opt(context("function arguments", Self::parse_parenthesized_list_of_exprs::<STYLE>)),
+        combinator::opt(context("function arguments", cut(
+          Self::parse_parenthesized_list_of_exprs::<STYLE>))),
       )),
       |(expr1, maybe_expr2, maybe_args)| {
         match (maybe_expr2, maybe_args) {
