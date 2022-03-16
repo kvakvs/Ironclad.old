@@ -30,4 +30,7 @@ impl ErlAst {
   pub fn is_binop(&self, op: ErlBinaryOp) -> bool {
     matches!(self, ErlAst::BinaryOp {expr, ..} if expr.operator == op)
   }
+
+  /// Checks whether an ErlAst node is a Function Application (a call)
+  pub fn is_application(&self) -> bool { matches!(self, ErlAst::Apply(_)) }
 }

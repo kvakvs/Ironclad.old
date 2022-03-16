@@ -63,7 +63,7 @@ fn fn_generic_attr_parse2() -> ErlResult<()> {
 
   match ErlAttrParser::parse_generic_attr(input).finish() {
     Ok((tail2, result2)) => {
-      assert!(tail2.is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
+      assert!(tail2.trim().is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
       println!("ErlAst for attr2: {}", result2);
     }
     Err(err) => return Err(ErlError::from_nom_error(input, err))
@@ -79,7 +79,8 @@ fn fn_typespec_parse_1() -> ErlResult<()> {
 
   let filename = PathBuf::from(function_name!());
 
-  let spec1_src = format!("-spec {}(A :: integer()) -> any().", function_name!());
+  // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
+  let spec1_src = format!("spec {}(A :: integer()) -> any()", function_name!());
   let spec1_m = Module::from_fun_spec_source(&filename, &spec1_src)?;
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
@@ -122,7 +123,8 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse when-part of a function type spec");
 
   let filename = PathBuf::from(function_name!());
-  let spec_src = format!("-spec {}(atom()) -> A when A :: tuple().", function_name!());
+  // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
+  let spec_src = format!("spec {}(atom()) -> A when A :: tuple()", function_name!());
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 
   assert!(parsed.ast.is_fn_spec());
@@ -157,7 +159,8 @@ fn fn_typespec_parse_union() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function spec with type union in it");
 
   let filename = PathBuf::from(function_name!());
-  let spec_src = format!("-spec {}(atom() | 42 | integer()) -> {{ok, any()}} | {{error, any()}}.",
+  // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
+  let spec_src = format!(" spec {}(atom() | 42 | integer()) -> {{ok, any()}} | {{error, any()}}",
                          function_name!());
   let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
 

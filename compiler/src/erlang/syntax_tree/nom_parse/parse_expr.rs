@@ -52,7 +52,8 @@ impl ErlParser {
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     sequence::delimited(
       Self::ws_before(char('(')),
-      cut(Self::parse_comma_sep_exprs0::<STYLE>),
+      context("function application arguments", cut(
+        Self::parse_comma_sep_exprs0::<STYLE>)),
       Self::ws_before(char(')')),
     )(input)
   }
@@ -105,7 +106,8 @@ impl ErlParser {
       sequence::separated_pair(
         Self::parse_expr,
         Self::ws_before(bytes::complete::tag("||")),
-        Self::parse_list_comprehension_exprs_and_generators,
+        context("list comprehension generators", cut(
+          Self::parse_list_comprehension_exprs_and_generators)),
       ),
       |(expr, generators)| {
         ErlAst::new_list_comprehension(SourceLoc::None, expr, generators)
@@ -218,25 +220,34 @@ impl ErlParser {
       sequence::tuple((
         Self::parse_expr_prec_primary::<STYLE>,
 
-        // An optional second expression after a ':'
-        combinator::opt(sequence::preceded(
-          ErlParser::ws_before(char(':')),
-          Self::parse_expr_prec_primary::<STYLE>)),
-        combinator::opt(context("function arguments", cut(
-          Self::parse_parenthesized_list_of_exprs::<STYLE>))),
+        // An optional second expression after a ':', MUST be followed by parentheses with args
+        combinator::opt(
+          // A pair: optional second expr for function name, and mandatory args
+          sequence::pair(
+            combinator::opt(
+              sequence::preceded(
+                ErlParser::ws_before(char(':')),
+                Self::parse_expr_prec_primary::<STYLE>)
+            ),
+            Self::parse_parenthesized_list_of_exprs::<STYLE>,
+          )
+        ),
       )),
-      |(expr1, maybe_expr2, maybe_args)| {
-        match (maybe_expr2, maybe_args) {
-          (_, None) => expr1,
-          (Some(expr2), Some(args_vec)) => {
-            // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
-            let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args_vec.len());
-            ErlAst::new_application(SourceLoc::None, target, args_vec)
+      |(expr1, maybe_expr2_args)| {
+        if let Some((maybe_expr2, args)) = maybe_expr2_args {
+          match maybe_expr2 {
+            Some(expr2) => {
+              // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
+              let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args.len());
+              ErlAst::new_application(SourceLoc::None, target, args)
+            }
+            None => {
+              let target = CallableTarget::new_expr(expr1);
+              ErlAst::new_application(SourceLoc::None, target, args)
+            }
           }
-          (None, Some(args_vec)) => {
-            let target = CallableTarget::new_expr(expr1);
-            ErlAst::new_application(SourceLoc::None, target, args_vec)
-          }
+        } else {
+          expr1 // no extra args after the expression
         }
       })(input)
   }

@@ -1,5 +1,6 @@
 extern crate compiler;
 extern crate function_name;
+extern crate core;
 
 use std::ops::Deref;
 use std::path::PathBuf;
@@ -228,7 +229,7 @@ fn parse_fn1() -> ErlResult<()> {
 /// Try parse some function defs
 #[named]
 #[test]
-fn parse_fn2() -> ErlResult<()> {
+fn parse_fn_with_list_comprehension() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a function from OTP lib/compiler with list comprehension");
   let filename = PathBuf::from(function_name!());
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
@@ -427,7 +428,7 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 
 #[named]
 #[test]
-fn parse_fun_call() -> ErlResult<()> {
+fn parse_apply_with_module_and_without() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let filename = PathBuf::from(function_name!());
 
@@ -435,13 +436,30 @@ fn parse_fun_call() -> ErlResult<()> {
     let src = "function_name()";
     let mod1 = Module::from_expr_source(&filename, src)?;
     println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
+    assert!(mod1.ast.is_application());
   }
   {
     let src = "mod_name:function_name()";
-    let mod2 = Module::from_expr_source(&filename, src)?;
-    println!("{}: from «{}» parsed {}", function_name!(), src, mod2.ast);
+    let mod1 = Module::from_expr_source(&filename, src)?;
+    println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
+    assert!(mod1.ast.is_application());
   }
   Ok(())
+}
+
+#[should_panic]
+#[named]
+#[test]
+fn parse_apply_panic() {
+  test_util::start(function_name!(), "Parse an function call without parentheses, should panic");
+  let filename = PathBuf::from(function_name!());
+  {
+    let src = "mod_name:function_name";
+    let mod1 = Module::from_expr_source(&filename, src).unwrap();
+    // Parsing above should panic
+
+    println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
+  }
 }
 
 #[named]
