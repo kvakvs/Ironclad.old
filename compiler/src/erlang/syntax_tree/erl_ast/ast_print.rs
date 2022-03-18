@@ -12,7 +12,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Token { token: t, .. } => writeln!(f, "% token {}", t),
       ErlAst::ModuleForms(forms) => {
         for form in forms.iter() {
-          writeln!(f, "{}", form)?;
+          write!(f, "{}", form)?;
         }
         Ok(())
       }
@@ -35,7 +35,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::TypeAttr { name, vars, ty, .. } => {
         write!(f, "-type {}", name)?;
         Pretty::display_paren_list(vars, f)?;
-        writeln!(f, " :: {}", ty)?;
+        write!(f, " :: {}", ty)?;
         writeln!(f, ".")
       }
       ErlAst::GenericAttr { tag, term, .. } => {
