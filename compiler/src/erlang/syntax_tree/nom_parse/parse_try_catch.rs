@@ -59,23 +59,27 @@ impl ErlParser {
   fn parse_try_catch_inner(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
-        context("try-catch expression",
+        context("try-catch block trial expression",
                 cut(Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>)),
 
         // Optional OF followed by match clauses
         combinator::opt(
           sequence::preceded(
             Self::ws_before(tag("of")),
-            multi::many1(Self::ws_before(Self::parse_case_clause)),
+            context("try block: 'of' clauses", cut(
+              multi::many1(Self::ws_before(Self::parse_case_clause))
+            )),
           )
         ),
 
         // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
         sequence::preceded(
           Self::ws_before(tag("catch")),
-          multi::separated_list1(
+          context("try block: 'catch' clauses", cut(
+            multi::separated_list1(
             Self::ws_before(char(';')),
-            Self::parse_catch_clause),
+            Self::parse_catch_clause)
+          )),
         )
       )),
       |(body, of_branches, catch_clauses)| {
@@ -88,12 +92,12 @@ impl ErlParser {
 
   /// Parses a `try-catch` or a `try-of-catch` block
   pub fn parse_try_catch(input: &str) -> AstParserResult {
-    sequence::delimited(
-      Self::ws_before(tag("try")),
-      context("try-catch or try-of-catch block",
-              // Self::parse_expr),
-              Self::parse_try_catch_inner),
-      Self::ws_before(tag("end")),
-    )(input)
+    let (input, _) = Self::ws_before(tag("try"))(input)?;
+
+    context("try-catch or try-of block", cut(
+      sequence::terminated(
+        Self::parse_try_catch_inner,
+        Self::ws_before(tag("end")),
+      )))(input)
   }
 }

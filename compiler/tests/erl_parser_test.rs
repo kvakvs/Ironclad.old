@@ -401,7 +401,7 @@ fn parse_fun_with_case() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
   let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
         false -> Swap = beam_opcodes:opcode(swap, 2), beam_dict:opcode(Swap, Dict);
-        true -> Dict end";
+        true -> Dict end.";
   let mod1 = Module::from_fun_source(&filename, src)?;
   println!("{}: parsed {}", function_name!(), mod1.ast);
 
@@ -440,6 +440,12 @@ fn parse_apply_with_module_and_without() -> ErlResult<()> {
   }
   {
     let src = "mod_name:function_name()";
+    let mod1 = Module::from_expr_source(&filename, src)?;
+    println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
+    assert!(mod1.ast.is_application());
+  }
+  {
+    let src = "proplists:get_bool(no_shared_fun_wrappers, Opts)";
     let mod1 = Module::from_expr_source(&filename, src)?;
     println!("{}: from «{}» parsed {}", function_name!(), src, mod1.ast);
     assert!(mod1.ast.is_application());

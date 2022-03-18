@@ -22,34 +22,41 @@ impl ErlParser {
         // The body after ->
         sequence::preceded(
           Self::ws_before(bytes::complete::tag("->")),
-          context("case clause body", cut(Self::parse_expr)),
+          context("case clause body", cut(
+            Self::parse_comma_sep_exprs1::<{ErlParser::EXPR_STYLE_FULL}>
+          )),
         )
       )),
       |(pattern, maybe_when, body)| {
-        ErlCaseClause::new(pattern, maybe_when, body)
+        let loc = SourceLoc::None;
+        ErlCaseClause::new(pattern, maybe_when,
+                           ErlAst::new_comma_expr(loc, body))
       },
     )(input)
   }
 
   /// Parses `case EXPR of MATCH -> EXPR; ... end`
   pub fn parse_case_statement(input: &str) -> AstParserResult {
-    combinator::map(
-      sequence::tuple((
-        sequence::delimited(
-          Self::ws_before(tag("case")),
-          context("case expression", cut(
-            ErlParser::parse_expr)),
-          Self::ws_before(tag("of")),
-        ),
-        multi::separated_list1(
-          Self::ws_before(char(';')),
-          context("case statement clause", cut(Self::parse_case_clause)),
-        ),
-        Self::ws_before(tag("end")),
-      )),
-      |(expr, clauses, _end0)| {
-        ErlAst::new_case_statement(SourceLoc::None, expr, clauses)
-      },
-    )(input)
+    let (input, _) = Self::ws_before(tag("case"))(input)?;
+
+    context("case block", cut(
+      combinator::map(
+        sequence::tuple((
+          sequence::terminated(
+            ErlParser::parse_expr,
+            Self::ws_before(tag("of")),
+          ),
+          multi::separated_list1(
+            Self::ws_before(char(';')),
+            context("case block clause", cut(
+              Self::parse_case_clause
+            )),
+          ),
+          Self::ws_before(tag("end")),
+        )),
+        |(expr, clauses, _end0)| {
+          ErlAst::new_case_statement(SourceLoc::None, expr, clauses)
+        },
+      )))(input)
   }
 }

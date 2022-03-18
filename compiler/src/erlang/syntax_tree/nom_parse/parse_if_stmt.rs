@@ -10,17 +10,19 @@ use crate::source_loc::SourceLoc;
 impl ErlParser {
   /// Parses `if COND -> EXPR; ... end`
   pub fn parse_if_statement(input: &str) -> AstParserResult {
-    combinator::map(
-      sequence::delimited(
-        Self::ws_before(tag("if")),
-        multi::separated_list1(
-          Self::ws_before(char(';')),
-          context("if statement clause", cut(Self::parse_if_clause)),
+    let (input, _) = Self::ws_before(tag("if"))(input)?;
+
+    context("if block", cut(
+      combinator::map(
+        sequence::terminated(
+          multi::separated_list1(
+            Self::ws_before(char(';')),
+            context("if block clause", cut(Self::parse_if_clause)),
+          ),
+          Self::ws_before(tag("end")),
         ),
-        Self::ws_before(tag("end")),
-      ),
-      |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),
-    )(input)
+        |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),
+      )))(input)
   }
 
   /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
