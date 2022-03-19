@@ -90,7 +90,7 @@ impl std::fmt::Display for TypeSpecifier {
           ValueEndianness::Native => write!(f, "native"),
         }
       }
-      TypeSpecifier::Unit(u) => write!(f, "unit-{}", u),
+      TypeSpecifier::Unit(u) => write!(f, "unit:{}", u),
     }
   }
 }
@@ -127,6 +127,7 @@ impl std::fmt::Display for BinaryElement {
       ValueWidth::Default => {}
     }
     if !self.type_specs.is_empty() {
+      write!(f, "/")?;
       Pretty::display_separated(&self.type_specs, "-", f)?;
     }
     Ok(())

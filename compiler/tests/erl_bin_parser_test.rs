@@ -15,12 +15,25 @@ mod test_util;
 #[test]
 fn parse_bin1() -> ErlResult<()> {
   test_util::start(function_name!(), "Parse a basic binary");
-
   let filename = PathBuf::from(function_name!());
-  let src = "<<1, 2, 3>>";
-  let module = Module::from_expr_source(&filename, src)?;
-  println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
-  assert!(module.ast.is_binary());
 
+  {
+    let src = "<<1, 2, 3>>";
+    let module = Module::from_expr_source(&filename, src)?;
+    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
+    assert!(module.ast.is_binary());
+  }
+  {
+    let src = "<<X, B:3, (atom):V>>";
+    let module = Module::from_expr_source(&filename, src)?;
+    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
+    assert!(module.ast.is_binary());
+  }
+  {
+    let src = "<<X/binary-big-unit:33>>";
+    let module = Module::from_expr_source(&filename, src)?;
+    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
+    assert!(module.ast.is_binary());
+  }
   Ok(())
 }
