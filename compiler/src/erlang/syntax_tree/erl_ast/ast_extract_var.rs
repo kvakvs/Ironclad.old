@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::erlang::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
+use crate::erlang::syntax_tree::node::erl_binary_element::ValueWidth;
 use crate::typing::erl_type::ErlType;
 
 impl ErlAst {
@@ -16,6 +17,15 @@ impl ErlAst {
     match node.deref() {
       ErlAst::Var(v) => {
         variables.insert(v.name.clone(), ErlType::any());
+        Ok(())
+      }
+      ErlAst::BinaryExpr { elements, .. } => {
+        for e in elements {
+          Self::extract_variables(&e.value, variables)?;
+          if let ValueWidth::Expr(expr_width) = &e.width {
+            Self::extract_variables(expr_width, variables)?;
+          }
+        }
         Ok(())
       }
       ErlAst::CommaExpr { elements, .. } => {

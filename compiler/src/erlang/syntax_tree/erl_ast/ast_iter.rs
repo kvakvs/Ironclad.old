@@ -3,6 +3,7 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use ::function_name::named;
 
 use std::sync::Arc;
+use crate::erlang::syntax_tree::node::erl_binary_element::ValueWidth;
 
 /// A trait for AST nodes which can contain nested nodes
 pub trait AstNode {
@@ -83,7 +84,7 @@ impl AstNode for ErlAst {
             }
           }
         }
-        for cc in catch_clauses {
+        for cc in catch_clauses.iter() {
           if let Some(cc_children) = cc.children() {
             r.extend(cc_children.iter().cloned())
           }
@@ -92,20 +93,29 @@ impl AstNode for ErlAst {
       }
       ErlAst::CommaExpr {elements, ..} => {
         let mut r = Vec::default();
-        elements.iter().for_each(|e| {
+        for e in elements.iter() {
           if let Some(c) = e.children() {
             r.extend(c.iter().cloned());
           }
-        });
+        }
         if r.is_empty() { None } else { Some(r) }
       }
       ErlAst::IfStatement {clauses, ..} => {
         let mut r = Vec::default();
-        clauses.iter().for_each(|ifc| {
+        for ifc in clauses.iter() {
           if let Some(c) = ifc.children() {
             r.extend(c.iter().cloned());
           }
-        });
+        }
+        if r.is_empty() { None } else { Some(r) }
+      }
+      ErlAst::BinaryExpr {elements, ..} => {
+        let mut r = Vec::default();
+        for bel in elements.iter() {
+          if let ValueWidth::Expr(expr_width) = &bel.width {
+            r.push(expr_width.clone());
+          }
+        }
         if r.is_empty() { None } else { Some(r) }
       }
       _ => unreachable!("{}(): Can't process {}", function_name!(), self),

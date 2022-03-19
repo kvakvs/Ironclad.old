@@ -118,6 +118,11 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_semicolon_separated(clauses, f)?;
         write!(f, " end")
       }
+      ErlAst::BinaryExpr { elements, .. } => {
+        write!(f, "<<")?;
+        Pretty::display_comma_separated(elements, f)?;
+        write!(f, ">>")
+      }
     }
   }
 }

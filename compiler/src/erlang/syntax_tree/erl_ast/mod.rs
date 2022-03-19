@@ -1,4 +1,7 @@
 //! AST syntax structure of an Erlang file
+use std::sync::Arc;
+use std::ops::Deref;
+
 use crate::erlang::syntax_tree::node::erl_apply::ErlApply;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
@@ -10,9 +13,8 @@ use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
 use crate::ast_tree::{AstCache, AstTree};
-use std::sync::Arc;
-use std::ops::Deref;
 use crate::erl_error::ErlResult;
+use crate::erlang::syntax_tree::node::erl_binary_element::BinaryElement;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::erlang::syntax_tree::node::erl_if_clause::ErlIfClause;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
@@ -259,6 +261,14 @@ pub enum ErlAst {
     /// The branches to be tried till `true` is found
     clauses: Vec<ErlIfClause>,
   },
+
+  /// A list of binary elements constructing a binary value, or serving as a binary match expression
+  BinaryExpr {
+    /// Source code location
+    location: SourceLoc,
+    /// Comma separated elements of a binary, with `:bit-widths` and `/type-specs`
+    elements: Vec<BinaryElement>,
+  }
 }
 
 impl ErlAst {

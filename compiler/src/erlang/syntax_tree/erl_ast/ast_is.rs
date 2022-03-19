@@ -31,6 +31,11 @@ impl ErlAst {
     matches!(self, ErlAst::BinaryOp {expr, ..} if expr.operator == op)
   }
 
+  /// Checks whether an ErlAst node is a Binary Expression
+  pub fn is_binary(&self) -> bool {
+    matches!(self, ErlAst::BinaryExpr { .. })
+  }
+
   /// Checks whether an ErlAst node is a Function Application (a call)
   pub fn is_application(&self) -> bool { matches!(self, ErlAst::Apply(_)) }
 }

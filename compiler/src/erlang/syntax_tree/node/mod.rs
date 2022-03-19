@@ -11,3 +11,4 @@ pub mod erl_if_clause;
 pub mod erl_token;
 pub mod erl_unop;
 pub mod erl_var;
+pub mod erl_binary_element;

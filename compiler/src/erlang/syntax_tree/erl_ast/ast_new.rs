@@ -4,6 +4,7 @@ use std::sync::Arc;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use crate::erlang::syntax_tree::node::erl_apply::{ErlApply};
+use crate::erlang::syntax_tree::node::erl_binary_element::BinaryElement;
 use crate::erlang::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::erlang::syntax_tree::node::erl_case_clause::ErlCaseClause;
@@ -202,5 +203,13 @@ impl ErlAst {
       clauses,
     };
     ErlAst::FnDef(fndef).into()
+  }
+
+  /// Create a new binary expression
+  pub fn new_binary_expr(location: SourceLoc, elements: Vec<BinaryElement>) -> Arc<ErlAst> {
+    Self::BinaryExpr {
+      location,
+      elements,
+    }.into()
   }
 }

@@ -12,6 +12,7 @@ use crate::erlang::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::erlang::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erlang::syntax_tree::node::erl_var::ErlVar;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
+use crate::erlang::syntax_tree::nom_parse::parse_binary::BinaryParser;
 use crate::source_loc::SourceLoc;
 
 
@@ -175,6 +176,7 @@ impl ErlParser {
                     Self::parse_try_catch,
                     Self::parse_if_statement,
                     Self::parse_case_statement,
+                    BinaryParser::parse,
                     Self::parenthesized_expr::<STYLE>,
                     Self::parse_list_comprehension,
                     Self::parse_list_of_exprs::<STYLE>,

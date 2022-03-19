@@ -19,6 +19,7 @@ pub mod parse_type;
 pub mod parse_case;
 pub mod parse_if_stmt;
 pub mod parse_try_catch;
+pub mod parse_binary;
 
 /// Gathers multiple errors and contexts together
 pub type ErlParserError<'a> = nom::error::VerboseError<&'a str>;
