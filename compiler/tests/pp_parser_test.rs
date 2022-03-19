@@ -8,7 +8,7 @@ use crate::test_util::pp_parse;
 use std::ops::Deref;
 
 #[test]
-/// Try s2_parse string
+/// Try parse string
 fn parse_define0_test() {
   let define0 = pp_parse(Rule::pp_define, "-define(AAA, true).\n").unwrap();
   if let PpAst::Define(_name, _value) = define0.deref() {} else {

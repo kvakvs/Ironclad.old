@@ -6,8 +6,8 @@ use crate::erl_error::ErlResult;
 use crate::project::source_file::SourceFile;
 use std::sync::Arc;
 
-/// Contains loaded files ready for s2_parse by the preprocessor.
-/// More files will be added in s1_preprocess stage, as include directives are parsed
+/// Contains loaded files ready for parsing by the preprocessor.
+/// More files will be added in preprocess stage, as include directives are parsed
 pub struct FileContentsCache {
   /// Statistics of bytes read
   pub read_bytes_count: usize,
@@ -51,7 +51,7 @@ impl<'a> FileContentsCache {
   }
 
   /// As source file text is read only, we replace.
-  /// The s2_parse trees referring the the old source file will retain their Arc<> to the old version
+  /// The parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
     let new_source_file = SourceFile::new(file_name, new_text);
     self.all_files.insert(file_name.to_path_buf(), new_source_file);

@@ -1,4 +1,4 @@
-//! Erlang preprocessor AST tree
+//! Erlang preprocess AST tree
 use crate::preprocessor::syntax_tree::pp_parser::{PpParser, Rule};
 use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstTree};
 use crate::project::source_file::SourceFile;
@@ -18,8 +18,8 @@ impl PpAstTree {
   /// ?OTP_RELEASE (OTP 21+)
   /// ??MACRO to stringify the tokens in the macro argument
   ///
-  /// Return: Parsed preprocessor forms list (directives, and text fragments and comments)
-  /// Lifetime note: Parse input string must live at least as long as s2_parse tree is alive
+  /// Return: Parsed preprocess forms list (directives, and text fragments and comments)
+  /// Lifetime note: Parse input string must live at least as long as parse tree is alive
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<PpAstTree> {
     let successful_parse = PpParser::parse(Rule::file, &source_file.text)?.next().unwrap();
 

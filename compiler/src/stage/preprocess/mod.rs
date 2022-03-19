@@ -37,27 +37,27 @@ impl PpCondition {
 }
 
 /// Preprocessor state with AST cache, macro definitions, etc
-struct PpState {
+pub struct ErlPreprocessStage {
   ast_cache: Arc<Mutex<PpAstCache>>,
   file_cache: Arc<Mutex<FileContentsCache>>,
 
   condition_stack: Vec<PpCondition>,
 
-  /// Contains unparsed symbol definitions. For preprocessor its either direct copy & paste into the
+  /// Contains unparsed symbol definitions. For preprocess its either direct copy & paste into the
   /// code output, or use symbol existence for ifdef/ifndef conditions.
   pp_symbols: HashMap<String, String>,
 }
 
-fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
-  let pp_ast = PpAstTree::from_source_file(source_file)?;
-  // println!("\n\
-  //       filename: {}\n\
-  //       PP AST ", source_file.file_name.display());
-  // pp_ast.nodes.iter().for_each(|n| print!("{}", n.fmt(&source_file)));
-  Ok(Arc::new(pp_ast))
-}
+impl ErlPreprocessStage {
+  fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
+    let pp_ast = PpAstTree::from_source_file(source_file)?;
+    // println!("\n\
+    //       filename: {}\n\
+    //       PP AST ", source_file.file_name.display());
+    // pp_ast.nodes.iter().for_each(|n| print!("{}", n.fmt(&source_file)));
+    Ok(Arc::new(pp_ast))
+  }
 
-impl PpState {
   /// Returns: True if a file was preprocessed
   fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<bool> {
     // trust that file exists
@@ -66,7 +66,7 @@ impl PpState {
       file_cache1.all_files.get(file_name).unwrap().clone()
     };
 
-    let ast_tree = load_and_parse_pp_ast(&contents)?;
+    let ast_tree = ErlPreprocessStage::load_and_parse_pp_ast(&contents)?;
 
     {
       let mut ast_cache = self.ast_cache.lock().unwrap();
@@ -113,7 +113,7 @@ fn interpret_include_directive(source_file: &SourceFile,
             let mut file_cache1 = file_cache.lock().unwrap();
             file_cache1.get_or_load(&include_path).unwrap()
           };
-          let ast_tree = load_and_parse_pp_ast(&include_source_file).unwrap();
+          let ast_tree = ErlPreprocessStage::load_and_parse_pp_ast(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
           ast_cache1.items.insert(include_path.clone(), ast_tree.clone());
@@ -130,7 +130,7 @@ fn interpret_include_directive(source_file: &SourceFile,
   }
 }
 
-impl PpState {
+impl ErlPreprocessStage {
   /// This is called for each Preprocessor AST node to make the final decision whether the node
   /// is passed into the output or replaced with a SKIP.
   fn interpret_pp_rule_map(&mut self, node: &Rc<PpAst>,
@@ -218,7 +218,7 @@ impl PpState {
   /// Preallocate so many slots for ifdef/ifndef stack
   const DEFAULT_CONDITION_STACK_SIZE: usize = 16;
 
-  /// Create a preprocessor state struct for processing a file.
+  /// Create a preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub fn new(ast_cache: &Arc<Mutex<PpAstCache>>,
              file_cache: &Arc<Mutex<FileContentsCache>>,
@@ -231,7 +231,7 @@ impl PpState {
     }
   }
 
-  /// Interpret parsed attributes/preprocessor directives from top to bottom
+  /// Interpret parsed attributes/preprocess directives from top to bottom
   /// - Exclude ifdef/if/ifndef sections where the condition check fails
   /// - Load include files and paste them where include directive was found. Continue interpretation.
   /// - Substitute macros.
@@ -264,49 +264,49 @@ impl PpState {
       msg: err_s,
     })
   }
-}
 
-/// Stage 1 - Preprocessor stage
-/// ----------------------------
-/// * Preparse loaded ERL files ignoring the syntax only paying attention to preprocessor tokens.
-/// * Preparse include files AST and paste preprocessor AST into include locations.
-/// * Drop AST branches covered by the conditional compile directives.
-///
-/// Side effects: Updates file contents cache
-/// Returns preprocessed collection of module sources
-pub fn run(project: &mut ErlProject,
-           file_cache: Arc<Mutex<FileContentsCache>>,
-) -> ErlResult<Arc<Mutex<PpAstCache>>> {
-  let ast_cache = Arc::new(Mutex::new(PpAstCache::default()));
+  /// Stage 1 - Preprocessor stage
+  /// ----------------------------
+  /// * Preparse loaded ERL files ignoring the syntax only paying attention to preprocess tokens.
+  /// * Preparse include files AST and paste preprocess AST into include locations.
+  /// * Drop AST branches covered by the conditional compile directives.
+  ///
+  /// Side effects: Updates file contents cache
+  /// Returns preprocessed collection of module sources
+  pub fn run(project: &mut ErlProject,
+             file_cache: Arc<Mutex<FileContentsCache>>,
+  ) -> ErlResult<Arc<Mutex<PpAstCache>>> {
+    let ast_cache = Arc::new(Mutex::new(PpAstCache::default()));
 
-  // Take only .erl files
-  let all_files: Vec<PathBuf> = {
-    let file_cache_r = file_cache.lock().unwrap();
-    file_cache_r.all_files.keys().cloned().collect()
-  };
+    // Take only .erl files
+    let all_files: Vec<PathBuf> = {
+      let file_cache_r = file_cache.lock().unwrap();
+      file_cache_r.all_files.keys().cloned().collect()
+    };
 
-  let mut preprocessed_count = 0;
+    let mut preprocessed_count = 0;
 
-  all_files.into_iter()
-      .filter(|path| path.to_string_lossy().ends_with(".erl"))
-      // For all input files, run s1_preprocess s2_parse and interpred the preprocessor directives
-      // Loaded and parsed HRL files are cached to be inserted into every include location
-      .for_each(
-        |path| {
-          let init_symbols = project.get_preprocessor_symbols(&path);
-          let mut pp_state = PpState::new(&ast_cache, &file_cache, init_symbols);
-          if pp_state.preprocess_file(&path).unwrap() {
-            preprocessed_count += 1;
-          }
-        });
+    all_files.into_iter()
+        .filter(|path| path.to_string_lossy().ends_with(".erl"))
+        // For all input files, run preprocess parse and interpred the preprocess directives
+        // Loaded and parsed HRL files are cached to be inserted into every include location
+        .for_each(
+          |path| {
+            let init_symbols = project.get_preprocessor_symbols(&path);
+            let mut pp_state = ErlPreprocessStage::new(&ast_cache, &file_cache, init_symbols);
+            if pp_state.preprocess_file(&path).unwrap() {
+              preprocessed_count += 1;
+            }
+          });
 
-  let cached_ast_trees_count = {
-    let ast_cache_r = ast_cache.lock().unwrap();
-    ast_cache_r.items.len()
-  };
+    let cached_ast_trees_count = {
+      let ast_cache_r = ast_cache.lock().unwrap();
+      ast_cache_r.items.len()
+    };
 
-  println!("Preprocessed {} sources, {} includes",
-           preprocessed_count,
-           cached_ast_trees_count);
-  Ok(ast_cache)
+    println!("Preprocessed {} sources, {} includes",
+             preprocessed_count,
+             cached_ast_trees_count);
+    Ok(ast_cache)
+  }
 }

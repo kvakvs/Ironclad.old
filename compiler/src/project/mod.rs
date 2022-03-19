@@ -10,7 +10,9 @@ use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
-use crate::stage;
+use crate::stage::file_preload::FilePreloadStage;
+use crate::stage::parse::ErlParseStage;
+use crate::stage::preprocess::ErlPreprocessStage;
 
 pub mod conf;
 pub mod compiler_opts;
@@ -101,14 +103,14 @@ impl ErlProject {
   /// Preprocesses and attempts to parse AST in all input files
   pub fn compile(mut project: ErlProject) -> ErlResult<()> {
     // Load files and store contents in the hashmap
-    let file_cache = stage::s0_preload::run(&mut project)?;
+    let file_cache = FilePreloadStage::run(&mut project)?;
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-    let _pp_ast_cache = stage::s1_preprocess::run(&mut project, file_cache.clone())
+    let _pp_ast_cache = ErlPreprocessStage::run(&mut project, file_cache.clone())
         .unwrap();
 
     // Parse all ERL and HRL files
-    let _erl_ast_cache = stage::s2_parse::run(&mut project, file_cache)
+    let _erl_ast_cache = ErlParseStage::run(&mut project, file_cache)
         .unwrap();
 
     Ok(())
