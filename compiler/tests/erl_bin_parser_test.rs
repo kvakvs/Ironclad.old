@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use ::function_name::named;
 
 use compiler::erl_error::{ErlResult};
-use compiler::project::module::Module;
+use compiler::project::module::ErlModule;
 
 mod test_util;
 
@@ -19,19 +19,19 @@ fn parse_bin1() -> ErlResult<()> {
 
   {
     let src = "<<1, 2, 3>>";
-    let module = Module::from_expr_source(&filename, src)?;
+    let module = ErlModule::from_expr_source(&filename, src)?;
     println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
     assert!(module.ast.is_binary());
   }
   {
     let src = "<<X, B:3, (atom):V>>";
-    let module = Module::from_expr_source(&filename, src)?;
+    let module = ErlModule::from_expr_source(&filename, src)?;
     println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
     assert!(module.ast.is_binary());
   }
   {
     let src = "<<X/binary-big-unit:33>>";
-    let module = Module::from_expr_source(&filename, src)?;
+    let module = ErlModule::from_expr_source(&filename, src)?;
     println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
     assert!(module.ast.is_binary());
   }

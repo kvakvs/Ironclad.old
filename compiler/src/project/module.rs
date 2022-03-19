@@ -17,7 +17,7 @@ use crate::typing::scope::Scope;
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
 /// - Compiler options used to produce this module
-pub struct Module {
+pub struct ErlModule {
   /// Options used to build this module. Possibly just a ref to the main project's options
   pub compiler_options: Arc<CompilerOpts>,
   /// Module name atom, as a string
@@ -40,7 +40,7 @@ pub struct Module {
 }
 
 
-impl Default for Module {
+impl Default for ErlModule {
   fn default() -> Self {
     Self {
       compiler_options: Default::default(),
@@ -53,13 +53,13 @@ impl Default for Module {
   }
 }
 
-impl Debug for Module {
+impl Debug for ErlModule {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "ErlModule({})", self.name)
   }
 }
 
-impl Module {
+impl ErlModule {
   /// Create a new empty module
   pub fn new(opt: Arc<CompilerOpts>, source_file: Arc<SourceFile>) -> Self {
     Self {
@@ -75,7 +75,7 @@ impl Module {
   {
     println!("Parsing from {}", filename.to_string_lossy());
 
-    let mut module = Module::default();
+    let mut module = ErlModule::default();
     let parse_result = parse_fn(input);
 
     #[cfg(debug_assertions)]

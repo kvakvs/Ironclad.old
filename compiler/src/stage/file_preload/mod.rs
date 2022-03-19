@@ -16,7 +16,7 @@ impl FilePreloadStage {
   pub fn run(project: &mut ErlProject) -> ErlResult<Arc<Mutex<FileContentsCache>>> {
     let mut state = FileContentsCache::default();
 
-    for filename in &project.file_set {
+    for filename in &project.inputs {
       state.preload_file(filename)?
     }
     println!("Read {} files, {} bytes (without include files)",

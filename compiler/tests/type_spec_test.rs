@@ -9,7 +9,7 @@ use ::function_name::named;
 use nom::Finish;
 use compiler::erl_error::{ErlError, ErlResult};
 use compiler::erlang::syntax_tree::erl_ast::ErlAst;
-use compiler::project::module::Module;
+use compiler::project::module::ErlModule;
 use compiler::erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use compiler::mfarity::MFArity;
 use compiler::typing::erl_type::ErlType;
@@ -81,7 +81,7 @@ fn fn_typespec_parse_1() -> ErlResult<()> {
 
   // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
   let spec1_src = format!("spec {}(A :: integer()) -> any()", function_name!());
-  let spec1_m = Module::from_fun_spec_source(&filename, &spec1_src)?;
+  let spec1_m = ErlModule::from_fun_spec_source(&filename, &spec1_src)?;
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
     assert_eq!(funarity, &MFArity::new_local(function_name!(), 1),
@@ -102,7 +102,7 @@ fn fn_typespec_parse_2() -> ErlResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let spec2_src = format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
-  let spec2_m = Module::from_fun_spec_source(&filename, &spec2_src)?;
+  let spec2_m = ErlModule::from_fun_spec_source(&filename, &spec2_src)?;
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
     assert_eq!(funarity, &MFArity::new_local(function_name!(), 1),
@@ -125,7 +125,7 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
   let filename = PathBuf::from(function_name!());
   // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
   let spec_src = format!("spec {}(atom()) -> A when A :: tuple()", function_name!());
-  let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
+  let parsed = ErlModule::from_fun_spec_source(&filename, &spec_src)?;
 
   assert!(parsed.ast.is_fn_spec());
   // TODO: Check that the spec parsed return type is tuple()
@@ -145,7 +145,7 @@ fn type_parse_union() -> ErlResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let src = "atom() | 42 | integer()";
-  let parsed = Module::from_type_source(&filename, &src)?;
+  let parsed = ErlModule::from_type_source(&filename, &src)?;
 
   assert!(parsed.ast.is_type());
   assert!(parsed.ast.as_type().is_union());
@@ -162,7 +162,7 @@ fn fn_typespec_parse_union() -> ErlResult<()> {
   // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here
   let spec_src = format!(" spec {}(atom() | 42 | integer()) -> {{ok, any()}} | {{error, any()}}",
                          function_name!());
-  let parsed = Module::from_fun_spec_source(&filename, &spec_src)?;
+  let parsed = ErlModule::from_fun_spec_source(&filename, &spec_src)?;
 
   assert!(parsed.ast.is_fn_spec());
   // TODO: Check that the spec parsed contains the unions as written
@@ -178,6 +178,6 @@ fn fn_typespec_parse_1_2() {
 
   let filename = PathBuf::from(function_name!());
   let spec2_src = format!("-spec {}(A) -> any(); (B, C) -> any().", function_name!());
-  let result = Module::from_fun_spec_source(&filename, &spec2_src);
+  let result = ErlModule::from_fun_spec_source(&filename, &spec2_src);
   assert!(result.is_err(), "Parse error is expected");
 }

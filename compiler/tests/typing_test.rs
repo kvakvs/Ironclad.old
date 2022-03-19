@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use ::function_name::named;
 use compiler::erl_error::ErlResult;
-use compiler::project::module::Module;
+use compiler::project::module::ErlModule;
 use compiler::typing::check::TypeCheck;
 use compiler::typing::erl_type::ErlType;
 use compiler::typing::scope::Scope;
@@ -20,7 +20,7 @@ fn typing_synth() -> ErlResult<()> {
 
   {
     let scope1 = Scope::new_root_scope(function_name!().to_string());
-    let parsed1 = Module::from_expr_source(&filename, "[3.14159265358979 , 2,atom]")?;
+    let parsed1 = ErlModule::from_expr_source(&filename, "[3.14159265358979 , 2,atom]")?;
     let synth_t1 = parsed1.ast.synthesize(&scope1)?;
     println!("Synth list1: {}", &synth_t1);
 
@@ -39,7 +39,7 @@ fn typing_synth() -> ErlResult<()> {
 
   {
     let scope2 = Scope::new_root_scope(function_name!().to_string());
-    let parsed2 = Module::from_expr_source(&filename, "{tuple_tag, 1.2, 3, \"hello\"}")?;
+    let parsed2 = ErlModule::from_expr_source(&filename, "{tuple_tag, 1.2, 3, \"hello\"}")?;
     let synth_t2 = parsed2.ast.synthesize(&scope2)?;
     println!("Synth tup1: {}", &synth_t2);
 
@@ -63,7 +63,7 @@ fn typing_expr_check_1() -> ErlResult<()> {
 
   let scope = Scope::new_root_scope(function_name!().to_string());
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_expr_source(&filename, "hello")?;
+  let parsed = ErlModule::from_expr_source(&filename, "hello")?;
   assert!(TypeCheck::check(&scope, &parsed.ast, &ErlType::Atom)?,
           "Parsed atom 'hello' must be subtype of atom()");
   Ok(())
@@ -77,7 +77,7 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
 
   let scope = Scope::new_root_scope(function_name!().to_string());
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_fun_source(&filename, "my_int_fun1() -> 10 + 20.")?;
+  let parsed = ErlModule::from_fun_source(&filename, "my_int_fun1() -> 10 + 20.")?;
 
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
 
@@ -94,7 +94,7 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let filename = PathBuf::from(function_name!());
   let scope = Scope::new_root_scope(function_name!().to_string());
-  let parsed = Module::from_fun_source(&filename, "my_int_fun2(A) -> 10 + A.")?;
+  let parsed = ErlModule::from_fun_source(&filename, "my_int_fun2(A) -> 10 + A.")?;
 
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
@@ -112,7 +112,7 @@ fn typing_expr_check_tuple1() -> ErlResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
   let filename = PathBuf::from(function_name!());
   let scope = Scope::new_root_scope(function_name!().to_string());
-  let parsed = Module::from_fun_source(&filename, "mytuple_fun(A) -> {A, 123}.")?;
+  let parsed = ErlModule::from_fun_source(&filename, "mytuple_fun(A) -> {A, 123}.")?;
 
   assert!(parsed.ast.is_fn_def(), "Expected FnDef() received {:?}", parsed.ast);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);

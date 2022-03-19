@@ -4,8 +4,8 @@ use crate::project::ErlProject;
 use std::sync::{Arc, Mutex};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::erl_error::{ErlResult};
-use crate::stage::code_cache::CodeCache;
-use crate::project::module::Module;
+use crate::stage::code_cache::ErlCodeCache;
+use crate::project::module::ErlModule;
 
 /// Handles parsing loaded Erlang files in the project
 pub struct ErlParseStage {}
@@ -15,9 +15,9 @@ impl ErlParseStage {
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
   pub fn run(project: &mut ErlProject,
-             contents_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<Mutex<CodeCache>>> {
+             contents_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<Mutex<ErlCodeCache>>> {
     // let mut ast_cache = ErlAstCache::new_empty();
-    let code_cache = CodeCache::default();
+    let code_cache = ErlCodeCache::default();
 
     let contents_cache_r = contents_cache.lock().unwrap();
 
@@ -28,7 +28,7 @@ impl ErlParseStage {
       if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
         let compiler_opts = project.get_compiler_options_for(path);
 
-        let mut parsed = Module::from_module_source(&source_file.file_name, &source_file.text)?;
+        let mut parsed = ErlModule::from_module_source(&source_file.file_name, &source_file.text)?;
         parsed.compiler_options = compiler_opts;
 
         // module.parse_and_unify_erlang()?;

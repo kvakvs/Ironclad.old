@@ -11,7 +11,7 @@ use compiler::erlang::syntax_tree::erl_ast::ErlAst;
 use compiler::erlang::syntax_tree::erl_op::ErlBinaryOp;
 use compiler::typing::erl_type::ErlType;
 use compiler::mfarity::MFArity;
-use compiler::project::module::Module;
+use compiler::project::module::ErlModule;
 
 #[named]
 #[test]
@@ -19,7 +19,7 @@ fn synth_list_append() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_expr_source(&filename, "[atom1] ++ [atom2]")?;
+  let parsed = ErlModule::from_expr_source(&filename, "[atom1] ++ [atom2]")?;
   let expr_type = parsed.ast.synthesize(&parsed.scope)?;
 
   println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed.ast, expr_type);
@@ -40,7 +40,7 @@ fn synth_simplefun_division() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for simple expression");
 
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_fun_source(&filename, "myfun(A) -> (A + 1) / 2.")?;
+  let parsed = ErlModule::from_fun_source(&filename, "myfun(A) -> (A + 1) / 2.")?;
 
   match parsed.ast.deref() {
     ErlAst::FnDef(fn_def) => {
@@ -66,7 +66,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let filename = PathBuf::from(function_name!());
-  let module = Module::from_fun_source(&filename, "myfun(A) -> A + 1.")?;
+  let module = ErlModule::from_fun_source(&filename, "myfun(A) -> A + 1.")?;
   let synth_type = module.ast.synthesize(&module.scope)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, synth_type);
 
@@ -134,7 +134,7 @@ fn synth_fun_call() -> ErlResult<()> {
   let code = format!("-module({}).
     add(A, B) -> A + B.
     main(A) -> add(A, 4).\n", function_name!());
-  let module = Module::from_module_source(&filename, &code)?;
+  let module = ErlModule::from_module_source(&filename, &code)?;
   // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
@@ -167,7 +167,7 @@ fn synth_multiple_clause_test() -> ErlResult<()> {
     main(one) -> atom1;
     main(two) -> 222.", function_name!());
   let filename = PathBuf::from(function_name!());
-  let parsed = Module::from_module_source(&filename, &source)?;
+  let parsed = ErlModule::from_module_source(&filename, &source)?;
 
   let main_fn_ast = ErlAst::find_function_def(
     &parsed.ast, &MFArity::new_local("main", 1),

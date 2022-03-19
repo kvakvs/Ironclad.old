@@ -1,8 +1,8 @@
 //! Postprocesses an AST tree. Takes a tree in, replaces some nodes, and returns a new tree.
 
-use crate::project::module::Module;
+use crate::project::module::ErlModule;
 
-impl Module {
+impl ErlModule {
   // /// Run the post-parse analysis. Relies upon results from Self::postprocess_ast_readonly().
   // /// Given a fresh parsed and processed Erlang AST, go through it once more and edit some nodes.
   // /// * In function applications replace atom function names with function pointers

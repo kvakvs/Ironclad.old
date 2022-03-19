@@ -2,7 +2,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc};
 
 use glob::glob;
 
@@ -28,10 +28,10 @@ pub struct ErlProject {
   pub compiler_opts: Arc<CompilerOpts>,
 
   /// Input files and directories (wildcards are allowed)
-  inputs: InputOpts,
+  input_opts: InputOpts,
 
   /// Prepared paths, scanned from Self::inputs, and with exclusions filtered out
-  pub file_set: HashSet<PathBuf>,
+  pub inputs: Vec<PathBuf>,
 }
 
 impl ErlProject {
@@ -64,53 +64,56 @@ impl ErlProject {
 
   /// Traverse directories starting from each of the inputs.directories;
   /// Add files from inputs if not duplicate.
-  pub fn build_file_list(&self) -> ErlResult<HashSet<PathBuf>> {
+  pub fn build_file_list(&self) -> ErlResult<Vec<PathBuf>> {
     let mut file_set: HashSet<PathBuf> = HashSet::with_capacity(ErlProject::DEFAULT_CAPACITY);
+    let mut file_list = Vec::new();
 
-    for file_mask in &self.inputs.files {
-      for dir in &self.inputs.directories {
+    for file_mask in &self.input_opts.files {
+      for dir in &self.input_opts.directories {
         let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
-        // println!("Globbing: {}", file_glob);
 
         for entry in glob(&file_glob)? {
           match entry {
-            Ok(path) => Self::maybe_add_path(&mut file_set, path)?,
+            Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
             Err(err) => return Err(ErlError::from(err))
           }
         } // for glob search results
       } // for input dirs
     } // for input file masks
 
-    Ok(file_set)
+    Ok(file_list)
   }
 
-  /// Check exclusions in the Self.input and also check duplicate paths
-  fn maybe_add_path(file_set: &mut HashSet<PathBuf>, path: PathBuf) -> ErlResult<()> {
+  /// Check exclusions in the Self.input. Hashset is used to check for duplicates. Add to Vec.
+  fn maybe_add_path(file_set: &mut HashSet<PathBuf>,
+                    file_list: &mut Vec<PathBuf>,
+                    path: PathBuf) -> ErlResult<()> {
     // Check duplicate
     let abs_path = std::fs::canonicalize(path)?;
     if file_set.contains(&abs_path) {
-      // println!("- skip dup: {:?}", abs_path);
       return Ok(());
     }
 
     // Success: checks passed, add to the input list
-    // println!("Input: {:?}", abs_path);
-    file_set.insert(abs_path);
+    file_set.insert(abs_path.clone());
+    file_list.push(abs_path);
 
     Ok(())
   }
 
   /// Preprocesses and attempts to parse AST in all input files
-  pub fn compile(mut project: ErlProject) -> ErlResult<()> {
+  pub fn compile(&mut self, inputs: Vec<PathBuf>) -> ErlResult<()> {
+    self.inputs = inputs;
+
     // Load files and store contents in the hashmap
-    let file_cache = FilePreloadStage::run(&mut project)?;
+    let file_cache = FilePreloadStage::run(self)?;
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-    let _pp_ast_cache = ErlPreprocessStage::run(&mut project, file_cache.clone())
+    let _pp_ast_cache = ErlPreprocessStage::run(self, file_cache.clone())
         .unwrap();
 
     // Parse all ERL and HRL files
-    let _erl_ast_cache = ErlParseStage::run(&mut project, file_cache)
+    let _erl_code_cache = ErlParseStage::run(self, file_cache)
         .unwrap();
 
     Ok(())
@@ -121,8 +124,8 @@ impl From<ProjectConf> for ErlProject {
   fn from(conf: ProjectConf) -> Self {
     Self {
       compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
-      inputs: InputOpts::from(conf.inputs),
-      file_set: HashSet::new(),
+      input_opts: InputOpts::from(conf.inputs),
+      inputs: Vec::default(),
     }
   }
 }

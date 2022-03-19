@@ -12,9 +12,9 @@ fn main_do() -> ErlResult<()> {
 
   let mut project: ErlProject = ProjectConf::from_project_file("test_project/erlproject.toml")?.into();
   println!("{:?}", project);
-  project.file_set = project.build_file_list().unwrap();
 
-  ErlProject::compile(project)
+  let inputs = project.build_file_list()?;
+  project.compile(inputs)
 }
 
 fn main() {
