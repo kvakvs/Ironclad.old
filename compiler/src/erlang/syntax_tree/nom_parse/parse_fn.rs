@@ -125,7 +125,7 @@ impl ErlParser {
                   )),
           Self::ws_before(tag("end")),
         )),
-      |fnclauses| Self::_construct_fndef(fnclauses),
+      Self::_construct_fndef,
     )(input)
   }
 }

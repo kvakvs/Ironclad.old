@@ -127,7 +127,7 @@ impl BinaryParser {
         BinaryElement::new(SourceLoc::None,
                            value,
                            bit_width.unwrap_or(ValueWidth::Default),
-                           type_specs.unwrap_or_else(Vec::default))
+                           type_specs.unwrap_or_default())
       },
     )(input)
   }

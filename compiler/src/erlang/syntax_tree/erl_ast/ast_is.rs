@@ -18,10 +18,7 @@ impl ErlAst {
   /// Checks whether an ErlAst node is an Erlang Type
   pub fn is_atom(&self) -> bool {
     match self {
-      ErlAst::Lit { value, .. } => match value.deref() {
-        Literal::Atom(_) => true,
-        _ => false,
-      },
+      ErlAst::Lit { value, .. } => matches!(value.deref(), Literal::Atom(_)),
       _ => false,
     }
   }

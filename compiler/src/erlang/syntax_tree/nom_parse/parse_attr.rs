@@ -80,7 +80,7 @@ impl ErlAttrParser {
           ErlParser::ws_before(AtomParser::parse_atom),
           ErlParser::ws_before(char(')')),
         )),
-      |name| ErlAst::new_module_start_attr(name),
+      ErlAst::new_module_start_attr,
     )(input)
   }
 
@@ -127,7 +127,7 @@ impl ErlAttrParser {
         ErlParser::ws_before(bytes::complete::tag("export")),
         Self::parse_export_mfa_list,
       ),
-      |exports| ErlAst::new_export_attr(exports),
+      ErlAst::new_export_attr,
     )(input)
   }
 
@@ -139,7 +139,7 @@ impl ErlAttrParser {
         ErlParser::ws_before(bytes::complete::tag("export_type")),
         Self::parse_export_mfa_list,
       ),
-      |exports| ErlAst::new_export_type_attr(exports),
+      ErlAst::new_export_type_attr,
     )(input)
   }
 

@@ -176,16 +176,10 @@ impl AtomParser {
   }
 
   fn is_erl_keyword(s: &str) -> bool {
-    match s {
-      "after" | "and" | "andalso" | "band" |
-      "begin" | "bnot" | "bor" | "bsl" |
-      "bsr" | "bxor" | "case" | "catch" |
-      "cond" | "div" | "end" | "fun" |
-      "if" | "let" | "not" | "of" |
-      "or" | "orelse" | "receive" | "rem" |
-      "try" | "when" | "xor" => true,
-      // TODO: Erlang 25 new keyword `maybe`
-      _ => false,
-    }
+    matches!(s,
+      "after" | "and" | "andalso" | "band" |"begin" | "bnot" | "bor" | "bsl" |
+      "bsr" | "bxor" | "case" | "catch" |"cond" | "div" | "end" | "fun" |
+      "if" | "let" | "not" | "of" |"or" | "orelse" | "receive" | "rem" |"try" | "when" | "xor"
+    )
   }
 }

@@ -75,7 +75,7 @@ impl AstNode for ErlAst {
 
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
-        let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_else(Vec::default);
+        let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch
         if let Some(ofb) = of_branches {
           for cc in ofb {

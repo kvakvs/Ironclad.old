@@ -33,7 +33,7 @@ impl std::fmt::Display for ErlCaseClause {
 
 impl AstNode for ErlCaseClause {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let mut r = self.pattern.children().unwrap_or_else(Vec::default);
+    let mut r = self.pattern.children().unwrap_or_default();
     if let Some(g) = &self.guard {
       if let Some(g_children) = g.children() {
         r.extend(g_children.iter().cloned());

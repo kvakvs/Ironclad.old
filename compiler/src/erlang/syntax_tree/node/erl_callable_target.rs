@@ -97,7 +97,7 @@ impl AstNode for CallableTarget {
       CallableTarget::Expr(e) => e.children(),
       CallableTarget::MFArity(_) => None,
       CallableTarget::MFAExpression { module, function, .. } => {
-        let mut result = function.children().unwrap_or_else(Vec::default);
+        let mut result = function.children().unwrap_or_default();
         if let Some(m) = module {
           match m.children() {
             None => {}

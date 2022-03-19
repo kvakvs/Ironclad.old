@@ -455,7 +455,7 @@ impl ErlParser {
     match STYLE {
       Self::EXPR_STYLE_MATCHEXPR | Self::EXPR_STYLE_FULL =>
       // Skip comma and semicolon operator
-        return Self::parse_expr_prec11::<STYLE>(input),
+        Self::parse_expr_prec11::<STYLE>(input),
 
       Self::EXPR_STYLE_GUARD =>
       // Guard-style expressions allow both comma and semicolons

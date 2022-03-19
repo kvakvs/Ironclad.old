@@ -46,7 +46,7 @@ impl ErlAst {
     match self {
       ErlAst::Lit{ value, .. } => {
         match value.deref() {
-          Literal::Atom(s) => return s,
+          Literal::Atom(s) => s,
           _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
         }
       },

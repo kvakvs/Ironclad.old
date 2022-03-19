@@ -28,7 +28,7 @@ impl std::fmt::Display for ErlIfClause {
 
 impl AstNode for ErlIfClause {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let mut r = self.cond.children().unwrap_or_else(Vec::default);
+    let mut r = self.cond.children().unwrap_or_default();
     if let Some(body_children) = self.body.children() {
       r.extend(body_children.iter().cloned());
     }
