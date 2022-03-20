@@ -1,7 +1,8 @@
 //! Preprocess Stage - parses and interprets the Erlang source and gets rid of -if/-ifdef/-ifndef
 //! directives, substitutes HRL files contents in place of -include/-include_lib etc.
+pub mod pp_scope;
+pub mod pp_define;
 
-use std::collections::HashMap;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -13,25 +14,29 @@ use crate::project::source_file::SourceFile;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache, PpAstTree};
+use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
-enum PpCondition {
+enum PreprocessorCondition {
   Ifdef(String),
   Ifndef(String),
 }
 
-impl PpCondition {
+// TODO: Move into pp_scope
+impl PreprocessorCondition {
   /// Produces inverse of ifdef/indef, for -else. directive
   pub fn invert(&self) -> Self {
     match self {
-      PpCondition::Ifdef(n) => PpCondition::Ifndef(n.clone()),
-      PpCondition::Ifndef(n) => PpCondition::Ifdef(n.clone()),
+      PreprocessorCondition::Ifdef(n) => PreprocessorCondition::Ifndef(n.clone()),
+      PreprocessorCondition::Ifndef(n) => PreprocessorCondition::Ifdef(n.clone()),
     }
   }
 
-  pub fn get_condition_value(&self, symbols: &HashMap<String, String>) -> bool {
+  /// Given current preprocessor scope, check whether preprocessor condition stands true.
+  pub fn get_condition_value(&self, scope: &PreprocessorScope) -> bool {
+    // TODO: scope belongs to the condition stack as it mutates while we parse the file
     match self {
-      PpCondition::Ifdef(n) => symbols.contains_key(n),
-      PpCondition::Ifndef(n) => !symbols.contains_key(n),
+      PreprocessorCondition::Ifdef(n) => scope.is_defined(n),
+      PreprocessorCondition::Ifndef(n) => !scope.is_defined(n),
     }
   }
 }
@@ -41,21 +46,17 @@ pub struct ErlPreprocessStage {
   ast_cache: Arc<Mutex<PpAstCache>>,
   file_cache: Arc<Mutex<FileContentsCache>>,
 
-  condition_stack: Vec<PpCondition>,
+  condition_stack: Vec<PreprocessorCondition>,
 
-  /// Contains unparsed symbol definitions. For preprocess its either direct copy & paste into the
-  /// code output, or use symbol existence for ifdef/ifndef conditions.
-  pp_symbols: HashMap<String, String>,
+  /// Contains preprocessor definitions from config, from command line or from the file. Evolves as
+  /// the parser progresses through the file and encounters new preprocessor directives.
+  scope: Arc<PreprocessorScope>,
 }
 
 impl ErlPreprocessStage {
   fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
     let pp_ast = PpAstTree::from_source_file(source_file)?;
-    // println!("\n\
-    //       filename: {}\n\
-    //       PP AST ", source_file.file_name.display());
-    // pp_ast.nodes.iter().for_each(|n| print!("{}", n.fmt(&source_file)));
-    Ok(Arc::new(pp_ast))
+    Ok(pp_ast.into())
   }
 
   /// Returns: True if a file was preprocessed
@@ -138,12 +139,12 @@ impl ErlPreprocessStage {
     // First process ifdef/if!def/else/endif
     match node.deref() {
       PpAst::Ifdef(symbol) => {
-        self.condition_stack.push(PpCondition::Ifdef(symbol.clone()));
+        self.condition_stack.push(PreprocessorCondition::Ifdef(symbol.clone()));
         return None;
       }
 
       PpAst::Ifndef(symbol) => {
-        self.condition_stack.push(PpCondition::Ifndef(symbol.clone()));
+        self.condition_stack.push(PreprocessorCondition::Ifndef(symbol.clone()));
         return None;
       }
 
@@ -163,21 +164,26 @@ impl ErlPreprocessStage {
     }
 
     // Then check if condition stack is not empty and last condition is valid
-    if !self.condition_stack.is_empty() &&
-        !self.condition_stack.last().unwrap().get_condition_value(&self.pp_symbols) {
-      return None;
+    if let Some(last) = self.condition_stack.last() {
+      if !last.get_condition_value(&self.scope) {
+        return None
+      }
     }
+    // if !self.condition_stack.is_empty() &&
+    //     !self.condition_stack.last().unwrap().get_condition_value(&self.scope) {
+    //   return None;
+    // }
 
     // Then copy or modify remaining AST nodes
     match node.deref() {
       PpAst::Define(symbol, value) => {
         println!("define {} = {}", symbol, value);
-        self.pp_symbols.insert(symbol.clone(), value.clone());
+        self.scope = self.scope.define(symbol, None, Some(value.clone()));
         return None;
       }
 
       PpAst::Undef(symbol) => {
-        self.pp_symbols.remove(symbol);
+        self.scope.undefine(symbol);
         return None;
       }
 
@@ -222,12 +228,12 @@ impl ErlPreprocessStage {
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub fn new(ast_cache: &Arc<Mutex<PpAstCache>>,
              file_cache: &Arc<Mutex<FileContentsCache>>,
-             init_symbols: HashMap<String, String>) -> Self {
+             scope: Arc<PreprocessorScope>) -> Self {
     Self {
       ast_cache: ast_cache.clone(),
       file_cache: file_cache.clone(),
       condition_stack: Vec::with_capacity(Self::DEFAULT_CONDITION_STACK_SIZE),
-      pp_symbols: init_symbols,
+      scope,
     }
   }
 
@@ -287,7 +293,7 @@ impl ErlPreprocessStage {
         // Loaded and parsed HRL files are cached to be inserted into every include location
         .for_each(
           |path| {
-            let init_symbols = project.get_preprocessor_symbols(&path);
+            let init_symbols = project.get_preprocessor_scope(&path);
             let mut pp_state = ErlPreprocessStage::new(&ast_cache, &file_cache, init_symbols);
             if pp_state.preprocess_file(&path).unwrap() {
               preprocessed_count += 1;

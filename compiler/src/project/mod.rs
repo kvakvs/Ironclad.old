@@ -1,6 +1,7 @@
 //! Erlang project contains all settings for input files and compiler options
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc};
 
@@ -13,6 +14,7 @@ use crate::project::input_opts::InputOpts;
 use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
 use crate::stage::preprocess::ErlPreprocessStage;
+use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
 pub mod conf;
 pub mod compiler_opts;
@@ -27,6 +29,9 @@ pub struct ErlProject {
   /// compile options
   pub compiler_opts: Arc<CompilerOpts>,
 
+  /// Compiler options but overrides on a per-file basis
+  pub compiler_opts_per_file: HashMap<PathBuf, Arc<CompilerOpts>>,
+
   /// Input files and directories (wildcards are allowed)
   input_opts: InputOpts,
 
@@ -35,28 +40,30 @@ pub struct ErlProject {
 }
 
 impl ErlProject {
-  /// Return preprocessor symbols defined for a given file
-  pub(crate) fn get_preprocessor_symbols(&self, _path: &Path) -> HashMap<String, String> {
-    let mut result: HashMap<String, String> = Default::default();
+  /// Create a starting preprocessor scope for the first line of a given file.
+  /// Initial scope values are derived from the commandline and the project settings for the file,
+  /// and the scope evolves as the preprocessor/parser goes through the file.
+  pub fn get_preprocessor_scope(&self, path: &Path) -> Arc<PreprocessorScope> {
+    let mut result_scope = self.compiler_opts.scope.clone();
 
-    self.compiler_opts.defines.iter()
-        .for_each(|def| {
-          Self::parse_preprocessor_define(def, &mut result);
-        });
+    // Find opts (if exist) for current file, and apply them over project global opts
+    if let Some(per_file_opts) = self.compiler_opts_per_file.get(path) {
+      result_scope = result_scope.overlay(&per_file_opts.scope);
+    }
 
-    result
-  }
-
-  /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition
-  /// symbols table. This will be passed then to preprocessor parser.
-  fn parse_preprocessor_define(key_value: &str, _symbols: &mut HashMap<String, String>) {
-    println!("Config preproc opt: {}", key_value);
+    result_scope
   }
 
   /// Get a clone of project compiler options
   /// TODO: special override options if user specifies extras as a module attribute
-  pub(crate) fn get_compiler_options_for(&self, _path: &Path) -> Arc<CompilerOpts> {
-    self.compiler_opts.clone()
+  pub fn get_compiler_options_for(&self, path: &Path) -> Arc<CompilerOpts> {
+    if let Some(per_file_opts) = self.compiler_opts_per_file.get(path) {
+      // If found per-file settings, combine global with per-file
+      self.compiler_opts.overlay(per_file_opts.deref()).into()
+    } else {
+      // If not found per-file settings, just provide a clone of global settings
+      self.compiler_opts.clone()
+    }
   }
 
   /// Default file dict capacity
@@ -106,7 +113,7 @@ impl ErlProject {
     self.inputs = inputs;
 
     // Load files and store contents in the hashmap
-    let file_cache = FilePreloadStage::run(self)?;
+    let file_cache = FilePreloadStage::run(&self.inputs)?;
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
     let _pp_ast_cache = ErlPreprocessStage::run(self, file_cache.clone())
@@ -124,6 +131,7 @@ impl From<ProjectConf> for ErlProject {
   fn from(conf: ProjectConf) -> Self {
     Self {
       compiler_opts: Arc::new(CompilerOpts::from(conf.compiler_opts)),
+      compiler_opts_per_file: Default::default(),
       input_opts: InputOpts::from(conf.inputs),
       inputs: Vec::default(),
     }
