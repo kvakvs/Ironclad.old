@@ -1,8 +1,6 @@
 //! Contains all possible Erlang compiler errors
 use std::path::{Path};
 
-use pest::error::LineColLocation;
-
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::mfarity::MFArity;
 use crate::preprocessor::syntax_tree::pp_parser;
@@ -34,11 +32,11 @@ pub enum ErlError {
     msg: String,
   },
 
-  /// Returned when preprocessor syntax is not correct
-  PreprocessorSyntax {
-    /// Error from the PEST parser
-    parse_err: pest::error::Error<pp_parser::Rule>
-  },
+  // /// Returned when preprocessor syntax is not correct
+  // PreprocessorSyntax {
+  //   /// Error from the PEST parser
+  //   parse_err: pest::error::Error<pp_parser::Rule>
+  // },
 
   /// Returned when Erlang parser failed: internal error must not occur with the user
   ParserInternal {
@@ -114,15 +112,15 @@ impl ErlError {
     })
   }
 
-  /// Formats a linecol-location from Pest nicely
-  fn format_line_col(p: &LineColLocation) -> String {
-    match p {
-      LineColLocation::Pos((l, c)) => format!("{}:{}", l, c),
-      LineColLocation::Span((l, c), (l2, c2)) => {
-        format!("{}:{} .. {}:{}", l, c, l2, c2)
-      }
-    }
-  }
+  // /// Formats a linecol-location from Pest nicely
+  // fn format_line_col(p: &LineColLocation) -> String {
+  //   match p {
+  //     LineColLocation::Pos((l, c)) => format!("{}:{}", l, c),
+  //     LineColLocation::Span((l, c), (l2, c2)) => {
+  //       format!("{}:{} .. {}:{}", l, c, l2, c2)
+  //     }
+  //   }
+  // }
 
   /// Create a parser internal error. Should not happen for the user, only during the development
   /// and testing.

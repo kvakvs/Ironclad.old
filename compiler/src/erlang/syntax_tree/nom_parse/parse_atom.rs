@@ -5,6 +5,7 @@ use nom::{sequence, multi, branch, combinator, error,
           bytes::streaming::{is_not, take_while_m_n},
           character};
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, StringParserResult};
+use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single
@@ -170,7 +171,7 @@ impl AtomParser {
   /// delitmited string
   pub fn parse_atom(input: &str) -> StringParserResult {
     branch::alt((
-      combinator::verify(ErlParser::parse_ident, |s| !Self::is_erl_keyword(s)),
+      combinator::verify(MiscParser::parse_ident, |s| !Self::is_erl_keyword(s)),
       Self::parse_quoted_atom,
     ))(input)
   }

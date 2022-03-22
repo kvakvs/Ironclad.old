@@ -8,6 +8,7 @@ use nom::{combinator, sequence, multi, error::{context}, character::complete::{c
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_fn_clause::ErlFnClause;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::mfarity::MFArity;
 use crate::source_loc::SourceLoc;
@@ -16,7 +17,7 @@ impl ErlParser {
   fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
-        Self::ws_before(tag("when")),
+        MiscParser::ws_before(tag("when")),
         cut(Self::parse_expr),
       )),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
@@ -49,7 +50,7 @@ impl ErlParser {
     combinator::map(
       sequence::tuple((
         // Function clause name
-        Self::ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
+        MiscParser::ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
 
         // Function arguments
         nom::error::context(
@@ -63,7 +64,7 @@ impl ErlParser {
         nom::error::context(
           "function clause body",
           sequence::preceded(
-            Self::ws_before(tag("->")),
+            MiscParser::ws_before(tag("->")),
             // Body as list of exprs
             cut(Self::parse_comma_sep_exprs1::<{ ErlParser::EXPR_STYLE_FULL }>),
           ))
@@ -100,12 +101,12 @@ impl ErlParser {
     combinator::map(
       sequence::terminated(
         multi::separated_list1(
-          Self::ws_before(char(';')),
+          MiscParser::ws_before(char(';')),
           // if parse fails under here, will show this context message in error
           context("function clause",
                   combinator::cut(Self::parse_fnclause::<true>)),
         ),
-        Self::ws_before(char('.')),
+        MiscParser::ws_before(char('.')),
       ),
       Self::_construct_fndef,
     )(input)
@@ -116,14 +117,14 @@ impl ErlParser {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     combinator::map(
       sequence::preceded(
-        Self::ws_before(tag("fun")),
+        MiscParser::ws_before(tag("fun")),
         sequence::terminated(
           context("",
                   multi::separated_list1(
-                    Self::ws_before(char(';')),
+                    MiscParser::ws_before(char(';')),
                     Self::parse_fnclause::<false>,
                   )),
-          Self::ws_before(tag("end")),
+          MiscParser::ws_before(tag("end")),
         )),
       Self::_construct_fndef,
     )(input)

@@ -6,8 +6,10 @@ pub mod pp_define;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use nom::Finish;
 
 use crate::erl_error::{ErlError, ErlResult};
+use crate::preprocessor::nom_parser::PreprocessorParser;
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
 use crate::source_loc::{ErrorLocation, SourceLoc};
@@ -55,9 +57,35 @@ pub struct ErlPreprocessStage {
 }
 
 impl ErlPreprocessStage {
-  fn ast_from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
-    let pp_ast = PpAst::from_source_file(source_file)?;
-    Ok(pp_ast.into())
+  // fn ast_from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
+  //   let pp_ast = PpAst::from_source_file(source_file)?;
+  //   Ok(pp_ast.into())
+  // }
+  /// Split input file into fragments using preprocessor directives as separators
+  pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
+    // let successful_parse = PpParser::parse(Rule::file, &source_file.text)?.next().unwrap();
+    // let pp_tree = Arc::new(PpAst::Empty);
+    // pp_tree.pp_parse_tokens_to_ast(successful_parse)
+    let input = &source_file.text;
+    let parse_result = PreprocessorParser::parse_module(input);
+
+    #[cfg(debug_assertions)]
+    if parse_result.is_err() {
+      println!("NomError: {:?}", parse_result);
+    }
+
+    match parse_result.finish() {
+      Ok((tail, ast)) => {
+        // println!("Parse result AST: «{}»", &forms);
+
+        assert!(tail.trim().is_empty(),
+                "Preprocessor: Not all input was consumed by parse.\n
+                \tTail: «{}»\n
+                \tAst: {}", tail, ast);
+        Ok(ast)
+      }
+      Err(err) => Err(ErlError::from_nom_error(input, err)),
+    }
   }
 
   /// Returns: True if a file was preprocessed
@@ -77,7 +105,7 @@ impl ErlPreprocessStage {
         Some(ast) => ast.clone(),
         None => {
           // Parse and cache
-          let ast = ErlPreprocessStage::ast_from_source_file(&contents)?;
+          let ast = Self::from_source_file(&contents)?;
           // Save to preprocessor AST cache
           ast_cache.items.insert(file_name.to_path_buf(), ast.clone());
           ast
@@ -126,7 +154,7 @@ fn interpret_include_directive(source_file: &SourceFile,
             let mut file_cache1 = file_cache.lock().unwrap();
             file_cache1.get_or_load(&include_path).unwrap()
           };
-          let ast_tree = ErlPreprocessStage::ast_from_source_file(&include_source_file).unwrap();
+          let ast_tree = ErlPreprocessStage::from_source_file(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
           ast_cache1.items.insert(include_path.clone(), ast_tree.clone());

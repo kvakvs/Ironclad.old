@@ -65,8 +65,6 @@ dependencies = [
  "glob",
  "lazy_static",
  "nom",
- "pest",
- "pest_derive",
  "serde",
  "serde_derive",
  "toml",

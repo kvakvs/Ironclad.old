@@ -24,9 +24,9 @@ impl std::fmt::Display for ErlError {
       ErlError::PreprocessorParse { loc, msg } => {
         write!(f, "Preprocessor parse error: {} (at {})", msg, loc)
       }
-      ErlError::PreprocessorSyntax { parse_err } => {
-        write!(f, "Preprocessor syntax parse error: {}", parse_err)
-      }
+      // ErlError::PreprocessorSyntax { parse_err } => {
+      //   write!(f, "Preprocessor syntax parse error: {}", parse_err)
+      // }
       ErlError::ParserInternal { loc, msg } => {
         write!(f, "Parser internal error: {} (at {})", msg, loc)
       }

@@ -5,21 +5,22 @@ use nom::{bytes, bytes::complete::{tag}, character::complete::{char}, error::{co
           combinator, combinator::{cut}, sequence, multi};
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::node::erl_if_clause::ErlIfClause;
+use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::source_loc::SourceLoc;
 
 impl ErlParser {
   /// Parses `if COND -> EXPR; ... end`
   pub fn parse_if_statement(input: &str) -> AstParserResult {
-    let (input, _) = Self::ws_before(tag("if"))(input)?;
+    let (input, _) = MiscParser::ws_before(tag("if"))(input)?;
 
     context("if block", cut(
       combinator::map(
         sequence::terminated(
           multi::separated_list1(
-            Self::ws_before(char(';')),
+            MiscParser::ws_before(char(';')),
             context("if block clause", cut(Self::parse_if_clause)),
           ),
-          Self::ws_before(tag("end")),
+          MiscParser::ws_before(tag("end")),
         ),
         |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),
       )))(input)
@@ -33,7 +34,7 @@ impl ErlParser {
 
         // The body after ->
         sequence::preceded(
-          Self::ws_before(bytes::complete::tag("->")),
+          MiscParser::ws_before(bytes::complete::tag("->")),
           Self::parse_expr,
         ),
       ),

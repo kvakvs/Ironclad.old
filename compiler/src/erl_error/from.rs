@@ -40,11 +40,11 @@ impl From<glob::PatternError> for ErlError {
   }
 }
 
-impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
-  fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
-    ErlError::PreprocessorSyntax { parse_err: value }
-  }
-}
+// impl From<pest::error::Error<pp_parser::Rule>> for ErlError {
+//   fn from(value: pest::error::Error<pp_parser::Rule>) -> Self {
+//     ErlError::PreprocessorSyntax { parse_err: value }
+//   }
+// }
 
 // impl From<pest::error::Error<erl_parser_prec_climber::Rule>> for ErlError {
 //   fn from(value: pest::error::Error<erl_parser_prec_climber::Rule>) -> Self {

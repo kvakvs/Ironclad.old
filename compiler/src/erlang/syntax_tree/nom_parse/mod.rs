@@ -57,37 +57,6 @@ impl ErlParser {
     multi::many0(combinator::complete(Self::parse_module_form))(input)
   }
 
-  /// Recognizes newline or end of input
-  fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
-    input: &'a str
-  ) -> nom::IResult<&str, &str, ErrType> {
-    combinator::recognize(
-      branch::alt((
-        nom::bytes::complete::tag("\r\n"),
-        nom::bytes::complete::tag("\r"),
-        nom::bytes::complete::tag("\n"),
-        combinator::eof,
-      ))
-    )(input)
-  }
-
-  /// Recognizes `% text <newline>` consuming text
-  fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
-    input: &'a str
-  ) -> nom::IResult<&str, &str, ErrType> {
-    combinator::recognize(
-      sequence::pair(
-        multi::many1(
-          character::complete::char('%'),
-        ),
-        multi::many_till(
-          character::complete::anychar,
-          Self::newline_or_eof,
-        ),
-      )
-    )(input)
-  }
-
   /// Parses an attribute or a function def
   pub fn parse_module_form(input: &str) -> AstParserResult {
     branch::alt((

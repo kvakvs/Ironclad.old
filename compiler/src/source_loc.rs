@@ -1,6 +1,5 @@
 //! Source file locations for printing and reporting to the user
 use std::path::PathBuf;
-use pest::Span;
 use std::fmt::Formatter;
 use std::sync::Weak;
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
@@ -21,14 +20,14 @@ pub enum SourceLoc {
   Ast(Weak<ErlAst>),
 }
 
-impl<'i> From<pest::Span<'i>> for SourceLoc {
-  fn from(sp: Span) -> Self {
-    Self::Span {
-      start: sp.start(),
-      end: sp.end(),
-    }
-  }
-}
+// impl<'i> From<pest::Span<'i>> for SourceLoc {
+//   fn from(sp: Span) -> Self {
+//     Self::Span {
+//       start: sp.start(),
+//       end: sp.end(),
+//     }
+//   }
+// }
 
 impl std::fmt::Display for SourceLoc {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

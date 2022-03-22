@@ -5,7 +5,10 @@ use nom::{sequence, combinator, multi, branch,
           bytes::complete::{tag}};
 use crate::erlang::syntax_tree::nom_parse::{ErlParser, StringParserResult, StrSliceParserResult};
 
-impl ErlParser {
+/// Group code with misc parsing helpers
+pub struct MiscParser {}
+
+impl MiscParser {
   /// Recognizes 0 or more whitespaces and line comments
   fn spaces_or_comments0<'a, ErrType: nom::error::ParseError<&'a str>>(
     input: &'a str
@@ -155,4 +158,35 @@ impl ErlParser {
   //     |_| (),
   //   )(input)
   // }
+
+  /// Recognizes newline or end of input
+  fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
+    input: &'a str
+  ) -> nom::IResult<&str, &str, ErrType> {
+    combinator::recognize(
+      branch::alt((
+        nom::bytes::complete::tag("\r\n"),
+        nom::bytes::complete::tag("\r"),
+        nom::bytes::complete::tag("\n"),
+        combinator::eof,
+      ))
+    )(input)
+  }
+
+  /// Recognizes `% text <newline>` consuming text
+  fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
+    input: &'a str
+  ) -> nom::IResult<&str, &str, ErrType> {
+    combinator::recognize(
+      sequence::pair(
+        multi::many1(
+          character::complete::char('%'),
+        ),
+        multi::many_till(
+          character::complete::anychar,
+          Self::newline_or_eof,
+        ),
+      )
+    )(input)
+  }
 }

@@ -4,6 +4,7 @@ use nom::{combinator, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser};
+use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use crate::literal::Literal;
@@ -36,7 +37,7 @@ impl ErlParser {
 
   fn parse_float_to_ast(input: &str) -> AstParserResult {
     combinator::map(
-      Self::parse_float,
+      MiscParser::parse_float,
       |s| {
         ErlAst::Lit {
           location: SourceLoc::None,
@@ -48,7 +49,7 @@ impl ErlParser {
 
   fn parse_int_to_ast(input: &str) -> AstParserResult {
     combinator::map(
-      Self::parse_int,
+      MiscParser::parse_int,
       |s| {
         ErlAst::Lit {
           location: SourceLoc::None,
