@@ -1,7 +1,7 @@
 //! Preprocessor scope for the current file, currently available defines
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc};
 use crate::stage::preprocess::pp_define::{NameArity, PreprocessorDefine};
 
 /// Currently available defines for a file, as the file is scanned, this is constantly updated with
@@ -11,12 +11,6 @@ pub struct PreprocessorScope {
   /// Available macros
   pub defines: HashMap<NameArity, Arc<PreprocessorDefine>>,
 }
-
-// impl Default for PreprocessorScope {
-//   fn default() -> Self {
-//     Self { defines: Default::default() }
-//   }
-// }
 
 impl PreprocessorScope {
   /// Parse defines in the configuration file, or from command line specified as -DNAME or -DNAME=XXX

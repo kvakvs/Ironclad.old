@@ -4,7 +4,7 @@
 use std::path::{PathBuf, };
 use crate::project::compiler_opts::CompilerOpts;
 use std::sync::Arc;
-use crate::erlang::syntax_tree::erl_ast::ErlAstTree;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::project::source_file::SourceFile;
 
 /// Compile state, used as input to begin the compilation
@@ -45,7 +45,7 @@ impl CompileModule {
 
   /// Given a parsed AST tree start work on the compilation
   // TODO: Also will need the environment with access to other modules and their inferred types
-  pub fn compile(&mut self, _ast: Arc<ErlAstTree>) {
+  pub fn compile(&mut self, _ast: Arc<ErlAst>) {
     unimplemented!("compile module")
   }
 }

@@ -4,10 +4,9 @@ use compiler::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstTree};
 use compiler::project::source_file::SourceFile;
 use std::path::PathBuf;
 use pest::Parser;
-use std::rc::Rc;
 
 #[allow(dead_code)]
-pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Rc<PpAst>> {
+pub fn pp_parse(rule: pp_parser::Rule, input: &str) -> ErlResult<Arc<PpAst>> {
   let parse_output = pp_parser::PpParser::parse(rule, input)?.next().unwrap();
 
   let sf = SourceFile::new(&PathBuf::from("<test>"), String::from(""));

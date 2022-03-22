@@ -1,12 +1,9 @@
 //! Defines AST structure for Erlang Preprocessor
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::path::PathBuf;
 use std::sync::Arc;
 use ::function_name::named;
-
-use crate::project::ErlProject;
-use crate::ast_tree::{AstCache, AstTree};
-use std::rc::Rc;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -18,7 +15,7 @@ pub enum PpAst {
   Empty,
 
   /// Root of a preprocessed file
-  File(Vec<Rc<PpAst>>),
+  File(Vec<Arc<PpAst>>),
 
   /// A % line comment
   Comment(String),
@@ -69,7 +66,12 @@ pub enum PpAst {
   Warning(String),
 
   /// Nested included file
-  IncludedFile(Arc<PpAstTree>),
+  IncludedFile {
+    /// Filename for this included file
+    filename: PathBuf,
+    /// Preprocessor sub-tree to descend into the includefile
+    nested: Arc<PpAst>,
+  },
 }
 
 impl PpAst {
@@ -89,8 +91,8 @@ impl PpAst {
       Self::Comment(s) => format!("Comment({})", Self::trim(s)),
       Self::Text(s) => format!("T({})", Self::trim(s)),
 
-      Self::IncludedFile(include_rc) => {
-        format!("include<{}>", include_rc.source.file_name.display())
+      Self::IncludedFile { filename, .. } => {
+        format!("-include({}).", filename.display())
       }
       PpAst::Include(p) => format!("Include({})", p),
       PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
@@ -123,7 +125,7 @@ impl std::fmt::Display for PpAst {
         Ok(())
       }
       PpAst::Text(s) => write!(f, "{}", s),
-      PpAst::IncludedFile(include_rc) => write!(f, "{}", include_rc.nodes),
+      PpAst::IncludedFile { nested: include_rc, .. } => write!(f, "{}", include_rc),
       PpAst::Define(name, body) => write!(f, "-define({}, {}).", name, body),
       PpAst::DefineFun { name, args, body } => {
         write!(f, "-define({}({:?}), {})", name, args, body)
@@ -145,17 +147,24 @@ impl std::fmt::Display for PpAst {
 }
 
 
-/// A tree of Preprocessor syntax nodes with attached file name, and root element removed
-pub type PpAstTree = AstTree<PpAst>;
+// /// A tree of Preprocessor syntax nodes with attached file name, and root element removed
+// pub type PpAstTree = AstTree<PpAst>;
 
-/// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
-pub type PpAstCache = AstCache<PpAst>;
+// /// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
+// pub type PpAstCache = AstCache<PpAst>;
 
-impl Default for PpAstCache {
-  /// Create a new empty AST cache for preprocessed files
-  fn default() -> Self {
-    Self {
-      items: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),
-    }
-  }
+/// Parsed preprocessor AST cache
+#[derive(Default)]
+pub struct PpAstCache {
+  /// AST trees keyed by filename
+  pub items: HashMap<PathBuf, Arc<PpAst>>,
 }
+
+// impl Default for PpAstCache {
+//   /// Create a new empty AST cache for preprocessed files
+//   fn default() -> Self {
+//     Self {
+//       items: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),
+//     }
+//   }
+// }

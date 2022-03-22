@@ -15,7 +15,6 @@ pub mod display;
 pub mod erlang;
 pub mod preprocessor;
 pub mod core_erlang;
-pub mod ast_tree;
 pub mod literal;
 
 extern crate pest;

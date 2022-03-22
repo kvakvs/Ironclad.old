@@ -5,7 +5,6 @@ pub mod pp_define;
 
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use crate::erl_error::{ErlError, ErlResult};
@@ -13,7 +12,7 @@ use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::stage::file_contents_cache::FileContentsCache;
-use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache, PpAstTree};
+use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
 enum PreprocessorCondition {
@@ -43,7 +42,9 @@ impl PreprocessorCondition {
 
 /// Preprocessor state with AST cache, macro definitions, etc
 pub struct ErlPreprocessStage {
+  /// For headers included more than once, parse them and cache here for reinterpretation as needed
   ast_cache: Arc<Mutex<PpAstCache>>,
+
   file_cache: Arc<Mutex<FileContentsCache>>,
 
   condition_stack: Vec<PreprocessorCondition>,
@@ -54,25 +55,35 @@ pub struct ErlPreprocessStage {
 }
 
 impl ErlPreprocessStage {
-  fn load_and_parse_pp_ast(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAstTree>> {
-    let pp_ast = PpAstTree::from_source_file(source_file)?;
+  fn ast_from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
+    let pp_ast = PpAst::from_source_file(source_file)?;
     Ok(pp_ast.into())
   }
 
   /// Returns: True if a file was preprocessed
-  fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<bool> {
+  fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<()> {
     // trust that file exists
     let contents = {
       let file_cache1 = self.file_cache.lock().unwrap();
-      file_cache1.all_files.get(file_name).unwrap().clone()
+      file_cache1.all_files
+          .get(file_name).unwrap()
+          .clone()
     };
 
-    let ast_tree = ErlPreprocessStage::load_and_parse_pp_ast(&contents)?;
-
-    {
+    // If cached, try get it, otherwise parse and save
+    let ast_tree = {
       let mut ast_cache = self.ast_cache.lock().unwrap();
-      ast_cache.items.insert(file_name.to_path_buf(), ast_tree.clone());
-    }
+      match ast_cache.items.get(file_name) {
+        Some(ast) => ast.clone(),
+        None => {
+          // Parse and cache
+          let ast = ErlPreprocessStage::ast_from_source_file(&contents)?;
+          // Save to preprocessor AST cache
+          ast_cache.items.insert(file_name.to_path_buf(), ast.clone());
+          ast
+        }
+      }
+    };
 
     let pp_ast = self.interpret_pp_ast(&contents, ast_tree)?;
 
@@ -84,15 +95,15 @@ impl ErlPreprocessStage {
     }
 
     // Cleanup
-    Ok(true)
+    Ok(())
   }
 }
 
 fn interpret_include_directive(source_file: &SourceFile,
-                               node: &PpAst,
+                               node: &Arc<PpAst>,
                                ast_cache: Arc<Mutex<PpAstCache>>,
-                               file_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<PpAst> {
-  match node {
+                               file_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<PpAst>> {
+  match node.deref() {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
     PpAst::IncludeLib(path)
@@ -114,15 +125,15 @@ fn interpret_include_directive(source_file: &SourceFile,
             let mut file_cache1 = file_cache.lock().unwrap();
             file_cache1.get_or_load(&include_path).unwrap()
           };
-          let ast_tree = ErlPreprocessStage::load_and_parse_pp_ast(&include_source_file).unwrap();
+          let ast_tree = ErlPreprocessStage::ast_from_source_file(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
           ast_cache1.items.insert(include_path.clone(), ast_tree.clone());
 
-          Ok(PpAst::IncludedFile(ast_tree))
+          Ok(PpAst::new_included_file(&include_path, ast_tree))
         }
         Some(arc_ast) => {
-          let result = PpAst::IncludedFile(arc_ast.clone());
+          let result = PpAst::new_included_file(&include_path, arc_ast.clone());
           Ok(result)
         }
       }
@@ -134,8 +145,8 @@ fn interpret_include_directive(source_file: &SourceFile,
 impl ErlPreprocessStage {
   /// This is called for each Preprocessor AST node to make the final decision whether the node
   /// is passed into the output or replaced with a SKIP.
-  fn interpret_pp_rule_map(&mut self, node: &Rc<PpAst>,
-                           source_file: &SourceFile) -> Option<Rc<PpAst>> {
+  fn interpret_pp_rule_map(&mut self, node: &Arc<PpAst>,
+                           source_file: &SourceFile) -> Option<Arc<PpAst>> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
       PpAst::Ifdef(symbol) => {
@@ -166,7 +177,7 @@ impl ErlPreprocessStage {
     // Then check if condition stack is not empty and last condition is valid
     if let Some(last) = self.condition_stack.last() {
       if !last.get_condition_value(&self.scope) {
-        return None
+        return None;
       }
     }
     // if !self.condition_stack.is_empty() &&
@@ -201,7 +212,7 @@ impl ErlPreprocessStage {
         return None;
       }
 
-      PpAst::IncludedFile(include_ast_tree) => {
+      PpAst::IncludedFile { nested: include_ast_tree, .. } => {
         // TODO: Return ErlResult
         self.interpret_pp_ast(source_file, include_ast_tree.clone()).unwrap();
       }
@@ -245,20 +256,20 @@ impl ErlPreprocessStage {
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(&mut self,
                       source_file: &SourceFile,
-                      ast_tree: Arc<PpAstTree>) -> ErlResult<Rc<PpAst>> {
+                      ast_tree: Arc<PpAst>) -> ErlResult<Arc<PpAst>> {
     // From top to down interpret the preprocessed AST. Includes will restart the intepretation
     // from the pasted included AST.
-    if let PpAst::File(nodes) = ast_tree.nodes.deref() {
-      let interpreted: Vec<Rc<PpAst>> = nodes.iter()
+    if let PpAst::File(nodes) = ast_tree.deref() {
+      let interpreted: Vec<Arc<PpAst>> = nodes.iter()
           .filter_map(|node| {
             self.interpret_pp_rule_map(node, source_file)
           })
           .collect();
-      return Ok(Rc::new(PpAst::File(interpreted)));
+      return Ok(PpAst::File(interpreted).into());
     }
     let err_s =
         format!("Preprocessor parse did not return a root AST node, got something else: {:?}",
-                ast_tree.nodes);
+                ast_tree);
     Err(ErlError::PreprocessorParse {
       loc: ErrorLocation::new(Some(source_file.file_name.clone()),
                               SourceLoc::None),
@@ -287,18 +298,19 @@ impl ErlPreprocessStage {
 
     let mut preprocessed_count = 0;
 
-    all_files.into_iter()
+    let erl_files: Vec<PathBuf> = all_files.into_iter()
         .filter(|path| path.to_string_lossy().ends_with(".erl"))
-        // For all input files, run preprocess parse and interpred the preprocess directives
-        // Loaded and parsed HRL files are cached to be inserted into every include location
-        .for_each(
-          |path| {
-            let init_symbols = project.get_preprocessor_scope(&path);
-            let mut pp_state = ErlPreprocessStage::new(&ast_cache, &file_cache, init_symbols);
-            if pp_state.preprocess_file(&path).unwrap() {
-              preprocessed_count += 1;
-            }
-          });
+        .collect();
+
+    for path in erl_files.iter() {
+      // For all input files, run preprocess parse and interpred the preprocess directives
+      // Loaded and parsed HRL files are cached to be inserted into every include location
+      // Create starting scope (from project settings and command line)
+      let starting_scope = project.get_preprocessor_scope(&path);
+      let mut stage = ErlPreprocessStage::new(&ast_cache, &file_cache, starting_scope);
+      stage.preprocess_file(&path)?;
+      preprocessed_count += 1;
+    }
 
     let cached_ast_trees_count = {
       let ast_cache_r = ast_cache.lock().unwrap();

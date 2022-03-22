@@ -12,7 +12,6 @@ use crate::erlang::syntax_tree::node::erl_token::ErlToken;
 use crate::erlang::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::source_loc::SourceLoc;
 use crate::mfarity::MFArity;
-use crate::ast_tree::{AstCache, AstTree};
 use crate::erl_error::ErlResult;
 use crate::erlang::syntax_tree::node::erl_binary_element::BinaryElement;
 use crate::erlang::syntax_tree::node::erl_catch_clause::CatchClause;
@@ -370,14 +369,14 @@ impl ErlAst {
   }
 }
 
-/// A tree of Erlang nodes with attached file name, and root element removed
-pub type ErlAstTree = AstTree<ErlAst>;
+// / A tree of Erlang nodes with attached file name, and root element removed
+// pub type ErlAstTree = AstTree<ErlAst>;
 
-/// A cache of trees of Erlang nodes, keyed by filename or module name
-pub type ErlAstCache = AstCache<ErlAst>;
-
-impl Default for ErlAst {
-  fn default() -> Self {
-    ErlAst::Empty
-  }
-}
+// /// A cache of trees of Erlang nodes, keyed by filename or module name
+// pub type ErlAstCache = AstCache<ErlAst>;
+//
+// impl Default for ErlAst {
+//   fn default() -> Self {
+//     ErlAst::Empty
+//   }
+// }
