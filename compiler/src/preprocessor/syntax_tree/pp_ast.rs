@@ -77,40 +77,36 @@ pub enum PpAst {
 impl PpAst {
   /// Trim the contents to CLAMP_LENGTH characters for convenient narrow debug printing
   pub fn trim(s: &str) -> &str {
-    const CLAMP_LENGTH: usize = 40;
     let trimmed = s.trim();
-    if trimmed.len() <= CLAMP_LENGTH {
-      return trimmed;
-    }
-    &trimmed[..CLAMP_LENGTH - 1]
+    &trimmed[..usize::min(trimmed.len(), 40) - 1]
   }
 
-  /// Format as a debug string
-  pub fn to_dbg_str(&self) -> String {
-    match self {
-      Self::Comment(s) => format!("Comment({})", Self::trim(s)),
-      Self::Text(s) => format!("T({})", Self::trim(s)),
-
-      Self::IncludedFile { filename, .. } => {
-        format!("-include({}).", filename.display())
-      }
-      PpAst::Include(p) => format!("Include({})", p),
-      PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
-      PpAst::File(nodes) => format!("File{{{:?}}}", nodes),
-      PpAst::Define(name, body) => format!("Define({}, {})", name, body),
-      PpAst::DefineFun { name, args, body } => format!("Define({}({:?}), {})", name, args, body),
-      PpAst::Ifdef(name) => format!("If Def({})", name),
-      PpAst::Ifndef(name) => format!("If !Def({})", name),
-      PpAst::Else => "Else".to_string(),
-      PpAst::Endif => "Endif".to_string(),
-      PpAst::If(expr) => format!("If({})", expr),
-      PpAst::Elif(expr) => format!("Elif({})", expr),
-      PpAst::Undef(name) => format!("Undef({})", name),
-      PpAst::Error(t) => format!("Error({})", t),
-      PpAst::Warning(t) => format!("Warning({})", t),
-      PpAst::Empty => unreachable!("PpAst::Empty encountered, while it shouldn't"),
-    }
-  }
+  // /// Format as a debug string
+  // pub fn to_dbg_str(&self) -> String {
+  //   match self {
+  //     Self::Comment(s) => format!("Comment({})", Self::trim(s)),
+  //     Self::Text(s) => format!("T({})", Self::trim(s)),
+  //
+  //     Self::IncludedFile { filename, .. } => {
+  //       format!("-include({}).", filename.display())
+  //     }
+  //     PpAst::Include(p) => format!("Include({})", p),
+  //     PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
+  //     PpAst::File(nodes) => format!("File{{{:?}}}", nodes),
+  //     PpAst::Define(name, body) => format!("Define({}, {})", name, body),
+  //     PpAst::DefineFun { name, args, body } => format!("Define({}({:?}), {})", name, args, body),
+  //     PpAst::Ifdef(name) => format!("If Def({})", name),
+  //     PpAst::Ifndef(name) => format!("If !Def({})", name),
+  //     PpAst::Else => "Else".to_string(),
+  //     PpAst::Endif => "Endif".to_string(),
+  //     PpAst::If(expr) => format!("If({})", expr),
+  //     PpAst::Elif(expr) => format!("Elif({})", expr),
+  //     PpAst::Undef(name) => format!("Undef({})", name),
+  //     PpAst::Error(t) => format!("Error({})", t),
+  //     PpAst::Warning(t) => format!("Warning({})", t),
+  //     PpAst::Empty => unreachable!("PpAst::Empty encountered, while it shouldn't"),
+  //   }
+  // }
 }
 
 impl std::fmt::Display for PpAst {

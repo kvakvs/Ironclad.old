@@ -87,6 +87,7 @@ impl ErlPreprocessStage {
 
     let pp_ast = self.interpret_pp_ast(&contents, ast_tree)?;
 
+    // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
     let output: String = pp_ast.to_string();
 
     { // Success: insert new string into preprocessed source cache
