@@ -3,7 +3,6 @@ use std::path::{Path};
 
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::mfarity::MFArity;
-use crate::preprocessor::syntax_tree::pp_parser;
 use crate::typing::type_error::TypeError;
 
 pub mod format;

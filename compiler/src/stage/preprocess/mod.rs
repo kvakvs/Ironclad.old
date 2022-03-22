@@ -67,6 +67,11 @@ impl ErlPreprocessStage {
     // let pp_tree = Arc::new(PpAst::Empty);
     // pp_tree.pp_parse_tokens_to_ast(successful_parse)
     let input = &source_file.text;
+    Self::from_source(input)
+  }
+
+  /// Split input file into fragments using preprocessor directives as separators
+  pub fn from_source(input: &str) -> ErlResult<Arc<PpAst>> {
     let parse_result = PreprocessorParser::parse_module(input);
 
     #[cfg(debug_assertions)]
@@ -215,10 +220,11 @@ impl ErlPreprocessStage {
     // }
 
     // Then copy or modify remaining AST nodes
+    println!("{}", node);
+
     match node.deref() {
-      PpAst::Define(symbol, value) => {
-        println!("define {} = {}", symbol, value);
-        self.scope = self.scope.define(symbol, None, Some(value.clone()));
+      PpAst::Define { name, args, body } => {
+        self.scope = self.scope.define(name, args, body);
         return None;
       }
 

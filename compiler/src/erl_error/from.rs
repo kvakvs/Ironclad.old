@@ -2,7 +2,6 @@
 use std::num::ParseIntError;
 use crate::erl_error::ErlError;
 use crate::erlang::syntax_tree::nom_parse::ErlParserError;
-use crate::preprocessor::syntax_tree::pp_parser;
 use crate::source_loc::{ErrorLocation, SourceLoc};
 use crate::typing::type_error::TypeError;
 

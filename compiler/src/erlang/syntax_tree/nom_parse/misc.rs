@@ -1,9 +1,9 @@
 //! Helper functions for Nom parsing
 
-use nom::{sequence, combinator, multi, branch, 
+use nom::{sequence, combinator, multi, branch,
           character, character::complete::{char, one_of, alphanumeric1},
           bytes::complete::{tag}};
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, StringParserResult, StrSliceParserResult};
+use crate::erlang::syntax_tree::nom_parse::{StringParserResult, StrSliceParserResult};
 
 /// Group code with misc parsing helpers
 pub struct MiscParser {}
@@ -85,11 +85,11 @@ impl MiscParser {
     combinator::map(
       combinator::recognize(
         sequence::pair( // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
-          combinator::verify(
-            character::complete::anychar,
-            |c: &char| c.is_uppercase() || *c == '_'
-          ),
-          multi::many0(branch::alt((alphanumeric1, tag("_")))),
+                        combinator::verify(
+                          character::complete::anychar,
+                          |c: &char| c.is_uppercase() || *c == '_',
+                        ),
+                        multi::many0(branch::alt((alphanumeric1, tag("_")))),
         )
       ),
       |result: &str| result.to_string(),
@@ -160,7 +160,7 @@ impl MiscParser {
   // }
 
   /// Recognizes newline or end of input
-  fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
+  pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
     input: &'a str
   ) -> nom::IResult<&str, &str, ErrType> {
     combinator::recognize(

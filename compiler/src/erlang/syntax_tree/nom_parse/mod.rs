@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, sequence, multi, branch, character};
+use nom::{combinator, multi, branch};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 use crate::erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;

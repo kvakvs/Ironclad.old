@@ -5,7 +5,7 @@ use nom::{combinator, sequence, multi, character::complete::{char},
           bytes::complete::{tag}, branch, combinator::{cut}, error::{context}};
 
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
+use crate::erlang::syntax_tree::nom_parse::{AstParserResult, ErlParserError};
 use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::erlang::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::literal::Literal;

@@ -17,4 +17,14 @@ impl PpAst {
       nested: ast,
     }.into()
   }
+
+  /// Create new macro definition
+  pub fn new_define(name: String, args: Option<Vec<String>>, body: Option<String>) -> Arc<Self> {
+    PpAst::Define { name, args, body }.into()
+  }
+
+  /// Create new text fragment
+  pub fn new_text(text: &str) -> Arc<Self> {
+    PpAst::Text(text.into()).into()
+  }
 }

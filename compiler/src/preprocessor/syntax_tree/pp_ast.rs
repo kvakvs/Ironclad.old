@@ -4,6 +4,7 @@ use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
 use std::sync::Arc;
 use ::function_name::named;
+use crate::display::Pretty;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -29,8 +30,16 @@ pub enum PpAst {
   /// Specific directive: -include_lib("path").
   IncludeLib(String),
 
-  /// Specific directive: -define(NAME, any text...).
-  Define(String, String),
+  /// Define directive: `-define(NAME)` or `-define(NAME, TEXT)` or `-define(NAME(ARGS), TEXT)`.
+  Define {
+    /// Macro name
+    name: String,
+    /// Args if specified, different arity macros do not conflict each with other
+    args: Option<Vec<String>>,
+    /// Body if specified, any tokens, but since we have no tokenizer - any text
+    body: Option<String>,
+  },
+
   /// Defines a macro with parameters, and body
   DefineFun {
     /// Name of the macro
@@ -122,7 +131,19 @@ impl std::fmt::Display for PpAst {
       }
       PpAst::Text(s) => write!(f, "{}", s),
       PpAst::IncludedFile { nested: include_rc, .. } => write!(f, "{}", include_rc),
-      PpAst::Define(name, body) => write!(f, "-define({}, {}).", name, body),
+      PpAst::Define { name, args, body } => {
+        write!(f, "-define({}", name)?;
+        if let Some(args1) = args {
+          Pretty::display_paren_list(args1, f)?;
+          if body.is_some() {
+            write!(f, ", ")?;
+          }
+        }
+        if let Some(body1) = body {
+          write!(f, "{}", body1)?;
+        }
+        writeln!(f, ").")
+      }
       PpAst::DefineFun { name, args, body } => {
         write!(f, "-define({}({:?}), {})", name, args, body)
       }

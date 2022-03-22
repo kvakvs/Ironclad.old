@@ -26,15 +26,15 @@ pub struct PreprocessorDefine {
 
 impl PreprocessorDefine {
   /// Create a new empty preprocessor definition without body and args
-  pub fn new(name: &str, args: Option<Vec<String>>, text: Option<String>) -> Arc<Self> {
-    Self { name: name.to_string(), args, text }.into()
+  pub fn new(name: String, args: Option<Vec<String>>, text: Option<String>) -> Arc<Self> {
+    Self { name, args, text }.into()
   }
 
   /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition
   /// symbols table. This will be passed then to preprocessor parser.
   pub fn new_from_command_line(key_value: &str) -> Arc<PreprocessorDefine> {
     println!("TODO: new preproc-define from: {}", key_value);
-    Self::new(key_value, None, None)
+    Self::new(key_value.to_string(), None, None)
   }
 
   /// Return the name/arity pair for this macro

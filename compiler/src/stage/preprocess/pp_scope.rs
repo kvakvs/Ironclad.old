@@ -48,9 +48,9 @@ impl PreprocessorScope {
   }
 
   /// Clone self and insert a new macro definition
-  pub fn define(&self, name: &str, args: Option<Vec<String>>, text: Option<String>) -> Arc<Self> {
+  pub fn define(&self, name: &str, args: &Option<Vec<String>>, text: &Option<String>) -> Arc<Self> {
     let mut defines = self.defines.clone();
-    let pp_def = PreprocessorDefine::new(name, args, text);
+    let pp_def = PreprocessorDefine::new(name.to_string(), args.clone(), text.clone());
     defines.insert(pp_def.get_name_arity(), pp_def);
     Self { defines }.into()
   }
