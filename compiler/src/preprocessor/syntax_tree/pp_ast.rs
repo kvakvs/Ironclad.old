@@ -5,12 +5,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use ::function_name::named;
 use crate::display::Pretty;
+use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
 /// Lifetime note: Parse input string must live at least as long as this is alive
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum PpAst {
   /// Default value for an empty AST tree
   Empty,
@@ -58,11 +59,11 @@ pub enum PpAst {
   /// ...or not defined
   Ifndef(String),
 
-  /// If and Elif store Erlang syntax parsable by Erlang grammar, which must resolve to a constant
-  /// expression otherwise compile error will be triggered.
-  If(String),
-  /// Else if
-  Elif(String),
+  /// If(expression) stores an expression which must resolve to a constant value otherwise compile
+  /// error will be triggered.
+  If(Arc<ErlAst>),
+  /// Elseif(expression)
+  Elif(Arc<ErlAst>),
 
   /// Else clause of a conditional block
   Else,

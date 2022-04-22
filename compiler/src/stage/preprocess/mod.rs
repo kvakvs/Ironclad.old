@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use nom::Finish;
 
 use crate::erl_error::{ErlError, ErlResult};
-use crate::preprocessor::nom_parser::PreprocessorParser;
+use crate::preprocessor::nom_parser::{AstParserResult, PreprocessorParser};
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
 use crate::source_loc::{ErrorLocation, SourceLoc};
@@ -72,7 +72,15 @@ impl ErlPreprocessStage {
 
   /// Split input file into fragments using preprocessor directives as separators
   pub fn from_source(input: &str) -> ErlResult<Arc<PpAst>> {
-    let parse_result = PreprocessorParser::parse_module(input);
+    Self::parse_helper(input, PreprocessorParser::parse_module)
+  }
+
+  /// Parse AST using provided parser function, check that input is consumed, print some info.
+  /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
+  pub fn parse_helper<Parser>(input: &str, parser: Parser) -> ErlResult<Arc<PpAst>>
+    where Parser: Fn(&str) -> AstParserResult
+  {
+    let parse_result = parser(input);
 
     #[cfg(debug_assertions)]
     if parse_result.is_err() {

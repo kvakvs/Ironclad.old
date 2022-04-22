@@ -1,22 +1,41 @@
 extern crate compiler;
 
 mod test_util;
+
 use ::function_name::named;
 
 use compiler::preprocessor::syntax_tree::pp_ast::{PpAst};
 use std::ops::Deref;
+use nom::Finish;
+use compiler::preprocessor::nom_parser::PreprocessorParser;
 use compiler::stage::preprocess::ErlPreprocessStage;
+
+#[test]
+#[named]
+/// Try how splitting module into directives and text works
+fn parse_fragments() {
+  test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
+  let src = "hello\n-if(true).\ntest\n\n-else.\n-end.";
+
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+      .finish()
+      .unwrap();
+  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+  println!("Out={:?}", out);
+}
 
 #[test]
 #[named]
 /// Try parse string
 fn parse_define0_test() {
-  test_util::start(function_name!(), "Parse a basic -define macro");
-  let define0 = ErlPreprocessStage::from_source("-define(AAA, true).\n").unwrap();
-  if let PpAst::Define { .. } = define0.deref() {
+  test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
+  let src = "define(AAA, true)"; // leading - and trailing . are not parsed in the parse_define
+  let ast = ErlPreprocessStage::parse_helper(src,
+                                             PreprocessorParser::parse_define).unwrap();
+  if let PpAst::Define { .. } = ast.deref() {
     // pass
   } else {
-    panic!("Expected PpAst::Define, received {:?}", define0);
+    panic!("Expected PpAst::Define, received {:?}", ast);
   }
 }
 
@@ -77,12 +96,12 @@ fn parse_define_fun_test() {
   }
 }
 
-#[test]
-fn parse_if_test() {
-  let if0 = ErlPreprocessStage::from_source("-if(10>20).").unwrap();
-  if let PpAst::If(s) = if0.deref() {
-    assert_eq!(s, "10>20");
-  } else {
-    panic!("Parsing -if(10>20) failed, received {:?}", if0);
-  }
-}
+// #[test]
+// fn parse_if_test() {
+//   let if0 = ErlPreprocessStage::from_source("-if(10>20).").unwrap();
+//   if let PpAst::If(s) = if0.deref() {
+//     assert_eq!(s, "10>20");
+//   } else {
+//     panic!("Parsing -if(10>20) failed, received {:?}", if0);
+//   }
+// }
