@@ -12,10 +12,24 @@ use compiler::stage::preprocess::ErlPreprocessStage;
 
 #[test]
 #[named]
+/// Try parse a simple pp directive -if(Expr).
+fn test_fragment_if() {
+  test_util::start(function_name!(), "Parse -if() directive");
+  let src = "-if(true).";
+
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+      .finish()
+      .unwrap();
+  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+  println!("Out={:?}", out);
+}
+
+#[test]
+#[named]
 /// Try how splitting module into directives and text works
-fn parse_fragments() {
+fn test_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
-  let src = "hello\n-if(true).\ntest\n\n-else.\n-end.";
+  let src = "hello\n-if(true).\ntest\n\n-else.\n-endif.";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
       .finish()
@@ -27,7 +41,7 @@ fn parse_fragments() {
 #[test]
 #[named]
 /// Try parse string
-fn parse_define0_test() {
+fn test_define0() {
   test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
   let src = "define(AAA, true)"; // leading - and trailing . are not parsed in the parse_define
   let ast = ErlPreprocessStage::parse_helper(src,
@@ -40,7 +54,22 @@ fn parse_define0_test() {
 }
 
 #[test]
-fn parse_include_test() {
+#[named]
+/// Try parse a define macro where value contains another macro
+fn test_macro_in_define() {
+  test_util::start(function_name!(), "Parse a -define macro with another macro in value");
+  let src = "-define(AAA, 1).\n-define(BBB, ?AAA).";
+
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+      .finish()
+      .unwrap();
+  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+
+  println!("Out={:?}", out);
+}
+
+#[test]
+fn test_include() {
   let inc1 = ErlPreprocessStage::from_source("-include (\"test\").\n").unwrap();
   if let PpAst::Include(t) = inc1.deref() {
     assert_eq!(t, "test");
@@ -64,7 +93,7 @@ fn parse_include_test() {
 }
 
 #[test]
-fn parse_define_test() {
+fn test_define() {
   let d0 = ErlPreprocessStage::from_source("- define(AAA, \"aaa\").").unwrap();
   if let PpAst::Define { name, args, body } = d0.deref() {
     assert_eq!(name, "AAA");
@@ -85,7 +114,7 @@ fn parse_define_test() {
 }
 
 #[test]
-fn parse_define_fun_test() {
+fn test_define_fun() {
   let d0 = ErlPreprocessStage::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
   if let PpAst::DefineFun { name, args, body } = d0.deref() {
     assert_eq!(name, "AAA");

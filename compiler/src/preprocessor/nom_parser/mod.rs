@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 use nom::{combinator, sequence, multi, character::complete::{char},
-          bytes::complete::{tag}, branch, combinator::{cut}, error::{context}};
+          bytes::complete::{tag}, branch, error::{context}};
 use crate::erlang::syntax_tree::nom_parse::ErlParser;
 use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::preprocessor::syntax_tree::pp_ast::PpAst;
@@ -150,14 +150,14 @@ impl PreprocessorParser {
       MiscParser::ws_before_mut(branch::alt((
         branch::alt((
           // -define is special, it needs closing ).\n to consume the content
-          context("'-define' directive", cut(Self::parse_define)),
+          context("'-define' directive", Self::parse_define),
           // Self::parse_undef,
           // Self::parse_ifdef,
           // Self::parse_ifndef,
-          context("'-if' directive", cut(Self::parse_if)), // must go after longer words ifdef and ifndef
-          context("'-elif' directive", cut(Self::parse_elif)),
-          context("'-else' directive", cut(Self::parse_else)),
-          context("'-endif' directive", cut(Self::parse_endif)),
+          context("'-if' directive", Self::parse_if), // must go after longer words ifdef and ifndef
+          context("'-elif' directive", Self::parse_elif),
+          context("'-else' directive", Self::parse_else),
+          context("'-endif' directive", Self::parse_endif),
           // Self::parse_error,
           // Self::parse_warning,
           // Self::parse_include_lib,
