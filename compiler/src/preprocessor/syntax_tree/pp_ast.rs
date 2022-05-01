@@ -1,10 +1,9 @@
 //! Defines AST structure for Erlang Preprocessor
 use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug};
 use std::path::PathBuf;
 use std::sync::Arc;
-use ::function_name::named;
-use crate::display::Pretty;
+
 use crate::erlang::syntax_tree::erl_ast::ErlAst;
 
 /// While preprocessing source, the text is parsed into these segments
@@ -24,6 +23,9 @@ pub enum PpAst {
 
   /// Any text
   Text(String),
+
+  /// Text("") shortcut
+  EmptyText,
 
   /// Specific directive: -include("path").
   Include(String),
@@ -90,86 +92,7 @@ impl PpAst {
     let trimmed = s.trim();
     &trimmed[..usize::min(trimmed.len(), 40) - 1]
   }
-
-  // /// Format as a debug string
-  // pub fn to_dbg_str(&self) -> String {
-  //   match self {
-  //     Self::Comment(s) => format!("Comment({})", Self::trim(s)),
-  //     Self::Text(s) => format!("T({})", Self::trim(s)),
-  //
-  //     Self::IncludedFile { filename, .. } => {
-  //       format!("-include({}).", filename.display())
-  //     }
-  //     PpAst::Include(p) => format!("Include({})", p),
-  //     PpAst::IncludeLib(p) => format!("IncludeLib({})", p),
-  //     PpAst::File(nodes) => format!("File{{{:?}}}", nodes),
-  //     PpAst::Define(name, body) => format!("Define({}, {})", name, body),
-  //     PpAst::DefineFun { name, args, body } => format!("Define({}({:?}), {})", name, args, body),
-  //     PpAst::Ifdef(name) => format!("If Def({})", name),
-  //     PpAst::Ifndef(name) => format!("If !Def({})", name),
-  //     PpAst::Else => "Else".to_string(),
-  //     PpAst::Endif => "Endif".to_string(),
-  //     PpAst::If(expr) => format!("If({})", expr),
-  //     PpAst::Elif(expr) => format!("Elif({})", expr),
-  //     PpAst::Undef(name) => format!("Undef({})", name),
-  //     PpAst::Error(t) => format!("Error({})", t),
-  //     PpAst::Warning(t) => format!("Warning({})", t),
-  //     PpAst::Empty => unreachable!("PpAst::Empty encountered, while it shouldn't"),
-  //   }
-  // }
 }
-
-impl std::fmt::Display for PpAst {
-  /// Format AST as a string
-  #[named]
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      PpAst::File(items) => {
-        for i in items.iter() {
-          writeln!(f, "{}", i)?;
-        }
-        Ok(())
-      }
-      PpAst::Text(s) => write!(f, "{}", s),
-      PpAst::IncludedFile { nested: include_rc, .. } => write!(f, "{}", include_rc),
-      PpAst::Define { name, args, body } => {
-        write!(f, "-define({}", name)?;
-        if let Some(args1) = args {
-          Pretty::display_paren_list(args1, f)?;
-          if body.is_some() {
-            write!(f, ", ")?;
-          }
-        }
-        if let Some(body1) = body {
-          write!(f, "{}", body1)?;
-        }
-        writeln!(f, ").")
-      }
-      PpAst::DefineFun { name, args, body } => {
-        write!(f, "-define({}({:?}), {})", name, args, body)
-      }
-      PpAst::Ifdef(name) => write!(f, "-ifdef({}).", name),
-      PpAst::Ifndef(name) => write!(f, "-ifndef({}).", name),
-      PpAst::Else => write!(f, "-else."),
-      PpAst::Endif => write!(f, "-endif."),
-      PpAst::If(expr) => write!(f, "-if({}).", expr),
-      PpAst::Elif(expr) => write!(f, "-elif({}).", expr),
-      PpAst::Undef(name) => write!(f, "-undef({}).", name),
-      PpAst::Error(t) => write!(f, "-error({}).", t),
-      PpAst::Warning(t) => write!(f, "-warning({}).", t),
-      PpAst::Comment(t) => write!(f, "% {}", t),
-
-      _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
-    }
-  }
-}
-
-
-// /// A tree of Preprocessor syntax nodes with attached file name, and root element removed
-// pub type PpAstTree = AstTree<PpAst>;
-
-// /// A cache of trees of Preprocessor syntax nodes, keyed by filename or module name
-// pub type PpAstCache = AstCache<PpAst>;
 
 /// Parsed preprocessor AST cache
 #[derive(Default)]
@@ -177,12 +100,3 @@ pub struct PpAstCache {
   /// AST trees keyed by filename
   pub items: HashMap<PathBuf, Arc<PpAst>>,
 }
-
-// impl Default for PpAstCache {
-//   /// Create a new empty AST cache for preprocessed files
-//   fn default() -> Self {
-//     Self {
-//       items: HashMap::with_capacity(ErlProject::DEFAULT_CAPACITY / 4),
-//     }
-//   }
-// }

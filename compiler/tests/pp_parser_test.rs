@@ -40,6 +40,20 @@ fn test_fragments() {
 
 #[test]
 #[named]
+/// Try how splitting module into directives and text works; With comments
+fn test_fragments_with_comments() {
+  test_util::start(function_name!(), "Parse a module example into fragments with comments");
+  let src = "hello\n-if(%true)\nfalse).\ntest\n\n-else.\n%%-endif.";
+
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+      .finish()
+      .unwrap();
+  println!("Out={:?}", out);
+  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+}
+
+#[test]
+#[named]
 /// Try parse string
 fn test_define0() {
   test_util::start(function_name!(), "Parse a basic -define macro with 0 params");

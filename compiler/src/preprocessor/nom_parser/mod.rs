@@ -177,7 +177,7 @@ impl PreprocessorParser {
   fn consume_text(input: &str) -> AstParserResult {
     combinator::map(
       combinator::verify(
-        MiscParser::ws_before(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
+        MiscParser::ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
         |text: &str| !text.is_empty() && !text.starts_with('-'),
       ),
       |text| PpAst::new_text(text.into()),
@@ -191,11 +191,14 @@ impl PreprocessorParser {
       branch::alt((
         Self::parse_preproc_directive,
         Self::consume_text,
+        // A final comment in file is not visible to consume_text
+        combinator::map(MiscParser::parse_line_comment, |_| PpAst::new_text("")),
       ))
     )(input)
   }
 
-  /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
+  /// Parses file contents into mix of preprocessor directives and text fragments.
+  /// Comments are eliminated.
   pub fn parse_module(input: &str) -> AstParserResult {
     let (input, fragments) = Self::parse_fragments_collection(input)?;
     Ok((input, PpAst::new_file(fragments)))

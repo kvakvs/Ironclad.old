@@ -80,17 +80,15 @@ impl ErlPreprocessStage {
   pub fn parse_helper<Parser>(input: &str, parser: Parser) -> ErlResult<Arc<PpAst>>
     where Parser: Fn(&str) -> AstParserResult
   {
-    let parse_result = parser(input);
+    let parse_result = parser(input).finish();
 
     #[cfg(debug_assertions)]
     if parse_result.is_err() {
       println!("NomError: {:?}", parse_result);
     }
 
-    match parse_result.finish() {
+    match parse_result {
       Ok((tail, ast)) => {
-        // println!("Parse result AST: «{}»", &forms);
-
         assert!(tail.trim().is_empty(),
                 "Preprocessor: Not all input was consumed by parse.\n
                 \tTail: «{}»\n

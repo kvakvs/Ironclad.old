@@ -52,7 +52,7 @@ impl MiscParser {
   {
     sequence::delimited(Self::spaces_or_comments0,
                         inner,
-                        character::complete::multispace0)
+                        Self::spaces_or_comments0)
   }
 
   /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -165,22 +165,22 @@ impl MiscParser {
   ) -> nom::IResult<&str, &str, ErrType> {
     combinator::recognize(
       branch::alt((
-        nom::bytes::complete::tag("\r\n"),
-        nom::bytes::complete::tag("\r"),
-        nom::bytes::complete::tag("\n"),
+        tag("\r\n"),
+        tag("\r"),
+        tag("\n"),
         combinator::eof,
       ))
     )(input)
   }
 
   /// Recognizes `% text <newline>` consuming text
-  fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
+  pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
     input: &'a str
   ) -> nom::IResult<&str, &str, ErrType> {
     combinator::recognize(
       sequence::pair(
         multi::many1(
-          character::complete::char('%'),
+          char('%'),
         ),
         multi::many_till(
           character::complete::anychar,

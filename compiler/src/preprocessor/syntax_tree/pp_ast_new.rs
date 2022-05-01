@@ -26,7 +26,11 @@ impl PpAst {
 
   /// Create new text fragment
   pub fn new_text(text: &str) -> Arc<Self> {
-    PpAst::Text(text.into()).into()
+    if text.trim().is_empty() {
+      PpAst::EmptyText
+    } else {
+      PpAst::Text(text.into())
+    }.into()
   }
 
   /// Creates a new preprocessor IF node
