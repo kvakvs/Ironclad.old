@@ -1,8 +1,8 @@
 //! Quick scan through a source file, split it using preprocessor directives as a divider
 
 use std::sync::Arc;
-use nom::{combinator, sequence, multi, character::complete::{char},
-          bytes::complete::{tag}, branch, error::{context}};
+use nom::{combinator, sequence, multi, character::complete::{char}, bytes::complete::{tag},
+          branch, error::{context}};
 use crate::erlang::syntax_tree::nom_parse::ErlParser;
 use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
 use crate::preprocessor::syntax_tree::pp_ast::PpAst;
@@ -146,6 +146,7 @@ impl PreprocessorParser {
 
   fn parse_preproc_directive(input: &str) -> AstParserResult {
     sequence::delimited(
+      // Preceded by a dash -
       MiscParser::ws_before(char('-')),
       MiscParser::ws_before_mut(branch::alt((
         branch::alt((
@@ -154,7 +155,7 @@ impl PreprocessorParser {
           // Self::parse_undef,
           // Self::parse_ifdef,
           // Self::parse_ifndef,
-          context("'-if' directive", Self::parse_if), // must go after longer words ifdef and ifndef
+          context("'-if' directive", Self::parse_if), // if must go after longer words ifdef and ifndef
           context("'-elif' directive", Self::parse_elif),
           context("'-else' directive", Self::parse_else),
           context("'-endif' directive", Self::parse_endif),
@@ -163,8 +164,6 @@ impl PreprocessorParser {
           // Self::parse_include_lib,
           // Self::parse_include,
         )),
-        // branch::alt((
-        // )),
       ))),
       // Terminated by .\n
       sequence::pair(
@@ -178,9 +177,9 @@ impl PreprocessorParser {
     combinator::map(
       combinator::verify(
         MiscParser::ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
-        |text: &str| !text.is_empty() && !text.starts_with('-'),
+        |text: &str| !text.is_empty() //&& !text.starts_with('-'),
       ),
-      |text| PpAst::new_text(text.into()),
+      PpAst::new_text,
     )(input)
   }
 

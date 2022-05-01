@@ -28,7 +28,7 @@ impl ErlAst {
           match env_read.variables.get(&v.name) {
             None => {
               println!("Var not found; Scope={:?}", &env_read);
-              ErlError::variable_not_found(&v.name)
+              ErlError::variable_not_found(&v.name, self.location())
             },
             Some(val) => Ok(val.clone()),
           }

@@ -29,7 +29,7 @@ fn test_fragment_if() {
 /// Try how splitting module into directives and text works
 fn test_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
-  let src = "hello\n-if(true).\ntest\n\n-else.\n-endif.";
+  let src = "hello\n-if(true).\ntest\n\n-else.\n-endif.\n-module(test).";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
       .finish()

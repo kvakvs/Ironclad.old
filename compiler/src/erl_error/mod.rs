@@ -1,15 +1,13 @@
 //! Contains all possible Erlang compiler errors
-use std::path::{Path};
-
-use crate::source_loc::{ErrorLocation, SourceLoc};
+use crate::source_loc::{SourceLoc};
 use crate::mfarity::MFArity;
 use crate::typing::type_error::TypeError;
 
-pub mod format;
-pub mod from;
+pub mod err_fmt;
+pub mod err_from;
 
-/// Erlang compiler errors all gathered together
-pub enum ErlError {
+/// Type of errors
+pub enum ErlErrorType {
   /// Returned when multiple errors were found, report each error
   Interrupted(String),
   /// Returned when multiple errors were found, report each error
@@ -22,48 +20,16 @@ pub enum ErlError {
   GlobPattern(glob::PatternError),
   /// Project loading error produced when loading TOML
   Config(toml::de::Error),
-
   /// Returned when preprocessor parser failed
-  PreprocessorParse {
-    /// Location where error was found
-    loc: ErrorLocation,
-    /// Message from the compiler
-    msg: String,
-  },
-
-  // /// Returned when preprocessor syntax is not correct
-  // PreprocessorSyntax {
-  //   /// Error from the PEST parser
-  //   parse_err: pest::error::Error<pp_parser::Rule>
-  // },
-
+  PreprocessorParse,
+  /// Returned when preprocessor syntax is not correct
+  Preprocessor,
   /// Returned when Erlang parser failed: internal error must not occur with the user
-  ParserInternal {
-    /// Some hint at where the error has occured
-    loc: ErrorLocation,
-    /// Message from the compiler
-    msg: String,
-  },
-
+  ParserInternal,
   /// Something unexpected like a TO-DO or assertion
-  Internal(String),
-
+  Internal,
   /// Returned when Erlang parser failed
-  ErlangParse {
-    /// Some hint at where the error has occured
-    loc: ErrorLocation,
-    /// Message from the compiler
-    msg: String,
-  },
-
-  // /// Returned when Erlang syntax is not correct
-  // ErlangSyntax {
-  //   /// Error from PEST parser
-  //   parse_err: pest::error::Error<erl_parser_prec_climber::Rule>,
-  //   /// Message from the compiler
-  //   msg: String,
-  // },
-
+  ErlangParse,
   /// A variable was referenced that's not in the scope
   VariableNotFound(String),
   /// A local function referenced by MFA (module ignored) is not found
@@ -79,58 +45,75 @@ pub enum ErlError {
   },
 }
 
+/// Erlang compiler errors all gathered together
+pub struct ErlError {
+  /// Error kind, an enum which might contain extra values
+  err_type: ErlErrorType,
+  /// Location where error was found
+  loc: SourceLoc,
+  /// Message from the compiler
+  msg: String,
+}
+
 impl ErlError {
+  /// Create ErlError from 3 components
+  pub fn new(err_type: ErlErrorType, loc: SourceLoc, msg: String) -> Self {
+    ErlError {
+      err_type,
+      loc,
+      msg,
+    }
+  }
+
+  /// Create ErlError from type only
+  pub fn new_type_only(err_type: ErlErrorType) -> Self {
+    ErlError {
+      err_type,
+      loc: SourceLoc::None,
+      msg: String::new(),
+    }
+  }
+
   /// Some errors might result in a non-0 exit code, list them here
   pub fn process_exit_code(&self) -> i32 { 1 }
 
   /// Create an internal error
   pub fn internal<T>(message: String) -> ErlResult<T> {
-    Err(ErlError::Internal(message))
+    Err(ErlError::new(ErlErrorType::Internal, SourceLoc::None, message))
   }
 
   /// Wraps a `VariableNotFound`
-  pub fn variable_not_found<T>(var_name: &str) -> ErlResult<T> {
-    Err(ErlError::VariableNotFound(String::from(var_name)))
+  pub fn variable_not_found<T>(var_name: &str, loc: SourceLoc) -> ErlResult<T> {
+    let err_type = ErlErrorType::VariableNotFound(String::from(var_name));
+    Err(ErlError::new(err_type, loc, "Variable not found".to_string()))
   }
 
   /// Wraps a `FunctionNotFound`
   pub fn local_function_not_found<T>(mfa: &MFArity) -> ErlResult<T> {
-    Err(ErlError::LocalFunctionNotFound(mfa.clone()))
+    let err_type = ErlErrorType::LocalFunctionNotFound(mfa.clone());
+    Err(ErlError::new_type_only(err_type))
   }
 
   /// Creates an unacceptable AST error, this type of AST is not allowed here.
   pub fn unacceptable_ast<T>(ast_repr: String, context: String) -> ErlResult<T> {
-    Err(ErlError::Unacceptable { ast_repr, context })
+    let err_type = ErlErrorType::Unacceptable { ast_repr, context };
+    Err(ErlError::new_type_only(err_type))
+  }
+
+  /// Creates a preprocessor parse error from a filename and a message
+  pub fn pp_parse<T>(loc: SourceLoc, message: &str) -> ErlResult<T> {
+    Err(ErlError::new(ErlErrorType::PreprocessorParse, loc, String::from(message)))
   }
 
   /// Creates a preprocessor error from a filename and a message
-  pub fn pp_parse<T>(file_name: &Path, message: &str) -> ErlResult<T> {
-    Err(ErlError::PreprocessorParse {
-      loc: ErrorLocation::new(Some(file_name.to_path_buf()), SourceLoc::None),
-      msg: String::from(message),
-    })
+  pub fn pp_error<T>(loc: SourceLoc, message: &str) -> ErlResult<T> {
+    Err(ErlError::new(ErlErrorType::Preprocessor, loc, String::from(message)))
   }
-
-  // /// Formats a linecol-location from Pest nicely
-  // fn format_line_col(p: &LineColLocation) -> String {
-  //   match p {
-  //     LineColLocation::Pos((l, c)) => format!("{}:{}", l, c),
-  //     LineColLocation::Span((l, c), (l2, c2)) => {
-  //       format!("{}:{} .. {}:{}", l, c, l2, c2)
-  //     }
-  //   }
-  // }
 
   /// Create a parser internal error. Should not happen for the user, only during the development
   /// and testing.
   pub fn parser_internal(location: SourceLoc, msg: String) -> Self {
-    ErlError::ParserInternal {
-      loc: ErrorLocation {
-        path: None,
-        location,
-      },
-      msg,
-    }
+    ErlError::new(ErlErrorType::ParserInternal, location, msg)
   }
 
   /// Given a vector of ErlErrors, return one, multiple error, or panic if no errors were given
@@ -138,7 +121,7 @@ impl ErlError {
     match errors.len() {
       0 => panic!("ErlError::multiple() called with an empty error vector"),
       1 => errors.pop().unwrap(),
-      _ => ErlError::Multiple(errors),
+      _ => ErlError::new_type_only(ErlErrorType::Multiple(errors.into())),
     }
   }
 }
