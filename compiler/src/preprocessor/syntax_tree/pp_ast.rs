@@ -12,14 +12,8 @@ use crate::erlang::syntax_tree::erl_ast::ErlAst;
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Debug, Clone)]
 pub enum PpAst {
-  /// Default value for an empty AST tree
-  Empty,
-
   /// Root of a preprocessed file
   File(Vec<Arc<PpAst>>),
-
-  /// A % line comment
-  Comment(String),
 
   /// Any text
   Text(String),
@@ -57,20 +51,25 @@ pub enum PpAst {
   Undef(String),
 
   /// Proceed interpreting AST nodes if the named macro is defined
-  Ifdef(String),
-  /// ...or not defined
-  Ifndef(String),
+  IfdefBlock {
+    /// The condition to check
+    macro_name: String,
+    /// The nested lines
+    cond_true: Option<Vec<Arc<PpAst>>>,
+    /// The nested lines for the else block (if it was present)
+    cond_false: Option<Vec<Arc<PpAst>>>,
+  },
 
   /// If(expression) stores an expression which must resolve to a constant value otherwise compile
   /// error will be triggered.
-  If(Arc<ErlAst>),
-  /// Elseif(expression)
-  Elif(Arc<ErlAst>),
-
-  /// Else clause of a conditional block
-  Else,
-  /// End of a conditional block
-  Endif,
+  IfBlock {
+    /// The condition to check
+    cond: Arc<ErlAst>,
+    /// The nested lines
+    cond_true: Option<Vec<Arc<PpAst>>>,
+    /// The nested lines for the else block (if it was present)
+    cond_false: Option<Vec<Arc<PpAst>>>,
+  },
 
   /// Produce a compiler error
   Error(String),
@@ -82,13 +81,26 @@ pub enum PpAst {
     /// Filename for this included file
     filename: PathBuf,
     /// Preprocessor sub-tree to descend into the includefile
-    nested: Arc<PpAst>,
+    ast: Arc<PpAst>,
   },
+
+  // Temporary nodes, appear during parsing and should never appear into the final AST output
+
+  /// -else.
+  _TemporaryElse,
+  /// -if(...).
+  _TemporaryIf(Arc<ErlAst>),
+  /// -elif(...).
+  _TemporaryElseIf(Arc<ErlAst>),
+  /// -ifdef(...). is translated into `IfdefBlock`
+  _TemporaryIfdef(String),
+  /// -ifndef(...). is translated into `IfdefBlock`
+  _TemporaryIfndef(String),
 }
 
 impl PpAst {
   /// Trim the contents to CLAMP_LENGTH characters for convenient narrow debug printing
-  pub fn trim(s: &str) -> &str {
+  fn trim(s: &str) -> &str {
     let trimmed = s.trim();
     &trimmed[..usize::min(trimmed.len(), 40) - 1]
   }

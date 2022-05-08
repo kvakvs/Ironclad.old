@@ -12,6 +12,9 @@ pub enum ErlErrorType {
   Interrupted(String),
   /// Returned when multiple errors were found, report each error
   Multiple(Vec<ErlError>),
+
+  /// Same as Multiple errors, but warnings
+  MultipleWarnings(Vec<ErlError>),
   /// Returned when file or directory read/write failed
   Io(std::io::Error),
   /// Project errors produced when glob() scanning input files and directories
@@ -122,6 +125,15 @@ impl ErlError {
       0 => panic!("ErlError::multiple() called with an empty error vector"),
       1 => errors.pop().unwrap(),
       _ => ErlError::new_type_only(ErlErrorType::Multiple(errors.into())),
+    }
+  }
+
+  /// Given a vector of ErlErrors, return a warning wrap
+  pub fn multiple_warnings(mut warnings: Vec<ErlError>) -> ErlError {
+    match warnings.len() {
+      0 => panic!("ErlError::multiple_warnings() called with an empty error vector"),
+      1 => warnings.pop().unwrap(),
+      _ => ErlError::new_type_only(ErlErrorType::MultipleWarnings(warnings.into())),
     }
   }
 }

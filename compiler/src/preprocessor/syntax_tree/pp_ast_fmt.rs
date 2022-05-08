@@ -20,7 +20,7 @@ impl std::fmt::Display for PpAst {
       PpAst::Text(s) => write!(f, "text ⊏{}⊐", s),
       PpAst::EmptyText => write!(f, "text ∅"),
 
-      PpAst::IncludedFile { nested: include_rc, .. } => write!(f, "{}", include_rc),
+      PpAst::IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       PpAst::Define { name, args, body } => {
         write!(f, "-define({}", name)?;
         if let Some(args1) = args {
@@ -37,16 +37,12 @@ impl std::fmt::Display for PpAst {
       PpAst::DefineFun { name, args, body } => {
         write!(f, "-define({}({:?}), {})", name, args, body)
       }
-      PpAst::Ifdef(name) => write!(f, "-ifdef({}).", name),
-      PpAst::Ifndef(name) => write!(f, "-ifndef({}).", name),
-      PpAst::Else => write!(f, "-else."),
-      PpAst::Endif => write!(f, "-endif."),
-      PpAst::If(expr) => write!(f, "-if({}).", expr),
-      PpAst::Elif(expr) => write!(f, "-elif({}).", expr),
+      PpAst::IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
+      PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
+      PpAst::IfBlock {cond, ..} => write!(f, "-if({}).", cond),
       PpAst::Undef(name) => write!(f, "-undef({}).", name),
       PpAst::Error(t) => write!(f, "-error({}).", t),
       PpAst::Warning(t) => write!(f, "-warning({}).", t),
-      PpAst::Comment(t) => write!(f, "% {}", t),
 
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }

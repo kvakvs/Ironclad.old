@@ -6,7 +6,6 @@ pub mod pp_define;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::option::Option;
 use nom::{Finish};
 
 use crate::erl_error::{ErlError, ErlErrorType, ErlResult};
@@ -18,31 +17,6 @@ use crate::stage::file_contents_cache::FileContentsCache;
 use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
-enum PreprocessorCondition {
-  Ifdef(String),
-  Ifndef(String),
-}
-
-// TODO: Move into pp_scope
-impl PreprocessorCondition {
-  /// Produces inverse of ifdef/indef, for -else. directive
-  pub fn invert(&self) -> Self {
-    match self {
-      PreprocessorCondition::Ifdef(n) => PreprocessorCondition::Ifndef(n.clone()),
-      PreprocessorCondition::Ifndef(n) => PreprocessorCondition::Ifdef(n.clone()),
-    }
-  }
-
-  /// Given current preprocessor scope, check whether preprocessor condition stands true.
-  pub fn get_condition_value(&self, scope: &PreprocessorScope) -> bool {
-    // TODO: scope belongs to the condition stack as it mutates while we parse the file
-    match self {
-      PreprocessorCondition::Ifdef(n) => scope.is_defined(n),
-      PreprocessorCondition::Ifndef(n) => !scope.is_defined(n),
-    }
-  }
-}
-
 /// Preprocessor state with AST cache, macro definitions, etc
 pub struct ErlPreprocessStage {
   /// For headers included more than once, parse them and cache here for reinterpretation as needed
@@ -50,23 +24,14 @@ pub struct ErlPreprocessStage {
 
   file_cache: Arc<Mutex<FileContentsCache>>,
 
-  condition_stack: Vec<PreprocessorCondition>,
-
   /// Contains preprocessor definitions from config, from command line or from the file. Evolves as
   /// the parser progresses through the file and encounters new preprocessor directives.
   scope: Arc<PreprocessorScope>,
 }
 
 impl ErlPreprocessStage {
-  // fn ast_from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
-  //   let pp_ast = PpAst::from_source_file(source_file)?;
-  //   Ok(pp_ast.into())
-  // }
   /// Split input file into fragments using preprocessor directives as separators
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
-    // let successful_parse = PpParser::parse(Rule::file, &source_file.text)?.next().unwrap();
-    // let pp_tree = Arc::new(PpAst::Empty);
-    // pp_tree.pp_parse_tokens_to_ast(successful_parse)
     let input = &source_file.text;
     Self::from_source(input)
   }
@@ -125,7 +90,7 @@ impl ErlPreprocessStage {
       }
     };
 
-    let pp_ast = self.interpret_pp_ast(&contents, ast_tree)?;
+    let pp_ast = self.interpret_pp_ast(&contents, &ast_tree)?;
 
     // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
     let output: String = pp_ast.to_string();
@@ -185,101 +150,98 @@ fn interpret_include_directive(source_file: &SourceFile,
 
 impl ErlPreprocessStage {
   /// This is called for each Preprocessor AST node to make the final decision whether the node
-  /// is passed into the output or replaced with a SKIP.
-  fn interpret_pp_rule_map(&mut self, node: &Arc<PpAst>,
-                           source_file: &SourceFile) -> ErlResult<Option<Arc<PpAst>>> {
+  /// is passed into the output or replaced with a SKIP. "Scope" is global for module and as the
+  /// interpretation goes top to bottom, the scope is updated globally and is not nested inside
+  /// ifdef/if blocks.
+  fn interpret_pp_rule_map(&mut self,
+                           node: &Arc<PpAst>,
+                           source_file: &SourceFile,
+                           nodes_out: &mut Vec<Arc<PpAst>>,
+                           warnings_out: &mut Vec<ErlError>,
+                           errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
-      PpAst::Ifdef(symbol) => {
-        self.condition_stack.push(PreprocessorCondition::Ifdef(symbol.clone()));
-        return Ok(None);
+      PpAst::File(nodes) => {}
+      PpAst::IncludedFile { ast, .. } => {
+        self.interpret_pp_rule_map(ast, source_file,
+                                   nodes_out, warnings_out, errors_out);
       }
-
-      PpAst::Ifndef(symbol) => {
-        self.condition_stack.push(PreprocessorCondition::Ifndef(symbol.clone()));
-        return Ok(None);
-      }
-
-      PpAst::Else => {
-        // TODO: If condition stack is empty, produce an error
-        let item = self.condition_stack.pop();
-        if item.is_none() {
-          return ErlError::pp_error(SourceLoc::from(&source_file.file_name),
-                                    "Found -else not matching any -if/-ifdef/-ifndef");
+      PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
+        if self.scope.is_defined(macro_name) {
+          if let Some(nodes) = cond_true {
+            nodes_out.extend(nodes.iter().cloned());
+          }
+        } else {
+          if let Some(nodes) = cond_false {
+            nodes_out.extend(nodes.iter().cloned());
+          }
         }
-        let last_condition = item.unwrap();
-        self.condition_stack.push(last_condition.invert());
-        return Ok(None);
       }
-
-      PpAst::Endif => {
-        // TODO: If condition stack is empty, produce an error
-        self.condition_stack.pop();
-        return Ok(None);
-      }
-      _ => {}
-    }
-
-    // Then check if condition stack is not empty and last condition is valid
-    if let Some(last) = self.condition_stack.last() {
-      if !last.get_condition_value(&self.scope) {
-        return Ok(None);
-      }
-    }
-    // if !self.condition_stack.is_empty() &&
-    //     !self.condition_stack.last().unwrap().get_condition_value(&self.scope) {
-    //   return None;
-    // }
-
-    // Then copy or modify remaining AST nodes
-    println!("{}", node);
-
-    match node.deref() {
+      PpAst::Text(_) => nodes_out.push(node.clone()),
+      PpAst::EmptyText => {} // skip
+      PpAst::Include(_) => unimplemented!(),
+      PpAst::IncludeLib(_) => unimplemented!(),
       PpAst::Define { name, args, body } => {
-        self.scope = self.scope.define(name, args, body);
-        return Ok(None);
+        self.scope = self.scope.define(name, args.clone(), body.clone());
       }
-
-      PpAst::Undef(symbol) => {
-        self.scope.undefine(symbol);
-        return Ok(None);
+      PpAst::DefineFun { name, args, body } => {
+        self.scope = self.scope.define(name, Some(args.clone()), Some(body.clone()));
       }
-
-      PpAst::Comment(_)
-      | PpAst::Text(_) => {} // default behaviour: clone into output
-
-      // An attribute without parens
-      // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
-      PpAst::Include(_path) => {
-        println!("TODO: interpret Include directive");
-        return Ok(None);
+      PpAst::Undef(_) => {}
+      PpAst::IfBlock { .. } => {}
+      PpAst::Error(msg) => {
+        errors_out.push(ErlError::new(ErlErrorType::Preprocessor,
+                                      SourceLoc::None,
+                                      msg.clone()));
       }
-      PpAst::IncludeLib(_path) => {
-        println!("TODO: interpret IncludeLib directive");
-        return Ok(None);
-      }
-
-      PpAst::IncludedFile { nested: include_ast_tree, .. } => {
-        self.interpret_pp_ast(source_file, include_ast_tree.clone())?;
-      }
-
-      #[allow(unreachable_patterns)]
-      PpAst::Include(_) => unreachable!("-include() must be eliminated at this stage"),
-
-      #[allow(unreachable_patterns)]
-      PpAst::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
-
-      #[allow(unreachable_patterns)]
-      PpAst::File(_) => unreachable!("File() root AST node must be eliminated on load"),
-
+      PpAst::Warning(_) => {}
       _ => {}
     }
 
-    Ok(Some(node.clone()))
+    // match node.deref() {
+    //   PpAst::Define { name, args, body } => {
+    //     self.scope = self.scope.define(name, args, body);
+    //     return Ok(None);
+    //   }
+    //
+    //   PpAst::Undef(symbol) => {
+    //     self.scope.undefine(symbol);
+    //     return Ok(None);
+    //   }
+    //
+    //   PpAst::Comment(_)
+    //   | PpAst::Text(_) => {} // default behaviour: clone into output
+    //
+    //   // An attribute without parens
+    //   // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
+    //   PpAst::Include(_path) => {
+    //     println!("TODO: interpret Include directive");
+    //     return Ok(None);
+    //   }
+    //   PpAst::IncludeLib(_path) => {
+    //     println!("TODO: interpret IncludeLib directive");
+    //     return Ok(None);
+    //   }
+    //
+    //   PpAst::IncludedFile { nested: include_ast_tree, .. } => {
+    //     self.interpret_pp_ast(source_file, include_ast_tree.clone())?;
+    //   }
+    //
+    //   #[allow(unreachable_patterns)]
+    //   PpAst::Include(_) => unreachable!("-include() must be eliminated at this stage"),
+    //
+    //   #[allow(unreachable_patterns)]
+    //   PpAst::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
+    //
+    //   #[allow(unreachable_patterns)]
+    //   PpAst::File(_) => unreachable!("File() root AST node must be eliminated on load"),
+    //
+    //   _ => {}
+    // }
+    //
+    // Ok(Some(node.clone()))
+    Ok(())
   }
-
-  /// Preallocate so many slots for ifdef/ifndef stack
-  const DEFAULT_CONDITION_STACK_SIZE: usize = 16;
 
   /// Create a preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
@@ -289,7 +251,6 @@ impl ErlPreprocessStage {
     Self {
       ast_cache: ast_cache.clone(),
       file_cache: file_cache.clone(),
-      condition_stack: Vec::with_capacity(Self::DEFAULT_CONDITION_STACK_SIZE),
       scope,
     }
   }
@@ -302,32 +263,21 @@ impl ErlPreprocessStage {
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(&mut self,
                       source_file: &SourceFile,
-                      ast_tree: Arc<PpAst>) -> ErlResult<Arc<PpAst>> {
-    // From top to down interpret the preprocessed AST. Includes will restart the intepretation
-    // from the pasted included AST.
-    if let PpAst::File(nodes) = ast_tree.deref() {
-      // Interpret AST nodes and check for errors
-      type MaybePpAst = Option<Arc<PpAst>>;
+                      ast_tree: &Arc<PpAst>) -> ErlResult<Arc<PpAst>> {
+    let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();
+    let mut warnings_out: Vec<ErlError> = Vec::default();
+    let mut errors_out: Vec<ErlError> = Vec::default();
 
-      let (good, bad): (Vec<_>, Vec<_>) = nodes.into_iter()
-          .map(|node| self.interpret_pp_rule_map(node, source_file))
-          .partition(Result::is_ok);
+    self.interpret_pp_rule_map(ast_tree, source_file,
+                               &mut nodes_out, &mut warnings_out, &mut errors_out)?;
 
-      if !bad.is_empty() {
-        let errors: Vec<ErlError> = bad.into_iter()
-            .map(|e| e.err().unwrap())
-            .collect();
-        return Err(ErlError::multiple(errors));
-      }
-
-      let interpreted: Vec<Arc<PpAst>> = good.into_iter()
-          .map(|res| res.unwrap().unwrap())
-          .collect();
-      return Ok(PpAst::File(interpreted).into());
+    if !errors_out.is_empty() {
+      Err(ErlError::multiple(errors_out))
+    } else if !warnings_out.is_empty() {
+      Err(ErlError::multiple_warnings(warnings_out))
+    } else {
+      Ok(PpAst::File(nodes_out).into())
     }
-    let msg = format!("Preprocessor parse did not return a root AST node, got something else: {:?}", ast_tree);
-    let loc = SourceLoc::from(&source_file.file_name);
-    Err(ErlError::new(ErlErrorType::PreprocessorParse, loc, msg))
   }
 
   /// Stage 1 - Preprocessor stage
