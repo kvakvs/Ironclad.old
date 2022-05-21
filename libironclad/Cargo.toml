@@ -1,6 +1,6 @@
 [package]
-name = "compiler"
-version = "0.1.0"
+name = "libironclad"
+version = "2022.5.0"
 authors = ["Dmytro Lytovchenko <dmytro.lytovchenko@gmail.com>"]
 edition = "2021"
 

@@ -1,8 +1,8 @@
-extern crate compiler;
+extern crate libironclad;
 
-use compiler::project::ErlProject;
-use compiler::project::conf::ProjectConf;
-use compiler::erl_error::{ErlResult};
+use libironclad::project::ErlProject;
+use libironclad::project::conf::ProjectConf;
+use libironclad::erl_error::{ErlResult};
 use std::process::exit;
 
 fn main_do() -> ErlResult<()> {

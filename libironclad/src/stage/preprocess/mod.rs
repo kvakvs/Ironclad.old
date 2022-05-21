@@ -153,20 +153,22 @@ impl ErlPreprocessStage {
   /// is passed into the output or replaced with a SKIP. "Scope" is global for module and as the
   /// interpretation goes top to bottom, the scope is updated globally and is not nested inside
   /// ifdef/if blocks.
-  fn interpret_pp_rule_map(&mut self,
-                           node: &Arc<PpAst>,
-                           source_file: &SourceFile,
-                           nodes_out: &mut Vec<Arc<PpAst>>,
-                           warnings_out: &mut Vec<ErlError>,
-                           errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
+  fn interpret_pp_rule(&mut self,
+                       node: &Arc<PpAst>,
+                       source_file: &SourceFile,
+                       nodes_out: &mut Vec<Arc<PpAst>>,
+                       warnings_out: &mut Vec<ErlError>,
+                       errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
-      PpAst::File(_nodes) => {
-        unimplemented!("File node interpret")
+      PpAst::File(nodes) => {
+        for n in nodes {
+          self.interpret_pp_rule(n, source_file, nodes_out, warnings_out, errors_out)?;
+        }
       }
       PpAst::IncludedFile { ast, .. } => {
-        self.interpret_pp_rule_map(ast, source_file,
-                                   nodes_out, warnings_out, errors_out)?;
+        self.interpret_pp_rule(ast, source_file,
+                               nodes_out, warnings_out, errors_out)?;
       }
       PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
@@ -181,8 +183,12 @@ impl ErlPreprocessStage {
       }
       PpAst::Text(_) => nodes_out.push(node.clone()),
       PpAst::EmptyText => {} // skip
-      PpAst::Include(_) => unimplemented!(),
-      PpAst::IncludeLib(_) => unimplemented!(),
+      PpAst::Include(arg) => {
+        println!("TODO: Include '{}'", arg)
+      }
+      PpAst::IncludeLib(arg) => {
+        println!("TODO: IncludeLib '{}'", arg)
+      }
       PpAst::Define { name, args, body } => {
         self.scope = self.scope.define(name, args.clone(), body.clone());
       }
@@ -200,48 +206,6 @@ impl ErlPreprocessStage {
       _ => {}
     }
 
-    // match node.deref() {
-    //   PpAst::Define { name, args, body } => {
-    //     self.scope = self.scope.define(name, args, body);
-    //     return Ok(None);
-    //   }
-    //
-    //   PpAst::Undef(symbol) => {
-    //     self.scope.undefine(symbol);
-    //     return Ok(None);
-    //   }
-    //
-    //   PpAst::Comment(_)
-    //   | PpAst::Text(_) => {} // default behaviour: clone into output
-    //
-    //   // An attribute without parens
-    //   // PpAstNode::Attr { name: _, args: _ } => println!("{:?}", node.fmt(source_file)),
-    //   PpAst::Include(_path) => {
-    //     println!("TODO: interpret Include directive");
-    //     return Ok(None);
-    //   }
-    //   PpAst::IncludeLib(_path) => {
-    //     println!("TODO: interpret IncludeLib directive");
-    //     return Ok(None);
-    //   }
-    //
-    //   PpAst::IncludedFile { nested: include_ast_tree, .. } => {
-    //     self.interpret_pp_ast(source_file, include_ast_tree.clone())?;
-    //   }
-    //
-    //   #[allow(unreachable_patterns)]
-    //   PpAst::Include(_) => unreachable!("-include() must be eliminated at this stage"),
-    //
-    //   #[allow(unreachable_patterns)]
-    //   PpAst::IncludeLib(_) => unreachable!("-include_lib() must be eliminated at this stage"),
-    //
-    //   #[allow(unreachable_patterns)]
-    //   PpAst::File(_) => unreachable!("File() root AST node must be eliminated on load"),
-    //
-    //   _ => {}
-    // }
-    //
-    // Ok(Some(node.clone()))
     Ok(())
   }
 
@@ -270,8 +234,8 @@ impl ErlPreprocessStage {
     let mut warnings_out: Vec<ErlError> = Vec::default();
     let mut errors_out: Vec<ErlError> = Vec::default();
 
-    self.interpret_pp_rule_map(ast_tree, source_file,
-                               &mut nodes_out, &mut warnings_out, &mut errors_out)?;
+    self.interpret_pp_rule(ast_tree, source_file,
+                           &mut nodes_out, &mut warnings_out, &mut errors_out)?;
 
     if !errors_out.is_empty() {
       Err(ErlError::multiple(errors_out))

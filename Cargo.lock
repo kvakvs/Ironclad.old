@@ -56,21 +56,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
-name = "compiler"
-version = "0.1.0"
-dependencies = [
- "alphabet",
- "derivative",
- "function_name",
- "glob",
- "lazy_static",
- "nom",
- "serde",
- "serde_derive",
- "toml",
-]
-
-[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -133,12 +118,12 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "ironclad"
-version = "0.1.0"
+version = "2022.5.0"
 dependencies = [
  "alphabet",
- "compiler",
  "glob",
  "lazy_static",
+ "libironclad",
  "pest",
  "pest_derive",
  "serde",
@@ -152,6 +137,21 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "libironclad"
+version = "2022.5.0"
+dependencies = [
+ "alphabet",
+ "derivative",
+ "function_name",
+ "glob",
+ "lazy_static",
+ "nom",
+ "serde",
+ "serde_derive",
+ "toml",
+]
 
 [[package]]
 name = "maplit"
