@@ -1,2 +1,2 @@
 ﻿[workspace]
-members = ["terlc", "compiler"]
+members = ["ironclad_exe", "libironclad"]

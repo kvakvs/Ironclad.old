@@ -1,0 +1,24 @@
+[package]
+name = "ironclad"
+version = "0.1.0"
+authors = ["Dmytro Lytovchenko <dmytro.lytovchenko@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+compiler = { path = "../libironclad" }
+
+#nom = "6.1.2"
+toml = "0.5.8"
+serde = "1.0.126"
+serde_derive = "1.0.126"
+thiserror = "1.0.25"
+#walkdir = "2.3.2"
+glob = "0.3.0"
+#errloc_macros = "0.1.0"
+#tap = "1.0.1"
+pest = "2.1.3"
+pest_derive = "2.1.0"
+alphabet = "0.2.2"
+lazy_static = "1.4.0"

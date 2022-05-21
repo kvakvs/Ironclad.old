@@ -1,4 +1,4 @@
-# Typed ERLC
+# Ironclad - The Erlang type checker
 
 ## The Problem
 
@@ -17,20 +17,30 @@ separate projects:
   everything as a single program, checking all possible type usages and finding the type-related problems with high
   precision. Dialyzer does not compile Erlang code.
 
-## The `typed_erlc` Project
+## The Vision
+
+Currently the work is aimed towards loading and parsing Erlang program sources (without parse transforms), deducing the
+types for variables and functions and checking them against user-provided types and each against the other.
+
+When this works in a satisfactory way, next step would certainly be to work towards compiling
+the code we just checked into BEAM files, replacing `lib/compiler`. This is a very long shot goal and it might never
+happen.
+
+## The `Ironclad` Project
 
 > NOTE: This is an early stage work-in-progress.
 
-This project is an alternate Erlang compiler, a fusion of OTP's `lib/compiler` and `lib/dialyzer` designed to load,
-analyze and compile all `.erl` files in your project together as a single unit, and perform live type deduction and type
-checking following the standard Erlang `-spec()` and `-type()` syntax.
+This project is an Erlang type checker, aiming to also become an Erlang compiler in the future. A fusion of
+OTP's `lib/compiler` and `lib/dialyzer` designed to read and analyze all `.erl` files in your project together
+as a single unit, and perform live type deduction and type checking following the standard Erlang `-spec()`
+and `-type()` syntax.
 
-## Project File `erlproject.toml`
+## Project File `ironclad.toml`
 
 > NOTE: The file format may and will change.
 
 To perform the task, the tool needs to know all input files before the work begins. Hence the project file syntax is
-introduced (experimental). The default name for the project file is `erlproject.toml`, and the contents may look like:
+introduced (experimental). The default name for the project file is `ironclad.toml`, and the contents may look like:
 
 ```toml
 [compiler_options]
@@ -45,7 +55,7 @@ exclude_directories = []    # TODO: not implemented; default []
 
 You can use `**` to match any portion of the path.
 
-An empty `erlproject.toml`, is acceptable, consisting of comments, or no bytes at all. In this case entire current
+An empty `ironclad.toml` is acceptable, which consists of comments, or has no bytes at all. In this case entire current
 directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 
 ## Project Progress
@@ -56,12 +66,18 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 - [ ] Preprocessor
     - [x] Parse and interpret `-define/-if*/-else/-endif` directives by removing chunks of guarded code
     - [x] Parse `-include/include_lib` directives
-    - [ ] Perform inclusion
+    - [ ] Perform file inclusion
     - [ ] Parse and interpret `-if(COND)`
     - [ ] Substitute `?MACRO`
     - [ ] Parse and interpret macros with arguments `-define(MACRO(X, Y), ...)`
 - [ ] Erlang syntax parser
-    - [ ] Common keywords and constructs
+    - [x] Common constructs 
+    - [x] Parser for functions
+    - [x] Parser for lambdas
+    - [x] Parser for types and typespecs
+    - [x] Parser for `case`
+    - [x] Parser for `try`
+    - [x] Expressions and operator precedence
     - [ ] Module attributes
     - [ ] Binary syntax
     - [ ] Scientific float syntax

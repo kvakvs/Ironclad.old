@@ -132,6 +132,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
+name = "ironclad"
+version = "0.1.0"
+dependencies = [
+ "alphabet",
+ "compiler",
+ "glob",
+ "lazy_static",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_derive",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,22 +331,6 @@ dependencies = [
  "proc-macro2 1.0.27",
  "quote 1.0.9",
  "unicode-xid 0.2.2",
-]
-
-[[package]]
-name = "terlc"
-version = "0.1.0"
-dependencies = [
- "alphabet",
- "compiler",
- "glob",
- "lazy_static",
- "pest",
- "pest_derive",
- "serde",
- "serde_derive",
- "thiserror",
- "toml",
 ]
 
 [[package]]
