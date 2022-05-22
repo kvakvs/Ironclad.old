@@ -3,6 +3,7 @@
 use std::sync::{Arc, RwLock};
 use libironclad_error::ic_error::IcResult;
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
@@ -21,10 +22,12 @@ impl TypeCheck {
              ast, synthesized_ty, expected_ty);
 
     if !synthesized_ty.is_subtype_of(expected_ty) {
-      Err(TypeError::ExpectedType {
-        expected_type: format!("{}", expected_ty),
-        actual_type: format!("{}", synthesized_ty),
-      }.into())
+      ErlError::type_error(
+        ast.location(),
+        TypeError::ExpectedType {
+          expected_type: format!("{}", expected_ty),
+          actual_type: format!("{}", synthesized_ty),
+        })
     } else {
       Ok(true)
     }

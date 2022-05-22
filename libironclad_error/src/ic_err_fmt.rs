@@ -10,37 +10,29 @@ impl std::fmt::Debug for IroncladError {
 
 impl std::fmt::Display for IroncladError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    writeln!(f, "{}:", self.get_category().to_string())?;
+
     match self.get_category() {
       // IcErrorType::Interrupted(s) => write!(f, "Processing interrupted: {}", s),
       IcErrorCategory::Multiple(errs) => {
-        writeln!(f, "Multiple errors:")?;
         for err in errs.iter() {
           writeln!(f, "{}", err)?;
         }
         Ok(())
       }
-      IcErrorCategory::Io(ioerr) => write!(f, "File IO error: {}", ioerr),
-      IcErrorCategory::Glob(gerr) => write!(f, "Directory scan error: {}", gerr),
-      IcErrorCategory::GlobPattern(gperr) => write!(f, "Glob pattern error: {}", gperr),
-      IcErrorCategory::Config(cfgerr) => write!(f, "Configuration file syntax error: {}", cfgerr),
-      IcErrorCategory::Preprocessor => {
-        write!(f, "Preprocessor error: {} (at {})", self.get_message(), self.get_location())
+      IcErrorCategory::Io(ioerr) => writeln!(f, "{}", ioerr),
+      IcErrorCategory::Glob(gerr) => write!(f, "{}", gerr),
+      IcErrorCategory::GlobPattern(gperr) => write!(f, "{}", gperr),
+      IcErrorCategory::Config(cfgerr) => write!(f, "{}", cfgerr),
+      IcErrorCategory::Preprocessor
+      | IcErrorCategory::PreprocessorParse
+      | IcErrorCategory::ParserInternal
+      | IcErrorCategory::Internal
+      | IcErrorCategory::TypeError
+      | IcErrorCategory::ErlangParse => {
+        write!(f, "{} (at {})", self.get_message(), self.get_location())
       }
-      IcErrorCategory::PreprocessorParse => {
-        write!(f, "Preprocessor parse error: {} (at {})", self.get_message(), self.get_location())
-      }
-      IcErrorCategory::ParserInternal => {
-        write!(f, "Parser internal error: {} (at {})", self.get_message(), self.get_location())
-      }
-      IcErrorCategory::Internal => {
-        write!(f, "Internal error: {} (at {})", self.get_message(), self.get_location())
-      }
-      IcErrorCategory::ErlangParse => {
-        write!(f, "Erlang parse error: {} (at {})", self.get_message(), self.get_location())
-      }
-      IcErrorCategory::VariableNotFound(vname) => write!(f, "Variable not found: {}", vname),
-      // IcErrorCategory::LocalFunctionNotFound(mfa) => write!(f, "Local function not found: {}", mfa),
-      // IcErrorCategory::TypeErr(terr) => write!(f, "Type error: {}", terr),
+      _ => unimplemented!("Format is not impl for {:?}", self.get_category())
     }
   }
 }

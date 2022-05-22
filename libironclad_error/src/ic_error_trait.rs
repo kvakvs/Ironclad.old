@@ -4,12 +4,12 @@ use crate::source_loc::SourceLoc;
 use crate::ic_error_category::IcErrorCategory;
 
 /// Trait for Ironclad errors, allows grouping errors into a big `IcError` struct
-pub trait IcErrorT: std::fmt::Display {
+pub trait IcErrorT: std::fmt::Display + std::fmt::Debug {
   /// Generalized category for the error, not aware of how sub-libraries are handling their errors
   fn get_category(&self) -> &IcErrorCategory;
 
   /// Where the error occured
-  fn get_location(&self) -> SourceLoc;
+  fn get_location(&self) -> &SourceLoc;
 
   /// Some errors might result in a non-0 exit code, return it here
   fn get_process_exit_code(&self) -> i32;
@@ -17,3 +17,6 @@ pub trait IcErrorT: std::fmt::Display {
   /// Retrieve the text message to the user
   fn get_message(&self) -> &str;
 }
+
+/// A boxed dynamic pointer to an unknown error, implementor of `IcErrorT` trait
+pub type IcError = Box<dyn IcErrorT>;

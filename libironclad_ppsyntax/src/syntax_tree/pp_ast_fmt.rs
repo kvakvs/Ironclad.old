@@ -1,9 +1,8 @@
 //! Printing support for Preprocessor AST
 
 use ::function_name::named;
-
-use crate::display::Pretty;
-use crate::preprocessor::syntax_tree::pp_ast::PpAst;
+use libironclad_util::pretty::Pretty;
+use crate::syntax_tree::pp_ast::PpAst;
 
 impl std::fmt::Display for PpAst {
   /// Format AST as a string

@@ -1,9 +1,9 @@
 //! Scans the project directory structure and preloads all ERL and HRL source files into memory
 
 use std::path::PathBuf;
-use crate::erl_error::ErlResult;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::sync::{Arc, RwLock};
+use libironclad_error::ic_error::{IcResult, IroncladResult};
 
 /// Handles loading/caching text files in memory
 pub struct FilePreloadStage {}
@@ -13,7 +13,7 @@ impl FilePreloadStage {
   /// ----------------------------
   /// Preload stage will visit all input files and load them in memory.
   /// Future improvement: Lazy loading as required, timestamp checks
-  pub fn run(inputs: &[PathBuf]) -> IcResult<Arc<RwLock<FileContentsCache>>> {
+  pub fn run(inputs: &[PathBuf]) -> IroncladResult<Arc<RwLock<FileContentsCache>>> {
     let mut state = FileContentsCache::default();
 
     for filename in inputs {

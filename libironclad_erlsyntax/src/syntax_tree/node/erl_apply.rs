@@ -8,6 +8,7 @@ use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_callable_target::CallableTarget;
 use libironclad_error::source_loc::SourceLoc;
+use crate::syntax_tree::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FnType;
 use crate::typing::scope::Scope;
@@ -53,7 +54,10 @@ impl ErlApply {
     let target_ty = self.target.synthesize(scope)?;
     if !target_ty.is_function() {
       let msg = format!("Attempt to call a value which is not a function: {}", self.target);
-      return Err(TypeError::NotAFunction { msg }.into());
+      return ErlError::type_error(
+        self.location.clone(),
+        TypeError::NotAFunction { msg },
+      );
     }
 
     // Build argument type list and check every argument vs the target (the callee)
@@ -75,7 +79,8 @@ impl ErlApply {
 
       other => {
         let msg = format!("Attempt to call a non-function: {}", other);
-        Err(TypeError::NotAFunction { msg }.into())
+        ErlError::type_error(self.location.clone(),
+                             TypeError::NotAFunction { msg })
       }
     }
     // let clause_type = FnClauseType::new(arg_types?, ret_ty).into();
@@ -89,7 +94,10 @@ impl ErlApply {
       let msg = format!(
         "Attempt to call a function with wrong number of arguments: expected {}, got {}",
         fn_type.arity(), self.args.len());
-      return Err(TypeError::BadArity { msg }.into());
+      return ErlError::type_error(
+        self.location.clone(),
+        TypeError::BadArity { msg },
+      );
     }
     let compatible_clauses = fn_type.get_compatible_clauses(arg_types);
     if compatible_clauses.is_empty() {
@@ -99,7 +107,8 @@ impl ErlApply {
           .join(", ");
       let msg = format!("No compatible function clauses while calling {} with args ({})",
                         self.target, args_str);
-      return Err(TypeError::BadArguments { msg }.into());
+      return ErlError::type_error(self.location.clone(),
+                                  TypeError::BadArguments { msg });
     }
     // Return type only from compatible clauses
     let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter()

@@ -2,8 +2,8 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::preprocessor::syntax_tree::pp_ast::PpAst;
+use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::pp_ast::PpAst;
 
 impl PpAst {
   /// Create new file tree

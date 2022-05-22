@@ -1,7 +1,7 @@
 //! Contains all possible Erlang libironclad errors
 use crate::ic_error_category::IcErrorCategory;
 use crate::source_loc::{SourceLoc};
-use crate::ic_error_trait::IcErrorT;
+use crate::ic_error_trait::{IcError, IcErrorT};
 
 /// Ironclad errors all gathered together, and categorised
 pub struct IroncladError {
@@ -19,8 +19,8 @@ impl IcErrorT for IroncladError {
     &self.category
   }
 
-  fn get_location(&self) -> SourceLoc {
-    self.loc.clone()
+  fn get_location(&self) -> &SourceLoc {
+    &self.loc
   }
 
   fn get_process_exit_code(&self) -> i32 {
@@ -33,7 +33,7 @@ impl IcErrorT for IroncladError {
 }
 
 impl IroncladError {
-  /// Create ErlError from 3 components
+  /// Create `IroncladError` from 3 components
   pub fn new(err_type: IcErrorCategory, loc: SourceLoc, msg: String) -> Self {
     IroncladError {
       category: err_type,
@@ -85,17 +85,20 @@ impl IroncladError {
   }
 
   /// Given a vector of ErlErrors, return one, multiple error, or panic if no errors were given
-  pub fn multiple(mut errors: Vec<Box<dyn IcErrorT>>) -> Box<dyn IcErrorT> {
+  pub fn multiple(mut errors: Vec<IcError>) -> IcError {
     match errors.len() {
       0 => panic!("IcError::multiple() called with an empty error vector"),
       1 => errors.pop().unwrap(),
       _ => {
         let new_err = IroncladError::new_type_only(IcErrorCategory::Multiple(errors));
         Box::new(new_err)
-      },
+      }
     }
   }
 }
 
-/// Used as Result<T> for all parse and compile operations
-pub type IcResult<T> = Result<T, Box<dyn IcErrorT>>;
+/// Used as generic `Result<T>` which can hold any error
+pub type IcResult<T> = Result<T, IcError>;
+
+/// Used as Result<T> for non-compiler related operations (loading config, e.g.)
+pub type IroncladResult<T> = Result<T, IroncladError>;

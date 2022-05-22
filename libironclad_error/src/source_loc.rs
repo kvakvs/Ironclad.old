@@ -20,6 +20,13 @@ pub enum SourceLoc {
   // Ast(Weak<ErlAst>),
 }
 
+impl SourceLoc {
+  pub fn unimplemented(file: &str, func: &str) -> Self {
+    println!("Unimplemented sourceloc use {}() at {}", func, file);
+    SourceLoc::None
+  }
+}
+
 impl From<&PathBuf> for SourceLoc {
   fn from(p: &PathBuf) -> Self {
     Self::File(p.clone())
@@ -35,39 +42,3 @@ impl std::fmt::Display for SourceLoc {
     }
   }
 }
-
-// /// Shows to the user where the error was found
-// pub struct ErrorLocation {
-//   /// If we know the file where this happened
-//   pub path: Option<PathBuf>,
-//   /// If we know where in file this happened
-//   pub location: SourceLoc,
-// }
-//
-// impl ErrorLocation {
-//   /// Creates a new error location for filename and possibly AST location
-//   pub fn new(filename: Option<PathBuf>,
-//              location: SourceLoc) -> SourceLoc {
-//     Self {
-//       path: filename,
-//       location,
-//     }
-//   }
-//
-//   /// Create an empty non-location
-//   pub fn empty() -> SourceLoc {
-//     Self {
-//       path: None,
-//       location: SourceLoc::None,
-//     }
-//   }
-// }
-//
-// impl std::fmt::Display for ErrorLocation {
-//   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//     match &self.path {
-//       None => write!(f, "{}", self.location),
-//       Some(path) => write!(f, "{}:{}", path.to_str().unwrap_or_default(), self.location),
-//     }
-//   }
-// }

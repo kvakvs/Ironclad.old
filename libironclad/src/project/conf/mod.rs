@@ -6,9 +6,9 @@ use core::option::Option;
 use core::result::Result;
 use std::convert::Into;
 use std::fs;
+use libironclad_error::ic_error::{IroncladError, IroncladResult};
 use crate::project::conf::compiler_opts::CompilerOptsConf;
 use crate::project::conf::input_opts::InputOptsConf;
-use crate::erl_error::ErlError;
 
 pub mod compiler_opts;
 pub mod input_opts;
@@ -25,7 +25,7 @@ pub struct ProjectConf {
 
 impl ProjectConf {
   /// Creates project struct from a TOML filename
-  pub fn from_project_file(filename: &str) -> Result<Self, ErlError> {
+  pub fn from_project_file(filename: &str) -> IroncladResult<Self> {
     println!("Reading: {}", filename);
     let config_str = fs::read_to_string(filename)?;
 
@@ -34,7 +34,7 @@ impl ProjectConf {
   }
 
   /// Creates project struct from a TOML config as a string
-  pub fn from_string(input: &str) -> Result<Self, ErlError> {
+  pub fn from_string(input: &str) -> Result<Self, IroncladError> {
     // Parse, and convert toml error into ErlError
     toml::from_str(input).map_err(|e| e.into())
   }

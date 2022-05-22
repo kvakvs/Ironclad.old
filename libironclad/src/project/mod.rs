@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc};
 
 use glob::glob;
+use libironclad_error::ic_error::{IcResult, IroncladError, IroncladResult};
 
-use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
@@ -71,7 +71,7 @@ impl ErlProject {
 
   /// Traverse directories starting from each of the inputs.directories;
   /// Add files from inputs if not duplicate.
-  pub fn build_file_list(&self) -> IcResult<Vec<PathBuf>> {
+  pub fn build_file_list(&self) -> IroncladResult<Vec<PathBuf>> {
     let mut file_set: HashSet<PathBuf> = HashSet::with_capacity(ErlProject::DEFAULT_CAPACITY);
     let mut file_list = Vec::new();
 
@@ -82,7 +82,7 @@ impl ErlProject {
         for entry in glob(&file_glob)? {
           match entry {
             Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
-            Err(err) => return Err(ErlError::from(err))
+            Err(err) => return Err(IroncladError::from(err))
           }
         } // for glob search results
       } // for input dirs
@@ -94,7 +94,7 @@ impl ErlProject {
   /// Check exclusions in the Self.input. Hashset is used to check for duplicates. Add to Vec.
   fn maybe_add_path(file_set: &mut HashSet<PathBuf>,
                     file_list: &mut Vec<PathBuf>,
-                    path: PathBuf) -> IcResult<()> {
+                    path: PathBuf) -> IroncladResult<()> {
     // Check duplicate
     let abs_path = std::fs::canonicalize(path)?;
     if file_set.contains(&abs_path) {
@@ -113,7 +113,10 @@ impl ErlProject {
     self.inputs = inputs;
 
     // Load files and store contents in the hashmap
-    let file_cache = FilePreloadStage::run(&self.inputs)?;
+    let file_cache = match FilePreloadStage::run(&self.inputs) {
+      Ok(fc) => fc,
+      Err(e) => return Err(Box::new(e)),
+    };
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
     let _pp_ast_cache = PreprocessState::run(self, file_cache.clone())

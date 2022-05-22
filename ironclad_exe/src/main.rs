@@ -5,18 +5,27 @@ use std::process::exit;
 
 use libironclad::project::ErlProject;
 use libironclad::project::conf::ProjectConf;
-use libironclad::erl_error::{ErlResult};
-use libironclad_error::ic_error::IcResult;
+use libironclad_error::ic_error::{IcResult, IroncladError, IroncladResult};
 
 fn main_do() -> IcResult<()> {
   // Test default project from ""
-  let default_project: ErlProject = ProjectConf::from_string("")?.into();
+  let default_project: ErlProject = match ProjectConf::from_string("") {
+    Ok(dp) => dp.into(),
+    Err(e) => return Err(Box::new(e))
+  };
   println!("default {:?}", default_project);
 
-  let mut project: ErlProject = ProjectConf::from_project_file("test_project/ironclad.toml")?.into();
+  let mut project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
+    Ok(erlp) => erlp.into(),
+    Err(e) => return Err(Box::new(e))
+  };
   println!("{:?}", project);
 
-  let inputs = project.build_file_list()?;
+  let inputs = match project.build_file_list() {
+    Ok(i) => i,
+    Err(e) => return Err(Box::new(e))
+  };
+
   project.compile(inputs)
 }
 
@@ -28,7 +37,7 @@ fn main() {
     }
     Err(e) => {
       println!("Error occured: {}", e);
-      exit(e.process_exit_code())
+      exit(e.get_process_exit_code())
     }
   }
 }

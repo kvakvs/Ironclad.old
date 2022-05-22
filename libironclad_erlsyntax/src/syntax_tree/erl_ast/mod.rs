@@ -5,6 +5,7 @@ use libironclad_error::ic_error::IcResult;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use crate::literal::Literal;
+use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
 use crate::syntax_tree::node::erl_apply::ErlApply;
 use crate::syntax_tree::node::erl_binary_element::BinaryElement;
@@ -266,7 +267,7 @@ pub enum ErlAst {
     location: SourceLoc,
     /// Comma separated elements of a ironclad_exe, with `:bit-widths` and `/type-specs`
     elements: Vec<BinaryElement>,
-  }
+  },
 }
 
 impl ErlAst {
@@ -335,7 +336,7 @@ impl ErlAst {
       ErlAst::MFA { location: loc, .. } => loc.clone(),
       ErlAst::Var(var) => var.location.clone(),
       ErlAst::Apply(app) => app.location.clone(),
-      ErlAst::CaseStatement {location, ..} => location.clone(),
+      ErlAst::CaseStatement { location, .. } => location.clone(),
       ErlAst::Lit { location: loc, .. } => loc.clone(),
       ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
       ErlAst::UnaryOp { location: loc, .. } => loc.clone(),
@@ -364,7 +365,8 @@ impl ErlAst {
       }
       _ => {}
     }
-    Err(TypeError::FunctionNotFound { mfa: funarity.clone() }.into())
+    ErlError::type_error(this.location(),
+                         TypeError::FunctionNotFound { mfa: funarity.clone() })
   }
 }
 

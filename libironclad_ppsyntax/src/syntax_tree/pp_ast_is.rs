@@ -1,6 +1,6 @@
 //! Checks for Preprocessor AST nodes
 
-use crate::preprocessor::syntax_tree::pp_ast::PpAst;
+use crate::syntax_tree::pp_ast::PpAst;
 
 impl PpAst {
   /// Check whether Preprocessor AST node is a temporary `-else` node

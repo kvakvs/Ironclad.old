@@ -9,3 +9,6 @@ edition = "2021"
 libironclad_erlsyntax = { path = "../libironclad_erlsyntax" }
 libironclad_util = { path = "../libironclad_util" }
 libironclad_error = { path = "../libironclad_error" }
+
+function_name = "0.2.0"
+nom = "7"

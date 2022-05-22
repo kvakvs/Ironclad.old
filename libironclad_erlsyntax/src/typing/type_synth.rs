@@ -19,7 +19,9 @@ impl ErlAst {
       ErlAst::FnDef(fndef) => fndef.synthesize_function_type(scope),
       ErlAst::FnRef { mfa, .. } => {
         match Scope::retrieve_fn_from(scope, mfa) {
-          None => ErlError::local_function_not_found(mfa),
+          None => ErlError::local_function_not_found(
+            self.location(), mfa.clone(),
+            format!("Function reference points to a non-existent local function: {}", mfa)),
           Some(fndef) => Ok(fndef.as_fn_def().synthesize_function_type(scope)?),
         }
       }
@@ -29,8 +31,8 @@ impl ErlAst {
           match env_read.variables.get(&v.name) {
             None => {
               println!("Var not found; Scope={:?}", &env_read);
-              ErlError::variable_not_found(&v.name, self.location())
-            },
+              ErlError::variable_not_found(self.location(), v.name.clone())
+            }
             Some(val) => Ok(val.clone()),
           }
         } else {

@@ -1,5 +1,7 @@
 //! Preprocess Stage - parses and interprets the Erlang source and gets rid of -if/-ifdef/-ifndef
 //! directives, substitutes HRL files contents in place of -include/-include_lib etc.
+use ::function_name::named;
+
 pub mod pp_scope;
 pub mod pp_define;
 
@@ -7,14 +9,17 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use nom::{Finish};
+use libironclad_erlsyntax::syntax_tree::erl_error::ErlError;
+use libironclad_error::ic_error::{IcResult, IroncladError};
+use libironclad_error::ic_error_trait::{IcError};
+use libironclad_error::source_loc::SourceLoc;
+use libironclad_ppsyntax::nom_parser::{PpAstParserResult, PreprocessorParser};
+use libironclad_ppsyntax::pp_error::{PpError, PpErrorCategory};
+use libironclad_ppsyntax::syntax_tree::pp_ast::{PpAst, PpAstCache};
 
-use crate::erl_error::{ErlError, ErlErrorType, ErlResult};
-use crate::preprocessor::nom_parser::{PpAstParserResult, PreprocessorParser};
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
-use libironclad_util::source_loc::{SourceLoc};
 use crate::stage::file_contents_cache::FileContentsCache;
-use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
 /// Preprocessor state with AST cache, macro definitions, etc
@@ -61,7 +66,7 @@ impl PreprocessState {
                 \tAst: {}", tail, ast);
         Ok(ast)
       }
-      Err(err) => Err(ErlError::from_nom_error(input, err)),
+      Err(err) => PpError::from_nom_error(input, err),
     }
   }
 
@@ -167,12 +172,13 @@ impl PreprocessState {
   /// is passed into the output or replaced with a SKIP. "Scope" is global for module and as the
   /// interpretation goes top to bottom, the scope is updated globally and is not nested inside
   /// ifdef/if blocks.
+  #[named]
   fn interpret_preprocessor_node(&mut self,
                                  node: &Arc<PpAst>,
                                  source_file: &Arc<SourceFile>,
                                  nodes_out: &mut Vec<Arc<PpAst>>,
-                                 warnings_out: &mut Vec<ErlError>,
-                                 errors_out: &mut Vec<ErlError>) -> IcResult<()> {
+                                 warnings_out: &mut Vec<IcError>,
+                                 errors_out: &mut Vec<IcError>) -> IcResult<()> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
       PpAst::File(nodes) => {
@@ -216,9 +222,7 @@ impl PreprocessState {
       PpAst::Undef(_) => {}
       PpAst::IfBlock { .. } => {}
       PpAst::Error(msg) => {
-        errors_out.push(ErlError::new(ErlErrorType::Preprocessor,
-                                      SourceLoc::None,
-                                      msg.clone()));
+        errors_out.push(PpError::new_error_directive(msg.clone()));
       }
       PpAst::Warning(_) => {}
       _ => {}
@@ -249,16 +253,16 @@ impl PreprocessState {
                       source_file: &Arc<SourceFile>,
                       ast_tree: &Arc<PpAst>) -> IcResult<Arc<PpAst>> {
     let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();
-    let mut warnings_out: Vec<ErlError> = Vec::default();
-    let mut errors_out: Vec<ErlError> = Vec::default();
+    let mut warnings_out: Vec<IcError> = Vec::default();
+    let mut errors_out: Vec<IcError> = Vec::default();
 
     self.interpret_preprocessor_node(ast_tree, source_file,
                                      &mut nodes_out, &mut warnings_out, &mut errors_out)?;
 
     if !errors_out.is_empty() {
-      Err(ErlError::multiple(errors_out))
+      Err(IroncladError::multiple(errors_out))
     } else if !warnings_out.is_empty() {
-      Err(ErlError::multiple_warnings(warnings_out))
+      Err(IroncladError::multiple(warnings_out))
     } else {
       Ok(PpAst::File(nodes_out).into())
     }

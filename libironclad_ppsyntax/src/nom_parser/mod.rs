@@ -4,10 +4,10 @@ use std::ops::Deref;
 use std::sync::Arc;
 use nom::{combinator, sequence, multi, character::complete::{char, alphanumeric1},
           bytes::complete::{tag}, branch, error::{context}, character};
-use crate::erlang::syntax_tree::nom_parse::ErlParser;
-use crate::erlang::syntax_tree::nom_parse::misc::MiscParser;
-use crate::erlang::syntax_tree::nom_parse::parse_str::StringParser;
-use crate::preprocessor::syntax_tree::pp_ast::PpAst;
+use libironclad_erlsyntax::syntax_tree::nom_parse::ErlParser;
+use libironclad_erlsyntax::syntax_tree::nom_parse::misc::MiscParser;
+use libironclad_erlsyntax::syntax_tree::nom_parse::parse_str::StringParser;
+use crate::syntax_tree::pp_ast::PpAst;
 
 /// Gathers multiple errors and contexts together
 pub type PpParserError<'a> = nom::error::VerboseError<&'a str>;

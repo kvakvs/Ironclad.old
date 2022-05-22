@@ -6,13 +6,14 @@ use std::path::{Path};
 use std::sync::{Arc, RwLock};
 use nom::Finish;
 
-use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlsyntax::syntax_tree::erl_error::ErlError;
 use libironclad_erlsyntax::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use libironclad_erlsyntax::syntax_tree::nom_parse::parse_type::ErlTypeParser;
 use libironclad_erlsyntax::typing::scope::Scope;
+use libironclad_error::ic_error::{IcResult};
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -97,7 +98,7 @@ impl ErlModule {
 
         Ok(module)
       }
-      Err(err) => Err(ErlError::from_nom_error(input, err)),
+      Err(err) => ErlError::from_nom_error(input, err),
     }
   }
 

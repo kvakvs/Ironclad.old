@@ -7,9 +7,7 @@
 //! somewhat like Dialyzer (lib/dialyzer in OTP repository).
 
 pub mod project;
-pub mod erl_error;
 pub mod stage;
-pub mod erlang;
 pub mod core_erlang;
 
 extern crate toml;
@@ -19,5 +17,4 @@ extern crate glob;
 extern crate alphabet;
 extern crate lazy_static;
 extern crate function_name;
-#[macro_use]
 extern crate derivative;

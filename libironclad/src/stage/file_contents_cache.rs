@@ -2,9 +2,9 @@
 use std::collections::{BTreeMap};
 use std::path::{PathBuf, Path};
 
-use crate::erl_error::ErlResult;
 use crate::project::source_file::SourceFile;
 use std::sync::Arc;
+use libironclad_error::ic_error::{IcResult, IroncladResult};
 
 /// Contains loaded files ready for parsing by the preprocessor.
 /// More files will be added in preprocess stage, as include directives are parsed
@@ -27,7 +27,7 @@ impl Default for FileContentsCache {
 
 impl<'a> FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
-  pub(crate) fn preload_file(&mut self, file_name: &Path) -> IcResult<()> {
+  pub(crate) fn preload_file(&mut self, file_name: &Path) -> IroncladResult<()> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
@@ -40,7 +40,7 @@ impl<'a> FileContentsCache {
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
-  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> IcResult<Arc<SourceFile>> {
+  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> IroncladResult<Arc<SourceFile>> {
     match self.all_files.get(file_name) {
       None => {
         self.preload_file(file_name)?;

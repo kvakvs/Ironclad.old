@@ -1,9 +1,11 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
+use ::function_name::named;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::source_loc::SourceLoc;
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
@@ -110,6 +112,7 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `any list() ++ any list()` operation
+  #[named]
   fn synthesize_list_append_op(scope: &RwLock<Scope>,
                                left: &Arc<ErlType>,
                                right: &Arc<ErlType>) -> IcResult<Arc<ErlType>> {
@@ -131,12 +134,15 @@ impl ErlBinaryOperatorExpr {
       other_left => {
         // left is not a list
         let msg = format!("List append operation ++ expected a list in its left argument, got {}", other_left);
-        Err(TypeError::ListExpected { msg }.into())
+        ErlError::type_error(
+          SourceLoc::unimplemented(file!(), function_name!()),
+          TypeError::ListExpected { msg })
       }
     }
   }
 
   /// For `list() ++ list(T1, T2...)` operation
+  #[named]
   fn synthesize_stronglist_append(_scope: &RwLock<Scope>,
                                   left: &Arc<ErlType>,
                                   left_elements: &[Arc<ErlType>],
@@ -172,12 +178,15 @@ impl ErlBinaryOperatorExpr {
       other_right => {
         // right is not a list
         let msg = format!("List append operation ++ expected a list in its right argument, got {}", other_right);
-        Err(TypeError::ListExpected { msg }.into())
+        ErlError::type_error(
+          SourceLoc::unimplemented(file!(), function_name!()),
+          TypeError::ListExpected { msg }.into())
       }
     }
   }
 
   /// For `list(T) ++ any list` operation
+  #[named]
   fn synthesize_list_of_t_append(_scope: &RwLock<Scope>,
                                  _left: &Arc<ErlType>,
                                  right: &Arc<ErlType>,
@@ -201,7 +210,9 @@ impl ErlBinaryOperatorExpr {
       other_right => {
         // right is not a list
         let msg = format!("List append operation ++ expected a list in its right argument, got {}", other_right);
-        Err(TypeError::ListExpected { msg }.into())
+        ErlError::type_error(
+          SourceLoc::unimplemented(file!(), function_name!()),
+          TypeError::ListExpected { msg })
       }
     }
   }

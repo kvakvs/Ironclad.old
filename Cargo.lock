@@ -182,9 +182,11 @@ dependencies = [
 name = "libironclad_ppsyntax"
 version = "2022.5.0"
 dependencies = [
+ "function_name",
  "libironclad_erlsyntax",
  "libironclad_error",
  "libironclad_util",
+ "nom",
 ]
 
 [[package]]

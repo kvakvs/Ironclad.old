@@ -1,6 +1,6 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use nom::{combinator, sequence, branch, multi, combinator::{cut}, error::{context},
-          character::complete::{char}, bytes, bytes::complete::{tag}, Parser};
+          character::complete::{char}, bytes, bytes::complete::{tag}, };
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use crate::syntax_tree::erl_ast::ErlAst;
