@@ -6,13 +6,13 @@ use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::display::Pretty;
+use libironclad_util::pretty::Pretty;
 use crate::erl_error::{ErlError, ErlResult};
-use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
-use crate::typing::fn_type::FnType;
-use crate::typing::scope::Scope;
-use crate::typing::type_error::TypeError;
+use libironclad_util::source_loc::SourceLoc;
+use libironclad_erlsyntax::typing::erl_type::ErlType;
+use libironclad_erlsyntax::typing::fn_type::FnType;
+use libironclad_erlsyntax::typing::scope::Scope;
+use libironclad_erlsyntax::typing::type_error::TypeError;
 
 /// Contains a function call
 #[cfg(coreast)]

@@ -9,10 +9,10 @@ use nom::Finish;
 use crate::erl_error::{ErlError, ErlResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
-use crate::erlang::syntax_tree::erl_ast::ErlAst;
-use crate::erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
-use crate::erlang::syntax_tree::nom_parse::parse_type::ErlTypeParser;
-use crate::typing::scope::Scope;
+use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlsyntax::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use libironclad_erlsyntax::syntax_tree::nom_parse::parse_type::ErlTypeParser;
+use libironclad_erlsyntax::typing::scope::Scope;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -70,7 +70,7 @@ impl ErlModule {
   }
 
   /// Generic parse helper for any Nom entry point
-  pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> ErlResult<Self>
+  pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> IcResult<Self>
     where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
   {
     println!("Parsing from {}", filename.to_string_lossy());
@@ -103,27 +103,27 @@ impl ErlModule {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source(filename: &Path, input: &str) -> ErlResult<Self> {
+  pub fn from_module_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &Path, input: &str) -> ErlResult<Self> {
+  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &Path, input: &str) -> ErlResult<Self> {
+  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &Path, input: &str) -> ErlResult<Self> {
+  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::parse_fn_spec)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &Path, input: &str) -> ErlResult<Self> {
+  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::parse_type_node)
   }
 

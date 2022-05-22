@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::core_case_clause::CaseClause;
-use crate::display::Pretty;
-use crate::source_loc::SourceLoc;
+use libironclad_util::pretty::Pretty;
+use libironclad_util::source_loc::SourceLoc;
 
 /// Case replaces Erlang constructs such as multiple function clauses (merged into one with a case),
 /// `if` operator, `try of`, and `case of`.

@@ -124,6 +124,7 @@ dependencies = [
  "glob",
  "lazy_static",
  "libironclad",
+ "libironclad_error",
  "pest",
  "pest_derive",
  "serde",
@@ -148,6 +149,7 @@ dependencies = [
  "glob",
  "lazy_static",
  "libironclad_erlsyntax",
+ "libironclad_error",
  "libironclad_ppsyntax",
  "nom",
  "serde",
@@ -158,13 +160,36 @@ dependencies = [
 [[package]]
 name = "libironclad_erlsyntax"
 version = "2022.5.0"
+dependencies = [
+ "derivative",
+ "function_name",
+ "lazy_static",
+ "libironclad_error",
+ "libironclad_util",
+ "nom",
+]
+
+[[package]]
+name = "libironclad_error"
+version = "2022.5.0"
+dependencies = [
+ "glob",
+ "libironclad_util",
+ "toml",
+]
 
 [[package]]
 name = "libironclad_ppsyntax"
 version = "2022.5.0"
 dependencies = [
  "libironclad_erlsyntax",
+ "libironclad_error",
+ "libironclad_util",
 ]
+
+[[package]]
+name = "libironclad_util"
+version = "0.1.0"
 
 [[package]]
 name = "maplit"

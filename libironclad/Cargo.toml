@@ -9,6 +9,7 @@ edition = "2021"
 [dependencies]
 libironclad_erlsyntax = { path = "../libironclad_erlsyntax" }
 libironclad_ppsyntax = { path = "../libironclad_ppsyntax" }
+libironclad_error = { path = "../libironclad_error" }
 
 toml = "0.5.8"
 serde = "1.0.126"

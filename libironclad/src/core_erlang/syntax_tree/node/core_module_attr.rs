@@ -1,10 +1,10 @@
 //! Module attribute is a generic container for erlang syntax `-name(param, param, ...)`.
 #![cfg(coreast)]
 
-use crate::source_loc::SourceLoc;
-use crate::literal::Literal;
+use libironclad_util::source_loc::SourceLoc;
+use libironclad_erlsyntax::literal::Literal;
 use std::fmt::Formatter;
-use crate::display::Pretty;
+use libironclad_util::pretty::Pretty;
 
 /// Each module attribute is just a name and list of literals
 #[derive(Debug)]

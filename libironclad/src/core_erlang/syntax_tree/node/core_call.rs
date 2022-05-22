@@ -2,9 +2,9 @@
 #![cfg(coreast)]
 use std::sync::Arc;
 
-use crate::mfarity::MFArity;
+use libironclad_util::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::source_loc::SourceLoc;
+use libironclad_util::source_loc::SourceLoc;
 
 /// Contains a function call on a MFArity
 #[derive(Debug)]

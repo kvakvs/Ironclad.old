@@ -14,7 +14,7 @@ use compiler::typing::scope::Scope;
 
 #[named]
 #[test]
-fn typing_synth() -> ErlResult<()> {
+fn typing_synth() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Synth");
   let filename = PathBuf::from(function_name!());
 
@@ -58,7 +58,7 @@ fn typing_synth() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn typing_expr_check_1() -> ErlResult<()> {
+fn typing_expr_check_1() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.Atom");
 
   let scope = Scope::new_root_scope(function_name!().to_string());
@@ -72,7 +72,7 @@ fn typing_expr_check_1() -> ErlResult<()> {
 #[named]
 #[test]
 /// Create a fun with 0 args, which returns an integer(). See if its compatible with an integer().
-fn typing_expr_check_noarg() -> ErlResult<()> {
+fn typing_expr_check_noarg() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
 
   let scope = Scope::new_root_scope(function_name!().to_string());
@@ -90,7 +90,7 @@ fn typing_expr_check_noarg() -> ErlResult<()> {
 #[named]
 #[test]
 /// Create a fun with argument, which returns an integer(). See if its compatible with an integer().
-fn typing_check_int_arg_fn() -> ErlResult<()> {
+fn typing_check_int_arg_fn() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let filename = PathBuf::from(function_name!());
   let scope = Scope::new_root_scope(function_name!().to_string());
@@ -108,7 +108,7 @@ fn typing_check_int_arg_fn() -> ErlResult<()> {
 #[named]
 #[test]
 /// Create a fun which returns a tuple of `{any(), integer()}` and see if it checks against a tuple
-fn typing_expr_check_tuple1() -> ErlResult<()> {
+fn typing_expr_check_tuple1() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
   let filename = PathBuf::from(function_name!());
   let scope = Scope::new_root_scope(function_name!().to_string());
@@ -126,7 +126,7 @@ fn typing_expr_check_tuple1() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_bool() -> ErlResult<()> {
+fn typing_subtyping_bool() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Bool");
 
   let test1_bool = ErlType::Boolean;
@@ -143,7 +143,7 @@ fn typing_subtyping_bool() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_number() -> ErlResult<()> {
+fn typing_subtyping_number() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Number");
   let test2_int = ErlType::Integer;
   let test2_flt = ErlType::Float;
@@ -158,7 +158,7 @@ fn typing_subtyping_number() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_list() -> ErlResult<()> {
+fn typing_subtyping_list() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.List");
 
   let test3_any = ErlType::AnyList;

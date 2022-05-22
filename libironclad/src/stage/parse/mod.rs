@@ -14,7 +14,7 @@ impl ErlParseStage {
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
   pub fn run(project: &mut ErlProject,
-             contents_cache: Arc<RwLock<FileContentsCache>>) -> ErlResult<()> {
+             contents_cache: Arc<RwLock<FileContentsCache>>) -> IcResult<()> {
     if let Ok(contents_cache_r) = contents_cache.read() {
       for (path, source_file) in &contents_cache_r.all_files {
         let path_s = path.to_string_lossy();

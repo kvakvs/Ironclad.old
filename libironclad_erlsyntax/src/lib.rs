@@ -1,8 +1,9 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+extern crate nom;
+extern crate libironclad_util;
+extern crate libironclad_error;
+extern crate lazy_static;
+extern crate derivative;
+
+pub mod syntax_tree;
+pub mod literal;
+pub mod typing;

@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 libironclad_erlsyntax = { path = "../libironclad_erlsyntax" }
+libironclad_util = { path = "../libironclad_util" }
+libironclad_error = { path = "../libironclad_error" }

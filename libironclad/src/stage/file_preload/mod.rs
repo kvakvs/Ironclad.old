@@ -13,7 +13,7 @@ impl FilePreloadStage {
   /// ----------------------------
   /// Preload stage will visit all input files and load them in memory.
   /// Future improvement: Lazy loading as required, timestamp checks
-  pub fn run(inputs: &[PathBuf]) -> ErlResult<Arc<RwLock<FileContentsCache>>> {
+  pub fn run(inputs: &[PathBuf]) -> IcResult<Arc<RwLock<FileContentsCache>>> {
     let mut state = FileContentsCache::default();
 
     for filename in inputs {

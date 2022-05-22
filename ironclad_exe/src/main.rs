@@ -1,11 +1,14 @@
 extern crate libironclad;
+extern crate libironclad_error;
+
+use std::process::exit;
 
 use libironclad::project::ErlProject;
 use libironclad::project::conf::ProjectConf;
 use libironclad::erl_error::{ErlResult};
-use std::process::exit;
+use libironclad_error::ic_error::IcResult;
 
-fn main_do() -> ErlResult<()> {
+fn main_do() -> IcResult<()> {
   // Test default project from ""
   let default_project: ErlProject = ProjectConf::from_string("")?.into();
   println!("default {:?}", default_project);

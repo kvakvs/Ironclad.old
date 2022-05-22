@@ -16,7 +16,7 @@ use compiler::typing::erl_type::ErlType;
 
 #[named]
 #[test]
-fn union_type_parse() -> ErlResult<()> {
+fn union_type_parse() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a multiline union type");
   // No leading `-`, and no trailing `.`, because `ErlAttrParser::parse` strips them
   let input = "type src() :: beam_reg() |
@@ -37,7 +37,7 @@ fn union_type_parse() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_generic_attr_parse1() -> ErlResult<()> {
+fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
 
   // Dash `-` and terminating `.` are matched outside by the caller.
@@ -55,7 +55,7 @@ fn fn_generic_attr_parse1() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_generic_attr_parse2() -> ErlResult<()> {
+fn fn_generic_attr_parse2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
 
   // Dash `-` and terminating `.` are matched outside by the caller.
@@ -74,7 +74,7 @@ fn fn_generic_attr_parse2() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_typespec_parse_1() -> ErlResult<()> {
+fn fn_typespec_parse_1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for a 1-clause fn");
 
   let filename = PathBuf::from(function_name!());
@@ -97,7 +97,7 @@ fn fn_typespec_parse_1() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_typespec_parse_2() -> ErlResult<()> {
+fn fn_typespec_parse_2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for a 2-clause fn");
 
   let filename = PathBuf::from(function_name!());
@@ -119,7 +119,7 @@ fn fn_typespec_parse_2() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_typespec_parse_when() -> ErlResult<()> {
+fn fn_typespec_parse_when() -> IcResult<()> {
   test_util::start(function_name!(), "Parse when-part of a function type spec");
 
   let filename = PathBuf::from(function_name!());
@@ -140,7 +140,7 @@ fn fn_typespec_parse_when() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn type_parse_union() -> ErlResult<()> {
+fn type_parse_union() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a type union");
 
   let filename = PathBuf::from(function_name!());
@@ -155,7 +155,7 @@ fn type_parse_union() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn fn_typespec_parse_union() -> ErlResult<()> {
+fn fn_typespec_parse_union() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function spec with type union in it");
 
   let filename = PathBuf::from(function_name!());

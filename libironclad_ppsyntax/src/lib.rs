@@ -1,8 +1,5 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+extern crate libironclad_erlsyntax;
+extern crate libironclad_util;
+
+pub mod syntax_tree;
+pub mod nom_parser;

@@ -9,14 +9,8 @@
 pub mod project;
 pub mod erl_error;
 pub mod stage;
-pub mod typing;
-pub mod mfarity;
-pub mod source_loc;
-pub mod display;
 pub mod erlang;
-pub mod preprocessor;
 pub mod core_erlang;
-pub mod literal;
 
 extern crate toml;
 extern crate serde;

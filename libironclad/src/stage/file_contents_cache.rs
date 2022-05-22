@@ -27,7 +27,7 @@ impl Default for FileContentsCache {
 
 impl<'a> FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
-  pub(crate) fn preload_file(&mut self, file_name: &Path) -> ErlResult<()> {
+  pub(crate) fn preload_file(&mut self, file_name: &Path) -> IcResult<()> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
@@ -40,7 +40,7 @@ impl<'a> FileContentsCache {
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
-  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> ErlResult<Arc<SourceFile>> {
+  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> IcResult<Arc<SourceFile>> {
     match self.all_files.get(file_name) {
       None => {
         self.preload_file(file_name)?;

@@ -13,7 +13,7 @@ mod test_util;
 
 #[named]
 #[test]
-fn parse_bin1() -> ErlResult<()> {
+fn parse_bin1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a basic ironclad_exe");
   let filename = PathBuf::from(function_name!());
 

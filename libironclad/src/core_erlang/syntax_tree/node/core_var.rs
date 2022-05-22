@@ -5,8 +5,8 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use libironclad_util::source_loc::SourceLoc;
+use libironclad_erlsyntax::typing::erl_type::ErlType;
 
 #[cfg(coreast)]
 lazy_static! {

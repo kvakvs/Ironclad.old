@@ -4,12 +4,12 @@
 use std::fmt::Formatter;
 use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::display::Pretty;
+use libironclad_util::pretty::Pretty;
 use crate::erl_error::ErlResult;
-use crate::typing::erl_type::ErlType;
-use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::scope::Scope;
-use crate::typing::typevar::Typevar;
+use libironclad_erlsyntax::typing::erl_type::ErlType;
+use libironclad_erlsyntax::typing::fn_clause_type::FnClauseType;
+use libironclad_erlsyntax::typing::scope::Scope;
+use libironclad_erlsyntax::typing::typevar::Typevar;
 
 /// Core function clause.
 /// We keep the function clauses separate and split without merging it into one big case operator,

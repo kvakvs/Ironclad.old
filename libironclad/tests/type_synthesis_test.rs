@@ -15,7 +15,7 @@ use compiler::project::module::ErlModule;
 
 #[named]
 #[test]
-fn synth_list_append() -> ErlResult<()> {
+fn synth_list_append() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
   let filename = PathBuf::from(function_name!());
@@ -36,7 +36,7 @@ fn synth_list_append() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn synth_simplefun_division() -> ErlResult<()> {
+fn synth_simplefun_division() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for simple expression");
 
   let filename = PathBuf::from(function_name!());
@@ -62,7 +62,7 @@ fn synth_simplefun_division() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn synth_simplefun_addition() -> ErlResult<()> {
+fn synth_simplefun_addition() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let filename = PathBuf::from(function_name!());
@@ -77,7 +77,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 // #[test]
 // /// Try synthesize type for a function which is a sum of two lists.
 // /// Expected: Inferred type list(atom1|atom2)
-// fn synth_atom_list_concatenation() -> ErlResult<()> {
+// fn synth_atom_list_concatenation() -> IcResult<()> {
 //   test_util::start(function_name!(), "synthesize type for a sum of two lists with atoms");
 //   let module = Module::from_fun_source("atomtest(A) -> [atom1] ++ [atom2].")?;
 //
@@ -105,7 +105,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 
 // #[named]
 // #[test]
-// fn infer_fun_call_other_fun() -> ErlResult<()> {
+// fn infer_fun_call_other_fun() -> IcResult<()> {
 //   test_util::start(function_name!(), "infer type for a fun which calls another fun with a sum");
 //   let code = format!(
 //     "-module({}).\n\
@@ -127,7 +127,7 @@ fn synth_simplefun_addition() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn synth_fun_call() -> ErlResult<()> {
+fn synth_fun_call() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a fun which calls another fun with a sum");
   let filename = PathBuf::from(function_name!());
 
@@ -161,7 +161,7 @@ fn synth_fun_call() -> ErlResult<()> {
 #[test]
 /// Synthesize type for a 2-clause function.
 /// Expected: -spec main(one) -> 'atom1'; (two) -> 222.
-fn synth_multiple_clause_test() -> ErlResult<()> {
+fn synth_multiple_clause_test() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a multi-clause function");
   let source = format!("-module({}).
     main(one) -> atom1;

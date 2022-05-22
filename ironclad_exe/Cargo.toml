@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 libironclad = { path = "../libironclad" }
+libironclad_error = { path = "../libironclad_error" }
 
 #nom = "6.1.2"
 toml = "0.5.8"

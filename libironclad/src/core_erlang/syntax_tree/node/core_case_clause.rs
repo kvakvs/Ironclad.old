@@ -4,8 +4,8 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::display::Pretty;
-use crate::source_loc::SourceLoc;
+use libironclad_util::pretty::Pretty;
+use libironclad_util::source_loc::SourceLoc;
 
 /// Case clause checks the input expression against `match_expr` and if it matches and if the guard
 /// is true, the body will be executed.

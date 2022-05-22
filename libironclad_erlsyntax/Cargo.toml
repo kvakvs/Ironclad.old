@@ -6,3 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libironclad_util = { path = "../libironclad_util" }
+libironclad_error = { path = "../libironclad_error" }
+
+function_name = "0.2.0"
+nom = "7"
+derivative = "2.2.0"
+lazy_static = "1.4.0"

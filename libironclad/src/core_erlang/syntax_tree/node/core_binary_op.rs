@@ -6,9 +6,9 @@ use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp};
 use crate::erl_error::{ErlError, ErlResult};
-use crate::typing::erl_type::ErlType;
-use crate::typing::scope::Scope;
-use crate::typing::type_error::TypeError;
+use libironclad_erlsyntax::typing::erl_type::ErlType;
+use libironclad_erlsyntax::typing::scope::Scope;
+use libironclad_erlsyntax::typing::type_error::TypeError;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]

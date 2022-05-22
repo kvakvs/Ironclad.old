@@ -71,7 +71,7 @@ impl ErlProject {
 
   /// Traverse directories starting from each of the inputs.directories;
   /// Add files from inputs if not duplicate.
-  pub fn build_file_list(&self) -> ErlResult<Vec<PathBuf>> {
+  pub fn build_file_list(&self) -> IcResult<Vec<PathBuf>> {
     let mut file_set: HashSet<PathBuf> = HashSet::with_capacity(ErlProject::DEFAULT_CAPACITY);
     let mut file_list = Vec::new();
 
@@ -94,7 +94,7 @@ impl ErlProject {
   /// Check exclusions in the Self.input. Hashset is used to check for duplicates. Add to Vec.
   fn maybe_add_path(file_set: &mut HashSet<PathBuf>,
                     file_list: &mut Vec<PathBuf>,
-                    path: PathBuf) -> ErlResult<()> {
+                    path: PathBuf) -> IcResult<()> {
     // Check duplicate
     let abs_path = std::fs::canonicalize(path)?;
     if file_set.contains(&abs_path) {
@@ -109,7 +109,7 @@ impl ErlProject {
   }
 
   /// Preprocesses and attempts to parse AST in all input files
-  pub fn compile(&mut self, inputs: Vec<PathBuf>) -> ErlResult<()> {
+  pub fn compile(&mut self, inputs: Vec<PathBuf>) -> IcResult<()> {
     self.inputs = inputs;
 
     // Load files and store contents in the hashmap

@@ -11,7 +11,7 @@ use compiler::typing::erl_type::ErlType;
 #[named]
 #[test]
 /// Check that unions are capable of shrinking matching multiple types into single compound types
-fn union_auto_shrink_numbers() -> ErlResult<()> {
+fn union_auto_shrink_numbers() -> IcResult<()> {
   test_util::start(function_name!(), "TypeUnion.ShrinkNum");
   let union_t = ErlType::new_union(
     &[ErlType::integer(),
@@ -35,7 +35,7 @@ fn union_auto_shrink_numbers() -> ErlResult<()> {
 #[named]
 #[test]
 /// Check that union of 0 is None-type
-fn union_auto_shrink_0() -> ErlResult<()> {
+fn union_auto_shrink_0() -> IcResult<()> {
   test_util::start(function_name!(), "TypeUnion.Shrink0");
   let union_t = ErlType::new_union(&Vec::default());
   assert!(union_t.as_ref().eq(&ErlType::None), "Union type of 0 elements should be none() type");
@@ -45,7 +45,7 @@ fn union_auto_shrink_0() -> ErlResult<()> {
 #[named]
 #[test]
 /// Check that union of 1 type is that type
-fn union_auto_shrink_1() -> ErlResult<()> {
+fn union_auto_shrink_1() -> IcResult<()> {
   test_util::start(function_name!(), "TypeUnion.Shrink1");
   let union_t = ErlType::new_union(&vec![ErlType::nil()]);
   assert!(union_t.as_ref().eq(&ErlType::Nil), "Union type of nil should be just nil, got {}", union_t);
@@ -55,7 +55,7 @@ fn union_auto_shrink_1() -> ErlResult<()> {
 #[named]
 #[test]
 /// Check that union of int|int is int
-fn union_int_int() -> ErlResult<()> {
+fn union_int_int() -> IcResult<()> {
   test_util::start(function_name!(), "TypeUnion.IntInt");
   let union_t = ErlType::new_union(&vec![ErlType::integer(), ErlType::integer()]);
   assert!(union_t.as_ref().eq(&ErlType::Integer),
@@ -66,7 +66,7 @@ fn union_int_int() -> ErlResult<()> {
 #[named]
 #[test]
 /// Check that union of nothing is none()
-fn union_none() -> ErlResult<()> {
+fn union_none() -> IcResult<()> {
   test_util::start(function_name!(), "TypeUnion.None");
   let union_t = ErlType::new_union(&vec![]);
   assert!(union_t.as_ref().eq(&ErlType::None),

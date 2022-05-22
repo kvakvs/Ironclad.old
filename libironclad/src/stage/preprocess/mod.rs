@@ -12,7 +12,7 @@ use crate::erl_error::{ErlError, ErlErrorType, ErlResult};
 use crate::preprocessor::nom_parser::{PpAstParserResult, PreprocessorParser};
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
-use crate::source_loc::{SourceLoc};
+use libironclad_util::source_loc::{SourceLoc};
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
@@ -31,19 +31,19 @@ pub struct PreprocessState {
 
 impl PreprocessState {
   /// Split input file into fragments using preprocessor directives as separators
-  pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
+  pub fn from_source_file(source_file: &Arc<SourceFile>) -> IcResult<Arc<PpAst>> {
     let input = &source_file.text;
     Self::from_source(input)
   }
 
   /// Split input file into fragments using preprocessor directives as separators
-  pub fn from_source(input: &str) -> ErlResult<Arc<PpAst>> {
+  pub fn from_source(input: &str) -> IcResult<Arc<PpAst>> {
     Self::parse_helper(input, PreprocessorParser::parse_module)
   }
 
   /// Parse AST using provided parser function, check that input is consumed, print some info.
   /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
-  pub fn parse_helper<Parser>(input: &str, parser: Parser) -> ErlResult<Arc<PpAst>>
+  pub fn parse_helper<Parser>(input: &str, parser: Parser) -> IcResult<Arc<PpAst>>
     where Parser: Fn(&str) -> PpAstParserResult
   {
     let parse_result = parser(input).finish();
@@ -66,7 +66,7 @@ impl PreprocessState {
   }
 
   /// Returns: True if a file was preprocessed
-  fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<()> {
+  fn preprocess_file(&mut self, file_name: &Path) -> IcResult<()> {
     // trust that file exists
     let contents = {
       let file_cache1 = self.file_cache.read().unwrap();
@@ -108,7 +108,7 @@ impl PreprocessState {
 fn interpret_include_directive(source_file: &SourceFile,
                                node: &Arc<PpAst>,
                                ast_cache: Arc<RwLock<PpAstCache>>,
-                               file_cache: Arc<RwLock<FileContentsCache>>) -> ErlResult<Arc<PpAst>> {
+                               file_cache: Arc<RwLock<FileContentsCache>>) -> IcResult<Arc<PpAst>> {
   match node.deref() {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
@@ -149,16 +149,16 @@ fn interpret_include_directive(source_file: &SourceFile,
 }
 
 impl PreprocessState {
-  fn load_include(&mut self, path: &Path) -> ErlResult<(Arc<SourceFile>, Arc<PpAst>)> {
+  fn load_include(&mut self, path: &Path) -> IcResult<(Arc<SourceFile>, Arc<PpAst>)> {
     unimplemented!("load_include not impl: {}", path.to_string_lossy())
   }
 
-  fn find_include(&mut self, path: &str) -> ErlResult<PathBuf> {
+  fn find_include(&mut self, path: &str) -> IcResult<PathBuf> {
     // unimplemented!("find_include not impl: {}", path)
     return Ok(PathBuf::from(path));
   }
 
-  fn find_include_lib(&mut self, path: &str) -> ErlResult<PathBuf> {
+  fn find_include_lib(&mut self, path: &str) -> IcResult<PathBuf> {
     // unimplemented!("find_include_lib not impl: {}", path)
     return Ok(PathBuf::from(path));
   }
@@ -172,7 +172,7 @@ impl PreprocessState {
                                  source_file: &Arc<SourceFile>,
                                  nodes_out: &mut Vec<Arc<PpAst>>,
                                  warnings_out: &mut Vec<ErlError>,
-                                 errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
+                                 errors_out: &mut Vec<ErlError>) -> IcResult<()> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
       PpAst::File(nodes) => {
@@ -247,7 +247,7 @@ impl PreprocessState {
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(&mut self,
                       source_file: &Arc<SourceFile>,
-                      ast_tree: &Arc<PpAst>) -> ErlResult<Arc<PpAst>> {
+                      ast_tree: &Arc<PpAst>) -> IcResult<Arc<PpAst>> {
     let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();
     let mut warnings_out: Vec<ErlError> = Vec::default();
     let mut errors_out: Vec<ErlError> = Vec::default();
@@ -274,7 +274,7 @@ impl PreprocessState {
   /// Returns preprocessed collection of module sources
   pub fn run(project: &mut ErlProject,
              file_cache: Arc<RwLock<FileContentsCache>>,
-  ) -> ErlResult<Arc<RwLock<PpAstCache>>> {
+  ) -> IcResult<Arc<RwLock<PpAstCache>>> {
     let ast_cache = RwLock::new(PpAstCache::default()).into();
 
     // Take only .erl files

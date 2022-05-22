@@ -5,14 +5,14 @@
 use ::function_name::named;
 use std::sync::{Arc};
 
-use crate::mfarity::MFArity;
-use crate::source_loc::SourceLoc;
-use crate::literal::Literal;
+use libironclad_util::mfarity::MFArity;
+use libironclad_util::source_loc::SourceLoc;
+use libironclad_erlsyntax::literal::Literal;
 use std::ops::Deref;
 use crate::core_erlang::syntax_tree::node::core_unary_op::UnaryOperatorExpr;
-use crate::display::Pretty;
+use libironclad_util::pretty::Pretty;
 use crate::erl_error::{ErlError, ErlResult};
-use crate::typing::type_error::TypeError;
+use libironclad_erlsyntax::typing::type_error::TypeError;
 
 /// AST node in Core Erlang (parsed or generated)
 #[cfg(coreast)]
@@ -135,7 +135,7 @@ impl CoreAst {
   }
 
   // /// Shortcut to call the typebuilder's synthesize
-  // pub fn synthesize_type(&self, env: &RwLock<Scope>) -> ErlResult<Arc<ErlType>> {
+  // pub fn synthesize_type(&self, env: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
   //   TypeSynth::synthesize(env, self)
   // }
 

@@ -20,7 +20,7 @@ mod test_util;
 /// Try parse empty module
 #[named]
 #[test]
-fn parse_empty_module() -> ErlResult<()> {
+fn parse_empty_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse an empty module with start attribute only");
   let filename = PathBuf::from(function_name!());
   let code = format!("-module({}).\n", function_name!());
@@ -33,7 +33,7 @@ fn parse_empty_module() -> ErlResult<()> {
 /// Try parse `-export([])` attr
 #[named]
 #[test]
-fn parse_export_attr() -> ErlResult<()> {
+fn parse_export_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
   let (_tail, pfna) = ErlAttrParser::parse_funarity("name/123").unwrap();
@@ -52,7 +52,7 @@ fn parse_export_attr() -> ErlResult<()> {
 /// Try parse empty module forms collection (from empty input)
 #[named]
 #[test]
-fn parse_empty_module_forms_collection() -> ErlResult<()> {
+fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let code = "    \n   \r\n  ";
   let parse_result = ErlParser::parse_module_forms_collection(code);
@@ -68,7 +68,7 @@ fn parse_empty_module_forms_collection() -> ErlResult<()> {
 /// Try parse module forms collection with 2 functions in it
 #[named]
 #[test]
-fn parse_2_module_forms_collection() -> ErlResult<()> {
+fn parse_2_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a string with 2 function defs in it as module forms collection");
   let code = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
   let parse_result = ErlParser::parse_module_forms_collection(code);
@@ -84,7 +84,7 @@ fn parse_2_module_forms_collection() -> ErlResult<()> {
 /// Try parse string
 #[named]
 #[test]
-fn parse_string_test() -> ErlResult<()> {
+fn parse_string_test() -> IcResult<()> {
   test_util::start(function_name!(), "parse a string literal");
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "\"abc\"").unwrap();
@@ -101,7 +101,7 @@ fn parse_string_test() -> ErlResult<()> {
 /// Try parse a 2+2 expression
 #[named]
 #[test]
-fn parse_expr_2_plus_2() -> ErlResult<()> {
+fn parse_expr_2_plus_2() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let expr_2 = ErlModule::from_expr_source(&filename, " 2")?;
   println!("Parse \"2\": {}", expr_2.ast);
@@ -117,7 +117,7 @@ fn parse_expr_2_plus_2() -> ErlResult<()> {
 /// Try parse a flat + expression
 #[named]
 #[test]
-fn parse_expr_flat() -> ErlResult<()> {
+fn parse_expr_flat() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "A + 123 + 333 + 6 + atom + Test")?;
   println!("Parse \"A+123+333+6+atom+Test\": {}", module.ast);
@@ -128,7 +128,7 @@ fn parse_expr_flat() -> ErlResult<()> {
 /// Try parse a list builder expression
 #[named]
 #[test]
-fn parse_expr_list_builder() -> ErlResult<()> {
+fn parse_expr_list_builder() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a list builder");
   let filename = PathBuf::from(function_name!());
   let input = "[1, 2, {3, 4} | 5]";
@@ -140,7 +140,7 @@ fn parse_expr_list_builder() -> ErlResult<()> {
 /// Try parse a more complex expression
 #[named]
 #[test]
-fn parse_expr_longer() -> ErlResult<()> {
+fn parse_expr_longer() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "123 + 1 / (2 * hello)")?;
   println!("Parse \"123+1/(2*hello)\": {}", module.ast);
@@ -151,7 +151,7 @@ fn parse_expr_longer() -> ErlResult<()> {
 /// Try parse an expression with parentheses and division
 #[named]
 #[test]
-fn parse_expr_2() -> ErlResult<()> {
+fn parse_expr_2() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "(A +1)/ 2")?;
   println!("Parse \"(A+1)/2\": {}", module.ast);
@@ -163,7 +163,7 @@ fn parse_expr_2() -> ErlResult<()> {
 #[named]
 #[test]
 #[ignore]
-fn parse_expr_comma() -> ErlResult<()> {
+fn parse_expr_comma() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a comma separated list of expressions");
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "A, B, 123 * C")?;
@@ -176,7 +176,7 @@ fn parse_expr_comma() -> ErlResult<()> {
 /// Try parse a list and a tuple
 #[named]
 #[test]
-fn parse_expr_containers() -> ErlResult<()> {
+fn parse_expr_containers() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a list and a tuple");
   let filename = PathBuf::from(function_name!());
   let src = "[1,2  ,3  ] + {a, b ,C}";
@@ -190,7 +190,7 @@ fn parse_expr_containers() -> ErlResult<()> {
 /// Try parse a hard-equals expression
 #[named]
 #[test]
-fn parse_expr_hard_eq() -> ErlResult<()> {
+fn parse_expr_hard_eq() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a hard-equals expr");
   let filename = PathBuf::from(function_name!());
   let src = "A =:= B2";
@@ -204,7 +204,7 @@ fn parse_expr_hard_eq() -> ErlResult<()> {
 /// Try parse some function defs
 #[named]
 #[test]
-fn parse_fn1() -> ErlResult<()> {
+fn parse_fn1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_fun_source(&filename, "f(A) -> atom123.")?;
@@ -229,7 +229,7 @@ fn parse_fn1() -> ErlResult<()> {
 /// Try parse some function defs
 #[named]
 #[test]
-fn parse_fn_with_list_comprehension() -> ErlResult<()> {
+fn parse_fn_with_list_comprehension() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function from OTP lib/libironclad with list comprehension");
   let filename = PathBuf::from(function_name!());
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
@@ -243,7 +243,7 @@ fn parse_fn_with_list_comprehension() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_try_catch_exceptionpattern() -> ErlResult<()> {
+fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
   {
@@ -269,7 +269,7 @@ fn parse_try_catch_exceptionpattern() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_try_catch_clause() -> ErlResult<()> {
+fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
   let (tail, clause) = ErlParser::parse_catch_clause("A:B:C when true -> ok").unwrap();
@@ -283,7 +283,7 @@ fn parse_try_catch_clause() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_fn_try_catch() -> ErlResult<()> {
+fn parse_fn_try_catch() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function with try/catch");
 
   let filename = PathBuf::from(function_name!());
@@ -302,7 +302,7 @@ fn parse_fn_try_catch() -> ErlResult<()> {
 /// a parenthesized comma expression.
 #[named]
 #[test]
-fn parse_apply_1() -> ErlResult<()> {
+fn parse_apply_1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a simple apply() expr");
 
   let filename = PathBuf::from(function_name!());
@@ -320,7 +320,7 @@ fn parse_apply_1() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_big_fun() -> ErlResult<()> {
+fn parse_big_fun() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a multi-clause big function");
 
   let filename = PathBuf::from(function_name!());
@@ -381,7 +381,7 @@ rename_instr(I) -> I.";
 
 #[named]
 #[test]
-fn parse_fun_with_if() -> ErlResult<()> {
+fn parse_fun_with_if() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function with if statement");
   let filename = PathBuf::from(function_name!());
   let src = "rename_instrs([{get_list,S,D1,D2}|Is]) ->
@@ -396,7 +396,7 @@ fn parse_fun_with_if() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_fun_with_case() -> ErlResult<()> {
+fn parse_fun_with_case() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function with case statement");
   let filename = PathBuf::from(function_name!());
   let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
@@ -410,7 +410,7 @@ fn parse_fun_with_case() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_fun_with_lambda() -> ErlResult<()> {
+fn parse_fun_with_lambda() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function with a lambda");
   let filename = PathBuf::from(function_name!());
   let src = "coalesce_consecutive_labels([{label,L}=Lbl,{label,Alias}|Is], Replace, Acc) ->
@@ -428,7 +428,7 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 
 #[named]
 #[test]
-fn parse_apply_with_module_and_without() -> ErlResult<()> {
+fn parse_apply_with_module_and_without() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let filename = PathBuf::from(function_name!());
 
@@ -470,7 +470,7 @@ fn parse_apply_panic() {
 
 #[named]
 #[test]
-fn parse_apply_2() -> ErlResult<()> {
+fn parse_apply_2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an apply() expression with a fancy left side");
 
   let filename = PathBuf::from(function_name!());
@@ -488,7 +488,7 @@ fn parse_apply_2() -> ErlResult<()> {
 
 #[named]
 #[test]
-fn parse_apply_3() -> ErlResult<()> {
+fn parse_apply_3() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a very fancy nested apply() expression");
 
   let filename = PathBuf::from(function_name!());
