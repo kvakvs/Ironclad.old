@@ -5,7 +5,7 @@ pub mod pp_define;
 
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 use nom::{Finish};
 
 use crate::erl_error::{ErlError, ErlErrorType, ErlResult};
@@ -18,18 +18,18 @@ use crate::preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
 /// Preprocessor state with AST cache, macro definitions, etc
-pub struct ErlPreprocessStage {
+pub struct PreprocessState {
   /// For headers included more than once, parse them and cache here for reinterpretation as needed
-  ast_cache: Arc<Mutex<PpAstCache>>,
+  ast_cache: Arc<RwLock<PpAstCache>>,
 
-  file_cache: Arc<Mutex<FileContentsCache>>,
+  file_cache: Arc<RwLock<FileContentsCache>>,
 
   /// Contains preprocessor definitions from config, from command line or from the file. Evolves as
   /// the parser progresses through the file and encounters new preprocessor directives.
   scope: Arc<PreprocessorScope>,
 }
 
-impl ErlPreprocessStage {
+impl PreprocessState {
   /// Split input file into fragments using preprocessor directives as separators
   pub fn from_source_file(source_file: &Arc<SourceFile>) -> ErlResult<Arc<PpAst>> {
     let input = &source_file.text;
@@ -69,7 +69,7 @@ impl ErlPreprocessStage {
   fn preprocess_file(&mut self, file_name: &Path) -> ErlResult<()> {
     // trust that file exists
     let contents = {
-      let file_cache1 = self.file_cache.lock().unwrap();
+      let file_cache1 = self.file_cache.read().unwrap();
       file_cache1.all_files
           .get(file_name).unwrap()
           .clone()
@@ -77,7 +77,7 @@ impl ErlPreprocessStage {
 
     // If cached, try get it, otherwise parse and save
     let ast_tree = {
-      let mut ast_cache = self.ast_cache.lock().unwrap();
+      let mut ast_cache = self.ast_cache.write().unwrap();
       match ast_cache.items.get(file_name) {
         Some(ast) => ast.clone(),
         None => {
@@ -96,7 +96,7 @@ impl ErlPreprocessStage {
     let output: String = pp_ast.to_string();
 
     { // Success: insert new string into preprocessed source cache
-      let mut file_cache2 = self.file_cache.lock().unwrap();
+      let mut file_cache2 = self.file_cache.write().unwrap();
       file_cache2.update_source_text(file_name, output);
     }
 
@@ -107,8 +107,8 @@ impl ErlPreprocessStage {
 
 fn interpret_include_directive(source_file: &SourceFile,
                                node: &Arc<PpAst>,
-                               ast_cache: Arc<Mutex<PpAstCache>>,
-                               file_cache: Arc<Mutex<FileContentsCache>>) -> ErlResult<Arc<PpAst>> {
+                               ast_cache: Arc<RwLock<PpAstCache>>,
+                               file_cache: Arc<RwLock<FileContentsCache>>) -> ErlResult<Arc<PpAst>> {
   match node.deref() {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
@@ -122,16 +122,16 @@ fn interpret_include_directive(source_file: &SourceFile,
       { include_path0 } else { source_path.parent().unwrap().join(include_path0) };
 
       // TODO: Path resolution relative to the file path
-      let mut ast_cache1 = ast_cache.lock().unwrap();
+      let mut ast_cache1 = ast_cache.write().unwrap();
       let find_result = ast_cache1.items.get(&include_path);
 
       match find_result {
         None => {
           let include_source_file = {
-            let mut file_cache1 = file_cache.lock().unwrap();
+            let mut file_cache1 = file_cache.write().unwrap();
             file_cache1.get_or_load(&include_path).unwrap()
           };
-          let ast_tree = ErlPreprocessStage::from_source_file(&include_source_file).unwrap();
+          let ast_tree = PreprocessState::from_source_file(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
           ast_cache1.items.insert(include_path.clone(), ast_tree.clone());
@@ -148,27 +148,51 @@ fn interpret_include_directive(source_file: &SourceFile,
   }
 }
 
-impl ErlPreprocessStage {
+impl PreprocessState {
+  fn load_include(&mut self, path: &Path) -> ErlResult<(Arc<SourceFile>, Arc<PpAst>)> {
+    unimplemented!("load_include not impl: {}", path.to_string_lossy())
+  }
+
+  fn find_include(&mut self, path: &str) -> ErlResult<PathBuf> {
+    // unimplemented!("find_include not impl: {}", path)
+    return Ok(PathBuf::from(path));
+  }
+
+  fn find_include_lib(&mut self, path: &str) -> ErlResult<PathBuf> {
+    // unimplemented!("find_include_lib not impl: {}", path)
+    return Ok(PathBuf::from(path));
+  }
+
   /// This is called for each Preprocessor AST node to make the final decision whether the node
   /// is passed into the output or replaced with a SKIP. "Scope" is global for module and as the
   /// interpretation goes top to bottom, the scope is updated globally and is not nested inside
   /// ifdef/if blocks.
-  fn interpret_pp_rule(&mut self,
-                       node: &Arc<PpAst>,
-                       source_file: &SourceFile,
-                       nodes_out: &mut Vec<Arc<PpAst>>,
-                       warnings_out: &mut Vec<ErlError>,
-                       errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
+  fn interpret_preprocessor_node(&mut self,
+                                 node: &Arc<PpAst>,
+                                 source_file: &Arc<SourceFile>,
+                                 nodes_out: &mut Vec<Arc<PpAst>>,
+                                 warnings_out: &mut Vec<ErlError>,
+                                 errors_out: &mut Vec<ErlError>) -> ErlResult<()> {
     // First process ifdef/if!def/else/endif
     match node.deref() {
       PpAst::File(nodes) => {
         for n in nodes {
-          self.interpret_pp_rule(n, source_file, nodes_out, warnings_out, errors_out)?;
+          self.interpret_preprocessor_node(n, source_file, nodes_out, warnings_out, errors_out)?;
         }
       }
+      PpAst::Include(arg) => {
+        let found_path = self.find_include(&arg)?;
+        let (incl_file, node) = self.load_include(&found_path)?;
+        self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
+      }
+      PpAst::IncludeLib(arg) => {
+        let found_path = self.find_include_lib(&arg)?;
+        let (incl_file, node) = self.load_include(&found_path)?;
+        self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
+      }
       PpAst::IncludedFile { ast, .. } => {
-        self.interpret_pp_rule(ast, source_file,
-                               nodes_out, warnings_out, errors_out)?;
+        self.interpret_preprocessor_node(ast, source_file,
+                                         nodes_out, warnings_out, errors_out)?;
       }
       PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
@@ -183,12 +207,6 @@ impl ErlPreprocessStage {
       }
       PpAst::Text(_) => nodes_out.push(node.clone()),
       PpAst::EmptyText => {} // skip
-      PpAst::Include(arg) => {
-        println!("TODO: Include '{}'", arg)
-      }
-      PpAst::IncludeLib(arg) => {
-        println!("TODO: IncludeLib '{}'", arg)
-      }
       PpAst::Define { name, args, body } => {
         self.scope = self.scope.define(name, args.clone(), body.clone());
       }
@@ -211,8 +229,8 @@ impl ErlPreprocessStage {
 
   /// Create a preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
-  pub fn new(ast_cache: &Arc<Mutex<PpAstCache>>,
-             file_cache: &Arc<Mutex<FileContentsCache>>,
+  pub fn new(ast_cache: &Arc<RwLock<PpAstCache>>,
+             file_cache: &Arc<RwLock<FileContentsCache>>,
              scope: Arc<PreprocessorScope>) -> Self {
     Self {
       ast_cache: ast_cache.clone(),
@@ -228,14 +246,14 @@ impl ErlPreprocessStage {
   ///
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(&mut self,
-                      source_file: &SourceFile,
+                      source_file: &Arc<SourceFile>,
                       ast_tree: &Arc<PpAst>) -> ErlResult<Arc<PpAst>> {
     let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();
     let mut warnings_out: Vec<ErlError> = Vec::default();
     let mut errors_out: Vec<ErlError> = Vec::default();
 
-    self.interpret_pp_rule(ast_tree, source_file,
-                           &mut nodes_out, &mut warnings_out, &mut errors_out)?;
+    self.interpret_preprocessor_node(ast_tree, source_file,
+                                     &mut nodes_out, &mut warnings_out, &mut errors_out)?;
 
     if !errors_out.is_empty() {
       Err(ErlError::multiple(errors_out))
@@ -255,13 +273,13 @@ impl ErlPreprocessStage {
   /// Side effects: Updates file contents cache
   /// Returns preprocessed collection of module sources
   pub fn run(project: &mut ErlProject,
-             file_cache: Arc<Mutex<FileContentsCache>>,
-  ) -> ErlResult<Arc<Mutex<PpAstCache>>> {
-    let ast_cache = Arc::new(Mutex::new(PpAstCache::default()));
+             file_cache: Arc<RwLock<FileContentsCache>>,
+  ) -> ErlResult<Arc<RwLock<PpAstCache>>> {
+    let ast_cache = RwLock::new(PpAstCache::default()).into();
 
     // Take only .erl files
     let all_files: Vec<PathBuf> = {
-      let file_cache_r = file_cache.lock().unwrap();
+      let file_cache_r = file_cache.read().unwrap();
       file_cache_r.all_files.keys().cloned().collect()
     };
 
@@ -276,13 +294,13 @@ impl ErlPreprocessStage {
       // Loaded and parsed HRL files are cached to be inserted into every include location
       // Create starting scope (from project settings and command line)
       let starting_scope = project.get_preprocessor_scope(&path);
-      let mut stage = ErlPreprocessStage::new(&ast_cache, &file_cache, starting_scope);
+      let mut stage = PreprocessState::new(&ast_cache, &file_cache, starting_scope);
       stage.preprocess_file(&path)?;
       preprocessed_count += 1;
     }
 
     let cached_ast_trees_count = {
-      let ast_cache_r = ast_cache.lock().unwrap();
+      let ast_cache_r = ast_cache.read().unwrap();
       ast_cache_r.items.len()
     };
 

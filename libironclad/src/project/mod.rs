@@ -13,7 +13,7 @@ use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
 use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
-use crate::stage::preprocess::ErlPreprocessStage;
+use crate::stage::preprocess::PreprocessState;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
 
 pub mod conf;
@@ -116,7 +116,7 @@ impl ErlProject {
     let file_cache = FilePreloadStage::run(&self.inputs)?;
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-    let _pp_ast_cache = ErlPreprocessStage::run(self, file_cache.clone())
+    let _pp_ast_cache = PreprocessState::run(self, file_cache.clone())
         .unwrap();
 
     // Parse all ERL and HRL files
