@@ -147,10 +147,23 @@ dependencies = [
  "function_name",
  "glob",
  "lazy_static",
+ "libironclad_erlsyntax",
+ "libironclad_ppsyntax",
  "nom",
  "serde",
  "serde_derive",
  "toml",
+]
+
+[[package]]
+name = "libironclad_erlsyntax"
+version = "2022.5.0"
+
+[[package]]
+name = "libironclad_ppsyntax"
+version = "2022.5.0"
+dependencies = [
+ "libironclad_erlsyntax",
 ]
 
 [[package]]

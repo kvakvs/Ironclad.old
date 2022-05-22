@@ -1,2 +1,2 @@
 ﻿[workspace]
-members = ["ironclad_exe", "libironclad"]
+members = ["ironclad_exe", "libironclad", "libironclad_ppsyntax", "libironclad_erlsyntax"]
