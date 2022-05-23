@@ -1,8 +1,8 @@
 //! Contains is_* checks
-use std::ops::Deref;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::subtyping::SubtypeChecker;
+use std::ops::Deref;
 
 impl ErlType {
   /// Shortcut to the subtype checker
@@ -14,8 +14,7 @@ impl ErlType {
   /// Checks whether type is an atom
   pub fn is_atom(&self) -> bool {
     return match self {
-      ErlType::Atom
-      | ErlType::Boolean => true,
+      ErlType::Atom | ErlType::Boolean => true,
       ErlType::Singleton { val } => {
         matches!(val.deref(), Literal::Atom(_))
       }
@@ -26,12 +25,10 @@ impl ErlType {
   /// Checks whether type is a literal atom of value
   pub fn is_lit_atom(&self, s: &str) -> bool {
     return match self {
-      ErlType::Singleton { val } => {
-        match val.deref() {
-          Literal::Atom(actual) => actual == s,
-          _ => false,
-        }
-      }
+      ErlType::Singleton { val } => match val.deref() {
+        Literal::Atom(actual) => actual == s,
+        _ => false,
+      },
       _ => false,
     };
   }
@@ -39,12 +36,12 @@ impl ErlType {
   /// Checks whether type is a number
   pub fn is_number(&self) -> bool {
     return match self {
-      ErlType::Number
-      | ErlType::Float
-      | ErlType::Integer
-      | ErlType::IntegerRange { .. } => true,
+      ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger | Literal::Float(_))
+        matches!(
+          val.deref(),
+          Literal::Integer(_) | Literal::BigInteger | Literal::Float(_)
+        )
       }
       _ => false,
     };
@@ -69,8 +66,7 @@ impl ErlType {
   /// Checks whether type is an integer number
   pub fn is_integer(&self) -> bool {
     return match self {
-      ErlType::Integer
-      | ErlType::IntegerRange { .. } => true,
+      ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
         matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger)
       }
@@ -91,7 +87,10 @@ impl ErlType {
 
   /// Checks whether type is a tuple type
   pub fn is_tuple(&self) -> bool {
-    matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
+    matches!(
+      self,
+      ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. }
+    )
   }
 
   /// Checks whether type is an union type
@@ -107,14 +106,19 @@ impl ErlType {
       | ErlType::StronglyTypedList { .. }
       | ErlType::Nil => true,
       ErlType::Singleton { val: singleton } => {
-        matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
+        matches!(
+          singleton.deref(),
+          Literal::List { .. } | Literal::String { .. }
+        )
       }
       _ => false,
     };
   }
 
   /// Checks whether type is an empty list (NIL)
-  pub fn is_nil(&self) -> bool { matches!(self, ErlType::Nil) }
+  pub fn is_nil(&self) -> bool {
+    matches!(self, ErlType::Nil)
+  }
 
   /// Checks whether type is a ironclad_exe
   pub fn is_binary(&self) -> bool {
@@ -128,11 +132,16 @@ impl ErlType {
 
   /// Checks whether a type is callable
   pub fn is_function(&self) -> bool {
-    matches!(self, ErlType::AnyFn | ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda)
+    matches!(
+      self,
+      ErlType::AnyFn | ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda
+    )
   }
 
   /// True if type is any()
-  pub fn is_any(&self) -> bool { matches!(self, ErlType::Any) }
+  pub fn is_any(&self) -> bool {
+    matches!(self, ErlType::Any)
+  }
 
   /// True if type is none() or union of no types
   pub fn is_none(&self) -> bool {

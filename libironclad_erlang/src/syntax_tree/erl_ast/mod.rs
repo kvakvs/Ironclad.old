@@ -1,9 +1,4 @@
 //! AST syntax structure of an Erlang file
-use std::sync::Arc;
-use std::ops::Deref;
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::source_loc::SourceLoc;
-use libironclad_util::mfarity::MFArity;
 use crate::literal::Literal;
 use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
@@ -19,13 +14,18 @@ use crate::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::syntax_tree::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
 use crate::typing::type_error::TypeError;
+use libironclad_error::ic_error::IcResult;
+use libironclad_error::source_loc::SourceLoc;
+use libironclad_util::mfarity::MFArity;
+use std::ops::Deref;
+use std::sync::Arc;
 
-pub mod ast_iter;
-pub mod ast_print;
 pub mod ast_as;
-pub mod ast_is;
 pub mod ast_extract_var;
+pub mod ast_is;
+pub mod ast_iter;
 pub mod ast_new;
+pub mod ast_print;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
@@ -286,8 +286,11 @@ impl ErlAst {
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
   pub fn temporary_token(t: ErlToken) -> Arc<ErlAst> {
-    ErlAst::Token { location: SourceLoc::None, token: t }
-        .into()
+    ErlAst::Token {
+      location: SourceLoc::None,
+      token: t,
+    }
+    .into()
   }
 
   // /// Create a new Comma operator from list of AST expressions
@@ -304,7 +307,11 @@ impl ErlAst {
   pub fn get_atom_text(&self) -> Option<String> {
     match self {
       ErlAst::Lit { value: lit, .. } => {
-        if let Literal::Atom(s) = lit.deref() { Some(s.clone()) } else { None }
+        if let Literal::Atom(s) = lit.deref() {
+          Some(s.clone())
+        } else {
+          None
+        }
       }
       _ => None,
     }
@@ -354,19 +361,22 @@ impl ErlAst {
       }
       ErlAst::ModuleForms(forms) => {
         // Find first in forms for which `find_function_def` returns something
-        let find_result = forms.iter()
-            .find(|&each_fndef| {
-              ErlAst::find_function_def(each_fndef, funarity).is_ok()
-            })
-            .cloned();
+        let find_result = forms
+          .iter()
+          .find(|&each_fndef| ErlAst::find_function_def(each_fndef, funarity).is_ok())
+          .cloned();
         if let Some(fr) = find_result {
           return Ok(fr);
         }
       }
       _ => {}
     }
-    ErlError::type_error(this.location(),
-                         TypeError::FunctionNotFound { mfa: funarity.clone() })
+    ErlError::type_error(
+      this.location(),
+      TypeError::FunctionNotFound {
+        mfa: funarity.clone(),
+      },
+    )
   }
 }
 

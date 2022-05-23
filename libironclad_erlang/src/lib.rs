@@ -1,9 +1,9 @@
-extern crate nom;
-extern crate libironclad_util;
-extern crate libironclad_error;
-extern crate lazy_static;
 extern crate derivative;
+extern crate lazy_static;
+extern crate libironclad_error;
+extern crate libironclad_util;
+extern crate nom;
 
-pub mod syntax_tree;
 pub mod literal;
+pub mod syntax_tree;
 pub mod typing;

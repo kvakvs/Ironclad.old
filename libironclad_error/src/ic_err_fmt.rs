@@ -1,11 +1,13 @@
-//! Printing for ErlError's
+//! Printing for `IroncladError`s
 
-use crate::ic_error::{IroncladError};
+use crate::ic_error::IroncladError;
 use crate::ic_error_category::IcErrorCategory;
 use crate::ic_error_trait::IcErrorT;
 
 impl std::fmt::Debug for IroncladError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self)
+  }
 }
 
 impl std::fmt::Display for IroncladError {
@@ -32,7 +34,7 @@ impl std::fmt::Display for IroncladError {
       | IcErrorCategory::ErlangParse => {
         write!(f, "{} (at {})", self.get_message(), self.get_location())
       }
-      _ => unimplemented!("Format is not impl for {:?}", self.get_category())
+      _ => unimplemented!("Format is not impl for {:?}", self.get_category()),
     }
   }
 }

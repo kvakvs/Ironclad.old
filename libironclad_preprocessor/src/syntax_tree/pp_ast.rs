@@ -1,6 +1,6 @@
 //! Defines AST structure for Erlang Preprocessor
 use std::collections::HashMap;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -86,7 +86,6 @@ pub enum PpAst {
 
   // Temporary nodes, appear during parsing and should never appear into the final AST output.
   // These values never leave the parser module.
-
   /// -else.
   _TemporaryElse,
   /// -if(...).

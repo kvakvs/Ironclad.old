@@ -1,9 +1,9 @@
 //! Erlang literals, values fully known at compile time
-use std::hash::{Hash, Hasher};
 use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
 
-use std::sync::Arc;
 use crate::typing::erl_type::ErlType;
+use std::sync::Arc;
 
 /// An Erlang literal, a value fully known at compile time
 #[derive(Clone, Debug)]
@@ -19,14 +19,12 @@ pub enum Literal {
   /// Atom literal, also includes atoms 'true' and 'false'
   Atom(String),
   // TODO: String/list lit, tuple lit, map lit, ironclad_exe lit, etc
-
   /// A boolean value true or false atom, is-a(Atom)
   Bool(bool),
 
   // Cannot have runtime values as literals
   // Pid,
   // Reference,
-
   /// A list of literals
   List {
     /// List elements
@@ -69,7 +67,9 @@ impl Hash for Literal {
         'L'.hash(state);
         elements.hash(state);
       }
-      Literal::Nil => { "[]".hash(state); }
+      Literal::Nil => {
+        "[]".hash(state);
+      }
       Literal::String(s) => {
         's'.hash(state);
         s.hash(state);
@@ -81,7 +81,10 @@ impl Hash for Literal {
     }
   }
 
-  fn hash_slice<H: Hasher>(data: &[Self], state: &mut H) where Self: Sized {
+  fn hash_slice<H: Hasher>(data: &[Self], state: &mut H)
+  where
+    Self: Sized,
+  {
     data.iter().for_each(|d| d.hash(state))
   }
 }
@@ -90,8 +93,7 @@ impl Literal {
   /// Synthesizes a type of this literal
   pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
-      Literal::Integer(_)
-      | Literal::BigInteger => ErlType::integer(),
+      Literal::Integer(_) | Literal::BigInteger => ErlType::integer(),
       Literal::Float(_) => ErlType::float(),
       Literal::Atom(_) => ErlType::atom(),
       Literal::Bool(_) => ErlType::boolean(),
@@ -104,12 +106,12 @@ impl Literal {
         ErlType::any_list()
       }
       Literal::Tuple(items) => {
-        let element_types = items.iter()
-            .map(|it| it.synthesize_type())
-            .collect();
-        ErlType::Tuple { elements: element_types }.into()
-      }
-      // other => unimplemented!("Don't know how to synthesize type for {}", other),
+        let element_types = items.iter().map(|it| it.synthesize_type()).collect();
+        ErlType::Tuple {
+          elements: element_types,
+        }
+        .into()
+      } // other => unimplemented!("Don't know how to synthesize type for {}", other),
     }
   }
 
@@ -181,7 +183,10 @@ impl Literal {
       (Literal::List { elements: a, .. }, Literal::List { elements: b, .. }) => a.cmp(b),
       (Literal::String(a), Literal::String(b)) => a.cmp(b),
       (Literal::Tuple(a), Literal::Tuple(b)) => a.cmp(b),
-      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)
+      _ => unreachable!(
+        "Can't compare {} vs {}, only same type allowed in this function",
+        self, other
+      ),
     }
   }
 }

@@ -1,10 +1,10 @@
 //! Parse an operator for ironclad_exe or unary expressions
 #![allow(missing_docs)]
 
-use nom::{branch, combinator, character::complete::{char}, bytes::complete::{tag}, Parser};
-use nom::combinator::not;
 use crate::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use nom::combinator::not;
+use nom::{branch, bytes::complete::tag, character::complete::char, combinator, Parser};
 
 type UnaryOpParserResult<'a> = nom::IResult<&'a str, ErlUnaryOp, ErlParserError<'a>>;
 type BinaryOpParserResult<'a> = nom::IResult<&'a str, ErlBinaryOp, ErlParserError<'a>>;
@@ -31,9 +31,7 @@ impl ErlParser {
   }
 
   pub fn binop_floatdiv(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('/')
-                        .and(not(char('='))),
-                    |_| ErlBinaryOp::Div)(input)
+    combinator::map(char('/').and(not(char('='))), |_| ErlBinaryOp::Div)(input)
   }
 
   pub fn binop_intdiv(input: &str) -> BinaryOpParserResult {
@@ -49,15 +47,11 @@ impl ErlParser {
   }
 
   pub fn binop_add(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('+')
-                        .and(not(char('+'))),
-                    |_| ErlBinaryOp::Add)(input)
+    combinator::map(char('+').and(not(char('+'))), |_| ErlBinaryOp::Add)(input)
   }
 
   pub fn binop_subtract(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('-')
-                        .and(not(char('-'))),
-                    |_| ErlBinaryOp::Sub)(input)
+    combinator::map(char('-').and(not(char('-'))), |_| ErlBinaryOp::Sub)(input)
   }
 
   pub fn binop_list_append(input: &str) -> BinaryOpParserResult {
@@ -137,8 +131,7 @@ impl ErlParser {
   }
 
   pub fn binop_greater(input: &str) -> BinaryOpParserResult {
-    combinator::map(char('>')
-                        .and(not(char('='))), |_| ErlBinaryOp::Greater)(input)
+    combinator::map(char('>').and(not(char('='))), |_| ErlBinaryOp::Greater)(input)
   }
 
   pub fn binop_greater_eq(input: &str) -> BinaryOpParserResult {
@@ -146,9 +139,10 @@ impl ErlParser {
   }
 
   pub fn binop_match(input: &str) -> BinaryOpParserResult {
-    combinator::map(tag("=")
-                        .and(not(branch::alt((char(':'), char('/'), char('<'))))),
-                    |_| ErlBinaryOp::Match)(input)
+    combinator::map(
+      tag("=").and(not(branch::alt((char(':'), char('/'), char('<'))))),
+      |_| ErlBinaryOp::Match,
+    )(input)
   }
 
   pub fn binop_comma(input: &str) -> BinaryOpParserResult {

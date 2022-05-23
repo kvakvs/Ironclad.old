@@ -1,10 +1,10 @@
 //! Catch clauses for try-catch block
 
-use std::fmt::Formatter;
-use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
+use std::fmt::Formatter;
+use std::sync::Arc;
 
 /// Catch clause for a try-catch block
 #[derive(Debug)]
@@ -19,7 +19,11 @@ pub struct CatchClause {
 
 impl CatchClause {
   /// Create a new catch clause
-  pub fn new(exc_pattern: ExceptionPattern, when_guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+  pub fn new(
+    exc_pattern: ExceptionPattern,
+    when_guard: Option<Arc<ErlAst>>,
+    body: Arc<ErlAst>,
+  ) -> Self {
     Self {
       exc_pattern,
       when_guard,
@@ -31,9 +35,17 @@ impl CatchClause {
 impl std::fmt::Display for CatchClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     if let Some(stk) = &self.exc_pattern.stack {
-      write!(f, "catch {}:{}:{}", self.exc_pattern.class, self.exc_pattern.error, stk)?;
+      write!(
+        f,
+        "catch {}:{}:{}",
+        self.exc_pattern.class, self.exc_pattern.error, stk
+      )?;
     } else {
-      write!(f, "catch {}:{}", self.exc_pattern.class, self.exc_pattern.error)?;
+      write!(
+        f,
+        "catch {}:{}",
+        self.exc_pattern.class, self.exc_pattern.error
+      )?;
     }
     if let Some(wheng) = &self.when_guard {
       write!(f, "when {}", wheng)?;
@@ -56,6 +68,10 @@ impl AstNode for CatchClause {
     if let Some(b_children) = self.body.children() {
       r.extend(b_children.iter().cloned());
     }
-    if r.is_empty() { None } else { Some(r) }
+    if r.is_empty() {
+      None
+    } else {
+      Some(r)
+    }
   }
 }

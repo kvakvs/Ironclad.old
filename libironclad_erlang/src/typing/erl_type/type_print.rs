@@ -1,8 +1,8 @@
 //! Display code for printing types
 
-use std::fmt::Formatter;
-use libironclad_util::pretty::{Pretty};
 use crate::typing::erl_type::ErlType;
+use libironclad_util::pretty::Pretty;
+use std::fmt::Formatter;
 
 impl std::fmt::Display for ErlType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -23,25 +23,21 @@ impl std::fmt::Display for ErlType {
         Pretty::display_curly_list(fields, f)
       }
       ErlType::AnyList => write!(f, "list()"),
-      ErlType::List { elements, tail } => {
-        match tail {
-          Some(t) => write!(f, "list({}, {})", elements, t),
-          None => write!(f, "list({})", elements),
+      ErlType::List { elements, tail } => match tail {
+        Some(t) => write!(f, "list({}, {})", elements, t),
+        None => write!(f, "list({})", elements),
+      },
+      ErlType::StronglyTypedList { elements, tail } => match tail {
+        Some(t) => {
+          write!(f, "strong_list(")?;
+          Pretty::display_comma_separated(elements, f)?;
+          write!(f, " | {})", t)
         }
-      }
-      ErlType::StronglyTypedList { elements, tail } => {
-        match tail {
-          Some(t) => {
-            write!(f, "strong_list(")?;
-            Pretty::display_comma_separated(elements, f)?;
-            write!(f, " | {})", t)
-          }
-          None => {
-            write!(f, "strong_list")?;
-            Pretty::display_paren_list(elements, f)
-          }
+        None => {
+          write!(f, "strong_list")?;
+          Pretty::display_paren_list(elements, f)
         }
-      }
+      },
       ErlType::Nil => write!(f, "[]"),
       ErlType::AnyMap => write!(f, "map()"),
       ErlType::Map { .. } => unimplemented!("Display type for map"),
@@ -63,7 +59,7 @@ impl std::fmt::Display for ErlType {
         write!(f, "{}", name)?;
         Pretty::display_paren_list(args, f)
       }
-      ErlType::Typevar(tv) => write!(f, "{}", tv)
+      ErlType::Typevar(tv) => write!(f, "{}", tv),
     }
   }
 }

@@ -1,14 +1,14 @@
 //! Code to support variable scopes
 
+use crate::syntax_tree::erl_ast::ast_iter::AstNode;
+use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::node::erl_var::ErlVar;
+use crate::typing::erl_type::ErlType;
+use libironclad_util::mfarity::MFArity;
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock, Weak};
-use crate::syntax_tree::erl_ast::ast_iter::AstNode;
-use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::node::erl_var::ErlVar;
-use libironclad_util::mfarity::MFArity;
-use crate::typing::erl_type::ErlType;
 
 /// Contains identifiers known in the current scope
 #[derive(Debug)]
@@ -28,7 +28,6 @@ pub struct Scope {
 
   /// Reference to the parent scope for name search
   pub parent_scope: Weak<RwLock<Scope>>,
-
   // TODO: Thrown types and catched types can be part of scope
 }
 
@@ -46,15 +45,23 @@ impl Default for Scope {
 
 impl std::fmt::Display for Scope {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    let vars_fmt = self.variables.iter()
-        .map(|v| format!("{}={}", v.0, v.1))
-        .collect::<Vec<String>>()
-        .join(", ");
-    let funs_fmt = self.function_defs.iter()
-        .map(|fnc| format!("{}", fnc.0))
-        .collect::<Vec<String>>()
-        .join(", ");
-    write!(f, "Scope{{ \"{}\", vars [{}], funs [{}] }}", self.name, vars_fmt, funs_fmt)
+    let vars_fmt = self
+      .variables
+      .iter()
+      .map(|v| format!("{}={}", v.0, v.1))
+      .collect::<Vec<String>>()
+      .join(", ");
+    let funs_fmt = self
+      .function_defs
+      .iter()
+      .map(|fnc| format!("{}", fnc.0))
+      .collect::<Vec<String>>()
+      .join(", ");
+    write!(
+      f,
+      "Scope{{ \"{}\", vars [{}], funs [{}] }}",
+      self.name, vars_fmt, funs_fmt
+    )
   }
 }
 
@@ -76,9 +83,11 @@ impl Scope {
   }
 
   /// Create a new scope from a variable hashmap
-  pub fn new(name: String,
-             parent_scope: Weak<RwLock<Scope>>,
-             variables: HashMap<String, Arc<ErlType>>) -> Self {
+  pub fn new(
+    name: String,
+    parent_scope: Weak<RwLock<Scope>>,
+    variables: HashMap<String, Arc<ErlType>>,
+  ) -> Self {
     Self {
       name,
       variables,
@@ -103,15 +112,15 @@ impl Scope {
   /// Insert a new var into scope
   pub fn add_to(scope: &RwLock<Scope>, var_name: &str) {
     if let Ok(mut scope_w) = scope.write() {
-      scope_w.variables.insert(var_name.to_string(), ErlType::any());
+      scope_w
+        .variables
+        .insert(var_name.to_string(), ErlType::any());
     }
   }
 
   /// Retrieve variable type from scope
   pub fn get(&self, var_name: &str) -> Option<Arc<ErlType>> {
-    self.variables
-        .get(&var_name.to_string())
-        .cloned()
+    self.variables.get(&var_name.to_string()).cloned()
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
@@ -121,8 +130,8 @@ impl Scope {
         Some(var_type) => Some(var_type.clone()),
         None => match scope_read.parent_scope.upgrade() {
           None => None,
-          Some(parent) => Self::retrieve_var_from(&parent, var)
-        }
+          Some(parent) => Self::retrieve_var_from(&parent, var),
+        },
       }
     } else {
       None
@@ -134,13 +143,15 @@ impl Scope {
     if let Ok(scope_read) = scope.read() {
       match scope_read.function_defs.get(mfa) {
         Some(val) => {
-          if val.is_fn_def() { return Some(val.clone()); }
+          if val.is_fn_def() {
+            return Some(val.clone());
+          }
           panic!("Only FnDef AST nodes must be stored in module scope")
         }
         None => match scope_read.parent_scope.upgrade() {
           None => None,
-          Some(parent) => Self::retrieve_fn_from(&parent, mfa)
-        }
+          Some(parent) => Self::retrieve_fn_from(&parent, mfa),
+        },
       }
     } else {
       None

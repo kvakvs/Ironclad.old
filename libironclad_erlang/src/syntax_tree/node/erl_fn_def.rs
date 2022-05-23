@@ -1,8 +1,4 @@
 //! Define a ErlFnDef struct for a new function AST node
-use std::sync::{Arc, RwLock};
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::source_loc::SourceLoc;
-use libironclad_util::mfarity::MFArity;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_fn_clause::ErlFnClause;
@@ -10,6 +6,10 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::scope::Scope;
+use libironclad_error::ic_error::IcResult;
+use libironclad_error::source_loc::SourceLoc;
+use libironclad_util::mfarity::MFArity;
+use std::sync::{Arc, RwLock};
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
@@ -28,7 +28,10 @@ impl ErlFnDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
   pub fn new(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
-    assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
+    assert!(
+      !clauses.is_empty(),
+      "Cannot construct a function definition without clauses"
+    );
     Self {
       location,
       funarity,
@@ -38,9 +41,11 @@ impl ErlFnDef {
 
   /// Produce `ErlType` for this function definition, with all clauses and their return types
   pub fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
-    let clauses_r: IcResult<Vec<FnClauseType>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
-        .collect();
+    let clauses_r: IcResult<Vec<FnClauseType>> = self
+      .clauses
+      .iter()
+      .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
+      .collect();
     let clauses = clauses_r?;
 
     let fn_type = FnType::new(self.funarity.arity, &clauses);
@@ -51,9 +56,11 @@ impl ErlFnDef {
   /// Produce a function return type, as union of all clauses returns
   pub fn synthesize_return_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     // TODO: Filter out incompatible clauses
-    let clauses_ret: IcResult<Vec<Arc<ErlType>>> = self.clauses.iter()
-        .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
-        .collect();
+    let clauses_ret: IcResult<Vec<Arc<ErlType>>> = self
+      .clauses
+      .iter()
+      .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
+      .collect();
     let synthesized_t = ErlType::new_union(&clauses_ret?);
     Ok(synthesized_t)
   }
@@ -61,9 +68,11 @@ impl ErlFnDef {
 
 impl AstNode for ErlFnDef {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let r: Vec<Arc<ErlAst>> = self.clauses.iter()
-        .map(|fclause| fclause.body.clone())
-        .collect();
+    let r: Vec<Arc<ErlAst>> = self
+      .clauses
+      .iter()
+      .map(|fclause| fclause.body.clone())
+      .collect();
     Some(r)
   }
 }

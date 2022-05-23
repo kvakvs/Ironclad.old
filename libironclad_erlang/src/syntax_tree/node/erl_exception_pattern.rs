@@ -1,8 +1,8 @@
 //! Exception pattern for `try-catch Class:Exception:Stack -> ...`
 
-use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
+use std::sync::Arc;
 
 /// Represents an exception pattern in catch clause for `try-catch Class:Exception:Stack -> ...`
 #[derive(Debug)]
@@ -17,9 +17,11 @@ pub struct ExceptionPattern {
 
 impl ExceptionPattern {
   /// Creates a new `ExceptionPattern`
-  pub fn new(class_pattern: Arc<ErlAst>,
-             err_pattern: Arc<ErlAst>,
-             stack_pattern: Option<Arc<ErlAst>>) -> Self {
+  pub fn new(
+    class_pattern: Arc<ErlAst>,
+    err_pattern: Arc<ErlAst>,
+    stack_pattern: Option<Arc<ErlAst>>,
+  ) -> Self {
     Self {
       class: class_pattern,
       error: err_pattern,
@@ -42,6 +44,10 @@ impl AstNode for ExceptionPattern {
         r.extend(c.iter().cloned());
       }
     }
-    if r.is_empty() { None } else { Some(r) }
+    if r.is_empty() {
+      None
+    } else {
+      Some(r)
+    }
   }
 }

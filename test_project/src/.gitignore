@@ -1,0 +1,5 @@
+﻿*.erl
+*.hrl
+*.src
+*.yrl
+genop.tab

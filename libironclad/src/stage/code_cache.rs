@@ -1,7 +1,7 @@
 //! Code cache contains compile states in a dict
+use crate::project::module::ErlModule;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::project::module::ErlModule;
 
 /// Contains cache of compile state keyed by filename
 pub struct ErlCodeCache {
@@ -17,7 +17,7 @@ impl Default for ErlCodeCache {
   /// Creates a new empty code cache hashmap
   fn default() -> Self {
     Self {
-      items: HashMap::with_capacity(Self::INITIAL_CODE_CACHE_SIZE)
+      items: HashMap::with_capacity(Self::INITIAL_CODE_CACHE_SIZE),
     }
   }
 }

@@ -1,9 +1,9 @@
 //! Haskell-style `let x = Value in Expr` node
 #![cfg(coreast)]
-use std::sync::Arc;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::node::core_var::Var;
 use libironclad_util::source_loc::SourceLoc;
+use std::sync::Arc;
 
 /// Represents Haskell-style `let x = Value in Expr` node, used in Core Erlang to create scopes
 #[derive(Debug)]

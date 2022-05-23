@@ -1,14 +1,14 @@
 //! Defines an Erlang-type
-use std::sync::Arc;
 use crate::literal::Literal;
-use libironclad_util::mfarity::MFArity;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
 use crate::typing::typevar::Typevar;
+use libironclad_util::mfarity::MFArity;
+use std::sync::Arc;
 
-pub mod type_is;
 pub mod type_as;
+pub mod type_is;
 pub mod type_new;
 pub mod type_print;
 
@@ -44,7 +44,7 @@ pub enum ErlType {
   /// Tuple of multiple types, elements count is the size
   Tuple {
     /// Collection of types for tuple elements, same size as tuple arity
-    elements: Vec<Arc<ErlType>>
+    elements: Vec<Arc<ErlType>>,
   },
   /// A tuple with an atom tag and typed fields
   Record {
@@ -78,7 +78,7 @@ pub enum ErlType {
   /// Type for a dictionary of key=>value style
   Map {
     /// Defines map key/value type pairs
-    items: Vec<(Arc<ErlType>, Arc<ErlType>)>
+    items: Vec<(Arc<ErlType>, Arc<ErlType>)>,
   },
 
   /// Any ironclad_exe of any size
@@ -98,7 +98,7 @@ pub enum ErlType {
   /// fun name/2 style references, also remote references
   FnRef {
     /// Function's location (module/function or just function)
-    fun: MFArity
+    fun: MFArity,
   },
   /// A function value, created using `fun(Args) -> code.` expression
   Lambda,
@@ -113,7 +113,7 @@ pub enum ErlType {
   /// A single literal value of any type
   Singleton {
     /// Singleton's value, a literal
-    val: Arc<Literal>
+    val: Arc<Literal>,
   },
 
   /// Contains multiple types + operations on these types
@@ -181,7 +181,10 @@ impl ErlType {
 
       ErlType::Singleton { val } => val.synthesize_type().get_order(),
 
-      other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", other),
+      other => unimplemented!(
+        "Don't know how to get numeric order for Erlang-type {}",
+        other
+      ),
     }
   }
 }

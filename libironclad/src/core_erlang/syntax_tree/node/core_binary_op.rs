@@ -4,7 +4,7 @@ use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use crate::core_erlang::syntax_tree::core_op::{CoreBinaryOp};
+use crate::core_erlang::syntax_tree::core_op::CoreBinaryOp;
 use crate::erl_error::{ErlError, ErlResult};
 use libironclad_erlsyntax::typing::erl_type::ErlType;
 use libironclad_erlsyntax::typing::scope::Scope;
@@ -23,5 +23,4 @@ pub struct BinaryOperatorExpr {
 }
 
 #[cfg(coreast)]
-impl BinaryOperatorExpr {
-}
+impl BinaryOperatorExpr {}

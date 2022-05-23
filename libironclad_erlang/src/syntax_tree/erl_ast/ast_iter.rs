@@ -2,8 +2,8 @@
 use crate::syntax_tree::erl_ast::ErlAst;
 use ::function_name::named;
 
-use std::sync::Arc;
 use crate::syntax_tree::node::erl_binary_element::ValueWidth;
+use std::sync::Arc;
 
 /// A trait for AST nodes which can contain nested nodes
 pub trait AstNode {
@@ -32,7 +32,7 @@ impl AstNode for ErlAst {
       ErlAst::FnDef(fn_def) => fn_def.children(),
       ErlAst::Apply(app) => app.children(),
 
-      ErlAst::CaseStatement {expr, clauses, ..} => {
+      ErlAst::CaseStatement { expr, clauses, .. } => {
         let mut r: Vec<Arc<ErlAst>> = vec![expr.clone()];
 
         for cc in clauses {
@@ -43,28 +43,32 @@ impl AstNode for ErlAst {
           r.push(cc.body.clone());
         }
 
-        if r.is_empty() { None } else { Some(r) }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
       }
 
       ErlAst::CClause(_loc, clause) => {
         if let Some(g) = &clause.guard {
-          Some(vec![clause.pattern.clone(),
-                    g.clone(),
-                    clause.body.clone()])
+          Some(vec![clause.pattern.clone(), g.clone(), clause.body.clone()])
         } else {
-          Some(vec![clause.pattern.clone(),
-                    clause.body.clone()])
+          Some(vec![clause.pattern.clone(), clause.body.clone()])
         }
       }
-      ErlAst::BinaryOp { expr: binop_expr, .. } => {
-        Some(vec![binop_expr.left.clone(),
-                  binop_expr.right.clone()])
-      }
-      ErlAst::UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
+      ErlAst::BinaryOp {
+        expr: binop_expr, ..
+      } => Some(vec![binop_expr.left.clone(), binop_expr.right.clone()]),
+      ErlAst::UnaryOp {
+        expr: unop_expr, ..
+      } => Some(vec![unop_expr.expr.clone()]),
       ErlAst::List { elements, .. } => Some(elements.to_vec()),
       ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
-      ErlAst::ListComprehension { expr, generators, .. } => {
+      ErlAst::ListComprehension {
+        expr, generators, ..
+      } => {
         let mut result = vec![expr.clone()];
         result.extend(generators.iter().cloned());
         Some(result)
@@ -74,7 +78,12 @@ impl AstNode for ErlAst {
       }
 
       ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
-      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+      ErlAst::TryCatch {
+        body,
+        of_branches,
+        catch_clauses,
+        ..
+      } => {
         let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch
         if let Some(ofb) = of_branches {
@@ -89,34 +98,50 @@ impl AstNode for ErlAst {
             r.extend(cc_children.iter().cloned())
           }
         }
-        if r.is_empty() { None } else { Some(r) }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
       }
-      ErlAst::CommaExpr {elements, ..} => {
+      ErlAst::CommaExpr { elements, .. } => {
         let mut r = Vec::default();
         for e in elements.iter() {
           if let Some(c) = e.children() {
             r.extend(c.iter().cloned());
           }
         }
-        if r.is_empty() { None } else { Some(r) }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
       }
-      ErlAst::IfStatement {clauses, ..} => {
+      ErlAst::IfStatement { clauses, .. } => {
         let mut r = Vec::default();
         for ifc in clauses.iter() {
           if let Some(c) = ifc.children() {
             r.extend(c.iter().cloned());
           }
         }
-        if r.is_empty() { None } else { Some(r) }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
       }
-      ErlAst::BinaryExpr {elements, ..} => {
+      ErlAst::BinaryExpr { elements, .. } => {
         let mut r = Vec::default();
         for bel in elements.iter() {
           if let ValueWidth::Expr(expr_width) = &bel.width {
             r.push(expr_width.clone());
           }
         }
-        if r.is_empty() { None } else { Some(r) }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
       }
       _ => unreachable!("{}(): Can't process {}", function_name!(), self),
     }

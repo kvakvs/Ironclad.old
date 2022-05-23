@@ -1,6 +1,6 @@
 //! Compile input options: All input directories, glob masks for file scanning, include/exclude etc
-use std::fmt::Debug;
 use crate::project::conf::input_opts::InputOptsConf;
+use std::fmt::Debug;
 
 /// Same as InputOptsConf but no Option<> fields
 /// Contains options defining libironclad inputs
@@ -39,7 +39,9 @@ impl From<InputOptsConf> for InputOpts {
       files: opts.files.unwrap_or(self_default.files),
       directories: opts.directories.unwrap_or(self_default.directories),
       exclude_files: opts.exclude_files.unwrap_or(self_default.exclude_files),
-      exclude_directories: opts.exclude_directories.unwrap_or(self_default.exclude_directories),
+      exclude_directories: opts
+        .exclude_directories
+        .unwrap_or(self_default.exclude_directories),
     }
   }
 }
@@ -48,7 +50,7 @@ impl From<Option<InputOptsConf>> for InputOpts {
   fn from(maybe_opts: Option<InputOptsConf>) -> Self {
     match maybe_opts {
       None => Self::default(),
-      Some(conf_val) => Self::from(conf_val)
+      Some(conf_val) => Self::from(conf_val),
     }
   }
 }

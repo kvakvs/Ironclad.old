@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc};
+use std::sync::Arc;
 
 use glob::glob;
 use libironclad_error::ic_error::{IcResult, IroncladError, IroncladResult};
@@ -13,14 +13,14 @@ use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
 use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
-use crate::stage::preprocess::PreprocessState;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
+use crate::stage::preprocess::PreprocessState;
 
-pub mod conf;
 pub mod compiler_opts;
+pub mod conf;
 pub mod input_opts;
-pub mod source_file;
 pub mod module;
+pub mod source_file;
 
 /// Same as ErlProjectConf but no Option<> fields
 #[derive(Debug)]
@@ -82,7 +82,7 @@ impl ErlProject {
         for entry in glob(&file_glob)? {
           match entry {
             Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
-            Err(err) => return Err(IroncladError::from(err))
+            Err(err) => return Err(IroncladError::from(err)),
           }
         } // for glob search results
       } // for input dirs
@@ -92,9 +92,11 @@ impl ErlProject {
   }
 
   /// Check exclusions in the Self.input. Hashset is used to check for duplicates. Add to Vec.
-  fn maybe_add_path(file_set: &mut HashSet<PathBuf>,
-                    file_list: &mut Vec<PathBuf>,
-                    path: PathBuf) -> IroncladResult<()> {
+  fn maybe_add_path(
+    file_set: &mut HashSet<PathBuf>,
+    file_list: &mut Vec<PathBuf>,
+    path: PathBuf,
+  ) -> IroncladResult<()> {
     // Check duplicate
     let abs_path = std::fs::canonicalize(path)?;
     if file_set.contains(&abs_path) {
@@ -119,12 +121,10 @@ impl ErlProject {
     };
 
     // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-    let _pp_ast_cache = PreprocessState::run(self, file_cache.clone())
-        .unwrap();
+    let _pp_ast_cache = PreprocessState::run(self, file_cache.clone()).unwrap();
 
     // Parse all ERL and HRL files
-    let _erl_code_cache = ErlParseStage::run(self, file_cache)
-        .unwrap();
+    let _erl_code_cache = ErlParseStage::run(self, file_cache).unwrap();
 
     Ok(())
   }

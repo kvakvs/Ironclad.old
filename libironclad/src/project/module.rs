@@ -1,19 +1,19 @@
 //! Defines an Erlang module ready to be compiled
-use std::cell::RefCell;
-use std::fmt::Debug;
-use std::fmt;
-use std::path::{Path};
-use std::sync::{Arc, RwLock};
 use nom::Finish;
+use std::cell::RefCell;
+use std::fmt;
+use std::fmt::Debug;
+use std::path::Path;
+use std::sync::{Arc, RwLock};
 
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 use libironclad_erlang::syntax_tree::erl_error::ErlError;
-use libironclad_erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use libironclad_erlang::syntax_tree::nom_parse::parse_type::ErlTypeParser;
+use libironclad_erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
 use libironclad_erlang::typing::scope::Scope;
-use libironclad_error::ic_error::{IcResult};
+use libironclad_error::ic_error::IcResult;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -31,7 +31,6 @@ pub struct ErlModule {
 
   // /// Collection of module functions and a lookup table
   // pub registry: RwLock<FuncRegistry>,
-
   /// Module level scope, containing functions
   pub scope: Arc<RwLock<Scope>>,
 
@@ -39,7 +38,6 @@ pub struct ErlModule {
   /// is reached.
   pub errors: RefCell<Vec<ErlError>>,
 }
-
 
 impl Default for ErlModule {
   fn default() -> Self {
@@ -49,7 +47,9 @@ impl Default for ErlModule {
       source_file: Arc::new(SourceFile::default()),
       ast: Arc::new(ErlAst::Empty),
       scope: Default::default(),
-      errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
+      errors: RefCell::new(Vec::with_capacity(
+        CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100,
+      )),
     }
   }
 }
@@ -72,7 +72,8 @@ impl ErlModule {
 
   /// Generic parse helper for any Nom entry point
   pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> IcResult<Self>
-    where T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>
+  where
+    T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>,
   {
     println!("Parsing from {}", filename.to_string_lossy());
 
@@ -88,8 +89,12 @@ impl ErlModule {
       Ok((tail, forms)) => {
         println!("Parse result AST: «{}»", &forms);
 
-        assert!(tail.trim().is_empty(),
-                "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}", tail, forms);
+        assert!(
+          tail.trim().is_empty(),
+          "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}",
+          tail,
+          forms
+        );
         module.source_file = SourceFile::new(filename, String::from(input));
         module.ast = forms;
 

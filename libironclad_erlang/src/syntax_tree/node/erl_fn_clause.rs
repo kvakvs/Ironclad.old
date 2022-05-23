@@ -1,14 +1,14 @@
 //! Defines a FClause struct for a new function clause AST node
 use std::fmt::Formatter;
 
-use std::sync::{Arc, RwLock, Weak};
-use libironclad_error::ic_error::IcResult;
-use libironclad_util::pretty::Pretty;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
 use crate::typing::typevar::Typevar;
+use libironclad_error::ic_error::IcResult;
+use libironclad_util::pretty::Pretty;
+use std::sync::{Arc, RwLock, Weak};
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
@@ -28,8 +28,12 @@ pub struct ErlFnClause {
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>,
-             guard_expr: Option<Arc<ErlAst>>) -> Self {
+  pub fn new(
+    name: Option<String>,
+    args: Vec<Arc<ErlAst>>,
+    body: Arc<ErlAst>,
+    guard_expr: Option<Arc<ErlAst>>,
+  ) -> Self {
     // TODO: For root level function defs assert that name is Some. For lambdas: that name is None
     let scope_name = match &name {
       None => "unnamed fn scope".into(),
@@ -88,7 +92,14 @@ impl ErlFnClause {
 
 impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
+    write!(
+      f,
+      "{}(",
+      self
+        .name
+        .clone()
+        .unwrap_or_else(|| "$unnamed-lambda".to_string())
+    )?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
@@ -100,7 +111,14 @@ impl std::fmt::Display for ErlFnClause {
 
 impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
+    write!(
+      f,
+      "{}(",
+      self
+        .name
+        .clone()
+        .unwrap_or_else(|| "$unnamed-lambda".to_string())
+    )?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {

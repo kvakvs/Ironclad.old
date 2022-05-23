@@ -43,7 +43,9 @@ impl MFArity {
 }
 
 impl std::fmt::Debug for MFArity {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self) }
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self)
+  }
 }
 
 impl std::fmt::Display for MFArity {

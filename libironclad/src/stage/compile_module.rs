@@ -1,11 +1,11 @@
 //! Module compile state contains all inputs necessary to compile a module. Environment is passed
 //! in separately (as the module will need to know about other modules and their inferred types)
 
-use std::path::{PathBuf, };
 use crate::project::compiler_opts::CompilerOpts;
-use std::sync::Arc;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 use crate::project::source_file::SourceFile;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 /// Compile state, used as input to begin the compilation
 pub struct CompileModule {
@@ -32,14 +32,13 @@ pub struct CompileModule {
 
 impl CompileModule {
   /// Creates new state for module compilation
-  pub fn new(in_file: &Arc<SourceFile>,
-             options: Arc<CompilerOpts>)  -> Self {
+  pub fn new(in_file: &Arc<SourceFile>, options: Arc<CompilerOpts>) -> Self {
     Self {
       in_file: in_file.file_name.to_path_buf(),
       out_file: Default::default(), // will be set later
       module_name: "".to_string(),
       encoding: "".to_string(),
-      options
+      options,
     }
   }
 

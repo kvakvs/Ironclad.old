@@ -1,5 +1,8 @@
 #[allow(dead_code)]
-pub fn fail_unexpected<T>(val: &T) where T: std::fmt::Display {
+pub fn fail_unexpected<T>(val: &T)
+where
+  T: std::fmt::Display,
+{
   panic!("Unexpected value: {}", val)
 }
 

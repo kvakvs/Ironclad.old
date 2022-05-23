@@ -2,14 +2,14 @@
 #![cfg(coreast)]
 use std::sync::{Arc, RwLock};
 
-use libironclad_util::mfarity::MFArity;
 use crate::core_erlang::syntax_tree::node::core_fn_clause::CoreFnClause;
 use crate::erl_error::ErlResult;
-use libironclad_util::source_loc::SourceLoc;
 use libironclad_erlsyntax::typing::erl_type::ErlType;
 use libironclad_erlsyntax::typing::fn_clause_type::FnClauseType;
 use libironclad_erlsyntax::typing::fn_type::FnType;
 use libironclad_erlsyntax::typing::scope::Scope;
+use libironclad_util::mfarity::MFArity;
+use libironclad_util::source_loc::SourceLoc;
 
 /// Defines a new function in Core Erlang
 /// Argument handling is moved from the clauses into the function body

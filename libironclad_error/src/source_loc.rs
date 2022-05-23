@@ -1,6 +1,6 @@
 //! Source file locations for printing and reporting to the user
-use std::path::PathBuf;
 use std::fmt::Formatter;
+use std::path::PathBuf;
 
 /// Source code span with start and end
 #[derive(Clone, Debug)]
@@ -38,7 +38,7 @@ impl std::fmt::Display for SourceLoc {
     match self {
       SourceLoc::None => write!(f, "Source:?"),
       SourceLoc::Span { start, end } => write!(f, "Source: bytes {}..{}", start, end),
-      SourceLoc::File(p) => write!(f, "File: {}", p.to_string_lossy())
+      SourceLoc::File(p) => write!(f, "File: {}", p.to_string_lossy()),
     }
   }
 }

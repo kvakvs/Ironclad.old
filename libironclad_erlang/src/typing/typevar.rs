@@ -1,8 +1,8 @@
 //! A type variable: name and a type pair.
 
+use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
 use std::sync::Arc;
-use crate::typing::erl_type::ErlType;
 
 /// Represents a function argument, a type variable in a typespec or a member of `when` clause
 /// in a function spec. Name is optional.
@@ -32,7 +32,12 @@ impl Typevar {
   }
 
   /// Create an unnamed anytype.
-  pub fn new_unnamed_any() -> Self { Self { name: None, ty: ErlType::any() } }
+  pub fn new_unnamed_any() -> Self {
+    Self {
+      name: None,
+      ty: ErlType::any(),
+    }
+  }
 
   /// Given a var, and a list of typevars in when clause, try find one matching
   pub fn substitute_var_from_when_clause<'a>(item_a: &'a Typevar, b: &'a [Typevar]) -> &'a Typevar {
@@ -41,9 +46,7 @@ impl Typevar {
       if let Some(found_b) = b.iter().find(|item_b| {
         // if some element in B has a name which matches A
         // and element B's type is same or more narrow than type of element A
-        item_b.name.is_some()
-            && item_b.name == item_a.name
-            && item_b.ty.is_subtype_of(&item_a.ty)
+        item_b.name.is_some() && item_b.name == item_a.name && item_b.ty.is_subtype_of(&item_a.ty)
       }) {
         // Then replace element A with element from B
         found_b
@@ -58,10 +61,11 @@ impl Typevar {
   /// Merges lists a and b, by finding typevar names from a in b
   pub fn merge_lists(a: &[Typevar], b: &[Typevar]) -> Vec<Typevar> {
     println!("Merge {:?} and {:?}", a, b);
-    let result = a.iter()
-        .map(|each_a| Self::substitute_var_from_when_clause(each_a, b))
-        .cloned()
-        .collect();
+    let result = a
+      .iter()
+      .map(|each_a| Self::substitute_var_from_when_clause(each_a, b))
+      .cloned()
+      .collect();
     println!("Merge result {:?}", result);
     result
   }
@@ -69,9 +73,7 @@ impl Typevar {
   /// Consumes argument.
   /// Converts vector of typevar into vector of erltype::typevars
   pub fn vec_of_typevars_into_types(typevars: Vec<Typevar>) -> Vec<Arc<ErlType>> {
-    typevars.into_iter()
-        .map(ErlType::new_typevar)
-        .collect()
+    typevars.into_iter().map(ErlType::new_typevar).collect()
   }
 }
 

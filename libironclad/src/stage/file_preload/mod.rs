@@ -1,9 +1,9 @@
 //! Scans the project directory structure and preloads all ERL and HRL source files into memory
 
-use std::path::PathBuf;
 use crate::stage::file_contents_cache::FileContentsCache;
+use libironclad_error::ic_error::IroncladResult;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use libironclad_error::ic_error::{IroncladResult};
 
 /// Handles loading/caching text files in memory
 pub struct FilePreloadStage {}
@@ -19,9 +19,11 @@ impl FilePreloadStage {
     for filename in inputs {
       state.preload_file(filename)?
     }
-    println!("Read {} files, {} bytes (without include files)",
-             state.all_files.len(),
-             state.read_bytes_count);
+    println!(
+      "Read {} files, {} bytes (without include files)",
+      state.all_files.len(),
+      state.read_bytes_count
+    );
 
     Ok(RwLock::new(state).into())
   }

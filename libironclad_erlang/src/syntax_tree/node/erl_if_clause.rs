@@ -1,8 +1,8 @@
 //! A branch of `if COND -> EXPR; ... end`
 
-use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
+use std::sync::Arc;
 
 /// AST node for a clause in a `if COND -> EXPR; ... end` statement.
 #[derive(Debug)]
@@ -32,6 +32,10 @@ impl AstNode for ErlIfClause {
     if let Some(body_children) = self.body.children() {
       r.extend(body_children.iter().cloned());
     }
-    if r.is_empty() { None } else { Some(r) }
+    if r.is_empty() {
+      None
+    } else {
+      Some(r)
+    }
   }
 }

@@ -1,19 +1,8 @@
 //! Creating ErlErrors from other types
-use std::num::ParseIntError;
-use crate::source_loc::SourceLoc;
-use crate::ic_error::{IroncladError, };
+use crate::ic_error::IroncladError;
 use crate::ic_error_category::IcErrorCategory;
-
-// impl IcError {
-//   /// Builds IcError with nice error details from input string and Nom's verbose error
-//   pub fn from_nom_error(input: &str, value: ErlParserError) -> Self {
-//     Self {
-//       err_type: IcErrorType::ErlangParse,
-//       loc: SourceLoc::None,
-//       msg: nom::error::convert_error(input, value),
-//     }
-//   }
-// }
+use crate::source_loc::SourceLoc;
+use std::num::ParseIntError;
 
 impl From<std::io::Error> for IroncladError {
   fn from(value: std::io::Error) -> Self {
@@ -39,17 +28,12 @@ impl From<glob::PatternError> for IroncladError {
   }
 }
 
-// impl From<TypeError> for IcError {
-//   fn from(value: TypeError) -> Self {
-//     IcError::new_type_only(IcErrorCategory::TypeErr(value))
-//   }
-// }
-
 impl From<ParseIntError> for IroncladError {
   fn from(pie: ParseIntError) -> Self {
-    IroncladError::new(IcErrorCategory::ErlangParse,
-                       SourceLoc::None,
-                       format!("Cannot parse integer: {}", pie),
+    IroncladError::new(
+      IcErrorCategory::ErlangParse,
+      SourceLoc::None,
+      format!("Cannot parse integer: {}", pie),
     )
   }
 }

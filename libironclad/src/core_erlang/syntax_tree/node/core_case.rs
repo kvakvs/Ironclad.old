@@ -44,7 +44,7 @@ impl std::fmt::Display for Case {
         write!(f, "( case <")?;
         Pretty::display_comma_separated(&self.exprs, f)?;
         writeln!(f, "> of ")?;
-      },
+      }
     }
     for clause in &self.clauses {
       writeln!(f, "( {} )", clause)?;

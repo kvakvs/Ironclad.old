@@ -1,7 +1,5 @@
 //! Constructors for complex ErlTypes
 
-use std::iter;
-use std::sync::Arc;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::erl_type::ErlType::UserDefinedType;
@@ -9,6 +7,8 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::type_union::TypeUnion;
 use crate::typing::typevar::Typevar;
+use std::iter;
+use std::sync::Arc;
 
 //
 // Constructors and Generators
@@ -22,8 +22,9 @@ impl ErlType {
   /// Creates a new singleton atom of name `s`
   pub fn new_atom(s: &str) -> Arc<ErlType> {
     ErlType::Singleton {
-      val: Literal::Atom(s.to_string()).into()
-    }.into()
+      val: Literal::Atom(s.to_string()).into(),
+    }
+    .into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
@@ -46,12 +47,17 @@ impl ErlType {
 
   /// Creates new function type with clauses
   pub fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
-    assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
+    assert!(
+      !clauses.is_empty(),
+      "Attempt to build a fn type with zero clauses"
+    );
 
     let arity = clauses[0].arity();
-    assert!(clauses.iter().all(|c| c.arity() == arity),
-            "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
-            arity);
+    assert!(
+      clauses.iter().all(|c| c.arity() == arity),
+      "Attempt to build a fn type with clauses of different arity (first clause had arity {})",
+      arity
+    );
 
     let fn_type = FnType::new(arity, clauses);
     ErlType::Fn(fn_type.into())
@@ -59,9 +65,10 @@ impl ErlType {
 
   /// Creates a new function type with 1 clause, a count of `any()` args and a given return type
   pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &Arc<ErlType>) -> ErlType {
-    let any_args = iter::repeat(()).take(arity)
-        .map(|_| Typevar::new(None, None))
-        .collect();
+    let any_args = iter::repeat(())
+      .take(arity)
+      .map(|_| Typevar::new(None, None))
+      .collect();
     let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
     let fn_type = FnType::new(arity, &[clause]);
     ErlType::Fn(fn_type.into())
@@ -83,7 +90,7 @@ impl ErlType {
         match u.types.len() {
           0 => panic!("Can't create type union of 0 types after normalization"),
           1 => u.types[0].clone(),
-          _ => ErlType::Union(u).into()
+          _ => ErlType::Union(u).into(),
         }
       }
     }
@@ -92,8 +99,9 @@ impl ErlType {
   /// Construct a new tuple-type
   pub fn new_tuple(elements: &[Arc<ErlType>]) -> Arc<ErlType> {
     ErlType::Tuple {
-      elements: elements.into()
-    }.into()
+      elements: elements.into(),
+    }
+    .into()
   }
 
   /// Consumes argument.
@@ -108,40 +116,41 @@ impl ErlType {
   }
 
   /// Try match type name and arity vs known basic types
-  pub fn from_name(_maybe_module: Option<String>,
-                   type_name: String,
-                   args: &[Typevar]) -> Arc<ErlType> {
+  pub fn from_name(
+    _maybe_module: Option<String>,
+    type_name: String,
+    args: &[Typevar],
+  ) -> Arc<ErlType> {
     #[allow(clippy::single_match)]
     match args.len() {
-      0 => {
-        match type_name.as_ref() {
-          "any" => return ErlType::any(),
-          "none" => return ErlType::none(),
+      0 => match type_name.as_ref() {
+        "any" => return ErlType::any(),
+        "none" => return ErlType::none(),
 
-          "number" => return ErlType::number(),
-          "integer" => return ErlType::integer(),
-          "float" => return ErlType::float(),
+        "number" => return ErlType::number(),
+        "integer" => return ErlType::integer(),
+        "float" => return ErlType::float(),
 
-          "atom" => return ErlType::atom(),
-          "boolean" => return ErlType::boolean(),
+        "atom" => return ErlType::atom(),
+        "boolean" => return ErlType::boolean(),
 
-          "list" => return ErlType::any_list(),
-          "nil" => return ErlType::nil(),
+        "list" => return ErlType::any_list(),
+        "nil" => return ErlType::nil(),
 
-          "tuple" => return ErlType::any_tuple(),
+        "tuple" => return ErlType::any_tuple(),
 
-          "pid" => return ErlType::pid(),
-          "port" => return ErlType::port(),
-          "reference" => return ErlType::reference(),
-          _ => {}
-        }
-      }
+        "pid" => return ErlType::pid(),
+        "port" => return ErlType::port(),
+        "reference" => return ErlType::reference(),
+        _ => {}
+      },
       _ => {}
     }
     // We were not able to find a basic type of that name and arity
     UserDefinedType {
       name: type_name,
       args: args.to_vec(),
-    }.into()
+    }
+    .into()
   }
 }

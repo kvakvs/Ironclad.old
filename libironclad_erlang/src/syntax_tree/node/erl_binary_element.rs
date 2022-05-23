@@ -1,10 +1,10 @@
 //! Binary element is an item in a ironclad_exe expression or a ironclad_exe builder.
 //! This models the ironclad_exe syntax of Erlang: <<1, 2, 3:8/bits, Variable, (function()):16 ...>>
 
-use std::sync::Arc;
+use crate::syntax_tree::erl_ast::ErlAst;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::pretty::Pretty;
-use crate::syntax_tree::erl_ast::ErlAst;
+use std::sync::Arc;
 
 /// Added to `BinaryTypeSpecifier` after `:` to specify the bit width.
 /// Sometimes bit width is known at compile time and sometimes is not.
@@ -66,30 +66,24 @@ pub enum TypeSpecifier {
 impl std::fmt::Display for TypeSpecifier {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeSpecifier::Type(t) => {
-        match t {
-          ValueType::Integer => write!(f, "integer"),
-          ValueType::Float => write!(f, "float"),
-          ValueType::Bytes => write!(f, "bytes"),
-          ValueType::Bitstring => write!(f, "bitstring"),
-          ValueType::Utf8 => write!(f, "utf8"),
-          ValueType::Utf16 => write!(f, "utf16"),
-          ValueType::Utf32 => write!(f, "utf32"),
-        }
-      }
-      TypeSpecifier::Signedness(s) => {
-        match s {
-          ValueSignedness::Signed => write!(f, "signed"),
-          ValueSignedness::Unsigned => write!(f, "unsigned"),
-        }
-      }
-      TypeSpecifier::Endianness(e) => {
-        match e {
-          ValueEndianness::Big => write!(f, "big"),
-          ValueEndianness::Little => write!(f, "little"),
-          ValueEndianness::Native => write!(f, "native"),
-        }
-      }
+      TypeSpecifier::Type(t) => match t {
+        ValueType::Integer => write!(f, "integer"),
+        ValueType::Float => write!(f, "float"),
+        ValueType::Bytes => write!(f, "bytes"),
+        ValueType::Bitstring => write!(f, "bitstring"),
+        ValueType::Utf8 => write!(f, "utf8"),
+        ValueType::Utf16 => write!(f, "utf16"),
+        ValueType::Utf32 => write!(f, "utf32"),
+      },
+      TypeSpecifier::Signedness(s) => match s {
+        ValueSignedness::Signed => write!(f, "signed"),
+        ValueSignedness::Unsigned => write!(f, "unsigned"),
+      },
+      TypeSpecifier::Endianness(e) => match e {
+        ValueEndianness::Big => write!(f, "big"),
+        ValueEndianness::Little => write!(f, "little"),
+        ValueEndianness::Native => write!(f, "native"),
+      },
       TypeSpecifier::Unit(u) => write!(f, "unit:{}", u),
     }
   }
@@ -110,11 +104,18 @@ pub struct BinaryElement {
 
 impl BinaryElement {
   /// Creates a new freshly parsed element of a ironclad_exe expression
-  pub fn new(location: SourceLoc,
-             value: Arc<ErlAst>,
-             width: ValueWidth,
-             type_specs: Vec<TypeSpecifier>) -> Self {
-    Self { location, value, width, type_specs }
+  pub fn new(
+    location: SourceLoc,
+    value: Arc<ErlAst>,
+    width: ValueWidth,
+    type_specs: Vec<TypeSpecifier>,
+  ) -> Self {
+    Self {
+      location,
+      value,
+      width,
+      type_specs,
+    }
   }
 }
 

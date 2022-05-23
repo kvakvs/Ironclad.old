@@ -1,7 +1,7 @@
 //! Defines libironclad options for a file
-use std::sync::Arc;
 use crate::project::conf::compiler_opts::CompilerOptsConf;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
+use std::sync::Arc;
 
 /// Compiler options for a file
 #[derive(Debug, Clone)]
@@ -10,7 +10,6 @@ pub struct CompilerOpts {
   pub include_paths: Vec<String>,
 
   // pub opts: Vec<CompilerOption> ...
-
   /// Preprocessor macro defines in form of "NAME" or "NAME=VALUE" or NAME(ARGS...)=VALUE
   pub scope: Arc<PreprocessorScope>,
 
@@ -66,7 +65,7 @@ impl From<Option<CompilerOptsConf>> for CompilerOpts {
   fn from(maybe_opts: Option<CompilerOptsConf>) -> Self {
     match maybe_opts {
       None => Self::default(),
-      Some(conf_val) => Self::from(conf_val)
+      Some(conf_val) => Self::from(conf_val),
     }
   }
 }

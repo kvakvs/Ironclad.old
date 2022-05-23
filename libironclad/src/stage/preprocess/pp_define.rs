@@ -48,6 +48,9 @@ impl PreprocessorDefine {
 
   /// Construct name/arity pair
   pub fn get_name_arity(&self) -> NameArity {
-    NameArity { name: self.name.clone(), arity: self.get_arity() }
+    NameArity {
+      name: self.name.clone(),
+      arity: self.get_arity(),
+    }
   }
 }

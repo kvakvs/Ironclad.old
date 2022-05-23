@@ -1,9 +1,9 @@
 //! Construction routines for PpAst
 
+use crate::syntax_tree::pp_ast::PpAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::pp_ast::PpAst;
 
 impl PpAst {
   /// Create new file tree
@@ -16,7 +16,8 @@ impl PpAst {
     PpAst::IncludedFile {
       filename: PathBuf::from(file),
       ast,
-    }.into()
+    }
+    .into()
   }
 
   /// Create new macro definition
@@ -30,18 +31,22 @@ impl PpAst {
       PpAst::EmptyText
     } else {
       PpAst::Text(text.into())
-    }.into()
+    }
+    .into()
   }
 
   /// Creates a new preprocessor IF node
-  pub fn new_if(expr: Arc<ErlAst>,
-                cond_true: Option<Vec<Arc<PpAst>>>,
-                cond_false: Option<Vec<Arc<PpAst>>>) -> Arc<Self> {
+  pub fn new_if(
+    expr: Arc<ErlAst>,
+    cond_true: Option<Vec<Arc<PpAst>>>,
+    cond_false: Option<Vec<Arc<PpAst>>>,
+  ) -> Arc<Self> {
     PpAst::IfBlock {
       cond: expr,
       cond_true,
       cond_false,
-    }.into()
+    }
+    .into()
   }
 
   /// Create a new `-if()` temporary node.
@@ -65,11 +70,17 @@ impl PpAst {
   }
 
   /// Create a new UNDEF node
-  pub fn new_undef(ident: String) -> Arc<Self> { PpAst::Undef(ident).into() }
+  pub fn new_undef(ident: String) -> Arc<Self> {
+    PpAst::Undef(ident).into()
+  }
 
   /// Create a new INCLUDE node
-  pub fn new_include(p: String) -> Arc<Self> { PpAst::Include(p).into() }
+  pub fn new_include(p: String) -> Arc<Self> {
+    PpAst::Include(p).into()
+  }
 
   /// Create a new INCLUDE_LIB node
-  pub fn new_include_lib(p: String) -> Arc<Self> { PpAst::IncludeLib(p).into() }
+  pub fn new_include_lib(p: String) -> Arc<Self> {
+    PpAst::IncludeLib(p).into()
+  }
 }

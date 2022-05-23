@@ -1,7 +1,7 @@
 //! Contains all possible Erlang libironclad errors
 use crate::ic_error_category::IcErrorCategory;
-use crate::source_loc::{SourceLoc};
 use crate::ic_error_trait::{IcError, IcErrorT};
+use crate::source_loc::SourceLoc;
 
 /// Ironclad errors all gathered together, and categorised
 pub struct IroncladError {
@@ -9,7 +9,6 @@ pub struct IroncladError {
   category: IcErrorCategory,
   /// Location where error was found
   loc: SourceLoc,
-
   /// Message for the user
   msg: String,
 }
@@ -67,7 +66,11 @@ impl IroncladError {
   // TODO: move to preprocessor crate
   /// Creates a preprocessor parse error from a filename and a message
   pub fn pp_parse<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
-    let new_err = IroncladError::new(IcErrorCategory::PreprocessorParse, loc, String::from(message));
+    let new_err = IroncladError::new(
+      IcErrorCategory::PreprocessorParse,
+      loc,
+      String::from(message),
+    );
     Err(Box::new(new_err))
   }
 

@@ -1,11 +1,13 @@
 //! Complex support code to parse 'delimited' atom strings and atoms in general
 //! String parsing code from Nom examples.
 
-use nom::{sequence, multi, branch, combinator, error,
-          bytes::streaming::{is_not, take_while_m_n},
-          character};
 use crate::syntax_tree::nom_parse::misc::MiscParser;
 use crate::syntax_tree::nom_parse::StringParserResult;
+use nom::{
+  branch,
+  bytes::streaming::{is_not, take_while_m_n},
+  character, combinator, error, multi, sequence,
+};
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single
@@ -29,8 +31,8 @@ impl AtomParser {
   /// hexadecimal numerals. We will combine this later with parse_escaped_char
   /// to parse sequences like \u{00AC}.
   fn parse_unicode<'a, E>(input: &'a str) -> nom::IResult<&'a str, char, E>
-    where
-        E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
+  where
+    E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
     // `take_while_m_n` parses between `m` and `n` bytes (inclusive) that match
     // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
@@ -46,30 +48,27 @@ impl AtomParser {
       sequence::delimited(
         character::streaming::char('{'),
         parse_hex,
-        character::streaming::char('}')),
+        character::streaming::char('}'),
+      ),
     );
 
     // `map_res` takes the result of a parser and applies a function that returns
     // a Result. In this case we take the hex bytes from parse_hex and attempt to
     // convert them to a u32.
-    let parse_u32 = combinator::map_res(
-      parse_delimited_hex,
-      move |hex| u32::from_str_radix(hex, 16));
+    let parse_u32 =
+      combinator::map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
 
     // map_opt is like map_res, but it takes an Option instead of a Result. If
     // the function returns None, map_opt returns an error. In this case, because
     // not all u32 values are valid unicode code points, we have to fallibly
     // convert to char with from_u32.
-    combinator::map_opt(
-      parse_u32,
-      std::char::from_u32,
-    )(input)
+    combinator::map_opt(parse_u32, std::char::from_u32)(input)
   }
 
   /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
   fn parse_escaped_char<'a, E>(input: &'a str) -> nom::IResult<&'a str, char, E>
-    where
-        E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
+  where
+    E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
     sequence::preceded(
       character::streaming::char('\\'),
@@ -105,7 +104,9 @@ impl AtomParser {
   }
 
   /// Parse a non-empty block of text that doesn't include \ or "
-  fn parse_literal<'a, E: error::ParseError<&'a str>>(input: &'a str) -> nom::IResult<&'a str, &'a str, E> {
+  fn parse_literal<'a, E: error::ParseError<&'a str>>(
+    input: &'a str,
+  ) -> nom::IResult<&'a str, &'a str, E> {
     // `is_not` parses a string of 0 or more characters that aren't one of the
     // given characters.
     let not_quote_slash = is_not("\'\\");
@@ -120,8 +121,8 @@ impl AtomParser {
   /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
   /// into a StringFragment.
   fn parse_fragment<'a, E>(input: &'a str) -> nom::IResult<&'a str, StringFragment<'a>, E>
-    where
-        E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
+  where
+    E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
     branch::alt((
       // The `map` combinator runs a parser, then applies a function to the output
@@ -135,8 +136,8 @@ impl AtomParser {
   /// Parse a string. Use a loop of parse_fragment and push all of the fragments
   /// into an output string.
   fn parse_quoted_atom<'a, E>(input: &'a str) -> nom::IResult<&'a str, String, E>
-    where
-        E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
+  where
+    E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
     // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
     // and for each output value, calls a folding function on each output value.
@@ -164,7 +165,8 @@ impl AtomParser {
     sequence::delimited(
       character::streaming::char('\''),
       build_quoted_atom_body,
-      character::streaming::char('\''))(input)
+      character::streaming::char('\''),
+    )(input)
   }
 
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
@@ -177,10 +179,35 @@ impl AtomParser {
   }
 
   fn is_erl_keyword(s: &str) -> bool {
-    matches!(s,
-      "after" | "and" | "andalso" | "band" |"begin" | "bnot" | "bor" | "bsl" |
-      "bsr" | "bxor" | "case" | "catch" |"cond" | "div" | "end" | "fun" |
-      "if" | "let" | "not" | "of" |"or" | "orelse" | "receive" | "rem" |"try" | "when" | "xor"
+    matches!(
+      s,
+      "after"
+        | "and"
+        | "andalso"
+        | "band"
+        | "begin"
+        | "bnot"
+        | "bor"
+        | "bsl"
+        | "bsr"
+        | "bxor"
+        | "case"
+        | "catch"
+        | "cond"
+        | "div"
+        | "end"
+        | "fun"
+        | "if"
+        | "let"
+        | "not"
+        | "of"
+        | "or"
+        | "orelse"
+        | "receive"
+        | "rem"
+        | "try"
+        | "when"
+        | "xor"
     )
   }
 }

@@ -2,23 +2,23 @@
 
 use std::sync::Arc;
 
-use nom::{combinator, multi, branch};
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
+use nom::{branch, combinator, multi};
 
-pub mod parse_attr;
 pub mod misc;
 pub mod parse_atom;
-pub mod parse_fn;
+pub mod parse_attr;
+pub mod parse_binary;
+pub mod parse_case;
 pub mod parse_expr;
 pub mod parse_expr_op;
+pub mod parse_fn;
+pub mod parse_if_stmt;
 pub mod parse_lit;
 pub mod parse_str;
-pub mod parse_type;
-pub mod parse_case;
-pub mod parse_if_stmt;
 pub mod parse_try_catch;
-pub mod parse_binary;
+pub mod parse_type;
 
 /// Gathers multiple errors and contexts together
 pub type ErlParserError<'a> = nom::error::VerboseError<&'a str>;
@@ -58,10 +58,7 @@ impl ErlParser {
 
   /// Parses an attribute or a function def
   pub fn parse_module_form(input: &str) -> AstParserResult {
-    branch::alt((
-      ErlAttrParser::parse,
-      Self::parse_fndef,
-    ))(input)
+    branch::alt((ErlAttrParser::parse, Self::parse_fndef))(input)
   }
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.

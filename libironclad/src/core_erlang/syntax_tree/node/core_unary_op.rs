@@ -1,9 +1,9 @@
 //! Defines structs for AST nodes representing unary operators (+A, not A, -A, ...)
 #![cfg(coreast)]
 
-use std::sync::Arc;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
 use crate::core_erlang::syntax_tree::core_op::CoreUnaryOp;
+use std::sync::Arc;
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
 #[derive(Debug)]

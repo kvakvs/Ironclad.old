@@ -19,5 +19,4 @@ pub struct InputOptsConf {
   pub exclude_directories: Option<Vec<String>>,
 }
 
-impl InputOptsConf {
-}
+impl InputOptsConf {}

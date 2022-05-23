@@ -1,19 +1,25 @@
 //! AST node-type checks
 
-use std::ops::Deref;
+use crate::literal::Literal;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
-use crate::literal::Literal;
+use std::ops::Deref;
 
 impl ErlAst {
   /// Checks whether an ErlAst node is a function definition
-  pub fn is_fn_def(&self) -> bool { matches!(self, ErlAst::FnDef(_)) }
+  pub fn is_fn_def(&self) -> bool {
+    matches!(self, ErlAst::FnDef(_))
+  }
 
   /// Checks whether an ErlAst node is a function spec
-  pub fn is_fn_spec(&self) -> bool { matches!(self, ErlAst::FnSpec{..}) }
+  pub fn is_fn_spec(&self) -> bool {
+    matches!(self, ErlAst::FnSpec { .. })
+  }
 
   /// Checks whether an ErlAst node is an Erlang Type
-  pub fn is_type(&self) -> bool { matches!(self, ErlAst::Type {..}) }
+  pub fn is_type(&self) -> bool {
+    matches!(self, ErlAst::Type { .. })
+  }
 
   /// Checks whether an ErlAst node is an Erlang Type
   pub fn is_atom(&self) -> bool {
@@ -34,5 +40,7 @@ impl ErlAst {
   }
 
   /// Checks whether an ErlAst node is a Function Application (a call)
-  pub fn is_application(&self) -> bool { matches!(self, ErlAst::Apply(_)) }
+  pub fn is_application(&self) -> bool {
+    matches!(self, ErlAst::Apply(_))
+  }
 }

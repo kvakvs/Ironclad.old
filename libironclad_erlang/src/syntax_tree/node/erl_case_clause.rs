@@ -1,7 +1,7 @@
 //! Declares AST node for a clause in `case of` expression
-use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
+use std::sync::Arc;
 
 /// AST node for a clause in a `case X of` expression.
 #[derive(Debug)]
@@ -17,7 +17,11 @@ pub struct ErlCaseClause {
 impl ErlCaseClause {
   /// Create a new case clause branch
   pub fn new(pattern: Arc<ErlAst>, guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
-    Self { pattern, guard, body }
+    Self {
+      pattern,
+      guard,
+      body,
+    }
   }
 }
 
@@ -38,6 +42,10 @@ impl AstNode for ErlCaseClause {
         r.extend(g_children.iter().cloned());
       }
     }
-    if r.is_empty() { None } else { Some(r) }
+    if r.is_empty() {
+      None
+    } else {
+      Some(r)
+    }
   }
 }

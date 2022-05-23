@@ -1,6 +1,6 @@
 //! Larger categories for errors
 
-use crate::ic_error_trait::{IcError};
+use crate::ic_error_trait::IcError;
 
 /// General error type covering all system errors, parser errors, compiler errors, etc.
 #[derive(Debug)]

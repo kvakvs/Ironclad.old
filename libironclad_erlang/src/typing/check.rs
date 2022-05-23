@@ -1,12 +1,12 @@
 //! Checks whether a type matches synthesized type for AST
 
-use std::sync::{Arc, RwLock};
-use libironclad_error::ic_error::IcResult;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
+use libironclad_error::ic_error::IcResult;
+use std::sync::{Arc, RwLock};
 
 /// Contains type checking code
 pub struct TypeCheck {}
@@ -18,8 +18,10 @@ impl TypeCheck {
   pub fn check(env: &Arc<RwLock<Scope>>, ast: &ErlAst, expected_ty: &ErlType) -> IcResult<bool> {
     let synthesized_ty = ast.synthesize(env)?;
 
-    println!("Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
-             ast, synthesized_ty, expected_ty);
+    println!(
+      "Checking AST type vs expected type\n\tAst: {}\n\tSynth type: {}\n\tExpected: {}",
+      ast, synthesized_ty, expected_ty
+    );
 
     if !synthesized_ty.is_subtype_of(expected_ty) {
       ErlError::type_error(
@@ -27,7 +29,8 @@ impl TypeCheck {
         TypeError::ExpectedType {
           expected_type: format!("{}", expected_ty),
           actual_type: format!("{}", synthesized_ty),
-        })
+        },
+      )
     } else {
       Ok(true)
     }

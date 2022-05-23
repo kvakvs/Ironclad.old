@@ -1,15 +1,15 @@
 //! Defines core function clause
 #![cfg(coreast)]
 
-use std::fmt::Formatter;
-use std::sync::{Arc, RwLock};
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use libironclad_util::pretty::Pretty;
 use crate::erl_error::ErlResult;
 use libironclad_erlsyntax::typing::erl_type::ErlType;
 use libironclad_erlsyntax::typing::fn_clause_type::FnClauseType;
 use libironclad_erlsyntax::typing::scope::Scope;
 use libironclad_erlsyntax::typing::typevar::Typevar;
+use libironclad_util::pretty::Pretty;
+use std::fmt::Formatter;
+use std::sync::{Arc, RwLock};
 
 /// Core function clause.
 /// We keep the function clauses separate and split without merging it into one big case operator,
@@ -39,16 +39,20 @@ impl CoreFnClause {
 
   /// Creates a new Core Function Clause
   /// All input variables are given unique new names.
-  pub fn new(clause_scope: Arc<RwLock<Scope>>,
-             args_ast: &[Arc<CoreAst>],
-             body: Arc<CoreAst>,
-             guard: Option<Arc<CoreAst>>) -> Self {
+  pub fn new(
+    clause_scope: Arc<RwLock<Scope>>,
+    args_ast: &[Arc<CoreAst>],
+    body: Arc<CoreAst>,
+    guard: Option<Arc<CoreAst>>,
+  ) -> Self {
     // let args: Vec<Arc<Var>> = args_ast.iter()
     //     .map(|arg_ast| ExtractVar::extract_vars(arg_ast))
     //     .flatten()
     //     .collect();
     // println!("New fnclause: args {:?}\nnew args {:?}", args_ast, args);
-    args_ast.iter().for_each(|ast| Self::update_scope(&clause_scope, ast));
+    args_ast
+      .iter()
+      .for_each(|ast| Self::update_scope(&clause_scope, ast));
 
     // Create inner_env for each arg where it has any() type, later this can be amended
     // TOxDO: This creates new Arc<RwLock> for each clause argument, which is not slow but unnecessary

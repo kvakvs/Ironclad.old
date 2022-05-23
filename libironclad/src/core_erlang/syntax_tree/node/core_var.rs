@@ -1,12 +1,12 @@
 //! A variable with possibly missing name and unique typevar
 #![cfg(coreast)]
 
-use std::fmt::Formatter;
-use std::sync::Arc;
 use lazy_static::lazy_static;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use libironclad_util::source_loc::SourceLoc;
 use libironclad_erlsyntax::typing::erl_type::ErlType;
+use libironclad_util::source_loc::SourceLoc;
+use std::fmt::Formatter;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 #[cfg(coreast)]
 lazy_static! {

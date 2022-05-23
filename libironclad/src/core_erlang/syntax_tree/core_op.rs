@@ -117,7 +117,6 @@ pub enum CoreUnaryOp {
   Positive,
 }
 
-
 impl std::fmt::Display for CoreBinaryOp {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {

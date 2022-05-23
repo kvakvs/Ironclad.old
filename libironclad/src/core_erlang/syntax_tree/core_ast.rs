@@ -3,16 +3,16 @@
 #![cfg(coreast)]
 
 use ::function_name::named;
-use std::sync::{Arc};
+use std::sync::Arc;
 
-use libironclad_util::mfarity::MFArity;
-use libironclad_util::source_loc::SourceLoc;
-use libironclad_erlsyntax::literal::Literal;
-use std::ops::Deref;
 use crate::core_erlang::syntax_tree::node::core_unary_op::UnaryOperatorExpr;
-use libironclad_util::pretty::Pretty;
 use crate::erl_error::{ErlError, ErlResult};
+use libironclad_erlsyntax::literal::Literal;
 use libironclad_erlsyntax::typing::type_error::TypeError;
+use libironclad_util::mfarity::MFArity;
+use libironclad_util::pretty::Pretty;
+use libironclad_util::source_loc::SourceLoc;
+use std::ops::Deref;
 
 /// AST node in Core Erlang (parsed or generated)
 #[cfg(coreast)]
@@ -35,7 +35,6 @@ pub enum CoreAst {
   //
   // Execution and branching AST nodes
   //
-
   /// Define a function with 1 clause (multiple clauses handled by a `case Args of`)
   FnDef(Arc<FnDef>),
 
@@ -68,7 +67,6 @@ pub enum CoreAst {
   //
   // AST nodes carrying values and operations
   //
-
   /// A variable with optional name and assigned unique numbered typevar
   Var(Arc<Var>),
 
@@ -229,7 +227,6 @@ impl std::fmt::Display for CoreAst {
       CoreAst::Let { .. } => todo!("display(let)"),
       CoreAst::Call { .. } => todo!("display(call)"),
       CoreAst::Empty => write!(f, "<empty ast>"),
-
       // other => unimplemented!("{}: Don't know how to display {:?}", function_name!(), other),
     }
   }

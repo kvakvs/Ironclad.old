@@ -1,14 +1,14 @@
 //! Projcet configuration: inputs, etc
-use serde_derive::Deserialize;
+use crate::project::conf::compiler_opts::CompilerOptsConf;
+use crate::project::conf::input_opts::InputOptsConf;
 use core::fmt;
 use core::fmt::Debug;
 use core::option::Option;
 use core::result::Result;
+use libironclad_error::ic_error::{IroncladError, IroncladResult};
+use serde_derive::Deserialize;
 use std::convert::Into;
 use std::fs;
-use libironclad_error::ic_error::{IroncladError, IroncladResult};
-use crate::project::conf::compiler_opts::CompilerOptsConf;
-use crate::project::conf::input_opts::InputOptsConf;
 
 pub mod compiler_opts;
 pub mod input_opts;
@@ -40,9 +40,12 @@ impl ProjectConf {
   }
 }
 
-
 impl Debug for ProjectConf {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "ProjectConf({:?}, {:?})", self.inputs, self.compiler_opts)
+    write!(
+      f,
+      "ProjectConf({:?}, {:?})",
+      self.inputs, self.compiler_opts
+    )
   }
 }

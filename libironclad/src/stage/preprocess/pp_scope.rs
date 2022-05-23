@@ -1,8 +1,8 @@
 //! Preprocessor scope for the current file, currently available defines
 
-use std::collections::HashMap;
-use std::sync::{Arc};
 use crate::stage::preprocess::pp_define::{NameArity, PreprocessorDefine};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Currently available defines for a file, as the file is scanned, this is constantly updated with
 /// defines added `-define` and removed `-undef`.
@@ -15,12 +15,13 @@ pub struct PreprocessorScope {
 impl PreprocessorScope {
   /// Parse defines in the configuration file, or from command line specified as -DNAME or -DNAME=XXX
   pub fn new_from_config_lines(inputs: &[String]) -> Arc<Self> {
-    let parsed = inputs.iter()
-        .map(|inp| {
-          let new_def = PreprocessorDefine::new_from_command_line(inp);
-          (new_def.get_name_arity(), new_def)
-        })
-        .collect();
+    let parsed = inputs
+      .iter()
+      .map(|inp| {
+        let new_def = PreprocessorDefine::new_from_command_line(inp);
+        (new_def.get_name_arity(), new_def)
+      })
+      .collect();
     Self { defines: parsed }.into()
   }
 
@@ -44,7 +45,10 @@ impl PreprocessorScope {
 
   /// Check if name of any arity exists in the scope
   pub fn is_defined(&self, name: &str) -> bool {
-    self.defines.iter().any(|(name_arity, _)| name_arity.name == name)
+    self
+      .defines
+      .iter()
+      .any(|(name_arity, _)| name_arity.name == name)
   }
 
   /// Clone self and insert a new macro definition

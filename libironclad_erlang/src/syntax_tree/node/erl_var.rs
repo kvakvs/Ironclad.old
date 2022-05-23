@@ -8,8 +8,8 @@ use libironclad_error::source_loc::SourceLoc;
 #[derivative(PartialEq, Debug)]
 pub struct ErlVar {
   /// Source code pointer
-  #[derivative(PartialEq="ignore")]
-  #[derivative(Debug="ignore")]
+  #[derivative(PartialEq = "ignore")]
+  #[derivative(Debug = "ignore")]
   pub location: SourceLoc,
 
   /// Variable name

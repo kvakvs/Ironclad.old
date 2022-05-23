@@ -1,7 +1,7 @@
 //! Trait for Ironclad errors
 
-use crate::source_loc::SourceLoc;
 use crate::ic_error_category::IcErrorCategory;
+use crate::source_loc::SourceLoc;
 
 /// Trait for Ironclad errors, allows grouping errors into a big `IcError` struct
 pub trait IcErrorT: std::fmt::Display + std::fmt::Debug {

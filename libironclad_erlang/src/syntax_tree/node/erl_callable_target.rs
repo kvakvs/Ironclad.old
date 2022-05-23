@@ -1,13 +1,13 @@
 //! Defines a callable target, to use in function applications
 
-use std::fmt::Formatter;
-use std::sync::{Arc, RwLock};
-use libironclad_error::ic_error::IcResult;
-use libironclad_util::mfarity::MFArity;
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
+use libironclad_error::ic_error::IcResult;
+use libironclad_util::mfarity::MFArity;
+use std::fmt::Formatter;
+use std::sync::{Arc, RwLock};
 
 /// A callable target (without application or args) to use in `ErlApply`.
 #[derive(Debug, Clone)]
@@ -32,18 +32,16 @@ impl std::fmt::Display for CallableTarget {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       CallableTarget::Expr(expr) => write!(f, "{}", expr),
-      CallableTarget::MFArity(mfa) => {
-        match &mfa.module {
-          Some(m) => write!(f, "{}:{}", m, mfa.name),
-          None => write!(f, "{}", mfa.name),
-        }
-      }
-      CallableTarget::MFAExpression { module, function, .. } => {
-        match module {
-          Some(m) => write!(f, "({}):({})", m, function),
-          None => write!(f, "({})", function),
-        }
-      }
+      CallableTarget::MFArity(mfa) => match &mfa.module {
+        Some(m) => write!(f, "{}:{}", m, mfa.name),
+        None => write!(f, "{}", mfa.name),
+      },
+      CallableTarget::MFAExpression {
+        module, function, ..
+      } => match module {
+        Some(m) => write!(f, "({}):({})", m, function),
+        None => write!(f, "({})", function),
+      },
     }
   }
 }
@@ -69,16 +67,20 @@ impl CallableTarget {
       }
       let module = m.unwrap();
       if module.is_atom() {
-        return Self::new_mfa(
-          MFArity::new(
-            Some(module.as_atom()),
-            f.as_atom(),
-            a));
+        return Self::new_mfa(MFArity::new(Some(module.as_atom()), f.as_atom(), a));
       }
       // rewrap module
-      return CallableTarget::MFAExpression { module: Some(module), function: f, arity: a };
+      return CallableTarget::MFAExpression {
+        module: Some(module),
+        function: f,
+        arity: a,
+      };
     }
-    CallableTarget::MFAExpression { module: m, function: f, arity: a }
+    CallableTarget::MFAExpression {
+      module: m,
+      function: f,
+      arity: a,
+    }
   }
 
   /// Create a type for this callable target
@@ -86,7 +88,9 @@ impl CallableTarget {
     match self {
       CallableTarget::Expr(e) => e.synthesize(scope),
       CallableTarget::MFArity(_) => todo!("synthesize for mfarity callable target"),
-      CallableTarget::MFAExpression { .. } => todo!("synthesize for mfa-expression callable target"),
+      CallableTarget::MFAExpression { .. } => {
+        todo!("synthesize for mfa-expression callable target")
+      }
     }
   }
 }
@@ -96,7 +100,9 @@ impl AstNode for CallableTarget {
     match self {
       CallableTarget::Expr(e) => e.children(),
       CallableTarget::MFArity(_) => None,
-      CallableTarget::MFAExpression { module, function, .. } => {
+      CallableTarget::MFAExpression {
+        module, function, ..
+      } => {
         let mut result = function.children().unwrap_or_default();
         if let Some(m) = module {
           match m.children() {

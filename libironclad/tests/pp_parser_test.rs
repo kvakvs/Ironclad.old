@@ -4,9 +4,9 @@ extern crate libironclad_preprocessor;
 mod test_util;
 
 use ::function_name::named;
-use std::ops::Deref;
-use nom::Finish;
 use libironclad::stage::preprocess::PreprocessState;
+use nom::Finish;
+use std::ops::Deref;
 
 use libironclad_preprocessor::nom_parser::PreprocessorParser;
 use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
@@ -19,8 +19,8 @@ fn test_fragment_if() {
   let src = "-if(true).";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-      .finish()
-      .unwrap();
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   println!("Out={:?}", out);
 }
@@ -29,12 +29,15 @@ fn test_fragment_if() {
 #[named]
 /// Try how splitting module into directives and text works
 fn test_fragments() {
-  test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
+  test_util::start(
+    function_name!(),
+    "Parse a module example into fragments of text and pp",
+  );
   let src = "hello\n-if(true).\ntest\n\n-else.\n-endif.\n-module(test).";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-      .finish()
-      .unwrap();
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   println!("Out={:?}", out);
 }
@@ -43,12 +46,15 @@ fn test_fragments() {
 #[named]
 /// Try how splitting module into directives and text works; With comments
 fn test_fragments_with_comments() {
-  test_util::start(function_name!(), "Parse a module example into fragments with comments");
+  test_util::start(
+    function_name!(),
+    "Parse a module example into fragments with comments",
+  );
   let src = "hello\n-if(%true)\nfalse).\ntest\n\n-else.\n%%-endif.";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-      .finish()
-      .unwrap();
+    .finish()
+    .unwrap();
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 }
@@ -57,10 +63,12 @@ fn test_fragments_with_comments() {
 #[named]
 /// Try parse string
 fn test_define0() {
-  test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
+  test_util::start(
+    function_name!(),
+    "Parse a basic -define macro with 0 params",
+  );
   let src = "define(AAA, true)"; // leading - and trailing . are not parsed in the parse_define
-  let ast = PreprocessState::parse_helper(src,
-                                             PreprocessorParser::parse_define).unwrap();
+  let ast = PreprocessState::parse_helper(src, PreprocessorParser::parse_define).unwrap();
   if let PpAst::Define { .. } = ast.deref() {
     // pass
   } else {
@@ -72,12 +80,15 @@ fn test_define0() {
 #[named]
 /// Try parse a define macro where value contains another macro
 fn test_macro_in_define() {
-  test_util::start(function_name!(), "Parse a -define macro with another macro in value");
+  test_util::start(
+    function_name!(),
+    "Parse a -define macro with another macro in value",
+  );
   let src = "-define(AAA, 1).\n-define(BBB, ?AAA).";
 
   let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-      .finish()
-      .unwrap();
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   println!("Out={:?}", out);
@@ -136,7 +147,10 @@ fn test_define_fun() {
     assert_eq!(*args, vec!["X", "Y"]);
     assert_eq!(body, "\"aaa\"");
   } else {
-    panic!("Parsing -define() with args must return PpAst::DefineFun, received {:?}", d0)
+    panic!(
+      "Parsing -define() with args must return PpAst::DefineFun, received {:?}",
+      d0
+    )
   }
 }
 

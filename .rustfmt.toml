@@ -1,0 +1,3 @@
+# To read the documentation: rustfmt --help=config > rustfmt.txt
+tab_spaces = 2
+edition = "2021"

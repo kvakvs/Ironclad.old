@@ -1,2 +1,2 @@
-pub mod pretty;
 pub mod mfarity;
+pub mod pretty;

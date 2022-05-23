@@ -1,8 +1,8 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
-use std::sync::Arc;
-use libironclad_error::source_loc::SourceLoc;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::erl_op::ErlUnaryOp;
+use libironclad_error::source_loc::SourceLoc;
+use std::sync::Arc;
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
 #[derive(Debug)]
@@ -18,10 +18,8 @@ impl ErlUnaryOperatorExpr {
   pub fn new_ast(loc: SourceLoc, operator: ErlUnaryOp, expr: Arc<ErlAst>) -> Arc<ErlAst> {
     ErlAst::UnaryOp {
       location: loc,
-      expr: ErlUnaryOperatorExpr {
-        expr,
-        operator,
-      },
-    }.into()
+      expr: ErlUnaryOperatorExpr { expr, operator },
+    }
+    .into()
   }
 }

@@ -9,7 +9,7 @@ impl CoreAst {
   pub fn as_fndef(&self) -> &FnDef {
     match self {
       CoreAst::FnDef(fndef) => &fndef,
-      _other => panic!("Expected CoreAst::FnDef element, got {}", self)
+      _other => panic!("Expected CoreAst::FnDef element, got {}", self),
     }
   }
 }

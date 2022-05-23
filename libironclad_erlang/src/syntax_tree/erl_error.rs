@@ -1,11 +1,11 @@
-use std::fmt::{Debug};
-use libironclad_error::ic_error::{IcResult};
+use crate::syntax_tree::nom_parse::ErlParserError;
+use crate::typing::type_error::TypeError;
+use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
 use libironclad_error::ic_error_trait::IcErrorT;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
-use crate::syntax_tree::nom_parse::ErlParserError;
-use crate::typing::type_error::TypeError;
+use std::fmt::Debug;
 
 #[derive(Debug)]
 pub enum ErlErrorCategory {
@@ -53,10 +53,7 @@ impl IcErrorT for ErlError {
 
 impl ErlError {
   /// Create ErlError from 3 components
-  pub fn new(ic_cat: IcErrorCategory,
-             cat: ErlErrorCategory,
-             loc: SourceLoc,
-             msg: String) -> Self {
+  pub fn new(ic_cat: IcErrorCategory, cat: ErlErrorCategory, loc: SourceLoc, msg: String) -> Self {
     Self {
       ic_category: ic_cat,
       category: cat,
@@ -79,30 +76,44 @@ impl ErlError {
   /// Creates an "Unacceptable" error
   pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
     let new_err = ErlError::new(
-      IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
+      IcErrorCategory::ErlangParse,
+      ErlErrorCategory::Unacceptable,
+      loc,
+      message,
+    );
     Err(Box::new(new_err))
   }
 
   /// Creates an "TypeError" error
   pub fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
     let new_err = ErlError::new(
-      IcErrorCategory::TypeError, ErlErrorCategory::TypeError, loc,
-      format!("{}", type_err));
+      IcErrorCategory::TypeError,
+      ErlErrorCategory::TypeError,
+      loc,
+      format!("{}", type_err),
+    );
     Err(Box::new(new_err))
   }
 
   /// Creates an "Local Function Not Found" error
   pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
     let new_err = ErlError::new(
-      IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
+      IcErrorCategory::Erlang,
+      ErlErrorCategory::LocalFnNotFound { mfa },
+      loc,
+      msg,
+    );
     Err(Box::new(new_err))
   }
 
   /// Creates a "Variable Not Found" error
   pub fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
     let new_err = ErlError::new(
-      IcErrorCategory::Erlang, ErlErrorCategory::VariableNotFound { var }, loc,
-      String::default());
+      IcErrorCategory::Erlang,
+      ErlErrorCategory::VariableNotFound { var },
+      loc,
+      String::default(),
+    );
     Err(Box::new(new_err))
   }
 }

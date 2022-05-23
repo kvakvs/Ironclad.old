@@ -1,7 +1,7 @@
+extern crate core;
+extern crate function_name;
 extern crate libironclad;
 extern crate libironclad_erlang;
-extern crate function_name;
-extern crate core;
 
 use std::path::PathBuf;
 

@@ -1,10 +1,10 @@
 //! Defines primitive operations for BEAM assembly and BEAM VM, which are not part of Core Erlang.
 #![cfg(coreast)]
 
-use ::function_name::named;
 use crate::core_erlang::syntax_tree::core_ast::CoreAst;
-use std::sync::Arc;
+use ::function_name::named;
 use std::fmt::Formatter;
+use std::sync::Arc;
 
 /// Describes an exception kind
 #[derive(Debug)]

@@ -1,10 +1,10 @@
+use crate::nom_parser::PpParserError;
 use ::function_name::named;
-use std::fmt::{Debug, Display, Formatter};
-use libironclad_error::ic_error::{IcResult};
+use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
 use libironclad_error::ic_error_trait::{IcError, IcErrorT};
 use libironclad_error::source_loc::SourceLoc;
-use crate::nom_parser::PpParserError;
+use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
 pub enum PpErrorCategory {
@@ -58,10 +58,7 @@ impl IcErrorT for PpError {
 
 impl PpError {
   /// Create PpError from 3 components
-  pub fn new(ic_cat: IcErrorCategory,
-             cat: PpErrorCategory,
-             loc: SourceLoc,
-             msg: String) -> Self {
+  pub fn new(ic_cat: IcErrorCategory, cat: PpErrorCategory, loc: SourceLoc, msg: String) -> Self {
     Self {
       ic_category: ic_cat,
       category: cat,
@@ -89,7 +86,8 @@ impl PpError {
       IcErrorCategory::Preprocessor,
       PpErrorCategory::ErrorDirective,
       SourceLoc::unimplemented(file!(), function_name!()),
-      msg))
+      msg,
+    ))
   }
 
   // /// Creates an "Unacceptable" error

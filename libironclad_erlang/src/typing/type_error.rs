@@ -1,7 +1,7 @@
 //! Type errors returned by the typing engine
 
-use std::fmt::{Display, Formatter};
 use libironclad_util::mfarity::MFArity;
+use std::fmt::{Display, Formatter};
 
 /// Indicates various type problems
 pub enum TypeError {
@@ -15,7 +15,7 @@ pub enum TypeError {
   /// List operation received something that's not a list
   ListExpected {
     /// Message to go with the error
-    msg: String
+    msg: String,
   },
   /// Returned when a call is attempted to something that's not a function
   NotAFunction {
@@ -36,14 +36,20 @@ pub enum TypeError {
   BadArguments {
     /// Message to go with the error
     msg: String,
-  }
+  },
 }
 
 impl Display for TypeError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeError::ExpectedType { expected_type, actual_type } =>
-        write!(f, "Expression's type: {} but expected: {}", actual_type, expected_type),
+      TypeError::ExpectedType {
+        expected_type,
+        actual_type,
+      } => write!(
+        f,
+        "Expression's type: {} but expected: {}",
+        actual_type, expected_type
+      ),
       TypeError::ListExpected { msg } => write!(f, "Bad list: {}", msg),
       TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),
       TypeError::BadArity { msg } => write!(f, "Bad arity: {}", msg),

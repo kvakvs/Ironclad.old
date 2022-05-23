@@ -1,5 +1,5 @@
 //! Represents a loaded source file, owning its contents
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Owns a source file text and possibly line numbers map
@@ -17,7 +17,7 @@ impl SourceFile {
   pub fn new(file_name: &Path, text: String) -> Arc<Self> {
     Arc::new(SourceFile {
       file_name: file_name.to_path_buf(),
-      text
+      text,
     })
   }
 }

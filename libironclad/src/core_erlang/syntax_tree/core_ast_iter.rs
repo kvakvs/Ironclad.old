@@ -15,21 +15,27 @@ impl CoreAst {
   #[named]
   pub fn children(&self) -> Option<Vec<Arc<CoreAst>>> {
     match self {
-      CoreAst::Attributes { .. } | CoreAst::Lit { .. } | CoreAst::Var { .. }
-      | CoreAst::Module { .. } | CoreAst::FnRef { .. } => None,
+      CoreAst::Attributes { .. }
+      | CoreAst::Lit { .. }
+      | CoreAst::Var { .. }
+      | CoreAst::Module { .. }
+      | CoreAst::FnRef { .. } => None,
 
       CoreAst::ModuleFuns(lst) => Some(lst.clone()),
       CoreAst::FnDef(fn_def) => {
-        let children = fn_def.clauses.iter()
-            .map(|c| -> Vec<Arc<CoreAst>> {
-              vec![
-                c.body.clone(),
-                c.guard.as_ref()
-                    .map_or(CoreAst::Empty.into(), |cg| cg.clone()),
-              ]
-            })
-            .flatten()
-            .collect();
+        let children = fn_def
+          .clauses
+          .iter()
+          .map(|c| -> Vec<Arc<CoreAst>> {
+            vec![
+              c.body.clone(),
+              c.guard
+                .as_ref()
+                .map_or(CoreAst::Empty.into(), |cg| cg.clone()),
+            ]
+          })
+          .flatten()
+          .collect();
         Some(children)
       }
 
@@ -52,21 +58,19 @@ impl CoreAst {
         Some(r)
       }
 
-      CoreAst::BinOp { op, .. } => {
-        Some(vec![op.left.clone(),
-                  op.right.clone()])
-      }
+      CoreAst::BinOp { op, .. } => Some(vec![op.left.clone(), op.right.clone()]),
       CoreAst::UnOp { op, .. } => Some(vec![op.expr.clone()]),
       CoreAst::List { elements, .. } => Some(elements.to_vec()),
       CoreAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
-      CoreAst::Empty => panic!("{}: Core AST tree is not initialized (empty node)", function_name!()),
-      CoreAst::PrimOp { op, .. } => {
-        match op {
-          PrimOp::Raise { expr, .. } => Some(vec![expr.clone()]),
-          PrimOp::ExcTrace => None,
-        }
-      }
+      CoreAst::Empty => panic!(
+        "{}: Core AST tree is not initialized (empty node)",
+        function_name!()
+      ),
+      CoreAst::PrimOp { op, .. } => match op {
+        PrimOp::Raise { expr, .. } => Some(vec![expr.clone()]),
+        PrimOp::ExcTrace => None,
+      },
 
       _ => {
         unreachable!("{}(): Can't process {:?}", function_name!(), self);
