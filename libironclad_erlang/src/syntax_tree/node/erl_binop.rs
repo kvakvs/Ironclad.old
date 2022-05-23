@@ -180,7 +180,7 @@ impl ErlBinaryOperatorExpr {
         let msg = format!("List append operation ++ expected a list in its right argument, got {}", other_right);
         ErlError::type_error(
           SourceLoc::unimplemented(file!(), function_name!()),
-          TypeError::ListExpected { msg }.into())
+          TypeError::ListExpected { msg })
       }
     }
   }

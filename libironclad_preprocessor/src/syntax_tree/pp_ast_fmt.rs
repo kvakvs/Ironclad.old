@@ -39,14 +39,14 @@ impl std::fmt::Display for PpAst {
       PpAst::IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
       PpAst::IfBlock { cond, cond_true, cond_false } => {
-        write!(f, "-if({}).\n", cond)?;
+        writeln!(f, "-if({}).", cond)?;
         if let Some(branch_true) = cond_true {
           for c in branch_true { writeln!(f, "{}", c) ?; }
         }
         if let Some(branch_false) = cond_false {
           for c in branch_false { writeln!(f, "{}", c) ?; }
         }
-        write!(f, "-endif.\n")
+        writeln!(f, "-endif.")
       }
       PpAst::Undef(name) => write!(f, "-undef({}).", name),
       PpAst::Error(t) => write!(f, "-error({}).", t),

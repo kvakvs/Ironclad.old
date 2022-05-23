@@ -15,7 +15,7 @@ impl PpAst {
   pub fn new_included_file(file: &Path, ast: Arc<PpAst>) -> Arc<Self> {
     PpAst::IncludedFile {
       filename: PathBuf::from(file),
-      ast: ast,
+      ast,
     }.into()
   }
 

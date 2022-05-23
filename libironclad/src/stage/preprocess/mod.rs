@@ -156,12 +156,12 @@ impl PreprocessState {
 
   fn find_include(&mut self, path: &str) -> IcResult<PathBuf> {
     // unimplemented!("find_include not impl: {}", path)
-    return Ok(PathBuf::from(path));
+    Ok(PathBuf::from(path))
   }
 
   fn find_include_lib(&mut self, path: &str) -> IcResult<PathBuf> {
     // unimplemented!("find_include_lib not impl: {}", path)
-    return Ok(PathBuf::from(path));
+    Ok(PathBuf::from(path))
   }
 
   /// This is called for each Preprocessor AST node to make the final decision whether the node
@@ -182,12 +182,12 @@ impl PreprocessState {
         }
       }
       PpAst::Include(arg) => {
-        let found_path = self.find_include(&arg)?;
+        let found_path = self.find_include(arg)?;
         let (incl_file, node) = self.load_include(&found_path)?;
         self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
       }
       PpAst::IncludeLib(arg) => {
-        let found_path = self.find_include_lib(&arg)?;
+        let found_path = self.find_include_lib(arg)?;
         let (incl_file, node) = self.load_include(&found_path)?;
         self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
       }
@@ -200,10 +200,8 @@ impl PreprocessState {
           if let Some(nodes) = cond_true {
             nodes_out.extend(nodes.iter().cloned());
           }
-        } else {
-          if let Some(nodes) = cond_false {
-            nodes_out.extend(nodes.iter().cloned());
-          }
+        } else if let Some(nodes) = cond_false {
+          nodes_out.extend(nodes.iter().cloned());
         }
       }
       PpAst::Text(_) => nodes_out.push(node.clone()),
@@ -292,9 +290,9 @@ impl PreprocessState {
       // For all input files, run preprocess parse and interpred the preprocess directives
       // Loaded and parsed HRL files are cached to be inserted into every include location
       // Create starting scope (from project settings and command line)
-      let starting_scope = project.get_preprocessor_scope(&path);
+      let starting_scope = project.get_preprocessor_scope(path);
       let mut stage = PreprocessState::new(&ast_cache, &file_cache, starting_scope);
-      stage.preprocess_file(&path)?;
+      stage.preprocess_file(path)?;
       preprocessed_count += 1;
     }
 

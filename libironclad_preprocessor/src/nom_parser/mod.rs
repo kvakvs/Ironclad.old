@@ -95,7 +95,7 @@ impl PreprocessorParser {
           MiscParser::ws_before(char(')')),
         ),
       ),
-      |expr| PpAst::new_if_temporary(expr),
+      PpAst::new_if_temporary,
     )(input)
   }
 
@@ -198,7 +198,8 @@ impl PreprocessorParser {
           MiscParser::ws_before(ErlParser::parse_expr),
           MiscParser::ws_before(char(')')),
         ),
-      ), |expr| PpAst::new_elif_temporary(expr),
+      ),
+      PpAst::new_elif_temporary,
     )(input)
   }
 
@@ -213,7 +214,7 @@ impl PreprocessorParser {
           MiscParser::ws_before(char(')')),
         ),
       ),
-      |s| PpAst::new_ifdef_temporary(s),
+      PpAst::new_ifdef_temporary,
     )(input)
   }
 
@@ -228,7 +229,7 @@ impl PreprocessorParser {
           MiscParser::ws_before(char(')')),
         ),
       ),
-      |s| PpAst::new_ifndef_temporary(s),
+      PpAst::new_ifndef_temporary,
     )(input)
   }
 
