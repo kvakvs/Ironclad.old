@@ -144,13 +144,13 @@ name = "libironclad"
 version = "2022.5.0"
 dependencies = [
  "alphabet",
- "derivative",
  "function_name",
  "glob",
  "lazy_static",
  "libironclad_erlang",
  "libironclad_error",
  "libironclad_preprocessor",
+ "libironclad_util",
  "nom",
  "serde",
  "serde_derive",

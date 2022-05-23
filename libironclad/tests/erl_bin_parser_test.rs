@@ -1,13 +1,13 @@
-extern crate compiler;
+extern crate libironclad;
+extern crate libironclad_erlang;
 extern crate function_name;
 extern crate core;
 
 use std::path::PathBuf;
 
 use ::function_name::named;
-
-use compiler::erl_error::{ErlResult};
-use compiler::project::module::ErlModule;
+use libironclad::project::module::ErlModule;
+use libironclad_error::ic_error::IcResult;
 
 mod test_util;
 

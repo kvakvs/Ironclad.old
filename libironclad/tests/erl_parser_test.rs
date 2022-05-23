@@ -1,4 +1,4 @@
-extern crate compiler;
+extern crate libironclad_erlang;
 extern crate function_name;
 extern crate core;
 
@@ -7,13 +7,13 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use nom::Finish;
-
-use compiler::erl_error::{ErlError, ErlResult};
-use compiler::erlang::syntax_tree::erl_ast::ErlAst;
-use compiler::erlang::syntax_tree::nom_parse::ErlParser;
-use compiler::erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
-use compiler::literal::Literal;
-use compiler::project::module::ErlModule;
+use libironclad::project::module::ErlModule;
+use libironclad_erlang::literal::Literal;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_error::ErlError;
+use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
+use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
+use libironclad_error::ic_error::IcResult;
 
 mod test_util;
 
@@ -60,7 +60,7 @@ fn parse_empty_module_forms_collection() -> IcResult<()> {
     Ok((_tail, forms)) => {
       println!("Parsed empty module forms collection: «{}»\nResult: {:?}", code, forms)
     }
-    Err(err) => return Err(ErlError::from_nom_error(code, err)),
+    Err(err) => return ErlError::from_nom_error(code, err),
   }
   Ok(())
 }
@@ -76,7 +76,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     Ok((_tail, forms)) => {
       println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), code, forms)
     }
-    Err(err) => return Err(ErlError::from_nom_error(code, err)),
+    Err(err) => return ErlError::from_nom_error(code, err),
   }
   Ok(())
 }

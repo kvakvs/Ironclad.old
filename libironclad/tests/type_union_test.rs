@@ -1,12 +1,12 @@
-extern crate compiler;
+extern crate libironclad_erlang;
 extern crate function_name;
 
 mod test_util;
 
 use std::ops::Deref;
 use ::function_name::named;
-use compiler::erl_error::ErlResult;
-use compiler::typing::erl_type::ErlType;
+use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_error::ic_error::IcResult;
 
 #[named]
 #[test]

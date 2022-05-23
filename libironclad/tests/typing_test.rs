@@ -1,4 +1,5 @@
-extern crate compiler;
+extern crate libironclad_erlang;
+extern crate libironclad_error;
 extern crate function_name;
 
 mod test_util;
@@ -6,11 +7,11 @@ mod test_util;
 use std::ops::Deref;
 use std::path::PathBuf;
 use ::function_name::named;
-use compiler::erl_error::ErlResult;
-use compiler::project::module::ErlModule;
-use compiler::typing::check::TypeCheck;
-use compiler::typing::erl_type::ErlType;
-use compiler::typing::scope::Scope;
+use libironclad::project::module::ErlModule;
+use libironclad_erlang::typing::check::TypeCheck;
+use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_erlang::typing::scope::Scope;
+use libironclad_error::ic_error::IcResult;
 
 #[named]
 #[test]

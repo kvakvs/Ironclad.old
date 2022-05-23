@@ -1,14 +1,15 @@
-extern crate libironclad;
+extern crate libironclad_erlang;
+extern crate libironclad_preprocessor;
 
 mod test_util;
 
 use ::function_name::named;
-
-use compiler::preprocessor::syntax_tree::pp_ast::{PpAst};
 use std::ops::Deref;
 use nom::Finish;
-use compiler::preprocessor::nom_parser::PreprocessorParser;
-use compiler::stage::preprocess::ErlPreprocessStage;
+use libironclad::stage::preprocess::PreprocessState;
+
+use libironclad_preprocessor::nom_parser::PreprocessorParser;
+use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
 
 #[test]
 #[named]
@@ -58,7 +59,7 @@ fn test_fragments_with_comments() {
 fn test_define0() {
   test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
   let src = "define(AAA, true)"; // leading - and trailing . are not parsed in the parse_define
-  let ast = ErlPreprocessStage::parse_helper(src,
+  let ast = PreprocessState::parse_helper(src,
                                              PreprocessorParser::parse_define).unwrap();
   if let PpAst::Define { .. } = ast.deref() {
     // pass
@@ -84,21 +85,21 @@ fn test_macro_in_define() {
 
 #[test]
 fn test_include() {
-  let inc1 = ErlPreprocessStage::from_source("-include (\"test\").\n").unwrap();
+  let inc1 = PreprocessState::from_source("-include (\"test\").\n").unwrap();
   if let PpAst::Include(t) = inc1.deref() {
     assert_eq!(t, "test");
   } else {
     panic!("Expected PpAst::Include, received {:?}", inc1);
   }
 
-  let inc2 = ErlPreprocessStage::from_source(" - include(\"test\"\n).\n").unwrap();
+  let inc2 = PreprocessState::from_source(" - include(\"test\"\n).\n").unwrap();
   if let PpAst::Include(t) = inc2.deref() {
     assert_eq!(t, "test");
   } else {
     panic!("Expected PpAst::Include, received {:?}", inc2);
   }
 
-  let inc3 = ErlPreprocessStage::from_source("-include\n(\"test\"\n).\n").unwrap();
+  let inc3 = PreprocessState::from_source("-include\n(\"test\"\n).\n").unwrap();
   if let PpAst::Include(t) = inc3.deref() {
     assert_eq!(t, "test");
   } else {
@@ -108,7 +109,7 @@ fn test_include() {
 
 #[test]
 fn test_define() {
-  let d0 = ErlPreprocessStage::from_source("- define(AAA, \"aaa\").").unwrap();
+  let d0 = PreprocessState::from_source("- define(AAA, \"aaa\").").unwrap();
   if let PpAst::Define { name, args, body } = d0.deref() {
     assert_eq!(name, "AAA");
     assert!(args.is_none());
@@ -117,7 +118,7 @@ fn test_define() {
     panic!("Parsing define(AAA, \"aaa\"). failed, received {:?}", d0)
   }
 
-  let d1 = ErlPreprocessStage::from_source("-define(BBB, 666).").unwrap();
+  let d1 = PreprocessState::from_source("-define(BBB, 666).").unwrap();
   if let PpAst::Define { name, args, body } = d1.deref() {
     assert_eq!(name, "BBB");
     assert!(args.is_none());
@@ -129,7 +130,7 @@ fn test_define() {
 
 #[test]
 fn test_define_fun() {
-  let d0 = ErlPreprocessStage::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
+  let d0 = PreprocessState::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
   if let PpAst::DefineFun { name, args, body } = d0.deref() {
     assert_eq!(name, "AAA");
     assert_eq!(*args, vec!["X", "Y"]);
@@ -141,7 +142,7 @@ fn test_define_fun() {
 
 // #[test]
 // fn parse_if_test() {
-//   let if0 = ErlPreprocessStage::from_source("-if(10>20).").unwrap();
+//   let if0 = PreprocessState::from_source("-if(10>20).").unwrap();
 //   if let PpAst::If(s) = if0.deref() {
 //     assert_eq!(s, "10>20");
 //   } else {

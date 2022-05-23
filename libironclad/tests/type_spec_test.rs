@@ -1,4 +1,4 @@
-extern crate compiler;
+extern crate libironclad_erlang;
 extern crate function_name;
 
 mod test_util;
@@ -7,12 +7,13 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use ::function_name::named;
 use nom::Finish;
-use compiler::erl_error::{ErlError, ErlResult};
-use compiler::erlang::syntax_tree::erl_ast::ErlAst;
-use compiler::project::module::ErlModule;
-use compiler::erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
-use compiler::mfarity::MFArity;
-use compiler::typing::erl_type::ErlType;
+use libironclad::project::module::ErlModule;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_error::ErlError;
+use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
+use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_error::ic_error::{IcResult};
+use libironclad_util::mfarity::MFArity;
 
 #[named]
 #[test]
@@ -30,7 +31,7 @@ fn union_type_parse() -> IcResult<()> {
       assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
       println!("Parsed: {}", result1);
     }
-    Err(err) => return Err(ErlError::from_nom_error(input, err))
+    Err(err) => return ErlError::from_nom_error(input, err)
   }
   Ok(())
 }
@@ -48,7 +49,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
       assert!(tail1.trim().is_empty(), "Not all input consumed from attr1_src, tail: «{}»", tail1);
       println!("ErlAst for «{}»: {}", src, result1);
     }
-    Err(err) => return Err(ErlError::from_nom_error(src, err))
+    Err(err) => return ErlError::from_nom_error(src, err)
   }
   Ok(())
 }
@@ -66,7 +67,7 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
       assert!(tail2.trim().is_empty(), "Not all input consumed from attr2_src, tail: {}", tail2);
       println!("ErlAst for attr2: {}", result2);
     }
-    Err(err) => return Err(ErlError::from_nom_error(input, err))
+    Err(err) => return ErlError::from_nom_error(input, err)
   }
   Ok(())
 }

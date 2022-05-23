@@ -1,17 +1,19 @@
-extern crate compiler;
+extern crate libironclad_erlang;
+extern crate libironclad_util;
+extern crate libironclad_error;
 extern crate function_name;
 
 mod test_util;
 
 use ::function_name::named;
-use compiler::erl_error::ErlResult;
 use std::ops::Deref;
 use std::path::PathBuf;
-use compiler::erlang::syntax_tree::erl_ast::ErlAst;
-use compiler::erlang::syntax_tree::erl_op::ErlBinaryOp;
-use compiler::typing::erl_type::ErlType;
-use compiler::mfarity::MFArity;
-use compiler::project::module::ErlModule;
+use libironclad::project::module::ErlModule;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_op::ErlBinaryOp;
+use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_error::ic_error::IcResult;
+use libironclad_util::mfarity::MFArity;
 
 #[named]
 #[test]
