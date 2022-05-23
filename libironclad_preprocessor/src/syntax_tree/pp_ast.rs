@@ -4,7 +4,7 @@ use std::fmt::{Debug};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
@@ -101,6 +101,7 @@ pub enum PpAst {
 
 impl PpAst {
   /// Trim the contents to CLAMP_LENGTH characters for convenient narrow debug printing
+  #[allow(dead_code)]
   fn trim(s: &str) -> &str {
     let trimmed = s.trim();
     &trimmed[..usize::min(trimmed.len(), 40) - 1]

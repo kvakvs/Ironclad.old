@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::pp_ast::PpAst;
 
 impl PpAst {

@@ -26,6 +26,7 @@ impl ErlParser {
   pub const EXPR_STYLE_MATCHEXPR: usize = 2;
 
   /// Parse a function call (application of args to a callable value)
+  #[allow(dead_code)]
   fn parse_apply(input: &str) -> AstParserResult {
     // Application consists of a callable expression, "(", list of args, and ")"
     combinator::map(

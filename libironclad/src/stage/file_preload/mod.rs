@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use crate::stage::file_contents_cache::FileContentsCache;
 use std::sync::{Arc, RwLock};
-use libironclad_error::ic_error::{IcResult, IroncladResult};
+use libironclad_error::ic_error::{IroncladResult};
 
 /// Handles loading/caching text files in memory
 pub struct FilePreloadStage {}

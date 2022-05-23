@@ -7,8 +7,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libironclad_erlsyntax = { path = "../libironclad_erlsyntax" }
-libironclad_ppsyntax = { path = "../libironclad_ppsyntax" }
+libironclad_erlang = { path = "../libironclad_erlang" }
+libironclad_preprocessor = { path = "../libironclad_preprocessor" }
 libironclad_error = { path = "../libironclad_error" }
 
 toml = "0.5.8"

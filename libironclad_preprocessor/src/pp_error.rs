@@ -20,10 +20,14 @@ pub enum PpErrorCategory {
 #[derive(Debug)]
 pub struct PpError {
   ic_category: IcErrorCategory,
+
   /// Error kind, an enum which might contain extra values
+  #[allow(dead_code)]
   category: PpErrorCategory,
+
   /// Location where error was found
   loc: SourceLoc,
+
   /// Message from the libironclad
   msg: String,
 }

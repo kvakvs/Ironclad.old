@@ -1,4 +1,4 @@
-extern crate compiler;
+extern crate libironclad;
 
 mod test_util;
 

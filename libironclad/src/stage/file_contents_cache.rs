@@ -4,7 +4,7 @@ use std::path::{PathBuf, Path};
 
 use crate::project::source_file::SourceFile;
 use std::sync::Arc;
-use libironclad_error::ic_error::{IcResult, IroncladResult};
+use libironclad_error::ic_error::{IroncladResult};
 
 /// Contains loaded files ready for parsing by the preprocessor.
 /// More files will be added in preprocess stage, as include directives are parsed

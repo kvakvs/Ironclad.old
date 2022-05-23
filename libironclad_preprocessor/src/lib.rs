@@ -1,4 +1,4 @@
-extern crate libironclad_erlsyntax;
+extern crate libironclad_erlang;
 extern crate libironclad_util;
 extern crate function_name;
 

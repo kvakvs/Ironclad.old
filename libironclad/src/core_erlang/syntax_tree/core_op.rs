@@ -1,6 +1,6 @@
 //! Binary and unary operations used in type checking.
 
-use libironclad_erlsyntax::syntax_tree::erl_op::ErlBinaryOp;
+use libironclad_erlang::syntax_tree::erl_op::ErlBinaryOp;
 
 /// Binary operation taking two arguments
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

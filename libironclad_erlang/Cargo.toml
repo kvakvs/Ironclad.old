@@ -1,5 +1,5 @@
 [package]
-name = "libironclad_erlsyntax"
+name = "libironclad_erlang"
 version = "2022.5.0"
 edition = "2021"
 

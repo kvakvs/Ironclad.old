@@ -154,6 +154,7 @@ impl ErlTypeParser {
     ))(input)
   }
 
+  #[allow(dead_code)]
   fn parse_typearg(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
     combinator::map(
       MiscParser::ws_before(Self::parse_type),

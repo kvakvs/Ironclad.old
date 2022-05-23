@@ -4,7 +4,7 @@
 use std::path::{PathBuf, };
 use crate::project::compiler_opts::CompilerOpts;
 use std::sync::Arc;
-use libironclad_erlsyntax::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
 use crate::project::source_file::SourceFile;
 
 /// Compile state, used as input to begin the compilation

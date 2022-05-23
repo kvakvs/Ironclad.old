@@ -1,7 +1,5 @@
 //! Preprocess Stage - parses and interprets the Erlang source and gets rid of -if/-ifdef/-ifndef
 //! directives, substitutes HRL files contents in place of -include/-include_lib etc.
-use ::function_name::named;
-
 pub mod pp_scope;
 pub mod pp_define;
 
@@ -9,13 +7,11 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use nom::{Finish};
-use libironclad_erlsyntax::syntax_tree::erl_error::ErlError;
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::{IcError};
-use libironclad_error::source_loc::SourceLoc;
-use libironclad_ppsyntax::nom_parser::{PpAstParserResult, PreprocessorParser};
-use libironclad_ppsyntax::pp_error::{PpError, PpErrorCategory};
-use libironclad_ppsyntax::syntax_tree::pp_ast::{PpAst, PpAstCache};
+use libironclad_preprocessor::nom_parser::{PpAstParserResult, PreprocessorParser};
+use libironclad_preprocessor::pp_error::{PpError};
+use libironclad_preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 
 use crate::project::ErlProject;
 use crate::project::source_file::SourceFile;
@@ -172,7 +168,6 @@ impl PreprocessState {
   /// is passed into the output or replaced with a SKIP. "Scope" is global for module and as the
   /// interpretation goes top to bottom, the scope is updated globally and is not nested inside
   /// ifdef/if blocks.
-  #[named]
   fn interpret_preprocessor_node(&mut self,
                                  node: &Arc<PpAst>,
                                  source_file: &Arc<SourceFile>,

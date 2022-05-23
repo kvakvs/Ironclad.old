@@ -5,7 +5,7 @@ use std::process::exit;
 
 use libironclad::project::ErlProject;
 use libironclad::project::conf::ProjectConf;
-use libironclad_error::ic_error::{IcResult, IroncladError, IroncladResult};
+use libironclad_error::ic_error::{IcResult};
 
 fn main_do() -> IcResult<()> {
   // Test default project from ""
@@ -32,11 +32,11 @@ fn main_do() -> IcResult<()> {
 fn main() {
   match main_do() {
     Ok(_) => {
-      println!("...finished.");
+      println!("Ironclad finished.");
       exit(0);
     }
     Err(e) => {
-      println!("Error occured: {}", e);
+      println!("{}", e);
       exit(e.get_process_exit_code())
     }
   }
