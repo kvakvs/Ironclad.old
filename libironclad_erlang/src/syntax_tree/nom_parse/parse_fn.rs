@@ -9,12 +9,10 @@ use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
-use nom::combinator::{map, opt};
+use nom::combinator::{cut, map, opt};
+use nom::multi::separated_list1;
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi,
-};
+use nom::{bytes::complete::tag, character::complete::char, combinator, error::context};
 
 impl ErlParser {
   fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
@@ -95,7 +93,7 @@ impl ErlParser {
   pub fn parse_fndef(input: &str) -> AstParserResult {
     map(
       terminated(
-        multi::separated_list1(
+        separated_list1(
           ws_before(char(';')),
           // if parse fails under here, will show this context message in error
           context("function clause", cut(Self::parse_fnclause::<true>)),
@@ -113,7 +111,7 @@ impl ErlParser {
       preceded(
         ws_before(tag("fun")),
         terminated(
-          context("", multi::separated_list1(ws_before(char(';')), Self::parse_fnclause::<false>)),
+          context("", separated_list1(ws_before(char(';')), Self::parse_fnclause::<false>)),
           ws_before(tag("end")),
         ),
       ),

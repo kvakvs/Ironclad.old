@@ -7,11 +7,10 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, 
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
-use nom::combinator::{map, opt};
+use nom::combinator::{cut, map, opt};
+use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
-use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context, multi,
-};
+use nom::{bytes, bytes::complete::tag, character::complete::char, error::context};
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
 pub struct ErlAttrParser {}
@@ -58,7 +57,7 @@ impl ErlAttrParser {
   fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     delimited(
       ws_before(char('[')),
-      multi::separated_list1(ws_before(char(',')), ws_before(Self::parse_funarity)),
+      separated_list1(ws_before(char(',')), ws_before(Self::parse_funarity)),
       ws_before(char(']')),
     )(input)
   }
@@ -118,7 +117,7 @@ impl ErlAttrParser {
   ) -> nom::IResult<&str, Vec<String>, ErlParserError> {
     delimited(
       ws_before(char('(')),
-      cut(multi::separated_list0(ws_before(char(',')), ErlTypeParser::parse_typevar_name)),
+      cut(separated_list0(ws_before(char(',')), ErlTypeParser::parse_typevar_name)),
       ws_before(char(')')),
     )(input)
   }

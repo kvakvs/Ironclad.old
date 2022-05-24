@@ -2,20 +2,20 @@
 
 use crate::syntax_tree::nom_parse::{StrSliceParserResult, StringParserResult};
 use nom::branch::alt;
-use nom::combinator::{map, opt, recognize};
+use nom::combinator::{eof, map, opt, recognize, verify};
+use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::{
   bytes::complete::tag,
   character,
   character::complete::{alphanumeric1, char, one_of},
-  combinator, multi,
 };
 
 /// Recognizes 0 or more whitespaces and line comments
 fn spaces_or_comments0<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  recognize(multi::many0(alt((character::complete::multispace1, parse_line_comment))))(input)
+  recognize(many0(alt((character::complete::multispace1, parse_line_comment))))(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -66,10 +66,8 @@ where
 pub fn parse_ident(input: &str) -> StringParserResult {
   map(
     recognize(pair(
-      combinator::verify(character::complete::anychar, |c: &char| {
-        c.is_alphabetic() && c.is_lowercase()
-      }),
-      multi::many0(alt((alphanumeric1, tag("_")))),
+      verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
+      many0(alt((alphanumeric1, tag("_")))),
     )),
     |result: &str| result.to_string(),
   )(input)
@@ -80,8 +78,8 @@ pub fn parse_varname(input: &str) -> StringParserResult {
   map(
     recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
-      combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
-      multi::many0(alt((alphanumeric1, tag("_")))),
+      verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
+      many0(alt((alphanumeric1, tag("_")))),
     )),
     |result: &str| result.to_string(),
   )(input)
@@ -90,7 +88,7 @@ pub fn parse_varname(input: &str) -> StringParserResult {
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 /// From Nom examples
 pub fn parse_int(input: &str) -> StrSliceParserResult {
-  recognize(multi::many1(terminated(one_of("0123456789"), multi::many0(char('_')))))(input)
+  recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
 }
 
 /// Parse a float with possibly scientific notation. Output is a string.
@@ -120,7 +118,7 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
 // pub fn newline(input: &str) -> nom::IResult<&str, (), ErlParserError> {
 //   map(
 //     alt((
-//       combinator::eof,
+//       eof,
 //       Self::ws(tag("\r\n")),
 //       Self::ws(tag("\n"))
 //     )),
@@ -132,15 +130,12 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
 pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  recognize(alt((tag("\r\n"), tag("\r"), tag("\n"), combinator::eof)))(input)
+  recognize(alt((tag("\r\n"), tag("\r"), tag("\n"), eof)))(input)
 }
 
 /// Recognizes `% text <newline>` consuming text
 pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  recognize(pair(
-    multi::many1(char('%')),
-    multi::many_till(character::complete::anychar, newline_or_eof),
-  ))(input)
+  recognize(pair(many1(char('%')), many_till(character::complete::anychar, newline_or_eof)))(input)
 }

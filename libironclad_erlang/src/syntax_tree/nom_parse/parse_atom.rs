@@ -4,11 +4,12 @@
 use crate::syntax_tree::nom_parse::misc::parse_ident;
 use crate::syntax_tree::nom_parse::StringParserResult;
 use nom::branch::alt;
-use nom::combinator::map;
+use nom::combinator::{map, map_opt, map_res, value, verify};
+use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
 use nom::{
   bytes::streaming::{is_not, take_while_m_n},
-  character, combinator, error, multi,
+  character, error,
 };
 
 /// A string fragment contains a fragment of a string being parsed: either
@@ -53,14 +54,13 @@ impl AtomParser {
     // `map_res` takes the result of a parser and applies a function that returns
     // a Result. In this case we take the hex bytes from parse_hex and attempt to
     // convert them to a u32.
-    let parse_u32 =
-      combinator::map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
+    let parse_u32 = map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
 
     // map_opt is like map_res, but it takes an Option instead of a Result. If
     // the function returns None, map_opt returns an error. In this case, because
     // not all u32 values are valid unicode code points, we have to fallibly
     // convert to char with from_u32.
-    combinator::map_opt(parse_u32, std::char::from_u32)(input)
+    map_opt(parse_u32, std::char::from_u32)(input)
   }
 
   /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
@@ -78,14 +78,14 @@ impl AtomParser {
         // parser (the second argument) succeeds. In these cases, it looks for
         // the marker characters (n, r, t, etc) and returns the matching
         // character (\n, \r, \t, etc).
-        combinator::value('\n', character::streaming::char('n')),
-        combinator::value('\r', character::streaming::char('r')),
-        combinator::value('\t', character::streaming::char('t')),
-        combinator::value('\u{08}', character::streaming::char('b')),
-        combinator::value('\u{0C}', character::streaming::char('f')),
-        combinator::value('\\', character::streaming::char('\\')),
-        combinator::value('/', character::streaming::char('/')),
-        combinator::value('\'', character::streaming::char('\'')),
+        value('\n', character::streaming::char('n')),
+        value('\r', character::streaming::char('r')),
+        value('\t', character::streaming::char('t')),
+        value('\u{08}', character::streaming::char('b')),
+        value('\u{0C}', character::streaming::char('f')),
+        value('\\', character::streaming::char('\\')),
+        value('/', character::streaming::char('/')),
+        value('\'', character::streaming::char('\'')),
       )),
     )(input)
   }
@@ -110,7 +110,7 @@ impl AtomParser {
     // the parser. The verification function accepts out output only if it
     // returns true. In this case, we want to ensure that the output of is_not
     // is non-empty.
-    combinator::verify(not_quote_slash, |s: &str| !s.is_empty())(input)
+    verify(not_quote_slash, |s: &str| !s.is_empty())(input)
   }
 
   /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
@@ -124,7 +124,7 @@ impl AtomParser {
       // of that parser.
       map(Self::parse_literal, StringFragment::Literal),
       map(Self::parse_escaped_char, StringFragment::EscapedChar),
-      combinator::value(StringFragment::EscapedWS, Self::parse_escaped_whitespace),
+      value(StringFragment::EscapedWS, Self::parse_escaped_whitespace),
     ))(input)
   }
 
@@ -136,7 +136,7 @@ impl AtomParser {
   {
     // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
     // and for each output value, calls a folding function on each output value.
-    let build_quoted_atom_body = multi::fold_many0(
+    let build_quoted_atom_body = fold_many0(
       // Our parser function– parses a single string fragment
       Self::parse_fragment,
       // Our init value, an empty string
@@ -167,10 +167,7 @@ impl AtomParser {
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
   /// delitmited string
   pub fn parse_atom(input: &str) -> StringParserResult {
-    alt((
-      combinator::verify(parse_ident, |s| !Self::is_erl_keyword(s)),
-      Self::parse_quoted_atom,
-    ))(input)
+    alt((verify(parse_ident, |s| !Self::is_erl_keyword(s)), Self::parse_quoted_atom))(input)
   }
 
   fn is_erl_keyword(s: &str) -> bool {

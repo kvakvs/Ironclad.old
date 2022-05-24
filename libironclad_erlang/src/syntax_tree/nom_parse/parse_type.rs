@@ -12,8 +12,9 @@ use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
+use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
+use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::sync::Arc;
 
 /// Holds code for parsing types and typespecs
@@ -28,7 +29,7 @@ impl ErlTypeParser {
         ws_before(tag("spec")),
         tuple((
           context("function spec: name", cut(ws_before(AtomParser::parse_atom))),
-          multi::separated_list1(
+          separated_list1(
             ws_before(char(';')),
             context("function clause spec", cut(ws_before(Self::parse_fn_spec_fnclause))),
           ),
@@ -102,7 +103,7 @@ impl ErlTypeParser {
 
   // /// Parses a list of comma separated typevars (function arg specs)
   // fn parse_comma_sep_arg_specs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
-  //   multi::separated_list0(
+  //   separated_list0(
   //     Self::ws(char(',')),
   //
   //     // Comma separated arguments spec can be typevars with optional `::type()`s or just types
@@ -150,7 +151,7 @@ impl ErlTypeParser {
   /// Parses a comma separated list of 0 or more type arguments.
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    multi::separated_list0(
+    separated_list0(
       ws_before(char(',')),
       context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
     )(input)
@@ -159,7 +160,7 @@ impl ErlTypeParser {
   /// Parses a comma separated list of 1 or more type arguments.
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    multi::separated_list1(
+    separated_list1(
       ws_before(char(',')),
       context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
     )(input)
@@ -249,7 +250,7 @@ impl ErlTypeParser {
   /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
-      multi::separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
+      separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
       |types| ErlType::new_union(&types),
     )(input)
   }

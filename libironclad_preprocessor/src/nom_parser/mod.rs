@@ -10,15 +10,14 @@ use libironclad_erlang::syntax_tree::nom_parse::misc::{
 };
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use nom::branch::alt;
-use nom::combinator::{map, opt, recognize};
+use nom::combinator::{map, opt, recognize, verify};
+use nom::multi::{many1, many_till, separated_list0};
 use nom::sequence::{delimited, pair, preceded, tuple};
 use nom::{
   bytes::complete::tag,
   character,
   character::complete::{alphanumeric1, char},
-  combinator,
   error::context,
-  multi,
 };
 
 pub mod pp_parse_if;
@@ -27,7 +26,7 @@ pub mod pp_parse_types;
 impl PreprocessorParser {
   /// Parse a `Var1, Var2, ...` into a list
   fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
-    multi::separated_list0(ws_before(char(',')), parse_varname)(input)
+    separated_list0(ws_before(char(',')), parse_varname)(input)
   }
 
   fn terminator(input: &str) -> PpParserResult<&str> {
@@ -49,7 +48,7 @@ impl PreprocessorParser {
           )),
           opt(delimited(
             ws_before(char(',')),
-            multi::many_till(nom::character::complete::anychar, Self::terminator),
+            many_till(nom::character::complete::anychar, Self::terminator),
             Self::terminator,
           )), // )delimited )opt
           ws_before(char(')')),
@@ -70,8 +69,8 @@ impl PreprocessorParser {
   fn parse_macro_ident(input: &str) -> PpStringParserResult {
     map(
       recognize(pair(
-        combinator::verify(character::complete::anychar, |c: &char| c.is_alphabetic() || *c == '_'),
-        multi::many1(alt((alphanumeric1, tag("_")))),
+        verify(character::complete::anychar, |c: &char| c.is_alphabetic() || *c == '_'),
+        many1(alt((alphanumeric1, tag("_")))),
       )),
       |result: &str| result.to_string(),
     )(input)
@@ -154,7 +153,7 @@ impl PreprocessorParser {
   /// Parse full lines till a line which looks like a preprocessor directive is found
   fn consume_one_line_of_text(input: &str) -> PpAstParserResult {
     map(
-      combinator::verify(
+      verify(
         ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
         |text: &str| !text.is_empty(), //&& !text.starts_with('-'),
       ),
@@ -175,7 +174,7 @@ impl PreprocessorParser {
   /// Split input into AST nodes for preprocessor directives and any irrelevant text in between
   pub fn parse_fragments_collection(input: &str) -> VecPpAstParserResult {
     // Followed by 1 or more directive or another text fragment
-    multi::many1(Self::parse_fragment)(input)
+    many1(Self::parse_fragment)(input)
   }
 
   /// Parses file contents into mix of preprocessor directives and text fragments.

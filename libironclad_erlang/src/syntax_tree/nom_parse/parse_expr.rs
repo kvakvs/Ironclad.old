@@ -16,8 +16,9 @@ use crate::syntax_tree::nom_parse::{
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
+use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
-use nom::{bytes, character::complete::char, error::context, multi};
+use nom::{bytes, character::complete::char, error::context};
 
 impl ErlParser {
   /// Full expression including comma operator, for function bodies
@@ -86,7 +87,7 @@ impl ErlParser {
 
   /// Parses mix of generators and conditions for a list comprehension
   pub fn parse_list_comprehension_exprs_and_generators(input: &str) -> VecAstParserResult {
-    multi::separated_list0(
+    separated_list0(
       ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
@@ -126,7 +127,7 @@ impl ErlParser {
   pub fn parse_comma_sep_exprs0<const STYLE: usize>(
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
-    multi::separated_list0(
+    separated_list0(
       ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
@@ -137,7 +138,7 @@ impl ErlParser {
   pub fn parse_comma_sep_exprs1<const STYLE: usize>(
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
-    multi::separated_list1(
+    separated_list1(
       ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
@@ -262,7 +263,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
         Self::parse_expr_prec03::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(alt((
             Self::binop_floatdiv,
             Self::binop_multiply,
@@ -284,7 +285,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       tuple((
         Self::parse_expr_prec04::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(alt((
             Self::binop_add,
             Self::binop_bor,
@@ -308,7 +309,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
         Self::parse_expr_prec05::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(alt((Self::binop_list_append, Self::binop_list_subtract))),
           ws_before(Self::parse_expr_prec05::<STYLE>),
         )),
@@ -323,7 +324,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
         Self::parse_expr_prec06::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(alt((
             Self::binop_hard_equals,
             Self::binop_hard_not_equals,
@@ -347,7 +348,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
       pair(
         Self::parse_expr_prec07::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(Self::binop_andalso),
           ws_before(Self::parse_expr_prec07::<STYLE>),
         )),
@@ -362,7 +363,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
       pair(
         Self::parse_expr_prec08::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(Self::binop_orelse),
           ws_before(Self::parse_expr_prec08::<STYLE>),
         )),
@@ -377,7 +378,7 @@ impl ErlParser {
       // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
       pair(
         Self::parse_expr_prec09::<STYLE>,
-        multi::many0(pair(
+        many0(pair(
           ws_before_mut(alt((Self::binop_match, Self::binop_bang))),
           ws_before(Self::parse_expr_prec09::<STYLE>),
         )),
@@ -429,7 +430,7 @@ impl ErlParser {
           // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
           pair(
             ws_before(Self::parse_expr_prec11::<STYLE>),
-            multi::many0(pair(
+            many0(pair(
               ws_before_mut(alt((Self::binop_semicolon, Self::binop_comma))),
               ws_before(Self::parse_expr_prec11::<STYLE>),
             )),

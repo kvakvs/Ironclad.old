@@ -5,7 +5,8 @@ use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use nom::branch::alt;
-use nom::{combinator, multi};
+use nom::combinator::complete;
+use nom::multi::many0;
 
 pub mod misc;
 pub mod parse_atom;
@@ -54,7 +55,7 @@ impl ErlParser {
       return Ok((input, Vec::default()));
     }
 
-    multi::many0(combinator::complete(Self::parse_module_form))(input)
+    many0(complete(Self::parse_module_form))(input)
   }
 
   /// Parses an attribute or a function def

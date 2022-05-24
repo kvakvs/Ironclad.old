@@ -6,9 +6,10 @@ use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::map;
+use nom::multi::separated_list1;
 use nom::sequence::{pair, preceded, terminated};
 use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context, multi,
+  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context,
 };
 
 impl ErlParser {
@@ -20,7 +21,7 @@ impl ErlParser {
       "if block",
       cut(map(
         terminated(
-          multi::separated_list1(
+          separated_list1(
             ws_before(char(';')),
             context("if block clause", cut(Self::parse_if_clause)),
           ),

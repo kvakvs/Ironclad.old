@@ -8,16 +8,16 @@ use crate::syntax_tree::pp_ast::PpAst;
 use libironclad_erlang::syntax_tree::nom_parse::misc::ws_before;
 use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
 use nom::character::complete::char;
-use nom::combinator::{cut, map, opt, recognize};
+use nom::combinator::{cut, map, opt, recognize, verify};
+use nom::multi::many0;
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
-use nom::{combinator, multi};
 use std::ops::Deref;
 use std::sync::Arc;
 
 impl PreprocessorParser {
   /// Parses multiple lines of any directives except `-endif.` or `-else.`
   fn parse_if_true_block_till_else(input: &str) -> VecPpAstParserResult {
-    multi::many0(combinator::verify(Self::parse_fragment, |frag: &Arc<PpAst>| {
+    many0(verify(Self::parse_fragment, |frag: &Arc<PpAst>| {
       !frag.is_else() && !frag.is_elseif() && !frag.is_endif()
     }))(input)
   }
@@ -30,7 +30,7 @@ impl PreprocessorParser {
         // Consume lines and directives until an `-else` or `-endif`
         Self::parse_if_true_block_till_else,
         // Optional -else. <LINES> block
-        cut(opt(preceded(Self::parse_else_temporary, multi::many0(Self::parse_fragment)))),
+        cut(opt(preceded(Self::parse_else_temporary, many0(Self::parse_fragment)))),
         cut(Self::consume_endif),
       )),
       |(pp_if_expr, branch_true, branch_false, _endif)| {

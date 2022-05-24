@@ -7,8 +7,9 @@ use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
+use nom::multi::{many1, separated_list1};
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
+use nom::{bytes::complete::tag, character::complete::char, error::context};
 
 impl ErlParser {
   /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
@@ -54,14 +55,14 @@ impl ErlParser {
         // Optional OF followed by match clauses
         opt(preceded(
           ws_before(tag("of")),
-          context("try block: 'of' clauses", cut(multi::many1(ws_before(Self::parse_case_clause)))),
+          context("try block: 'of' clauses", cut(many1(ws_before(Self::parse_case_clause)))),
         )),
         // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
         preceded(
           ws_before(tag("catch")),
           context(
             "try block: 'catch' clauses",
-            cut(multi::separated_list1(ws_before(char(';')), Self::parse_catch_clause)),
+            cut(separated_list1(ws_before(char(';')), Self::parse_catch_clause)),
           ),
         ),
       )),

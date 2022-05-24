@@ -10,8 +10,9 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
+use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
+use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -95,7 +96,7 @@ impl BinaryParser {
   fn parse_type_specs(input: &str) -> ParserResult<Vec<TypeSpecifier>> {
     preceded(
       ws_before(char('/')), // TODO: Whitespace allowed before?
-      multi::separated_list1(
+      separated_list1(
         ws_before(char('-')), // TODO: Whitespace allowed before?
         Self::parse_a_type_spec,
       ),
@@ -130,7 +131,7 @@ impl BinaryParser {
       "ironclad_exe expression",
       cut(terminated(
         map(
-          multi::separated_list1(
+          separated_list1(
             ws_before(char(',')),
             context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
           ),
