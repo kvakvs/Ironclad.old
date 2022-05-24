@@ -38,10 +38,7 @@ impl ErlType {
     return match self {
       ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        matches!(
-          val.deref(),
-          Literal::Integer(_) | Literal::BigInteger | Literal::Float(_)
-        )
+        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger | Literal::Float(_))
       }
       _ => false,
     };
@@ -87,10 +84,7 @@ impl ErlType {
 
   /// Checks whether type is a tuple type
   pub fn is_tuple(&self) -> bool {
-    matches!(
-      self,
-      ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. }
-    )
+    matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
   }
 
   /// Checks whether type is an union type
@@ -101,15 +95,9 @@ impl ErlType {
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     return match self {
-      ErlType::AnyList
-      | ErlType::List { .. }
-      | ErlType::StronglyTypedList { .. }
-      | ErlType::Nil => true,
+      ErlType::AnyList | ErlType::List { .. } | ErlType::StronglyTypedList { .. } | ErlType::Nil => true,
       ErlType::Singleton { val: singleton } => {
-        matches!(
-          singleton.deref(),
-          Literal::List { .. } | Literal::String { .. }
-        )
+        matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
       }
       _ => false,
     };

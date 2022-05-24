@@ -42,10 +42,6 @@ impl ProjectConf {
 
 impl Debug for ProjectConf {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(
-      f,
-      "ProjectConf({:?}, {:?})",
-      self.inputs, self.compiler_opts
-    )
+    write!(f, "ProjectConf({:?}, {:?})", self.inputs, self.compiler_opts)
   }
 }

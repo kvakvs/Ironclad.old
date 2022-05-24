@@ -14,10 +14,7 @@ impl ErlAst {
   /// For a function header, `myfun(A, {B, C}, #{key => D})` extract variable names: A, B, C, D.
   /// and add them to the scope of this function. Some AST nodes are not acceptable in argument
   /// list, so they would cause an error.
-  pub fn extract_variables(
-    node: &Arc<ErlAst>,
-    variables: &mut HashMap<String, Arc<ErlType>>,
-  ) -> IcResult<()> {
+  pub fn extract_variables(node: &Arc<ErlAst>, variables: &mut HashMap<String, Arc<ErlType>>) -> IcResult<()> {
     match node.deref() {
       ErlAst::Var(v) => {
         variables.insert(v.name.clone(), ErlType::any());
@@ -38,9 +35,7 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::ListComprehension {
-        expr, generators, ..
-      } => {
+      ErlAst::ListComprehension { expr, generators, .. } => {
         Self::extract_variables(expr, variables)?;
         for g in generators {
           Self::extract_variables(g, variables)?;
@@ -61,12 +56,7 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::TryCatch {
-        body,
-        of_branches,
-        catch_clauses,
-        ..
-      } => {
+      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
         Self::extract_variables(body, variables)?;
         if let Some(ofb) = of_branches {
           for b in ofb {
@@ -132,10 +122,9 @@ impl ErlAst {
       | ErlAst::CaseStatement { .. }
       | ErlAst::Apply(_)
       | ErlAst::UnaryOp { .. }
-      | ErlAst::GenericAttr { .. } => ErlError::unacceptable(
-        node.location(),
-        format!("{}: is unacceptable as a function argument", node),
-      ),
+      | ErlAst::GenericAttr { .. } => {
+        ErlError::unacceptable(node.location(), format!("{}: is unacceptable as a function argument", node))
+      }
     }
   }
 }

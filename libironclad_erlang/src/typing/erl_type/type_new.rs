@@ -21,36 +21,24 @@ impl ErlType {
 
   /// Creates a new singleton atom of name `s`
   pub fn new_atom(s: &str) -> Arc<ErlType> {
-    ErlType::Singleton {
-      val: Literal::Atom(s.to_string()).into(),
-    }
-    .into()
+    ErlType::Singleton { val: Literal::Atom(s.to_string()).into() }.into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
   pub fn list_of(t: Arc<ErlType>) -> Arc<ErlType> {
-    let result = ErlType::List {
-      elements: t,
-      tail: None,
-    };
+    let result = ErlType::List { elements: t, tail: None };
     result.into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
   pub fn list_of_types(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
-    let result = ErlType::StronglyTypedList {
-      elements: types,
-      tail: None,
-    };
+    let result = ErlType::StronglyTypedList { elements: types, tail: None };
     result.into()
   }
 
   /// Creates new function type with clauses
   pub fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
-    assert!(
-      !clauses.is_empty(),
-      "Attempt to build a fn type with zero clauses"
-    );
+    assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
     assert!(
@@ -65,10 +53,7 @@ impl ErlType {
 
   /// Creates a new function type with 1 clause, a count of `any()` args and a given return type
   pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &Arc<ErlType>) -> ErlType {
-    let any_args = iter::repeat(())
-      .take(arity)
-      .map(|_| Typevar::new(None, None))
-      .collect();
+    let any_args = iter::repeat(()).take(arity).map(|_| Typevar::new(None, None)).collect();
     let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
     let fn_type = FnType::new(arity, &[clause]);
     ErlType::Fn(fn_type.into())
@@ -98,10 +83,7 @@ impl ErlType {
 
   /// Construct a new tuple-type
   pub fn new_tuple(elements: &[Arc<ErlType>]) -> Arc<ErlType> {
-    ErlType::Tuple {
-      elements: elements.into(),
-    }
-    .into()
+    ErlType::Tuple { elements: elements.into() }.into()
   }
 
   /// Consumes argument.
@@ -116,11 +98,7 @@ impl ErlType {
   }
 
   /// Try match type name and arity vs known basic types
-  pub fn from_name(
-    _maybe_module: Option<String>,
-    type_name: String,
-    args: &[Typevar],
-  ) -> Arc<ErlType> {
+  pub fn from_name(_maybe_module: Option<String>, type_name: String, args: &[Typevar]) -> Arc<ErlType> {
     #[allow(clippy::single_match)]
     match args.len() {
       0 => match type_name.as_ref() {
@@ -147,10 +125,6 @@ impl ErlType {
       _ => {}
     }
     // We were not able to find a basic type of that name and arity
-    UserDefinedType {
-      name: type_name,
-      args: args.to_vec(),
-    }
-    .into()
+    UserDefinedType { name: type_name, args: args.to_vec() }.into()
   }
 }

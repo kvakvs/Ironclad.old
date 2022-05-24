@@ -181,10 +181,7 @@ impl ErlType {
 
       ErlType::Singleton { val } => val.synthesize_type().get_order(),
 
-      other => unimplemented!(
-        "Don't know how to get numeric order for Erlang-type {}",
-        other
-      ),
+      other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", other),
     }
   }
 }

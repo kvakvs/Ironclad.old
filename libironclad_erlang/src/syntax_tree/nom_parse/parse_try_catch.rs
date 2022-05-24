@@ -7,27 +7,19 @@ use crate::syntax_tree::nom_parse::misc::MiscParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 
 impl ErlParser {
   /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
-  pub fn parse_exception_pattern(
-    input: &str,
-  ) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
+  pub fn parse_exception_pattern(input: &str) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
     combinator::map(
       sequence::tuple((
         Self::parse_matchexpr,
         sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_matchexpr),
-        combinator::opt(sequence::preceded(
-          MiscParser::ws_before(char(':')),
-          Self::parse_matchexpr,
-        )),
+        combinator::opt(sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_matchexpr)),
       )),
-      |(class_pattern, err_pattern, stack_pattern)| {
-        ExceptionPattern::new(class_pattern, err_pattern, stack_pattern)
-      },
+      |(class_pattern, err_pattern, stack_pattern)| ExceptionPattern::new(class_pattern, err_pattern, stack_pattern),
     )(input)
   }
 
@@ -38,10 +30,7 @@ impl ErlParser {
         // Class:Error:Stacktrace
         Self::parse_exception_pattern,
         // when <Expression>
-        combinator::opt(sequence::preceded(
-          MiscParser::ws_before(tag("when")),
-          Self::parse_guardexpr,
-        )),
+        combinator::opt(sequence::preceded(MiscParser::ws_before(tag("when")), Self::parse_guardexpr)),
         // -> Expression
         sequence::preceded(
           MiscParser::ws_before(tag("->")),
@@ -49,11 +38,7 @@ impl ErlParser {
         ),
       )),
       |(exc_pattern, maybe_when, body)| {
-        CatchClause::new(
-          exc_pattern,
-          maybe_when,
-          ErlAst::new_comma_expr(SourceLoc::None, body),
-        )
+        CatchClause::new(exc_pattern, maybe_when, ErlAst::new_comma_expr(SourceLoc::None, body))
       },
     )(input)
   }

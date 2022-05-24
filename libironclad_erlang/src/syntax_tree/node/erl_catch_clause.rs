@@ -19,33 +19,17 @@ pub struct CatchClause {
 
 impl CatchClause {
   /// Create a new catch clause
-  pub fn new(
-    exc_pattern: ExceptionPattern,
-    when_guard: Option<Arc<ErlAst>>,
-    body: Arc<ErlAst>,
-  ) -> Self {
-    Self {
-      exc_pattern,
-      when_guard,
-      body,
-    }
+  pub fn new(exc_pattern: ExceptionPattern, when_guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+    Self { exc_pattern, when_guard, body }
   }
 }
 
 impl std::fmt::Display for CatchClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     if let Some(stk) = &self.exc_pattern.stack {
-      write!(
-        f,
-        "catch {}:{}:{}",
-        self.exc_pattern.class, self.exc_pattern.error, stk
-      )?;
+      write!(f, "catch {}:{}:{}", self.exc_pattern.class, self.exc_pattern.error, stk)?;
     } else {
-      write!(
-        f,
-        "catch {}:{}",
-        self.exc_pattern.class, self.exc_pattern.error
-      )?;
+      write!(f, "catch {}:{}", self.exc_pattern.class, self.exc_pattern.error)?;
     }
     if let Some(wheng) = &self.when_guard {
       write!(f, "when {}", wheng)?;

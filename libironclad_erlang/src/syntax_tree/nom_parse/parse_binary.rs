@@ -9,8 +9,7 @@ use crate::syntax_tree::nom_parse::misc::MiscParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::{
-  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 use std::ops::Deref;
 use std::str::FromStr;
@@ -22,9 +21,7 @@ impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: &str) -> AstParserResult {
     branch::alt((
-      combinator::map(MiscParser::parse_varname, |v| {
-        ErlAst::new_var(SourceLoc::None, &v)
-      }),
+      combinator::map(MiscParser::parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
       sequence::delimited(
         MiscParser::ws_before(char('(')),
@@ -69,34 +66,23 @@ impl BinaryParser {
 
   fn parse_typespec_signedness(input: &str) -> ParserResult<TypeSpecifier> {
     branch::alt((
-      combinator::map(tag("signed"), |_| {
-        TypeSpecifier::Signedness(ValueSignedness::Signed)
-      }),
-      combinator::map(tag("unsigned"), |_| {
-        TypeSpecifier::Signedness(ValueSignedness::Unsigned)
-      }),
+      combinator::map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
+      combinator::map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
     ))(input)
   }
 
   fn parse_typespec_endianness(input: &str) -> ParserResult<TypeSpecifier> {
     branch::alt((
-      combinator::map(tag("big"), |_| {
-        TypeSpecifier::Endianness(ValueEndianness::Big)
-      }),
-      combinator::map(tag("little"), |_| {
-        TypeSpecifier::Endianness(ValueEndianness::Little)
-      }),
-      combinator::map(tag("native"), |_| {
-        TypeSpecifier::Endianness(ValueEndianness::Native)
-      }),
+      combinator::map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
+      combinator::map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
+      combinator::map(tag("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
     ))(input)
   }
 
   fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
-    combinator::map(
-      sequence::preceded(tag("unit:"), MiscParser::parse_int),
-      |i_str| TypeSpecifier::Unit(usize::from_str(i_str).unwrap()),
-    )(input)
+    combinator::map(sequence::preceded(tag("unit:"), MiscParser::parse_int), |i_str| {
+      TypeSpecifier::Unit(usize::from_str(i_str).unwrap())
+    })(input)
   }
 
   fn parse_a_type_spec(input: &str) -> ParserResult<TypeSpecifier> {
@@ -125,10 +111,7 @@ impl BinaryParser {
     combinator::map(
       sequence::tuple((
         Self::parse_value,
-        combinator::opt(sequence::preceded(
-          MiscParser::ws_before(char(':')),
-          Self::parse_width,
-        )),
+        combinator::opt(sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_width)),
         combinator::opt(Self::parse_type_specs),
       )),
       |(value, bit_width, type_specs)| {

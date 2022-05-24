@@ -1,9 +1,11 @@
 //! Quick scan through a source file, split it using preprocessor directives as a divider
 
+use crate::nom_parser::pp_parse_types::{
+  PpAstParserResult, PpParserResult, PpStringParserResult, PreprocessorParser, VecPpAstParserResult,
+};
 use crate::syntax_tree::pp_ast::PpAst;
 use libironclad_erlang::syntax_tree::nom_parse::misc::MiscParser;
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
-use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
 use nom::{
   branch,
   bytes::complete::tag,
@@ -13,40 +15,17 @@ use nom::{
   error::context,
   multi, sequence,
 };
-use std::ops::Deref;
-use std::sync::Arc;
 
-/// Gathers multiple errors and contexts together
-pub type PpParserError<'a> = nom::error::VerboseError<&'a str>;
-
-/// Generic return value from a Nom parser which takes &str and returns `Out`
-pub type ParserResult<'a, Out> = nom::IResult<&'a str, Out, PpParserError<'a>>;
-
-/// Return value from a Nom parser which takes &str and returns `Arc<PpAst>`
-pub type PpAstParserResult<'a> = ParserResult<'a, Arc<PpAst>>;
-
-/// Return value from a Nom parser which takes &str and returns `Vec<Arc<PpAst>>`
-pub type VecPpAstParserResult<'a> = ParserResult<'a, Vec<Arc<PpAst>>>;
-
-/// Return value from a Nom parser which takes &str and returns `String`
-pub type StringParserResult<'a> = ParserResult<'a, String>;
-
-/// Return value from a Nom parser which takes &str and returns `&str`
-pub type StrSliceParserResult<'a> = ParserResult<'a, &'a str>;
-
-/// Return value from a Nom parser which takes &str and returns `()`
-pub type VoidParserResult<'a> = ParserResult<'a, ()>;
-
-/// Groups code for parsing preprocessor directives
-pub struct PreprocessorParser {}
+pub mod pp_parse_if;
+pub mod pp_parse_types;
 
 impl PreprocessorParser {
   /// Parse a `Var1, Var2, ...` into a list
-  fn parse_comma_sep_varnames(input: &str) -> ParserResult<Vec<String>> {
+  fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
     multi::separated_list0(MiscParser::ws_before(char(',')), MiscParser::parse_varname)(input)
   }
 
-  fn terminator(input: &str) -> ParserResult<&str> {
+  fn terminator(input: &str) -> PpParserResult<&str> {
     combinator::recognize(sequence::tuple((
       MiscParser::ws_before(char(')')),
       MiscParser::ws_before(char('.')),
@@ -76,64 +55,16 @@ impl PreprocessorParser {
         )),
       ),
       |(_open, name, args, body, _close)| {
-        PpAst::new_define(
-          name,
-          args,
-          body.map(|(chars, _term)| chars.into_iter().collect::<String>()),
-        )
-      },
-    )(input)
-  }
-
-  /// Parse a `-if(EXPR)` and return a temporary node
-  fn parse_if_temporary(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(tag("if")),
-        sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(ErlParser::parse_expr),
-          MiscParser::ws_before(char(')')),
-        ),
-      ),
-      PpAst::new_if_temporary,
-    )(input)
-  }
-
-  /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
-  fn parse_if_block(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::tuple((
-        MiscParser::ws_before(Self::parse_if_temporary),
-        // Consume lines and directives until an `-else` or `-endif`
-        multi::many0(combinator::verify(
-          Self::parse_fragment,
-          |frag: &Arc<PpAst>| !frag.is_else() && !frag.is_elseif(),
-        )),
-        // Optional -else. <LINES> block
-        combinator::opt(sequence::preceded(
-          Self::parse_else_temporary,
-          multi::many0(Self::parse_fragment),
-        )),
-        Self::consume_endif,
-      )),
-      |(pp_if_expr, branch_true, branch_false, _endif)| {
-        if let PpAst::_TemporaryIf(if_expr) = pp_if_expr.deref() {
-          PpAst::new_if(if_expr.clone(), Some(branch_true), branch_false)
-        } else {
-          unreachable!("This code path should not execute")
-        }
+        PpAst::new_define(name, args, body.map(|(chars, _term)| chars.into_iter().collect::<String>()))
       },
     )(input)
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-  fn parse_macro_ident(input: &str) -> StringParserResult {
+  fn parse_macro_ident(input: &str) -> PpStringParserResult {
     combinator::map(
       combinator::recognize(sequence::pair(
-        combinator::verify(character::complete::anychar, |c: &char| {
-          c.is_alphabetic() || *c == '_'
-        }),
+        combinator::verify(character::complete::anychar, |c: &char| c.is_alphabetic() || *c == '_'),
         multi::many1(branch::alt((alphanumeric1, tag("_")))),
       )),
       |result: &str| result.to_string(),
@@ -183,76 +114,6 @@ impl PreprocessorParser {
       ),
       |(_open, s, _close)| PpAst::new_include_lib(s),
     )(input)
-  }
-
-  /// Parse a `-elif(EXPR)` into a temporary AST node
-  fn parse_elif_temporary(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(tag("elif")),
-        sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(ErlParser::parse_expr),
-          MiscParser::ws_before(char(')')),
-        ),
-      ),
-      PpAst::new_elif_temporary,
-    )(input)
-  }
-
-  /// Parse a `-ifdef(MACRO_NAME)`
-  fn parse_ifdef_temporary(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(tag("ifdef")),
-        sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(Self::parse_macro_ident),
-          MiscParser::ws_before(char(')')),
-        ),
-      ),
-      PpAst::new_ifdef_temporary,
-    )(input)
-  }
-
-  /// Parse a `-ifndef(MACRO_NAME)`
-  fn parse_ifndef_temporary(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(tag("ifndef")),
-        sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(Self::parse_macro_ident),
-          MiscParser::ws_before(char(')')),
-        ),
-      ),
-      PpAst::new_ifndef_temporary,
-    )(input)
-  }
-
-  /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
-  fn parse_else_temporary(input: &str) -> PpAstParserResult {
-    combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(tag("else")),
-        combinator::opt(sequence::pair(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(char(')')),
-        )),
-      ),
-      |_opt| PpAst::_TemporaryElse.into(),
-    )(input)
-  }
-
-  /// Parse a `-endif.` and return it as a `&str` slice
-  fn consume_endif(input: &str) -> StrSliceParserResult {
-    combinator::recognize(sequence::preceded(
-      MiscParser::ws_before(tag("endif")),
-      combinator::opt(sequence::pair(
-        MiscParser::ws_before(char('(')),
-        MiscParser::ws_before(char(')')),
-      )),
-    ))(input)
   }
 
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {

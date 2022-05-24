@@ -34,11 +34,7 @@ impl IcErrorT for IroncladError {
 impl IroncladError {
   /// Create `IroncladError` from 3 components
   pub fn new(err_type: IcErrorCategory, loc: SourceLoc, msg: String) -> Self {
-    IroncladError {
-      category: err_type,
-      loc,
-      msg,
-    }
+    IroncladError { category: err_type, loc, msg }
   }
 
   /// Create ErlError from type only
@@ -66,11 +62,7 @@ impl IroncladError {
   // TODO: move to preprocessor crate
   /// Creates a preprocessor parse error from a filename and a message
   pub fn pp_parse<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
-    let new_err = IroncladError::new(
-      IcErrorCategory::PreprocessorParse,
-      loc,
-      String::from(message),
-    );
+    let new_err = IroncladError::new(IcErrorCategory::PreprocessorParse, loc, String::from(message));
     Err(Box::new(new_err))
   }
 

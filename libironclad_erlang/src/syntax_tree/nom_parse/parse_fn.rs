@@ -10,8 +10,7 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 
 impl ErlParser {
@@ -33,17 +32,12 @@ impl ErlParser {
       return combinator::map(AtomParser::parse_atom, Option::Some)(input);
     }
     // Succeed if FN_NAME=false and there is no atom
-    combinator::map(
-      combinator::peek(combinator::not(AtomParser::parse_atom)),
-      |_| Option::None,
-    )(input)
+    combinator::map(combinator::peek(combinator::not(AtomParser::parse_atom)), |_| Option::None)(input)
   }
 
   /// Parses a named clause for a top level function
   /// * FN_NAME: true if the parser must require function name
-  fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
-    input: &str,
-  ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
+  fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: &str) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
         // Function clause name
@@ -68,23 +62,15 @@ impl ErlParser {
         ),
       )),
       |(maybe_name, args, when_expr, body)| {
-        ErlFnClause::new(
-          maybe_name,
-          args,
-          ErlAst::new_comma_expr(SourceLoc::None, body),
-          when_expr,
-        )
+        ErlFnClause::new(maybe_name, args, ErlAst::new_comma_expr(SourceLoc::None, body), when_expr)
       },
     )(input)
   }
 
   /// Builds a function definition from multiple parsed clauses
   fn _construct_fndef(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
-    assert!(
-      !fnclauses.is_empty(),
-      "Function clauses list can't be empty, i don't even..."
-    ); // unreachable
-       // println!("Construct fdef: {:?}", fnclauses);
+    assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even..."); // unreachable
+                                                                                             // println!("Construct fdef: {:?}", fnclauses);
 
     let arity = fnclauses[0].args.len();
     let fn_name = match &fnclauses[0].name {
@@ -124,10 +110,7 @@ impl ErlParser {
         sequence::terminated(
           context(
             "",
-            multi::separated_list1(
-              MiscParser::ws_before(char(';')),
-              Self::parse_fnclause::<false>,
-            ),
+            multi::separated_list1(MiscParser::ws_before(char(';')), Self::parse_fnclause::<false>),
           ),
           MiscParser::ws_before(tag("end")),
         ),

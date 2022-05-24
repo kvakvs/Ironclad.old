@@ -27,11 +27,7 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
       }
-      ErlAst::ImportAttr {
-        import_from,
-        imports,
-        ..
-      } => {
+      ErlAst::ImportAttr { import_from, imports, .. } => {
         write!(f, "-import({}, ", import_from)?;
         Pretty::display_square_list(imports, f)?;
         writeln!(f, ").")
@@ -70,18 +66,10 @@ impl std::fmt::Display for ErlAst {
       }
       ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
 
-      ErlAst::BinaryOp {
-        expr: binop_expr, ..
-      } => {
-        write!(
-          f,
-          "({} {} {})",
-          binop_expr.left, binop_expr.operator, binop_expr.right
-        )
+      ErlAst::BinaryOp { expr: binop_expr, .. } => {
+        write!(f, "({} {} {})", binop_expr.left, binop_expr.operator, binop_expr.right)
       }
-      ErlAst::UnaryOp {
-        expr: unop_expr, ..
-      } => {
+      ErlAst::UnaryOp { expr: unop_expr, .. } => {
         write!(f, "({} {})", unop_expr.operator, unop_expr.expr)
       }
       ErlAst::MFA { mfarity: mfa, .. } => match &mfa.module {
@@ -89,11 +77,7 @@ impl std::fmt::Display for ErlAst {
         Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
       },
       ErlAst::CommaExpr { elements, .. } => Pretty::display_comma_separated(elements, f),
-      ErlAst::List {
-        elements,
-        tail: maybe_tail,
-        ..
-      } => {
+      ErlAst::List { elements, tail: maybe_tail, .. } => {
         write!(f, "[")?;
         Pretty::display_comma_separated(elements, f)?;
         if let Some(tail) = maybe_tail {
@@ -111,9 +95,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::Map { .. } => {
         unimplemented!("Display for ErlAst::Map")
       }
-      ErlAst::ListComprehension {
-        expr, generators, ..
-      } => {
+      ErlAst::ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;
         Pretty::display_comma_separated(generators, f)?;
         write!(f, "]")
@@ -121,12 +103,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::ListComprehensionGenerator { left, right, .. } => {
         write!(f, "{} <- {}", left, right)
       }
-      ErlAst::TryCatch {
-        body,
-        of_branches,
-        catch_clauses,
-        ..
-      } => {
+      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
         write!(f, "try {}", body)?;
         if let Some(ofb) = of_branches {
           write!(f, "of")?;

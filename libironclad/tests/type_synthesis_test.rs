@@ -18,21 +18,13 @@ use std::path::PathBuf;
 #[named]
 #[test]
 fn synth_list_append() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "synthesize type for strongly typed list ++ another such",
-  );
+  test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
   let filename = PathBuf::from(function_name!());
   let parsed = ErlModule::from_expr_source(&filename, "[atom1] ++ [atom2]")?;
   let expr_type = parsed.ast.synthesize(&parsed.scope)?;
 
-  println!(
-    "{}: Inferred {} 🡆 {}",
-    function_name!(),
-    &parsed.ast,
-    expr_type
-  );
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed.ast, expr_type);
 
   assert!(parsed.ast.is_binop(ErlBinaryOp::ListAppend));
 
@@ -75,20 +67,12 @@ fn synth_simplefun_division() -> IcResult<()> {
 #[named]
 #[test]
 fn synth_simplefun_addition() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "synthesize type for a function(A) doing A+1",
-  );
+  test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_fun_source(&filename, "myfun(A) -> A + 1.")?;
   let synth_type = module.ast.synthesize(&module.scope)?;
-  println!(
-    "{}: Inferred {} 🡆 {}",
-    function_name!(),
-    &module.ast,
-    synth_type
-  );
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, synth_type);
 
   Ok(())
 }
@@ -148,10 +132,7 @@ fn synth_simplefun_addition() -> IcResult<()> {
 #[named]
 #[test]
 fn synth_fun_call() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "synthesize type for a fun which calls another fun with a sum",
-  );
+  test_util::start(function_name!(), "synthesize type for a fun which calls another fun with a sum");
   let filename = PathBuf::from(function_name!());
 
   let code = format!(
@@ -166,17 +147,11 @@ fn synth_fun_call() -> IcResult<()> {
   {
     let add_fn_ast = ErlAst::find_function_def(&module.ast, &MFArity::new_local("add", 2)).unwrap();
     let add_fn_type = add_fn_ast.synthesize(&module.scope)?;
-    println!(
-      "{}: Synthesized for add/2 {} 🡆 {}",
-      function_name!(),
-      add_fn_ast,
-      add_fn_type
-    );
+    println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
   }
 
   {
-    let main_fn_ast =
-      ErlAst::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
+    let main_fn_ast = ErlAst::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
     let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
     println!(
       "{}: Synthesized for main/1 {} 🡆 {}",
@@ -200,10 +175,7 @@ fn synth_fun_call() -> IcResult<()> {
 /// Synthesize type for a 2-clause function.
 /// Expected: -spec main(one) -> 'atom1'; (two) -> 222.
 fn synth_multiple_clause_test() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "synthesize type for a multi-clause function",
-  );
+  test_util::start(function_name!(), "synthesize type for a multi-clause function");
   let source = format!(
     "-module({}).
     main(one) -> atom1;
@@ -217,12 +189,7 @@ fn synth_multiple_clause_test() -> IcResult<()> {
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
   let main_ty = main_fn_ast.synthesize(&parsed.scope)?;
-  println!(
-    "{}: Synthesized {} 🡆 {}",
-    function_name!(),
-    main_fn_ast,
-    main_ty
-  );
+  println!("{}: Synthesized {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Assert that type is a two-clause function type
   if let ErlType::Fn(fntype) = main_ty.deref() {

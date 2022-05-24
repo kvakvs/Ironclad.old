@@ -26,11 +26,7 @@ pub struct Case {
 impl Case {
   /// Create a case struct, member of `CoreAst::Case`
   pub fn new(location: SourceLoc, exprs: Vec<Arc<CoreAst>>, clauses: Vec<CaseClause>) -> Case {
-    Case {
-      location,
-      exprs,
-      clauses,
-    }
+    Case { location, exprs, clauses }
   }
 }
 

@@ -1,4 +1,4 @@
-use crate::nom_parser::PpParserError;
+use crate::nom_parser::pp_parse_types::PpParserError;
 use ::function_name::named;
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
@@ -59,12 +59,7 @@ impl IcErrorT for PpError {
 impl PpError {
   /// Create PpError from 3 components
   pub fn new(ic_cat: IcErrorCategory, cat: PpErrorCategory, loc: SourceLoc, msg: String) -> Self {
-    Self {
-      ic_category: ic_cat,
-      category: cat,
-      loc,
-      msg,
-    }
+    Self { ic_category: ic_cat, category: cat, loc, msg }
   }
 
   /// Builds PpError with nice error details from input string and Nom's verbose error

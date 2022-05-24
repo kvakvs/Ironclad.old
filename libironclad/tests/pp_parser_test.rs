@@ -5,10 +5,10 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::stage::preprocess::PreprocessState;
+use libironclad_preprocessor::nom_parser::pp_parse_types::PreprocessorParser;
 use nom::Finish;
 use std::ops::Deref;
 
-use libironclad_preprocessor::nom_parser::PreprocessorParser;
 use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
 
 #[test]

@@ -7,8 +7,8 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, 
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::{
-  branch, bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  branch, bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi,
+  sequence,
 };
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
@@ -64,10 +64,7 @@ impl ErlAttrParser {
   fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     sequence::delimited(
       MiscParser::ws_before(char('[')),
-      multi::separated_list1(
-        MiscParser::ws_before(char(',')),
-        MiscParser::ws_before(Self::parse_funarity),
-      ),
+      multi::separated_list1(MiscParser::ws_before(char(',')), MiscParser::ws_before(Self::parse_funarity)),
       MiscParser::ws_before(char(']')),
     )(input)
   }
@@ -128,9 +125,7 @@ impl ErlAttrParser {
   }
 
   /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
-  pub fn parse_parenthesized_list_of_vars(
-    input: &str,
-  ) -> nom::IResult<&str, Vec<String>, ErlParserError> {
+  pub fn parse_parenthesized_list_of_vars(input: &str) -> nom::IResult<&str, Vec<String>, ErlParserError> {
     sequence::delimited(
       MiscParser::ws_before(char('(')),
       cut(multi::separated_list0(
@@ -149,17 +144,12 @@ impl ErlAttrParser {
         MiscParser::ws_before(tag("type")),
         sequence::tuple((
           MiscParser::ws_before(AtomParser::parse_atom),
-          context(
-            "new type: type arguments",
-            cut(Self::parse_parenthesized_list_of_vars),
-          ),
+          context("new type: type arguments", cut(Self::parse_parenthesized_list_of_vars)),
           MiscParser::ws_before(tag("::")),
           context("new type: type definition", cut(ErlTypeParser::parse_type)),
         )),
       ),
-      |(type_name, type_args, _coloncolon, new_type)| {
-        ErlAst::new_type_attr(type_name, type_args, new_type)
-      },
+      |(type_name, type_args, _coloncolon, new_type)| ErlAst::new_type_attr(type_name, type_args, new_type),
     )(input)
   }
 

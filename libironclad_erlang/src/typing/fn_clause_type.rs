@@ -31,10 +31,7 @@ impl FnClauseType {
 
   /// Create a new function clause from just args
   pub fn new(args: Vec<Typevar>, ret_ty: Typevar) -> Self {
-    Self {
-      args,
-      ret_type: ret_ty,
-    }
+    Self { args, ret_type: ret_ty }
   }
 
   /// Get the function clause argument count

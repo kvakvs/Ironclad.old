@@ -54,12 +54,7 @@ impl IcErrorT for ErlError {
 impl ErlError {
   /// Create ErlError from 3 components
   pub fn new(ic_cat: IcErrorCategory, cat: ErlErrorCategory, loc: SourceLoc, msg: String) -> Self {
-    Self {
-      ic_category: ic_cat,
-      category: cat,
-      loc,
-      msg,
-    }
+    Self { ic_category: ic_cat, category: cat, loc, msg }
   }
 
   /// Builds ErlError with nice error details from input string and Nom's verbose error
@@ -75,12 +70,7 @@ impl ErlError {
 
   /// Creates an "Unacceptable" error
   pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
-    let new_err = ErlError::new(
-      IcErrorCategory::ErlangParse,
-      ErlErrorCategory::Unacceptable,
-      loc,
-      message,
-    );
+    let new_err = ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
     Err(Box::new(new_err))
   }
 
@@ -97,12 +87,7 @@ impl ErlError {
 
   /// Creates an "Local Function Not Found" error
   pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
-    let new_err = ErlError::new(
-      IcErrorCategory::Erlang,
-      ErlErrorCategory::LocalFnNotFound { mfa },
-      loc,
-      msg,
-    );
+    let new_err = ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
     Err(Box::new(new_err))
   }
 

@@ -29,9 +29,7 @@ impl CoreAst {
           .map(|c| -> Vec<Arc<CoreAst>> {
             vec![
               c.body.clone(),
-              c.guard
-                .as_ref()
-                .map_or(CoreAst::Empty.into(), |cg| cg.clone()),
+              c.guard.as_ref().map_or(CoreAst::Empty.into(), |cg| cg.clone()),
             ]
           })
           .flatten()
@@ -63,10 +61,7 @@ impl CoreAst {
       CoreAst::List { elements, .. } => Some(elements.to_vec()),
       CoreAst::Tuple { elements, .. } => Some(elements.to_vec()),
 
-      CoreAst::Empty => panic!(
-        "{}: Core AST tree is not initialized (empty node)",
-        function_name!()
-      ),
+      CoreAst::Empty => panic!("{}: Core AST tree is not initialized (empty node)", function_name!()),
       CoreAst::PrimOp { op, .. } => match op {
         PrimOp::Raise { expr, .. } => Some(vec![expr.clone()]),
         PrimOp::ExcTrace => None,

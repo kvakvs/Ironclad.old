@@ -107,10 +107,7 @@ impl Literal {
       }
       Literal::Tuple(items) => {
         let element_types = items.iter().map(|it| it.synthesize_type()).collect();
-        ErlType::Tuple {
-          elements: element_types,
-        }
-        .into()
+        ErlType::Tuple { elements: element_types }.into()
       } // other => unimplemented!("Don't know how to synthesize type for {}", other),
     }
   }
@@ -183,10 +180,7 @@ impl Literal {
       (Literal::List { elements: a, .. }, Literal::List { elements: b, .. }) => a.cmp(b),
       (Literal::String(a), Literal::String(b)) => a.cmp(b),
       (Literal::Tuple(a), Literal::Tuple(b)) => a.cmp(b),
-      _ => unreachable!(
-        "Can't compare {} vs {}, only same type allowed in this function",
-        self, other
-      ),
+      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other),
     }
   }
 }

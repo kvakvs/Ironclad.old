@@ -39,11 +39,6 @@ impl std::fmt::Display for CaseClause {
 impl CaseClause {
   /// Create a case clause, member of `Case`
   pub fn new(loc: SourceLoc, match_exprs: Vec<Arc<CoreAst>>, body: Arc<CoreAst>) -> CaseClause {
-    CaseClause {
-      location: loc,
-      match_exprs,
-      guard: None,
-      body,
-    }
+    CaseClause { location: loc, match_exprs, guard: None, body }
   }
 }

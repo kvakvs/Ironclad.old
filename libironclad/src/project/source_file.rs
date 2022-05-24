@@ -15,9 +15,6 @@ pub struct SourceFile {
 impl SourceFile {
   /// Creates a new source file struct
   pub fn new(file_name: &Path, text: String) -> Arc<Self> {
-    Arc::new(SourceFile {
-      file_name: file_name.to_path_buf(),
-      text,
-    })
+    Arc::new(SourceFile { file_name: file_name.to_path_buf(), text })
   }
 }

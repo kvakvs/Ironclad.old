@@ -28,12 +28,7 @@ pub struct ErlFnClause {
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(
-    name: Option<String>,
-    args: Vec<Arc<ErlAst>>,
-    body: Arc<ErlAst>,
-    guard_expr: Option<Arc<ErlAst>>,
-  ) -> Self {
+  pub fn new(name: Option<String>, args: Vec<Arc<ErlAst>>, body: Arc<ErlAst>, guard_expr: Option<Arc<ErlAst>>) -> Self {
     // TODO: For root level function defs assert that name is Some. For lambdas: that name is None
     let scope_name = match &name {
       None => "unnamed fn scope".into(),
@@ -48,13 +43,7 @@ impl ErlFnClause {
 
     let clause_scope = Scope::new(scope_name, Weak::new(), variables).into();
 
-    ErlFnClause {
-      name,
-      args,
-      body,
-      guard_expr,
-      scope: clause_scope,
-    }
+    ErlFnClause { name, args, body, guard_expr, scope: clause_scope }
   }
 
   /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
@@ -77,10 +66,8 @@ impl ErlFnClause {
       args_types.push(Typevar::from_erltype(&synth));
     }
 
-    let synthesized_t = FnClauseType::new(
-      args_types,
-      Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?),
-    );
+    let synthesized_t =
+      FnClauseType::new(args_types, Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?));
     Ok(synthesized_t)
   }
 
@@ -92,14 +79,7 @@ impl ErlFnClause {
 
 impl std::fmt::Display for ErlFnClause {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(
-      f,
-      "{}(",
-      self
-        .name
-        .clone()
-        .unwrap_or_else(|| "$unnamed-lambda".to_string())
-    )?;
+    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
@@ -111,14 +91,7 @@ impl std::fmt::Display for ErlFnClause {
 
 impl std::fmt::Debug for ErlFnClause {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(
-      f,
-      "{}(",
-      self
-        .name
-        .clone()
-        .unwrap_or_else(|| "$unnamed-lambda".to_string())
-    )?;
+    write!(f, "{}(", self.name.clone().unwrap_or_else(|| "$unnamed-lambda".to_string()))?;
     Pretty::display_comma_separated(&self.args, f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {

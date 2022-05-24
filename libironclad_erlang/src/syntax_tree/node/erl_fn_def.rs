@@ -28,15 +28,8 @@ impl ErlFnDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
   pub fn new(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
-    assert!(
-      !clauses.is_empty(),
-      "Cannot construct a function definition without clauses"
-    );
-    Self {
-      location,
-      funarity,
-      clauses,
-    }
+    assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
+    Self { location, funarity, clauses }
   }
 
   /// Produce `ErlType` for this function definition, with all clauses and their return types
@@ -68,11 +61,7 @@ impl ErlFnDef {
 
 impl AstNode for ErlFnDef {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let r: Vec<Arc<ErlAst>> = self
-      .clauses
-      .iter()
-      .map(|fclause| fclause.body.clone())
-      .collect();
+    let r: Vec<Arc<ErlAst>> = self.clauses.iter().map(|fclause| fclause.body.clone()).collect();
     Some(r)
   }
 }

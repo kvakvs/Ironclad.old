@@ -10,14 +10,9 @@ use crate::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::syntax_tree::node::erl_var::ErlVar;
 use crate::syntax_tree::nom_parse::misc::MiscParser;
 use crate::syntax_tree::nom_parse::parse_binary::BinaryParser;
-use crate::syntax_tree::nom_parse::{
-  AstParserResult, ErlParser, ErlParserError, VecAstParserResult,
-};
+use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
 use libironclad_error::source_loc::SourceLoc;
-use nom::{
-  branch, bytes, character::complete::char, combinator, combinator::cut, error::context, multi,
-  sequence,
-};
+use nom::{branch, bytes, character::complete::char, combinator, combinator::cut, error::context, multi, sequence};
 
 impl ErlParser {
   /// Full expression including comma operator, for function bodies
@@ -57,10 +52,7 @@ impl ErlParser {
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     sequence::delimited(
       MiscParser::ws_before(char('(')),
-      context(
-        "function application arguments",
-        cut(Self::parse_comma_sep_exprs0::<STYLE>),
-      ),
+      context("function application arguments", cut(Self::parse_comma_sep_exprs0::<STYLE>)),
       MiscParser::ws_before(char(')')),
     )(input)
   }
@@ -76,9 +68,7 @@ impl ErlParser {
         )),
         MiscParser::ws_before(char(']')),
       )),
-      |(_open, elements, maybe_tail, _close)| {
-        ErlAst::new_list(SourceLoc::None, elements, maybe_tail)
-      },
+      |(_open, elements, maybe_tail, _close)| ErlAst::new_list(SourceLoc::None, elements, maybe_tail),
     )(input)
   }
 
@@ -326,10 +316,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec05::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((
-            Self::binop_list_append,
-            Self::binop_list_subtract,
-          ))),
+          MiscParser::ws_before_mut(branch::alt((Self::binop_list_append, Self::binop_list_subtract))),
           MiscParser::ws_before(Self::parse_expr_prec05::<STYLE>),
         )),
       ),
@@ -467,25 +454,16 @@ impl ErlParser {
 
   /// Parse an expression. Expression can also be a block which produces a value.
   pub fn parse_expr(input: &str) -> AstParserResult {
-    context(
-      "expression",
-      Self::parse_expr_prec13::<{ Self::EXPR_STYLE_FULL }>,
-    )(input)
+    context("expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_FULL }>)(input)
   }
 
   /// Parse a guard expression.
   pub fn parse_guardexpr(input: &str) -> AstParserResult {
-    context(
-      "guard expression",
-      Self::parse_expr_prec13::<{ Self::EXPR_STYLE_GUARD }>,
-    )(input)
+    context("guard expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_GUARD }>)(input)
   }
 
   /// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.
   pub fn parse_matchexpr(input: &str) -> AstParserResult {
-    context(
-      "match expression",
-      Self::parse_expr_prec13::<{ Self::EXPR_STYLE_MATCHEXPR }>,
-    )(input)
+    context("match expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_MATCHEXPR }>)(input)
   }
 }

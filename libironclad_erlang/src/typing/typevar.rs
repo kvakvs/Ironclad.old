@@ -17,26 +17,17 @@ pub struct Typevar {
 impl Typevar {
   /// Construct a new typevar, with possibly a type, otherwise any() will be used.
   pub fn new(name: Option<String>, maybe_type: Option<Arc<ErlType>>) -> Self {
-    Self {
-      name,
-      ty: maybe_type.unwrap_or_else(ErlType::any),
-    }
+    Self { name, ty: maybe_type.unwrap_or_else(ErlType::any) }
   }
 
   /// Creates an unnamed typevar with a given type
   pub fn from_erltype(t: &Arc<ErlType>) -> Self {
-    Self {
-      name: None,
-      ty: t.clone(),
-    }
+    Self { name: None, ty: t.clone() }
   }
 
   /// Create an unnamed anytype.
   pub fn new_unnamed_any() -> Self {
-    Self {
-      name: None,
-      ty: ErlType::any(),
-    }
+    Self { name: None, ty: ErlType::any() }
   }
 
   /// Given a var, and a list of typevars in when clause, try find one matching

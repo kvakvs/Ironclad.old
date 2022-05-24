@@ -19,9 +19,7 @@ impl std::fmt::Display for PpAst {
       PpAst::Text(s) => write!(f, "text ⊏{}⊐", s),
       PpAst::EmptyText => write!(f, "text ∅"),
 
-      PpAst::IncludedFile {
-        ast: include_rc, ..
-      } => write!(f, "{}", include_rc),
+      PpAst::IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       PpAst::Define { name, args, body } => {
         write!(f, "-define({}", name)?;
         if let Some(args1) = args {
@@ -40,11 +38,7 @@ impl std::fmt::Display for PpAst {
       }
       PpAst::IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
-      PpAst::IfBlock {
-        cond,
-        cond_true,
-        cond_false,
-      } => {
+      PpAst::IfBlock { cond, cond_true, cond_false } => {
         writeln!(f, "-if({}).", cond)?;
         if let Some(branch_true) = cond_true {
           for c in branch_true {

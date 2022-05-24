@@ -25,11 +25,7 @@ impl ErlAst {
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
-  pub fn new_application(
-    location: SourceLoc,
-    target: CallableTarget,
-    args: Vec<Arc<ErlAst>>,
-  ) -> Arc<ErlAst> {
+  pub fn new_application(location: SourceLoc, target: CallableTarget, args: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
     ErlAst::Apply(ErlApply::new(location, target, args)).into()
   }
 
@@ -39,30 +35,17 @@ impl ErlAst {
   }
 
   /// Create an new ironclad_exe operation AST node with left and right operands AST
-  pub fn new_binop(
-    location: SourceLoc,
-    left: Arc<ErlAst>,
-    op: ErlBinaryOp,
-    right: Arc<ErlAst>,
-  ) -> Arc<ErlAst> {
+  pub fn new_binop(location: SourceLoc, left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Arc<ErlAst> {
     ErlAst::BinaryOp {
       location,
-      expr: ErlBinaryOperatorExpr {
-        left,
-        right,
-        operator: op,
-      },
+      expr: ErlBinaryOperatorExpr { left, right, operator: op },
     }
     .into()
   }
 
   /// Create a new literal AST node of an integer
   pub fn new_lit_int(location: SourceLoc, val: isize) -> Arc<ErlAst> {
-    ErlAst::Lit {
-      location,
-      value: Literal::Integer(val).into(),
-    }
-    .into()
+    ErlAst::Lit { location, value: Literal::Integer(val).into() }.into()
   }
 
   /// Create a new literal AST node of an atom
@@ -77,11 +60,7 @@ impl ErlAst {
   /// Create a new literal AST node of a floating point number
   pub fn new_lit_float(location: SourceLoc, val: &str) -> Arc<ErlAst> {
     match String::from(val).trim().parse() {
-      Ok(flt) => ErlAst::Lit {
-        location,
-        value: Literal::Float(flt).into(),
-      }
-      .into(),
+      Ok(flt) => ErlAst::Lit { location, value: Literal::Float(flt).into() }.into(),
       Err(e) => {
         panic!("Failed to parse float from \"{}\": error {}", val, e)
       }
@@ -98,18 +77,9 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list of some expressions
-  pub fn new_list(
-    location: SourceLoc,
-    elements: Vec<Arc<ErlAst>>,
-    tail: Option<Arc<ErlAst>>,
-  ) -> Arc<ErlAst> {
+  pub fn new_list(location: SourceLoc, elements: Vec<Arc<ErlAst>>, tail: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
-    ErlAst::List {
-      location,
-      elements,
-      tail,
-    }
-    .into()
+    ErlAst::List { location, elements, tail }.into()
   }
 
   /// Create a new AST node for a tuple of some expressions
@@ -128,103 +98,48 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list comprehension
-  pub fn new_list_comprehension(
-    location: SourceLoc,
-    expr: Arc<ErlAst>,
-    generators: Vec<Arc<ErlAst>>,
-  ) -> Arc<ErlAst> {
-    ErlAst::ListComprehension {
-      location,
-      expr,
-      generators,
-    }
-    .into()
+  pub fn new_list_comprehension(location: SourceLoc, expr: Arc<ErlAst>, generators: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::ListComprehension { location, expr, generators }.into()
   }
 
   /// Create a new AST node for a function `-spec FN(ARG, ...) -> RETURN.`
   pub fn new_fn_spec(location: SourceLoc, funarity: MFArity, spec: Arc<ErlType>) -> Arc<ErlAst> {
-    ErlAst::FnSpec {
-      location,
-      funarity,
-      spec,
-    }
-    .into()
+    ErlAst::FnSpec { location, funarity, spec }.into()
   }
 
   /// Create a new AST node for a list comprehension generator `Expr <- Expr`
-  pub fn new_list_comprehension_generator(
-    location: SourceLoc,
-    left: Arc<ErlAst>,
-    right: Arc<ErlAst>,
-  ) -> Arc<ErlAst> {
-    ErlAst::ListComprehensionGenerator {
-      location,
-      left,
-      right,
-    }
-    .into()
+  pub fn new_list_comprehension_generator(location: SourceLoc, left: Arc<ErlAst>, right: Arc<ErlAst>) -> Arc<ErlAst> {
+    ErlAst::ListComprehensionGenerator { location, left, right }.into()
   }
 
   /// Create a new `-module(m).` module attr.
   pub fn new_module_start_attr(name: String) -> Arc<ErlAst> {
-    ErlAst::ModuleStartAttr {
-      location: SourceLoc::None,
-      name,
-    }
-    .into()
+    ErlAst::ModuleStartAttr { location: SourceLoc::None, name }.into()
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.
-  pub fn new_generic_attr(
-    location: SourceLoc,
-    tag: String,
-    term: Option<Arc<ErlAst>>,
-  ) -> Arc<ErlAst> {
-    ErlAst::GenericAttr {
-      location,
-      tag,
-      term,
-    }
-    .into()
+  pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
+    ErlAst::GenericAttr { location, tag, term }.into()
   }
 
   /// Create a new `-export([...]).` module attr.
   pub fn new_export_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::ExportAttr {
-      location: SourceLoc::None,
-      exports,
-    }
-    .into()
+    ErlAst::ExportAttr { location: SourceLoc::None, exports }.into()
   }
 
   /// Create a new `-export_type([...]).` module attr.
   pub fn new_export_type_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::ExportTypeAttr {
-      location: SourceLoc::None,
-      exports,
-    }
-    .into()
+    ErlAst::ExportTypeAttr { location: SourceLoc::None, exports }.into()
   }
 
   /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.
   pub fn new_type_attr(name: String, vars: Vec<String>, ty: Arc<ErlType>) -> Arc<ErlAst> {
-    ErlAst::TypeAttr {
-      location: SourceLoc::None,
-      name,
-      vars,
-      ty,
-    }
-    .into()
+    ErlAst::TypeAttr { location: SourceLoc::None, name, vars, ty }.into()
   }
 
   /// Create a new `-import(modulename, [...]).` module attr.
   pub fn new_import_attr(import_from: String, imports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::ImportAttr {
-      location: SourceLoc::None,
-      import_from,
-      imports,
-    }
-    .into()
+    ErlAst::ImportAttr { location: SourceLoc::None, import_from, imports }.into()
   }
 
   /// Create a new try-catch AST node
@@ -234,13 +149,7 @@ impl ErlAst {
     of_branches: Option<Vec<ErlCaseClause>>,
     catch_clauses: Vec<CatchClause>,
   ) -> Arc<ErlAst> {
-    ErlAst::TryCatch {
-      location,
-      body,
-      of_branches,
-      catch_clauses,
-    }
-    .into()
+    ErlAst::TryCatch { location, body, of_branches, catch_clauses }.into()
   }
 
   /// Create a new `if` AST Node for `if COND -> EXPR; ... end`
@@ -249,30 +158,13 @@ impl ErlAst {
   }
 
   /// Create a new `case` AST Node for `case EXPR of MATCH -> EXPR; ... end`
-  pub fn new_case_statement(
-    location: SourceLoc,
-    expr: Arc<ErlAst>,
-    clauses: Vec<ErlCaseClause>,
-  ) -> Arc<ErlAst> {
-    ErlAst::CaseStatement {
-      location,
-      expr,
-      clauses,
-    }
-    .into()
+  pub fn new_case_statement(location: SourceLoc, expr: Arc<ErlAst>, clauses: Vec<ErlCaseClause>) -> Arc<ErlAst> {
+    ErlAst::CaseStatement { location, expr, clauses }.into()
   }
 
   /// Create a new function AST node, or a lambda AST node.
-  pub fn new_fndef(
-    location: SourceLoc,
-    funarity: MFArity,
-    clauses: Vec<ErlFnClause>,
-  ) -> Arc<ErlAst> {
-    let fndef = ErlFnDef {
-      location,
-      funarity,
-      clauses,
-    };
+  pub fn new_fndef(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
+    let fndef = ErlFnDef { location, funarity, clauses };
     ErlAst::FnDef(fndef).into()
   }
 

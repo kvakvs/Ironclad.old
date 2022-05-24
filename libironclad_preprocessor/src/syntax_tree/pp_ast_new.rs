@@ -13,11 +13,7 @@ impl PpAst {
 
   /// Create new nested included file AST node
   pub fn new_included_file(file: &Path, ast: Arc<PpAst>) -> Arc<Self> {
-    PpAst::IncludedFile {
-      filename: PathBuf::from(file),
-      ast,
-    }
-    .into()
+    PpAst::IncludedFile { filename: PathBuf::from(file), ast }.into()
   }
 
   /// Create new macro definition
@@ -27,12 +23,7 @@ impl PpAst {
 
   /// Create new text fragment
   pub fn new_text(text: &str) -> Arc<Self> {
-    if text.trim().is_empty() {
-      PpAst::EmptyText
-    } else {
-      PpAst::Text(text.into())
-    }
-    .into()
+    if text.trim().is_empty() { PpAst::EmptyText } else { PpAst::Text(text.into()) }.into()
   }
 
   /// Creates a new preprocessor IF node
@@ -41,12 +32,7 @@ impl PpAst {
     cond_true: Option<Vec<Arc<PpAst>>>,
     cond_false: Option<Vec<Arc<PpAst>>>,
   ) -> Arc<Self> {
-    PpAst::IfBlock {
-      cond: expr,
-      cond_true,
-      cond_false,
-    }
-    .into()
+    PpAst::IfBlock { cond: expr, cond_true, cond_false }.into()
   }
 
   /// Create a new `-if()` temporary node.

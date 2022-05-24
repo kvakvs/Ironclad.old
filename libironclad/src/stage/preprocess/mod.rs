@@ -5,7 +5,7 @@ pub mod pp_scope;
 
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
-use libironclad_preprocessor::nom_parser::{PpAstParserResult, PreprocessorParser};
+use libironclad_preprocessor::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use libironclad_preprocessor::pp_error::PpError;
 use libironclad_preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use nom::Finish;
@@ -143,9 +143,7 @@ fn interpret_include_directive(
           let ast_tree = PreprocessState::from_source_file(&include_source_file).unwrap();
 
           // let mut ast_cache1 = ast_cache.lock().unwrap();
-          ast_cache1
-            .items
-            .insert(include_path.clone(), ast_tree.clone());
+          ast_cache1.items.insert(include_path.clone(), ast_tree.clone());
 
           Ok(PpAst::new_included_file(&include_path, ast_tree))
         }
@@ -206,11 +204,7 @@ impl PreprocessState {
       PpAst::IncludedFile { ast, .. } => {
         self.interpret_preprocessor_node(ast, source_file, nodes_out, warnings_out, errors_out)?;
       }
-      PpAst::IfdefBlock {
-        macro_name,
-        cond_true,
-        cond_false,
-      } => {
+      PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
           if let Some(nodes) = cond_true {
             nodes_out.extend(nodes.iter().cloned());
@@ -225,9 +219,7 @@ impl PreprocessState {
         self.scope = self.scope.define(name, args.clone(), body.clone());
       }
       PpAst::DefineFun { name, args, body } => {
-        self.scope = self
-          .scope
-          .define(name, Some(args.clone()), Some(body.clone()));
+        self.scope = self.scope.define(name, Some(args.clone()), Some(body.clone()));
       }
       PpAst::Undef(_) => {}
       PpAst::IfBlock { .. } => {}
@@ -261,22 +253,12 @@ impl PreprocessState {
   /// - Substitute macros.
   ///
   /// Return: a new preprocessed string joined together.
-  fn interpret_pp_ast(
-    &mut self,
-    source_file: &Arc<SourceFile>,
-    ast_tree: &Arc<PpAst>,
-  ) -> IcResult<Arc<PpAst>> {
+  fn interpret_pp_ast(&mut self, source_file: &Arc<SourceFile>, ast_tree: &Arc<PpAst>) -> IcResult<Arc<PpAst>> {
     let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();
     let mut warnings_out: Vec<IcError> = Vec::default();
     let mut errors_out: Vec<IcError> = Vec::default();
 
-    self.interpret_preprocessor_node(
-      ast_tree,
-      source_file,
-      &mut nodes_out,
-      &mut warnings_out,
-      &mut errors_out,
-    )?;
+    self.interpret_preprocessor_node(ast_tree, source_file, &mut nodes_out, &mut warnings_out, &mut errors_out)?;
 
     if !errors_out.is_empty() {
       Err(IroncladError::multiple(errors_out))

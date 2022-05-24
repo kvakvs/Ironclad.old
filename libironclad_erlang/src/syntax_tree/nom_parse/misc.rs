@@ -64,20 +64,14 @@ impl MiscParser {
   where
     InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
   {
-    sequence::delimited(
-      Self::spaces_or_comments0,
-      inner,
-      character::complete::multispace0,
-    )
+    sequence::delimited(Self::spaces_or_comments0, inner, character::complete::multispace0)
   }
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
   pub fn parse_ident(input: &str) -> StringParserResult {
     combinator::map(
       combinator::recognize(sequence::pair(
-        combinator::verify(character::complete::anychar, |c: &char| {
-          c.is_alphabetic() && c.is_lowercase()
-        }),
+        combinator::verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
         multi::many0(branch::alt((alphanumeric1, tag("_")))),
       )),
       |result: &str| result.to_string(),
@@ -89,9 +83,7 @@ impl MiscParser {
     combinator::map(
       combinator::recognize(sequence::pair(
         // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
-        combinator::verify(character::complete::anychar, |c: &char| {
-          c.is_uppercase() || *c == '_'
-        }),
+        combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
         multi::many0(branch::alt((alphanumeric1, tag("_")))),
       )),
       |result: &str| result.to_string(),
@@ -115,11 +107,7 @@ impl MiscParser {
       combinator::recognize(sequence::tuple((
         char('.'),
         Self::parse_int,
-        combinator::opt(sequence::tuple((
-          one_of("eE"),
-          combinator::opt(one_of("+-")),
-          Self::parse_int,
-        ))),
+        combinator::opt(sequence::tuple((one_of("eE"), combinator::opt(one_of("+-")), Self::parse_int))),
       ))),
       // Case two: 42e42 and 42.42e42
       combinator::recognize(sequence::tuple((
@@ -130,11 +118,7 @@ impl MiscParser {
         Self::parse_int,
       ))),
       // Case three: 42. (disallowed because end of function is also period) and 42.42
-      combinator::recognize(sequence::tuple((
-        Self::parse_int,
-        char('.'),
-        Self::parse_int,
-      ))),
+      combinator::recognize(sequence::tuple((Self::parse_int, char('.'), Self::parse_int))),
     ))(input)
   }
 
@@ -154,12 +138,7 @@ impl MiscParser {
   pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
     input: &'a str,
   ) -> nom::IResult<&str, &str, ErrType> {
-    combinator::recognize(branch::alt((
-      tag("\r\n"),
-      tag("\r"),
-      tag("\n"),
-      combinator::eof,
-    )))(input)
+    combinator::recognize(branch::alt((tag("\r\n"), tag("\r"), tag("\n"), combinator::eof)))(input)
   }
 
   /// Recognizes `% text <newline>` consuming text

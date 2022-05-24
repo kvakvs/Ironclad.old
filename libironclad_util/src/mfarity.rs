@@ -16,20 +16,12 @@ pub struct MFArity {
 impl MFArity {
   /// Creates a new local (no module) funarity
   pub fn new_local_from_string(name: String, arity: usize) -> Self {
-    MFArity {
-      module: None,
-      name,
-      arity,
-    }
+    MFArity { module: None, name, arity }
   }
 
   /// Creates a new local (no module) funarity, cloning the name
   pub fn new_local(name: &str, arity: usize) -> Self {
-    MFArity {
-      module: None,
-      name: String::from(name),
-      arity,
-    }
+    MFArity { module: None, name: String::from(name), arity }
   }
 
   /// Creates a new local (no module) funarity, cloning the name

@@ -42,14 +42,9 @@ pub enum TypeError {
 impl Display for TypeError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      TypeError::ExpectedType {
-        expected_type,
-        actual_type,
-      } => write!(
-        f,
-        "Expression's type: {} but expected: {}",
-        actual_type, expected_type
-      ),
+      TypeError::ExpectedType { expected_type, actual_type } => {
+        write!(f, "Expression's type: {} but expected: {}", actual_type, expected_type)
+      }
       TypeError::ListExpected { msg } => write!(f, "Bad list: {}", msg),
       TypeError::NotAFunction { msg } => write!(f, "Bad fun: {}", msg),
       TypeError::BadArity { msg } => write!(f, "Bad arity: {}", msg),

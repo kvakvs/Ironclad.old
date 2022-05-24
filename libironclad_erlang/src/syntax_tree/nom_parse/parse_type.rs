@@ -11,8 +11,7 @@ use crate::typing::typevar::Typevar;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::{
-  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 use std::sync::Arc;
 
@@ -27,16 +26,10 @@ impl ErlTypeParser {
       sequence::preceded(
         MiscParser::ws_before(tag("spec")),
         sequence::tuple((
-          context(
-            "function spec: name",
-            cut(MiscParser::ws_before(AtomParser::parse_atom)),
-          ),
+          context("function spec: name", cut(MiscParser::ws_before(AtomParser::parse_atom))),
           multi::separated_list1(
             MiscParser::ws_before(char(';')),
-            context(
-              "function clause spec",
-              cut(MiscParser::ws_before(Self::parse_fn_spec_fnclause)),
-            ),
+            context("function clause spec", cut(MiscParser::ws_before(Self::parse_fn_spec_fnclause))),
           ),
         )),
       ), // preceded by -spec
@@ -68,16 +61,10 @@ impl ErlTypeParser {
         // Return type for fn clause
         context(
           "return type in function clause spec",
-          branch::alt((
-            Self::parse_typevar_with_opt_type,
-            Self::parse_type_as_typevar,
-          )),
+          branch::alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
         ),
         // Optional: when <comma separated list of typevariables given types>
-        context(
-          "when expression for typespec",
-          combinator::opt(Self::parse_when_expr_for_type),
-        ),
+        context("when expression for typespec", combinator::opt(Self::parse_when_expr_for_type)),
       )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
         // TODO: Check name equals function name, for module level functions
@@ -103,10 +90,7 @@ impl ErlTypeParser {
   /// `A :: type()` or `A`
   fn parse_typevar_with_opt_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
     combinator::map(
-      sequence::pair(
-        Self::parse_typevar_name,
-        combinator::opt(Self::parse_coloncolon_type),
-      ),
+      sequence::pair(Self::parse_typevar_name, combinator::opt(Self::parse_coloncolon_type)),
       |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
     )(input)
   }
@@ -129,15 +113,10 @@ impl ErlTypeParser {
   // }
 
   /// Parses a list of comma separated typevars enclosed in (parentheses)
-  pub fn parse_parenthesized_arg_spec_list(
-    input: &str,
-  ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
+  pub fn parse_parenthesized_arg_spec_list(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = MiscParser::ws_before(char('('))(input)?;
 
-    sequence::terminated(
-      Self::parse_comma_sep_typeargs0,
-      MiscParser::ws_before(char(')')),
-    )(input)
+    sequence::terminated(Self::parse_comma_sep_typeargs0, MiscParser::ws_before(char(')')))(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -162,9 +141,7 @@ impl ErlTypeParser {
 
   #[allow(dead_code)]
   fn parse_typearg(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
-    combinator::map(MiscParser::ws_before(Self::parse_type), |t| {
-      Typevar::from_erltype(&t)
-    })(input)
+    combinator::map(MiscParser::ws_before(Self::parse_type), |t| Typevar::from_erltype(&t))(input)
   }
 
   /// Parses a comma separated list of 0 or more type arguments.
@@ -172,10 +149,7 @@ impl ErlTypeParser {
   fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     multi::separated_list0(
       MiscParser::ws_before(char(',')),
-      context(
-        "parsing items of a typeargs0_list",
-        Self::alt_typevar_or_type,
-      ),
+      context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
     )(input)
   }
 
@@ -184,19 +158,13 @@ impl ErlTypeParser {
   fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     multi::separated_list1(
       MiscParser::ws_before(char(',')),
-      context(
-        "parsing items of a typeargs1_list",
-        Self::alt_typevar_or_type,
-      ),
+      context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
     )(input)
   }
 
   /// Optional `module:` before typename in `module:type()`.
   fn parse_type_modulename_colon(input: &str) -> nom::IResult<&str, String, ErlParserError> {
-    sequence::terminated(
-      MiscParser::ws_before(AtomParser::parse_atom),
-      MiscParser::ws_before(char(':')),
-    )(input)
+    sequence::terminated(MiscParser::ws_before(AtomParser::parse_atom), MiscParser::ws_before(char(':')))(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
@@ -208,10 +176,7 @@ impl ErlTypeParser {
         MiscParser::ws_before(AtomParser::parse_atom),
         sequence::delimited(
           MiscParser::ws_before(char('(')),
-          context(
-            "type arguments for a user-defined type",
-            Self::parse_comma_sep_typeargs0,
-          ),
+          context("type arguments for a user-defined type", Self::parse_comma_sep_typeargs0),
           MiscParser::ws_before(char(')')),
         ),
       )),
@@ -225,10 +190,7 @@ impl ErlTypeParser {
 
     combinator::map(
       sequence::terminated(
-        context(
-          "type arguments for a list() type",
-          Self::parse_comma_sep_typeargs0,
-        ),
+        context("type arguments for a list() type", Self::parse_comma_sep_typeargs0),
         MiscParser::ws_before(char(']')),
       ),
       |elements| {
@@ -244,10 +206,7 @@ impl ErlTypeParser {
 
     combinator::map(
       sequence::terminated(
-        context(
-          "type arguments for a tuple() type",
-          Self::parse_comma_sep_typeargs0,
-        ),
+        context("type arguments for a tuple() type", Self::parse_comma_sep_typeargs0),
         MiscParser::ws_before(char('}')),
       ),
       |elements| {
@@ -297,12 +256,6 @@ impl ErlTypeParser {
 
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: &str) -> AstParserResult {
-    combinator::map(Self::parse_type, |t| {
-      ErlAst::Type {
-        location: SourceLoc::None,
-        ty: t,
-      }
-      .into()
-    })(input)
+    combinator::map(Self::parse_type, |t| ErlAst::Type { location: SourceLoc::None, ty: t }.into())(input)
   }
 }

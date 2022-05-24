@@ -17,11 +17,7 @@ pub struct ErlCaseClause {
 impl ErlCaseClause {
   /// Create a new case clause branch
   pub fn new(pattern: Arc<ErlAst>, guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
-    Self {
-      pattern,
-      guard,
-      body,
-    }
+    Self { pattern, guard, body }
   }
 }
 

@@ -5,8 +5,7 @@ use crate::syntax_tree::nom_parse::misc::MiscParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 
 impl ErlParser {

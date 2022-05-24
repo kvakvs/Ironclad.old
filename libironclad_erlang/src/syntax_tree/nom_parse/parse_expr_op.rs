@@ -139,10 +139,9 @@ impl ErlParser {
   }
 
   pub fn binop_match(input: &str) -> BinaryOpParserResult {
-    combinator::map(
-      tag("=").and(not(branch::alt((char(':'), char('/'), char('<'))))),
-      |_| ErlBinaryOp::Match,
-    )(input)
+    combinator::map(tag("=").and(not(branch::alt((char(':'), char('/'), char('<'))))), |_| {
+      ErlBinaryOp::Match
+    })(input)
   }
 
   pub fn binop_comma(input: &str) -> BinaryOpParserResult {

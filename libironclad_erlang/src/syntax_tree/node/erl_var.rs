@@ -19,9 +19,6 @@ pub struct ErlVar {
 impl ErlVar {
   /// Creates a new variable node
   pub fn new(location: SourceLoc, name: &str) -> Self {
-    ErlVar {
-      location,
-      name: name.to_string(),
-    }
+    ErlVar { location, name: name.to_string() }
   }
 }

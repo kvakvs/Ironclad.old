@@ -47,9 +47,7 @@ impl Default for ErlModule {
       source_file: Arc::new(SourceFile::default()),
       ast: Arc::new(ErlAst::Empty),
       scope: Default::default(),
-      errors: RefCell::new(Vec::with_capacity(
-        CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100,
-      )),
+      errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
 }

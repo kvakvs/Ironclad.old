@@ -36,9 +36,7 @@ impl std::fmt::Display for CallableTarget {
         Some(m) => write!(f, "{}:{}", m, mfa.name),
         None => write!(f, "{}", mfa.name),
       },
-      CallableTarget::MFAExpression {
-        module, function, ..
-      } => match module {
+      CallableTarget::MFAExpression { module, function, .. } => match module {
         Some(m) => write!(f, "({}):({})", m, function),
         None => write!(f, "({})", function),
       },
@@ -70,17 +68,9 @@ impl CallableTarget {
         return Self::new_mfa(MFArity::new(Some(module.as_atom()), f.as_atom(), a));
       }
       // rewrap module
-      return CallableTarget::MFAExpression {
-        module: Some(module),
-        function: f,
-        arity: a,
-      };
+      return CallableTarget::MFAExpression { module: Some(module), function: f, arity: a };
     }
-    CallableTarget::MFAExpression {
-      module: m,
-      function: f,
-      arity: a,
-    }
+    CallableTarget::MFAExpression { module: m, function: f, arity: a }
   }
 
   /// Create a type for this callable target
@@ -100,9 +90,7 @@ impl AstNode for CallableTarget {
     match self {
       CallableTarget::Expr(e) => e.children(),
       CallableTarget::MFArity(_) => None,
-      CallableTarget::MFAExpression {
-        module, function, ..
-      } => {
+      CallableTarget::MFAExpression { module, function, .. } => {
         let mut result = function.children().unwrap_or_default();
         if let Some(m) = module {
           match m.children() {

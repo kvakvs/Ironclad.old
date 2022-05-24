@@ -34,10 +34,6 @@ impl FnDef {
   /// Create a new function definition for Core Erlang AST
   pub fn new(loc: SourceLoc, funarity: MFArity, clauses: Vec<CoreFnClause>) -> Self {
     // assert!(args.iter().all(|el| if let CoreAst::Var(_) = el.deref() { true } else { false }));
-    Self {
-      location: loc,
-      funarity,
-      clauses,
-    }
+    Self { location: loc, funarity, clauses }
   }
 }

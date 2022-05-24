@@ -28,10 +28,7 @@ impl FnType {
       );
     }
 
-    Self {
-      arity,
-      clauses: clauses.into(),
-    }
+    Self { arity, clauses: clauses.into() }
   }
 
   /// Retrieve arity

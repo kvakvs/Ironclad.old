@@ -28,11 +28,7 @@ fn union_type_parse() -> IcResult<()> {
 	       {'float',float()}";
   match ErlAttrParser::parse_type_attr(input).finish() {
     Ok((tail1, result1)) => {
-      assert!(
-        tail1.is_empty(),
-        "Not all input consumed, tail: «{}»",
-        tail1
-      );
+      assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
       println!("Parsed: {}", result1);
     }
     Err(err) => return ErlError::from_nom_error(input, err),
@@ -65,10 +61,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
 #[named]
 #[test]
 fn fn_generic_attr_parse2() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "Parse a generic attribute line, consuming all as string",
-  );
+  test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
 
   // Dash `-` and terminating `.` are matched outside by the caller.
   let input = " bbbggg (ababagalamaga()) ";
@@ -107,12 +100,7 @@ fn fn_typespec_parse_1() -> IcResult<()> {
       funarity
     );
     let fntype = spec.as_fn_type();
-    assert_eq!(
-      fntype.clauses().len(),
-      1,
-      "Expected 1 clause in typespec, got {}",
-      spec1_m.ast
-    );
+    assert_eq!(fntype.clauses().len(), 1, "Expected 1 clause in typespec, got {}", spec1_m.ast);
   } else {
     panic!("Expected AST FnSpec node, but got {}", spec1_m.ast)
   }
@@ -125,10 +113,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for a 2-clause fn");
 
   let filename = PathBuf::from(function_name!());
-  let spec2_src = format!(
-    "-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().",
-    function_name!()
-  );
+  let spec2_src = format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
   let spec2_m = ErlModule::from_fun_spec_source(&filename, &spec2_src)?;
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
@@ -139,12 +124,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
       funarity
     );
     let fntype = spec.as_fn_type();
-    assert_eq!(
-      fntype.clauses().len(),
-      2,
-      "Expected 2 clauses in typespec, got {}",
-      spec2_m.ast
-    );
+    assert_eq!(fntype.clauses().len(), 2, "Expected 2 clauses in typespec, got {}", spec2_m.ast);
   } else {
     panic!("Expected AST FnSpec node, but got {}", spec2_m.ast)
   }
@@ -194,10 +174,7 @@ fn type_parse_union() -> IcResult<()> {
 #[named]
 #[test]
 fn fn_typespec_parse_union() -> IcResult<()> {
-  test_util::start(
-    function_name!(),
-    "Parse a function spec with type union in it",
-  );
+  test_util::start(function_name!(), "Parse a function spec with type union in it");
 
   let filename = PathBuf::from(function_name!());
   // Leading - and trailing . are consumed by the parser calling parse_fn_spec, so we don't include them here

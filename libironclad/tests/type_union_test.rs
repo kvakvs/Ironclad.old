@@ -36,10 +36,7 @@ fn union_auto_shrink_numbers() -> IcResult<()> {
       union_t
     );
   } else {
-    panic!(
-      "Union of int|float|'atomliteral' should be a type union, got {}",
-      &union_t
-    )
+    panic!("Union of int|float|'atomliteral' should be a type union, got {}", &union_t)
   }
 
   Ok(())

@@ -286,11 +286,7 @@ impl ErlAst {
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
   pub fn temporary_token(t: ErlToken) -> Arc<ErlAst> {
-    ErlAst::Token {
-      location: SourceLoc::None,
-      token: t,
-    }
-    .into()
+    ErlAst::Token { location: SourceLoc::None, token: t }.into()
   }
 
   // /// Create a new Comma operator from list of AST expressions
@@ -371,12 +367,7 @@ impl ErlAst {
       }
       _ => {}
     }
-    ErlError::type_error(
-      this.location(),
-      TypeError::FunctionNotFound {
-        mfa: funarity.clone(),
-      },
-    )
+    ErlError::type_error(this.location(), TypeError::FunctionNotFound { mfa: funarity.clone() })
   }
 }
 

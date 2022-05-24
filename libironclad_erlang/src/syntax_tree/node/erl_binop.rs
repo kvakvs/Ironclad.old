@@ -25,20 +25,12 @@ pub struct ErlBinaryOperatorExpr {
 impl ErlBinaryOperatorExpr {
   /// Create a ironclad_exe operator, caller is to wrap it with ErlAst::BinOp(location, _)
   pub fn new(left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Self {
-    Self {
-      left,
-      right,
-      operator: op,
-    }
+    Self { left, right, operator: op }
   }
 
   /// From left and multiple right components, build a right-associative tree of expressions.
   /// Try pair last and one before last, then take result and pair with previous one, ... and so on
-  pub fn new_right_assoc(
-    loc: &SourceLoc,
-    left: Arc<ErlAst>,
-    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
-  ) -> Arc<ErlAst> {
+  pub fn new_right_assoc(loc: &SourceLoc, left: Arc<ErlAst>, tail: &[(ErlBinaryOp, Arc<ErlAst>)]) -> Arc<ErlAst> {
     if tail.is_empty() {
       return left;
     }
@@ -57,11 +49,7 @@ impl ErlBinaryOperatorExpr {
 
   /// From left and multiple right components, build a left-associative tree of expressions.
   /// Try pair first and the first element in tail, then take result and pair with second, ... and so on
-  pub fn new_left_assoc(
-    loc: &SourceLoc,
-    left: Arc<ErlAst>,
-    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
-  ) -> Arc<ErlAst> {
+  pub fn new_left_assoc(loc: &SourceLoc, left: Arc<ErlAst>, tail: &[(ErlBinaryOp, Arc<ErlAst>)]) -> Arc<ErlAst> {
     if tail.is_empty() {
       return left;
     }
@@ -144,15 +132,13 @@ impl ErlBinaryOperatorExpr {
         panic!("Internal: Synthesize anylist++any list loses type precision")
       }
 
-      ErlType::StronglyTypedList {
-        elements: left_elements,
-        tail: left_tail,
-      } => Self::synthesize_stronglist_append(scope, left, left_elements, left_tail, right),
+      ErlType::StronglyTypedList { elements: left_elements, tail: left_tail } => {
+        Self::synthesize_stronglist_append(scope, left, left_elements, left_tail, right)
+      }
 
-      ErlType::List {
-        elements: left_elements,
-        tail: left_tail,
-      } => Self::synthesize_list_of_t_append(scope, left, right, left_elements, left_tail),
+      ErlType::List { elements: left_elements, tail: left_tail } => {
+        Self::synthesize_list_of_t_append(scope, left, right, left_elements, left_tail)
+      }
 
       other_left => {
         // left is not a list
@@ -181,33 +167,21 @@ impl ErlBinaryOperatorExpr {
       ErlType::AnyList => {
         panic!("Internal: Synthesize stronglist++anylist loses type precision")
       }
-      ErlType::List {
-        elements: right_elements,
-        tail: right_tail,
-      } => {
+      ErlType::List { elements: right_elements, tail: right_tail } => {
         let elements: Vec<Arc<ErlType>> = left_elements
           .iter()
           .map(|l_elem| ErlType::new_union(&[l_elem.clone(), right_elements.clone()]))
           .collect();
-        let result_list = ErlType::StronglyTypedList {
-          elements,
-          tail: right_tail.clone(),
-        };
+        let result_list = ErlType::StronglyTypedList { elements, tail: right_tail.clone() };
         Ok(result_list.into())
       }
-      ErlType::StronglyTypedList {
-        elements: right_elements,
-        tail: right_tail,
-      } => {
+      ErlType::StronglyTypedList { elements: right_elements, tail: right_tail } => {
         let elements: Vec<Arc<ErlType>> = left_elements
           .iter()
           .zip(right_elements.iter())
           .map(|(l_elem, r_elem)| ErlType::new_union(&[l_elem.clone(), r_elem.clone()]))
           .collect();
-        let result_list = ErlType::StronglyTypedList {
-          elements,
-          tail: right_tail.clone(),
-        };
+        let result_list = ErlType::StronglyTypedList { elements, tail: right_tail.clone() };
         Ok(result_list.into())
       }
       ErlType::Nil => Ok(left.clone()),
@@ -234,27 +208,18 @@ impl ErlBinaryOperatorExpr {
     left_elements: &Arc<ErlType>,
     left_tail: &Option<Arc<ErlType>>,
   ) -> IcResult<Arc<ErlType>> {
-    assert!(
-      left_tail.is_none(),
-      "Left operand for ++ must always be a proper list"
-    );
+    assert!(left_tail.is_none(), "Left operand for ++ must always be a proper list");
 
     match right.deref() {
       ErlType::AnyList => {
         panic!("Internal: Synthesize list(T)++anylist loses type precision")
       }
-      ErlType::List {
-        elements: right_elements,
-        tail: right_tail,
-      } => {
+      ErlType::List { elements: right_elements, tail: right_tail } => {
         let union_t = ErlType::new_union(&[left_elements.clone(), right_elements.clone()]);
 
         // Result type for ++ is union of left and right types, and right tail is applied as the
         // tail type for result
-        let result_type = ErlType::List {
-          elements: union_t,
-          tail: right_tail.clone(),
-        };
+        let result_type = ErlType::List { elements: union_t, tail: right_tail.clone() };
         Ok(result_type.into())
       }
       other_right => {
