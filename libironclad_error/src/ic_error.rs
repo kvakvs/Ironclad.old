@@ -62,7 +62,8 @@ impl IroncladError {
   // TODO: move to preprocessor crate
   /// Creates a preprocessor parse error from a filename and a message
   pub fn pp_parse<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
-    let new_err = IroncladError::new(IcErrorCategory::PreprocessorParse, loc, String::from(message));
+    let new_err =
+      IroncladError::new(IcErrorCategory::PreprocessorParse, loc, String::from(message));
     Err(Box::new(new_err))
   }
 

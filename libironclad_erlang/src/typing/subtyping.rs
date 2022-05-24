@@ -11,7 +11,10 @@ pub struct SubtypeChecker {}
 
 impl SubtypeChecker {
   /// is_subtype check for `Option<Erltype>` which treats `None` as `[]`
-  pub fn is_subtype_for_list_tail(sub_ty: &Option<Arc<ErlType>>, sup_ty: &Option<Arc<ErlType>>) -> bool {
+  pub fn is_subtype_for_list_tail(
+    sub_ty: &Option<Arc<ErlType>>,
+    sup_ty: &Option<Arc<ErlType>>,
+  ) -> bool {
     let nil = Arc::new(ErlType::Nil); // TODO: Some global NIL for all our NIL needs?
     let subt = sub_ty.clone().unwrap_or_else(|| nil.clone());
     let supt = sup_ty.clone().unwrap_or(nil);
@@ -38,7 +41,9 @@ impl SubtypeChecker {
       ErlType::Integer => Self::is_subtype_of_integer(sub_ty),
       // ErlType::IntegerRange { from, to } => { todo: only singletons and nested ranges and must be from <= n <= to }
       ErlType::AnyTuple => Self::is_subtype_of_anytuple(sub_ty),
-      ErlType::Tuple { elements: supertype_elements } => Self::is_subtype_of_tuple(supertype_elements, sub_ty),
+      ErlType::Tuple { elements: supertype_elements } => {
+        Self::is_subtype_of_tuple(supertype_elements, sub_ty)
+      }
       // ErlType::Record { .. } => {}
       ErlType::AnyList => Self::is_subtype_of_anylist(sub_ty),
       ErlType::List { elements: supertype_elements, tail: supertype_tail } => {
@@ -55,7 +60,9 @@ impl SubtypeChecker {
       // An equal ironclad_exe type can be a subtype of ironclad_exe, no other matches it (checked at the top)
       ErlType::Binary { .. } => false,
 
-      ErlType::AnyFn => matches!(sub_ty, ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda),
+      ErlType::AnyFn => {
+        matches!(sub_ty, ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda)
+      }
       // only can be subtype of self (equality checked at the top)
       ErlType::Fn(fn_type) => Self::is_subtype_of_fn(fn_type.arity(), fn_type.clauses(), sub_ty),
 
@@ -150,7 +157,11 @@ impl SubtypeChecker {
   }
 
   /// Checks whether sub_ty matches a list `[supertype_elements() | supertype_tail()]` type.
-  fn is_subtype_of_list(supertype_elements: &ErlType, supertype_tail: &Option<Arc<ErlType>>, sub_ty: &ErlType) -> bool {
+  fn is_subtype_of_list(
+    supertype_elements: &ErlType,
+    supertype_tail: &Option<Arc<ErlType>>,
+    sub_ty: &ErlType,
+  ) -> bool {
     match sub_ty {
       // For superlist to include a sublist
       ErlType::List { elements: subtype_elements, tail: subtype_tail } => {

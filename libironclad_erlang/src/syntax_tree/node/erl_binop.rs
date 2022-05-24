@@ -30,7 +30,11 @@ impl ErlBinaryOperatorExpr {
 
   /// From left and multiple right components, build a right-associative tree of expressions.
   /// Try pair last and one before last, then take result and pair with previous one, ... and so on
-  pub fn new_right_assoc(loc: &SourceLoc, left: Arc<ErlAst>, tail: &[(ErlBinaryOp, Arc<ErlAst>)]) -> Arc<ErlAst> {
+  pub fn new_right_assoc(
+    loc: &SourceLoc,
+    left: Arc<ErlAst>,
+    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
+  ) -> Arc<ErlAst> {
     if tail.is_empty() {
       return left;
     }
@@ -49,7 +53,11 @@ impl ErlBinaryOperatorExpr {
 
   /// From left and multiple right components, build a left-associative tree of expressions.
   /// Try pair first and the first element in tail, then take result and pair with second, ... and so on
-  pub fn new_left_assoc(loc: &SourceLoc, left: Arc<ErlAst>, tail: &[(ErlBinaryOp, Arc<ErlAst>)]) -> Arc<ErlAst> {
+  pub fn new_left_assoc(
+    loc: &SourceLoc,
+    left: Arc<ErlAst>,
+    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
+  ) -> Arc<ErlAst> {
     if tail.is_empty() {
       return left;
     }

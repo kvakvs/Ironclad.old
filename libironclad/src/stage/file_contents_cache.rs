@@ -31,7 +31,9 @@ impl<'a> FileContentsCache {
     self.read_bytes_count += contents.len();
 
     let src_file_definition = SourceFile::new(file_name, contents);
-    self.all_files.insert(file_name.to_path_buf(), src_file_definition);
+    self
+      .all_files
+      .insert(file_name.to_path_buf(), src_file_definition);
     Ok(())
   }
 
@@ -51,6 +53,8 @@ impl<'a> FileContentsCache {
   /// The parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
     let new_source_file = SourceFile::new(file_name, new_text);
-    self.all_files.insert(file_name.to_path_buf(), new_source_file);
+    self
+      .all_files
+      .insert(file_name.to_path_buf(), new_source_file);
   }
 }

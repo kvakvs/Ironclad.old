@@ -55,7 +55,8 @@ impl ErlAst {
     elements: &[Arc<ErlAst>],
     tail: &Option<Arc<ErlAst>>,
   ) -> IcResult<Arc<ErlType>> {
-    let elements: IcResult<Vec<Arc<ErlType>>> = elements.iter().map(|el| el.synthesize(env)).collect();
+    let elements: IcResult<Vec<Arc<ErlType>>> =
+      elements.iter().map(|el| el.synthesize(env)).collect();
 
     let synthesized_t = ErlType::StronglyTypedList {
       elements: elements?,
@@ -70,8 +71,12 @@ impl ErlAst {
   }
 
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
-  fn synthesize_tuple_type(env: &RwLock<Scope>, elements: &[Arc<ErlAst>]) -> IcResult<Arc<ErlType>> {
-    let elements: IcResult<Vec<Arc<ErlType>>> = elements.iter().map(|el| el.synthesize(env)).collect();
+  fn synthesize_tuple_type(
+    env: &RwLock<Scope>,
+    elements: &[Arc<ErlAst>],
+  ) -> IcResult<Arc<ErlType>> {
+    let elements: IcResult<Vec<Arc<ErlType>>> =
+      elements.iter().map(|el| el.synthesize(env)).collect();
     Ok(ErlType::Tuple { elements: elements? }.into())
   }
 }

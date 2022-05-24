@@ -18,7 +18,9 @@ fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
   let src = "-if(true).";
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src).finish().unwrap();
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   println!("Out={:?}", out);
 }
@@ -29,8 +31,11 @@ fn test_fragment_if() {
 fn parse_if_as_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
   let src = "before_if\n-if(true).\non_true\n\n-else.\non_false\n-endif.\nafter_if";
+  println!("Parsing «{}»", src);
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src).finish().unwrap();
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   assert!(
@@ -40,10 +45,14 @@ fn parse_if_as_fragments() {
   );
 
   if let PpAst::IfBlock { cond_true, cond_false, .. } = out[1].deref() {
-    let true_branch = cond_true.clone().unwrap_or_else(|| panic!("must have true branch"));
+    let true_branch = cond_true
+      .clone()
+      .unwrap_or_else(|| panic!("must have true branch"));
     assert!(true_branch[0].is_text_of("on_true"));
 
-    let false_branch = cond_false.clone().unwrap_or_else(|| panic!("must have false branch"));
+    let false_branch = cond_false
+      .clone()
+      .unwrap_or_else(|| panic!("must have false branch"));
     assert!(false_branch[0].is_text_of("on_false"));
   } else {
     panic!("If block is expected, but got {:?}", out[1]);
@@ -60,7 +69,9 @@ fn test_fragments_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let src = "hello\n-if(%true)\nfalse).\ntest\n\n-else.\n%%-endif.";
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src).finish().unwrap();
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+    .finish()
+    .unwrap();
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 }
@@ -85,7 +96,9 @@ fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let src = "-define(AAA, 1).\n-define(BBB, ?AAA).";
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src).finish().unwrap();
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+    .finish()
+    .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   println!("Out={:?}", out);

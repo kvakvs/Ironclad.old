@@ -45,7 +45,10 @@ impl PreprocessorScope {
 
   /// Check if name of any arity exists in the scope
   pub fn is_defined(&self, name: &str) -> bool {
-    self.defines.iter().any(|(name_arity, _)| name_arity.name == name)
+    self
+      .defines
+      .iter()
+      .any(|(name_arity, _)| name_arity.name == name)
   }
 
   /// Clone self and insert a new macro definition

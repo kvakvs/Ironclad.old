@@ -95,7 +95,10 @@ impl ErlType {
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     return match self {
-      ErlType::AnyList | ErlType::List { .. } | ErlType::StronglyTypedList { .. } | ErlType::Nil => true,
+      ErlType::AnyList
+      | ErlType::List { .. }
+      | ErlType::StronglyTypedList { .. }
+      | ErlType::Nil => true,
       ErlType::Singleton { val: singleton } => {
         matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
       }

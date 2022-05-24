@@ -132,7 +132,10 @@ fn synth_simplefun_addition() -> IcResult<()> {
 #[named]
 #[test]
 fn synth_fun_call() -> IcResult<()> {
-  test_util::start(function_name!(), "synthesize type for a fun which calls another fun with a sum");
+  test_util::start(
+    function_name!(),
+    "synthesize type for a fun which calls another fun with a sum",
+  );
   let filename = PathBuf::from(function_name!());
 
   let code = format!(
@@ -151,7 +154,8 @@ fn synth_fun_call() -> IcResult<()> {
   }
 
   {
-    let main_fn_ast = ErlAst::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
+    let main_fn_ast =
+      ErlAst::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
     let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
     println!(
       "{}: Synthesized for main/1 {} 🡆 {}",

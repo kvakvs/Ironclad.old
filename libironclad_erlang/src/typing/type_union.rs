@@ -38,7 +38,11 @@ impl TypeUnion {
   /// Function to filter type union members.
   /// An union member is kept if for every other union member it's not a subtype of the other member.
   /// Or it is an equivalent to the other member and this is the first equivalent arm
-  fn is_subtype_of_another_union_member(&self, every_index: usize, every_type: &Arc<ErlType>) -> bool {
+  fn is_subtype_of_another_union_member(
+    &self,
+    every_index: usize,
+    every_type: &Arc<ErlType>,
+  ) -> bool {
     for every_other_index in every_index + 1..self.types.len() {
       let every_other_type = &self.types[every_other_index];
       if every_type.is_subtype_of(every_other_type) {

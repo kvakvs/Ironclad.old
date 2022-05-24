@@ -1,7 +1,7 @@
 # To read the documentation: rustfmt --help=config > rustfmt.txt
 tab_spaces = 2
 edition = "2021"
-max_width = 120
+max_width = 100
 single_line_if_else_max_width = 80
 struct_variant_width = 80
 struct_lit_width = 50

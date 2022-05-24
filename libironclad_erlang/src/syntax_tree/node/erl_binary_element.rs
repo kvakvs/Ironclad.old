@@ -104,7 +104,12 @@ pub struct BinaryElement {
 
 impl BinaryElement {
   /// Creates a new freshly parsed element of a ironclad_exe expression
-  pub fn new(location: SourceLoc, value: Arc<ErlAst>, width: ValueWidth, type_specs: Vec<TypeSpecifier>) -> Self {
+  pub fn new(
+    location: SourceLoc,
+    value: Arc<ErlAst>,
+    width: ValueWidth,
+    type_specs: Vec<TypeSpecifier>,
+  ) -> Self {
     Self { location, value, width, type_specs }
   }
 }

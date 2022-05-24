@@ -70,7 +70,8 @@ impl ErlError {
 
   /// Creates an "Unacceptable" error
   pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
-    let new_err = ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
+    let new_err =
+      ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
     Err(Box::new(new_err))
   }
 
@@ -87,7 +88,8 @@ impl ErlError {
 
   /// Creates an "Local Function Not Found" error
   pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
-    let new_err = ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
+    let new_err =
+      ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
     Err(Box::new(new_err))
   }
 

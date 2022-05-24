@@ -39,7 +39,9 @@ impl From<InputOptsConf> for InputOpts {
       files: opts.files.unwrap_or(self_default.files),
       directories: opts.directories.unwrap_or(self_default.directories),
       exclude_files: opts.exclude_files.unwrap_or(self_default.exclude_files),
-      exclude_directories: opts.exclude_directories.unwrap_or(self_default.exclude_directories),
+      exclude_directories: opts
+        .exclude_directories
+        .unwrap_or(self_default.exclude_directories),
     }
   }
 }

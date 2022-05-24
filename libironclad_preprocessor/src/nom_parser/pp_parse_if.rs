@@ -3,7 +3,7 @@
 use crate::nom_parser::pp_parse_types::{PpAstParserResult, StrSliceParserResult};
 use crate::nom_parser::PreprocessorParser;
 use crate::syntax_tree::pp_ast::PpAst;
-use libironclad_erlang::syntax_tree::nom_parse::misc::MiscParser;
+use libironclad_erlang::syntax_tree::nom_parse::misc::ws_before;
 use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
 use nom::character::complete::char;
 use nom::{bytes::complete::tag, combinator, multi, sequence};
@@ -15,11 +15,11 @@ impl PreprocessorParser {
   fn parse_if_temporary(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("if")),
+        ws_before(tag("if")),
         sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(ErlParser::parse_expr),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(ErlParser::parse_expr),
+          ws_before(char(')')),
         ),
       ),
       PpAst::new_if_temporary,
@@ -30,7 +30,7 @@ impl PreprocessorParser {
   pub(crate) fn parse_if_block(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::tuple((
-        MiscParser::ws_before(Self::parse_if_temporary),
+        ws_before(Self::parse_if_temporary),
         // Consume lines and directives until an `-else` or `-endif`
         multi::many0(combinator::verify(Self::parse_fragment, |frag: &Arc<PpAst>| {
           !frag.is_else() && !frag.is_elseif()
@@ -56,11 +56,11 @@ impl PreprocessorParser {
   pub(crate) fn parse_elif_temporary(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("elif")),
+        ws_before(tag("elif")),
         sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(ErlParser::parse_expr),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(ErlParser::parse_expr),
+          ws_before(char(')')),
         ),
       ),
       PpAst::new_elif_temporary,
@@ -71,11 +71,11 @@ impl PreprocessorParser {
   pub(crate) fn parse_ifdef_temporary(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("ifdef")),
+        ws_before(tag("ifdef")),
         sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(Self::parse_macro_ident),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(Self::parse_macro_ident),
+          ws_before(char(')')),
         ),
       ),
       PpAst::new_ifdef_temporary,
@@ -86,11 +86,11 @@ impl PreprocessorParser {
   pub(crate) fn parse_ifndef_temporary(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("ifndef")),
+        ws_before(tag("ifndef")),
         sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(Self::parse_macro_ident),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(Self::parse_macro_ident),
+          ws_before(char(')')),
         ),
       ),
       PpAst::new_ifndef_temporary,
@@ -101,11 +101,8 @@ impl PreprocessorParser {
   pub(crate) fn parse_else_temporary(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("else")),
-        combinator::opt(sequence::pair(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(char(')')),
-        )),
+        ws_before(tag("else")),
+        combinator::opt(sequence::pair(ws_before(char('(')), ws_before(char(')')))),
       ),
       |_opt| PpAst::_TemporaryElse.into(),
     )(input)
@@ -114,11 +111,8 @@ impl PreprocessorParser {
   /// Parse a `-endif.` and return it as a `&str` slice
   fn consume_endif(input: &str) -> StrSliceParserResult {
     combinator::recognize(sequence::preceded(
-      MiscParser::ws_before(tag("endif")),
-      combinator::opt(sequence::pair(
-        MiscParser::ws_before(char('(')),
-        MiscParser::ws_before(char(')')),
-      )),
+      ws_before(tag("endif")),
+      combinator::opt(sequence::pair(ws_before(char('(')), ws_before(char(')')))),
     ))(input)
   }
 }

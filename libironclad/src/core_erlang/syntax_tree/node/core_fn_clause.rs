@@ -50,7 +50,9 @@ impl CoreFnClause {
     //     .flatten()
     //     .collect();
     // println!("New fnclause: args {:?}\nnew args {:?}", args_ast, args);
-    args_ast.iter().for_each(|ast| Self::update_scope(&clause_scope, ast));
+    args_ast
+      .iter()
+      .for_each(|ast| Self::update_scope(&clause_scope, ast));
 
     // Create inner_env for each arg where it has any() type, later this can be amended
     // TOxDO: This creates new Arc<RwLock> for each clause argument, which is not slow but unnecessary

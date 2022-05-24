@@ -17,7 +17,11 @@ pub struct ExceptionPattern {
 
 impl ExceptionPattern {
   /// Creates a new `ExceptionPattern`
-  pub fn new(class_pattern: Arc<ErlAst>, err_pattern: Arc<ErlAst>, stack_pattern: Option<Arc<ErlAst>>) -> Self {
+  pub fn new(
+    class_pattern: Arc<ErlAst>,
+    err_pattern: Arc<ErlAst>,
+    stack_pattern: Option<Arc<ErlAst>>,
+  ) -> Self {
     Self {
       class: class_pattern,
       error: err_pattern,

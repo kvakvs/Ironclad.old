@@ -14,7 +14,10 @@ impl ErlAst {
   /// For a function header, `myfun(A, {B, C}, #{key => D})` extract variable names: A, B, C, D.
   /// and add them to the scope of this function. Some AST nodes are not acceptable in argument
   /// list, so they would cause an error.
-  pub fn extract_variables(node: &Arc<ErlAst>, variables: &mut HashMap<String, Arc<ErlType>>) -> IcResult<()> {
+  pub fn extract_variables(
+    node: &Arc<ErlAst>,
+    variables: &mut HashMap<String, Arc<ErlType>>,
+  ) -> IcResult<()> {
     match node.deref() {
       ErlAst::Var(v) => {
         variables.insert(v.name.clone(), ErlType::any());
@@ -122,9 +125,10 @@ impl ErlAst {
       | ErlAst::CaseStatement { .. }
       | ErlAst::Apply(_)
       | ErlAst::UnaryOp { .. }
-      | ErlAst::GenericAttr { .. } => {
-        ErlError::unacceptable(node.location(), format!("{}: is unacceptable as a function argument", node))
-      }
+      | ErlAst::GenericAttr { .. } => ErlError::unacceptable(
+        node.location(),
+        format!("{}: is unacceptable as a function argument", node),
+      ),
     }
   }
 }

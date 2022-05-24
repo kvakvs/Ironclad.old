@@ -58,7 +58,8 @@ impl ErlApply {
     }
 
     // Build argument type list and check every argument vs the target (the callee)
-    let arg_types_r: IcResult<Vec<Arc<ErlType>>> = self.args.iter().map(|arg| arg.synthesize(scope)).collect();
+    let arg_types_r: IcResult<Vec<Arc<ErlType>>> =
+      self.args.iter().map(|arg| arg.synthesize(scope)).collect();
     let arg_types = arg_types_r?;
 
     match target_ty.deref() {
@@ -82,7 +83,11 @@ impl ErlApply {
     // Ok(synthesized_t)
   }
 
-  fn synthesize_call_to_fn(&self, fn_type: &FnType, arg_types: &[Arc<ErlType>]) -> IcResult<Arc<ErlType>> {
+  fn synthesize_call_to_fn(
+    &self,
+    fn_type: &FnType,
+    arg_types: &[Arc<ErlType>],
+  ) -> IcResult<Arc<ErlType>> {
     if self.args.len() != fn_type.arity() {
       let msg = format!(
         "Attempt to call a function with wrong number of arguments: expected {}, got {}",
@@ -106,7 +111,11 @@ impl ErlApply {
       return ErlError::type_error(self.location.clone(), TypeError::BadArguments { msg });
     }
     // Return type only from compatible clauses
-    let ret_types: Vec<Arc<ErlType>> = compatible_clauses.iter().map(|fc| fc.ret_ty()).cloned().collect();
+    let ret_types: Vec<Arc<ErlType>> = compatible_clauses
+      .iter()
+      .map(|fc| fc.ret_ty())
+      .cloned()
+      .collect();
     Ok(ErlType::new_union(&ret_types))
   }
 }

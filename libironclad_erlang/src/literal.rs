@@ -180,7 +180,9 @@ impl Literal {
       (Literal::List { elements: a, .. }, Literal::List { elements: b, .. }) => a.cmp(b),
       (Literal::String(a), Literal::String(b)) => a.cmp(b),
       (Literal::Tuple(a), Literal::Tuple(b)) => a.cmp(b),
-      _ => unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other),
+      _ => {
+        unreachable!("Can't compare {} vs {}, only same type allowed in this function", self, other)
+      }
     }
   }
 }

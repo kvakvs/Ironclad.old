@@ -1,14 +1,14 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::{parse_int, ws_before};
 use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::parse_type::ErlTypeParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::{
-  branch, bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi,
-  sequence,
+  branch, bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
+  error::context, multi, sequence,
 };
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
@@ -22,11 +22,11 @@ impl ErlAttrParser {
     combinator::map(
       // Dash `-` and terminating `.` are matched outside by the caller.
       sequence::pair(
-        MiscParser::ws_before(AtomParser::parse_atom),
+        ws_before(AtomParser::parse_atom),
         combinator::opt(sequence::delimited(
-          MiscParser::ws_before(char('(')),
+          ws_before(char('(')),
           ErlParser::parse_expr,
-          MiscParser::ws_before(char(')')),
+          ws_before(char(')')),
         )),
       ),
       |(tag, term)| ErlAst::new_generic_attr(SourceLoc::None, tag, term),
@@ -38,11 +38,11 @@ impl ErlAttrParser {
   pub fn parse_module_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("module")),
+        ws_before(tag("module")),
         sequence::delimited(
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(AtomParser::parse_atom),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(AtomParser::parse_atom),
+          ws_before(char(')')),
         ),
       ),
       ErlAst::new_module_start_attr,
@@ -52,9 +52,9 @@ impl ErlAttrParser {
   /// Parses a `fun/arity` atom with an integer.
   pub fn parse_funarity(input: &str) -> nom::IResult<&str, MFArity, ErlParserError> {
     combinator::map(
-      sequence::tuple((AtomParser::parse_atom, char('/'), MiscParser::parse_int)),
+      sequence::tuple((AtomParser::parse_atom, char('/'), parse_int)),
       |(name, _slash, arity_s)| {
-        let arity = arity_s.parse::<usize>().unwrap_or(0);
+        let arity = arity_s.parse().unwrap_or(0);
         MFArity::new_local_from_string(name, arity)
       },
     )(input)
@@ -63,17 +63,17 @@ impl ErlAttrParser {
   /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
   fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     sequence::delimited(
-      MiscParser::ws_before(char('[')),
-      multi::separated_list1(MiscParser::ws_before(char(',')), MiscParser::ws_before(Self::parse_funarity)),
-      MiscParser::ws_before(char(']')),
+      ws_before(char('[')),
+      multi::separated_list1(ws_before(char(',')), ws_before(Self::parse_funarity)),
+      ws_before(char(']')),
     )(input)
   }
 
   fn parse_export_mfa_list(input: &str) -> ParserResult<Vec<MFArity>> {
     sequence::delimited(
-      MiscParser::ws_before(char('(')),
-      MiscParser::ws_before(Self::parse_square_funarity_list1),
-      MiscParser::ws_before(char(')')),
+      ws_before(char('(')),
+      ws_before(Self::parse_square_funarity_list1),
+      ws_before(char(')')),
     )(input)
   }
 
@@ -81,10 +81,7 @@ impl ErlAttrParser {
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn parse_export_attr(input: &str) -> AstParserResult {
     combinator::map(
-      sequence::preceded(
-        MiscParser::ws_before(bytes::complete::tag("export")),
-        Self::parse_export_mfa_list,
-      ),
+      sequence::preceded(ws_before(bytes::complete::tag("export")), Self::parse_export_mfa_list),
       ErlAst::new_export_attr,
     )(input)
   }
@@ -94,7 +91,7 @@ impl ErlAttrParser {
   pub fn parse_export_type_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(bytes::complete::tag("export_type")),
+        ws_before(bytes::complete::tag("export_type")),
         Self::parse_export_mfa_list,
       ),
       ErlAst::new_export_type_attr,
@@ -106,17 +103,17 @@ impl ErlAttrParser {
   pub fn parse_import_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(bytes::complete::tag("import")),
+        ws_before(bytes::complete::tag("import")),
         context(
           "import attribute",
           cut(sequence::delimited(
-            MiscParser::ws_before(char('(')),
+            ws_before(char('(')),
             sequence::tuple((
               AtomParser::parse_atom,
-              MiscParser::ws_before(char(',')),
-              MiscParser::ws_before(Self::parse_square_funarity_list1),
+              ws_before(char(',')),
+              ws_before(Self::parse_square_funarity_list1),
             )),
-            MiscParser::ws_before(char(')')),
+            ws_before(char(')')),
           )),
         ),
       ),
@@ -125,14 +122,13 @@ impl ErlAttrParser {
   }
 
   /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
-  pub fn parse_parenthesized_list_of_vars(input: &str) -> nom::IResult<&str, Vec<String>, ErlParserError> {
+  pub fn parse_parenthesized_list_of_vars(
+    input: &str,
+  ) -> nom::IResult<&str, Vec<String>, ErlParserError> {
     sequence::delimited(
-      MiscParser::ws_before(char('(')),
-      cut(multi::separated_list0(
-        MiscParser::ws_before(char(',')),
-        ErlTypeParser::parse_typevar_name,
-      )),
-      MiscParser::ws_before(char(')')),
+      ws_before(char('(')),
+      cut(multi::separated_list0(ws_before(char(',')), ErlTypeParser::parse_typevar_name)),
+      ws_before(char(')')),
     )(input)
   }
 
@@ -141,15 +137,17 @@ impl ErlAttrParser {
   pub fn parse_type_attr(input: &str) -> AstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("type")),
+        ws_before(tag("type")),
         sequence::tuple((
-          MiscParser::ws_before(AtomParser::parse_atom),
+          ws_before(AtomParser::parse_atom),
           context("new type: type arguments", cut(Self::parse_parenthesized_list_of_vars)),
-          MiscParser::ws_before(tag("::")),
+          ws_before(tag("::")),
           context("new type: type definition", cut(ErlTypeParser::parse_type)),
         )),
       ),
-      |(type_name, type_args, _coloncolon, new_type)| ErlAst::new_type_attr(type_name, type_args, new_type),
+      |(type_name, type_args, _coloncolon, new_type)| {
+        ErlAst::new_type_attr(type_name, type_args, new_type)
+      },
     )(input)
   }
 
@@ -157,7 +155,7 @@ impl ErlAttrParser {
   pub fn parse(input: &str) -> AstParserResult {
     sequence::terminated(
       sequence::preceded(
-        MiscParser::ws_before(char('-')),
+        ws_before(char('-')),
         branch::alt((
           Self::parse_export_type_attr,
           Self::parse_export_attr,
@@ -170,7 +168,7 @@ impl ErlAttrParser {
         )),
       ),
       // sequence::terminated(
-      MiscParser::ws_before(char('.')),
+      ws_before(char('.')),
       // newline,
       // ),
     )(input)

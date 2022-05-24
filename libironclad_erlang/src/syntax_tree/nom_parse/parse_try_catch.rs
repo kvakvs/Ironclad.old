@@ -3,23 +3,28 @@
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
+  multi, sequence,
 };
 
 impl ErlParser {
   /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
-  pub fn parse_exception_pattern(input: &str) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
+  pub fn parse_exception_pattern(
+    input: &str,
+  ) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
     combinator::map(
       sequence::tuple((
         Self::parse_matchexpr,
-        sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_matchexpr),
-        combinator::opt(sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_matchexpr)),
+        sequence::preceded(ws_before(char(':')), Self::parse_matchexpr),
+        combinator::opt(sequence::preceded(ws_before(char(':')), Self::parse_matchexpr)),
       )),
-      |(class_pattern, err_pattern, stack_pattern)| ExceptionPattern::new(class_pattern, err_pattern, stack_pattern),
+      |(class_pattern, err_pattern, stack_pattern)| {
+        ExceptionPattern::new(class_pattern, err_pattern, stack_pattern)
+      },
     )(input)
   }
 
@@ -30,10 +35,10 @@ impl ErlParser {
         // Class:Error:Stacktrace
         Self::parse_exception_pattern,
         // when <Expression>
-        combinator::opt(sequence::preceded(MiscParser::ws_before(tag("when")), Self::parse_guardexpr)),
+        combinator::opt(sequence::preceded(ws_before(tag("when")), Self::parse_guardexpr)),
         // -> Expression
         sequence::preceded(
-          MiscParser::ws_before(tag("->")),
+          ws_before(tag("->")),
           Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>,
         ),
       )),
@@ -52,21 +57,15 @@ impl ErlParser {
         ),
         // Optional OF followed by match clauses
         combinator::opt(sequence::preceded(
-          MiscParser::ws_before(tag("of")),
-          context(
-            "try block: 'of' clauses",
-            cut(multi::many1(MiscParser::ws_before(Self::parse_case_clause))),
-          ),
+          ws_before(tag("of")),
+          context("try block: 'of' clauses", cut(multi::many1(ws_before(Self::parse_case_clause)))),
         )),
         // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
         sequence::preceded(
-          MiscParser::ws_before(tag("catch")),
+          ws_before(tag("catch")),
           context(
             "try block: 'catch' clauses",
-            cut(multi::separated_list1(
-              MiscParser::ws_before(char(';')),
-              Self::parse_catch_clause,
-            )),
+            cut(multi::separated_list1(ws_before(char(';')), Self::parse_catch_clause)),
           ),
         ),
       )),
@@ -83,14 +82,11 @@ impl ErlParser {
 
   /// Parses a `try-catch` or a `try-of-catch` block
   pub fn parse_try_catch(input: &str) -> AstParserResult {
-    let (input, _) = MiscParser::ws_before(tag("try"))(input)?;
+    let (input, _) = ws_before(tag("try"))(input)?;
 
     context(
       "try-catch or try-of block",
-      cut(sequence::terminated(
-        Self::parse_try_catch_inner,
-        MiscParser::ws_before(tag("end")),
-      )),
+      cut(sequence::terminated(Self::parse_try_catch_inner, ws_before(tag("end")))),
     )(input)
   }
 }

@@ -41,13 +41,18 @@ impl StringParser {
       // `delimited` is like `preceded`, but it parses both a prefix and a suffix.
       // It returns the result of the middle parser. In this case, it parses
       // {XXXX}, where XXXX is 1 to 6 hex numerals, and returns XXXX
-      sequence::delimited(character::streaming::char('{'), parse_hex, character::streaming::char('}')),
+      sequence::delimited(
+        character::streaming::char('{'),
+        parse_hex,
+        character::streaming::char('}'),
+      ),
     );
 
     // `map_res` takes the result of a parser and applies a function that returns
     // a Result. In this case we take the hex bytes from parse_hex and attempt to
     // convert them to a u32.
-    let parse_u32 = combinator::map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
+    let parse_u32 =
+      combinator::map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
 
     // map_opt is like map_res, but it takes an Option instead of a Result. If
     // the function returns None, map_opt returns an error. In this case, because
@@ -85,12 +90,16 @@ impl StringParser {
 
   /// Parse a backslash, followed by any amount of whitespace. This is used later
   /// to discard any escaped whitespace.
-  fn parse_escaped_whitespace<'a, E: error::ParseError<&'a str>>(input: &'a str) -> nom::IResult<&'a str, &'a str, E> {
+  fn parse_escaped_whitespace<'a, E: error::ParseError<&'a str>>(
+    input: &'a str,
+  ) -> nom::IResult<&'a str, &'a str, E> {
     sequence::preceded(character::streaming::char('\\'), character::streaming::multispace1)(input)
   }
 
   /// Parse a non-empty block of text that doesn't include \ or "
-  fn parse_literal<'a, E: error::ParseError<&'a str>>(input: &'a str) -> nom::IResult<&'a str, &'a str, E> {
+  fn parse_literal<'a, E: error::ParseError<&'a str>>(
+    input: &'a str,
+  ) -> nom::IResult<&'a str, &'a str, E> {
     // `is_not` parses a string of 0 or more characters that aren't one of the
     // given characters.
     let not_quote_slash = is_not("\"\\");

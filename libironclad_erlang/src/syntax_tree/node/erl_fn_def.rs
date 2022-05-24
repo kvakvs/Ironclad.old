@@ -61,7 +61,11 @@ impl ErlFnDef {
 
 impl AstNode for ErlFnDef {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let r: Vec<Arc<ErlAst>> = self.clauses.iter().map(|fclause| fclause.body.clone()).collect();
+    let r: Vec<Arc<ErlAst>> = self
+      .clauses
+      .iter()
+      .map(|fclause| fclause.body.clone())
+      .collect();
     Some(r)
   }
 }

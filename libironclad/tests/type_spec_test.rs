@@ -113,7 +113,8 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse typespec syntax for a 2-clause fn");
 
   let filename = PathBuf::from(function_name!());
-  let spec2_src = format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
+  let spec2_src =
+    format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
   let spec2_m = ErlModule::from_fun_spec_source(&filename, &spec2_src)?;
 
   if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {

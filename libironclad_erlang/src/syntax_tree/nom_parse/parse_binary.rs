@@ -5,11 +5,12 @@ use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::{parse_int, parse_varname, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::{
-  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
+  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
+  error::context, multi, sequence,
 };
 use std::ops::Deref;
 use std::str::FromStr;
@@ -21,13 +22,9 @@ impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: &str) -> AstParserResult {
     branch::alt((
-      combinator::map(MiscParser::parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
+      combinator::map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
-      sequence::delimited(
-        MiscParser::ws_before(char('(')),
-        ErlParser::parse_expr,
-        MiscParser::ws_before(char(')')),
-      ),
+      sequence::delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
     ))(input)
   }
 
@@ -80,7 +77,7 @@ impl BinaryParser {
   }
 
   fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
-    combinator::map(sequence::preceded(tag("unit:"), MiscParser::parse_int), |i_str| {
+    combinator::map(sequence::preceded(tag("unit:"), parse_int), |i_str| {
       TypeSpecifier::Unit(usize::from_str(i_str).unwrap())
     })(input)
   }
@@ -97,9 +94,9 @@ impl BinaryParser {
   /// Parse a `-` separated list of typespecs
   fn parse_type_specs(input: &str) -> ParserResult<Vec<TypeSpecifier>> {
     sequence::preceded(
-      MiscParser::ws_before(char('/')), // TODO: Whitespace allowed before?
+      ws_before(char('/')), // TODO: Whitespace allowed before?
       multi::separated_list1(
-        MiscParser::ws_before(char('-')), // TODO: Whitespace allowed before?
+        ws_before(char('-')), // TODO: Whitespace allowed before?
         Self::parse_a_type_spec,
       ),
     )(input)
@@ -111,7 +108,7 @@ impl BinaryParser {
     combinator::map(
       sequence::tuple((
         Self::parse_value,
-        combinator::opt(sequence::preceded(MiscParser::ws_before(char(':')), Self::parse_width)),
+        combinator::opt(sequence::preceded(ws_before(char(':')), Self::parse_width)),
         combinator::opt(Self::parse_type_specs),
       )),
       |(value, bit_width, type_specs)| {
@@ -127,22 +124,19 @@ impl BinaryParser {
 
   /// Parse a ironclad_exe or ironclad_exe builder expression
   pub fn parse(input: &str) -> AstParserResult {
-    let (input, _) = MiscParser::ws_before(tag("<<"))(input)?;
+    let (input, _) = ws_before(tag("<<"))(input)?;
 
     context(
       "ironclad_exe expression",
       cut(sequence::terminated(
         combinator::map(
           multi::separated_list1(
-            MiscParser::ws_before(char(',')),
-            context(
-              "ironclad_exe expression element",
-              cut(MiscParser::ws_before(Self::parse_bin_element)),
-            ),
+            ws_before(char(',')),
+            context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
           ),
           |bin_exprs| ErlAst::new_binary_expr(SourceLoc::None, bin_exprs),
         ),
-        MiscParser::ws_before(tag(">>")),
+        ws_before(tag(">>")),
       )),
     )(input)
   }

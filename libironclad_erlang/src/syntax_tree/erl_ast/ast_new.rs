@@ -25,7 +25,11 @@ impl ErlAst {
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
-  pub fn new_application(location: SourceLoc, target: CallableTarget, args: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+  pub fn new_application(
+    location: SourceLoc,
+    target: CallableTarget,
+    args: Vec<Arc<ErlAst>>,
+  ) -> Arc<ErlAst> {
     ErlAst::Apply(ErlApply::new(location, target, args)).into()
   }
 
@@ -35,7 +39,12 @@ impl ErlAst {
   }
 
   /// Create an new ironclad_exe operation AST node with left and right operands AST
-  pub fn new_binop(location: SourceLoc, left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Arc<ErlAst> {
+  pub fn new_binop(
+    location: SourceLoc,
+    left: Arc<ErlAst>,
+    op: ErlBinaryOp,
+    right: Arc<ErlAst>,
+  ) -> Arc<ErlAst> {
     ErlAst::BinaryOp {
       location,
       expr: ErlBinaryOperatorExpr { left, right, operator: op },
@@ -77,7 +86,11 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list of some expressions
-  pub fn new_list(location: SourceLoc, elements: Vec<Arc<ErlAst>>, tail: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
+  pub fn new_list(
+    location: SourceLoc,
+    elements: Vec<Arc<ErlAst>>,
+    tail: Option<Arc<ErlAst>>,
+  ) -> Arc<ErlAst> {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
     ErlAst::List { location, elements, tail }.into()
   }
@@ -98,7 +111,11 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list comprehension
-  pub fn new_list_comprehension(location: SourceLoc, expr: Arc<ErlAst>, generators: Vec<Arc<ErlAst>>) -> Arc<ErlAst> {
+  pub fn new_list_comprehension(
+    location: SourceLoc,
+    expr: Arc<ErlAst>,
+    generators: Vec<Arc<ErlAst>>,
+  ) -> Arc<ErlAst> {
     ErlAst::ListComprehension { location, expr, generators }.into()
   }
 
@@ -108,7 +125,11 @@ impl ErlAst {
   }
 
   /// Create a new AST node for a list comprehension generator `Expr <- Expr`
-  pub fn new_list_comprehension_generator(location: SourceLoc, left: Arc<ErlAst>, right: Arc<ErlAst>) -> Arc<ErlAst> {
+  pub fn new_list_comprehension_generator(
+    location: SourceLoc,
+    left: Arc<ErlAst>,
+    right: Arc<ErlAst>,
+  ) -> Arc<ErlAst> {
     ErlAst::ListComprehensionGenerator { location, left, right }.into()
   }
 
@@ -118,7 +139,11 @@ impl ErlAst {
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.
-  pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<Arc<ErlAst>>) -> Arc<ErlAst> {
+  pub fn new_generic_attr(
+    location: SourceLoc,
+    tag: String,
+    term: Option<Arc<ErlAst>>,
+  ) -> Arc<ErlAst> {
     ErlAst::GenericAttr { location, tag, term }.into()
   }
 
@@ -158,12 +183,20 @@ impl ErlAst {
   }
 
   /// Create a new `case` AST Node for `case EXPR of MATCH -> EXPR; ... end`
-  pub fn new_case_statement(location: SourceLoc, expr: Arc<ErlAst>, clauses: Vec<ErlCaseClause>) -> Arc<ErlAst> {
+  pub fn new_case_statement(
+    location: SourceLoc,
+    expr: Arc<ErlAst>,
+    clauses: Vec<ErlCaseClause>,
+  ) -> Arc<ErlAst> {
     ErlAst::CaseStatement { location, expr, clauses }.into()
   }
 
   /// Create a new function AST node, or a lambda AST node.
-  pub fn new_fndef(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
+  pub fn new_fndef(
+    location: SourceLoc,
+    funarity: MFArity,
+    clauses: Vec<ErlFnClause>,
+  ) -> Arc<ErlAst> {
     let fndef = ErlFnDef { location, funarity, clauses };
     ErlAst::FnDef(fndef).into()
   }

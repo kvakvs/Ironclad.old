@@ -4,19 +4,20 @@ use std::sync::Arc;
 
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_fn_clause::ErlFnClause;
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::{ws_before, ws_before_mut};
 use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
+  multi, sequence,
 };
 
 impl ErlParser {
   fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
     combinator::map(
-      sequence::tuple((MiscParser::ws_before(tag("when")), cut(Self::parse_expr))),
+      sequence::tuple((ws_before(tag("when")), cut(Self::parse_expr))),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
     )(input)
   }
@@ -32,16 +33,20 @@ impl ErlParser {
       return combinator::map(AtomParser::parse_atom, Option::Some)(input);
     }
     // Succeed if FN_NAME=false and there is no atom
-    combinator::map(combinator::peek(combinator::not(AtomParser::parse_atom)), |_| Option::None)(input)
+    combinator::map(combinator::peek(combinator::not(AtomParser::parse_atom)), |_| Option::None)(
+      input,
+    )
   }
 
   /// Parses a named clause for a top level function
   /// * FN_NAME: true if the parser must require function name
-  fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: &str) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
+  fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
+    input: &str,
+  ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     combinator::map(
       sequence::tuple((
         // Function clause name
-        MiscParser::ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
+        ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
         // Function arguments
         nom::error::context(
           "function clause arguments",
@@ -55,7 +60,7 @@ impl ErlParser {
         nom::error::context(
           "function clause body",
           sequence::preceded(
-            MiscParser::ws_before(tag("->")),
+            ws_before(tag("->")),
             // Body as list of exprs
             cut(Self::parse_comma_sep_exprs1::<{ ErlParser::EXPR_STYLE_FULL }>),
           ),
@@ -91,11 +96,11 @@ impl ErlParser {
     combinator::map(
       sequence::terminated(
         multi::separated_list1(
-          MiscParser::ws_before(char(';')),
+          ws_before(char(';')),
           // if parse fails under here, will show this context message in error
           context("function clause", cut(Self::parse_fnclause::<true>)),
         ),
-        MiscParser::ws_before(char('.')),
+        ws_before(char('.')),
       ),
       Self::_construct_fndef,
     )(input)
@@ -106,13 +111,10 @@ impl ErlParser {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("fun")),
+        ws_before(tag("fun")),
         sequence::terminated(
-          context(
-            "",
-            multi::separated_list1(MiscParser::ws_before(char(';')), Self::parse_fnclause::<false>),
-          ),
-          MiscParser::ws_before(tag("end")),
+          context("", multi::separated_list1(ws_before(char(';')), Self::parse_fnclause::<false>)),
+          ws_before(tag("end")),
         ),
       ),
       Self::_construct_fndef,

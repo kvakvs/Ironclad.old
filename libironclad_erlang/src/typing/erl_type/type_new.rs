@@ -53,7 +53,10 @@ impl ErlType {
 
   /// Creates a new function type with 1 clause, a count of `any()` args and a given return type
   pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &Arc<ErlType>) -> ErlType {
-    let any_args = iter::repeat(()).take(arity).map(|_| Typevar::new(None, None)).collect();
+    let any_args = iter::repeat(())
+      .take(arity)
+      .map(|_| Typevar::new(None, None))
+      .collect();
     let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
     let fn_type = FnType::new(arity, &[clause]);
     ErlType::Fn(fn_type.into())
@@ -98,7 +101,11 @@ impl ErlType {
   }
 
   /// Try match type name and arity vs known basic types
-  pub fn from_name(_maybe_module: Option<String>, type_name: String, args: &[Typevar]) -> Arc<ErlType> {
+  pub fn from_name(
+    _maybe_module: Option<String>,
+    type_name: String,
+    args: &[Typevar],
+  ) -> Arc<ErlType> {
     #[allow(clippy::single_match)]
     match args.len() {
       0 => match type_name.as_ref() {

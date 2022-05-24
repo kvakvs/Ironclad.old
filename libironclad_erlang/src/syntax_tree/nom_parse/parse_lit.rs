@@ -2,7 +2,7 @@
 
 use crate::literal::Literal;
 use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::{parse_float, parse_int};
 use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::parse_str::StringParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser};
@@ -31,7 +31,7 @@ impl ErlParser {
   }
 
   fn parse_float_to_ast(input: &str) -> AstParserResult {
-    combinator::map(MiscParser::parse_float, |s| {
+    combinator::map(parse_float, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::Float(s.parse::<f64>().unwrap()).into(),
@@ -41,7 +41,7 @@ impl ErlParser {
   }
 
   fn parse_int_to_ast(input: &str) -> AstParserResult {
-    combinator::map(MiscParser::parse_int, |s| {
+    combinator::map(parse_int, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::Integer(s.parse::<isize>().unwrap()).into(),

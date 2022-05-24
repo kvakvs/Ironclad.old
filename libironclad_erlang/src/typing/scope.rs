@@ -79,7 +79,11 @@ impl Scope {
   }
 
   /// Create a new scope from a variable hashmap
-  pub fn new(name: String, parent_scope: Weak<RwLock<Scope>>, variables: HashMap<String, Arc<ErlType>>) -> Self {
+  pub fn new(
+    name: String,
+    parent_scope: Weak<RwLock<Scope>>,
+    variables: HashMap<String, Arc<ErlType>>,
+  ) -> Self {
     Self {
       name,
       variables,
@@ -104,7 +108,9 @@ impl Scope {
   /// Insert a new var into scope
   pub fn add_to(scope: &RwLock<Scope>, var_name: &str) {
     if let Ok(mut scope_w) = scope.write() {
-      scope_w.variables.insert(var_name.to_string(), ErlType::any());
+      scope_w
+        .variables
+        .insert(var_name.to_string(), ErlType::any());
     }
   }
 

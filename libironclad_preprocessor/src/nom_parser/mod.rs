@@ -4,7 +4,9 @@ use crate::nom_parser::pp_parse_types::{
   PpAstParserResult, PpParserResult, PpStringParserResult, PreprocessorParser, VecPpAstParserResult,
 };
 use crate::syntax_tree::pp_ast::PpAst;
-use libironclad_erlang::syntax_tree::nom_parse::misc::MiscParser;
+use libironclad_erlang::syntax_tree::nom_parse::misc::{
+  newline_or_eof, parse_line_comment, parse_varname, ws, ws_before, ws_before_mut,
+};
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use nom::{
   branch,
@@ -22,14 +24,14 @@ pub mod pp_parse_types;
 impl PreprocessorParser {
   /// Parse a `Var1, Var2, ...` into a list
   fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
-    multi::separated_list0(MiscParser::ws_before(char(',')), MiscParser::parse_varname)(input)
+    multi::separated_list0(ws_before(char(',')), parse_varname)(input)
   }
 
   fn terminator(input: &str) -> PpParserResult<&str> {
     combinator::recognize(sequence::tuple((
-      MiscParser::ws_before(char(')')),
-      MiscParser::ws_before(char('.')),
-      MiscParser::newline_or_eof,
+      ws_before(char(')')),
+      ws_before(char('.')),
+      newline_or_eof,
     )))(input)
   }
 
@@ -37,25 +39,29 @@ impl PreprocessorParser {
   pub fn parse_define(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("define")),
+        ws_before(tag("define")),
         sequence::tuple((
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(MiscParser::parse_varname),
+          ws_before(char('(')),
+          ws_before(parse_varname),
           combinator::opt(sequence::delimited(
-            MiscParser::ws_before(char('(')),
+            ws_before(char('(')),
             Self::parse_comma_sep_varnames,
-            MiscParser::ws_before(char(')')),
+            ws_before(char(')')),
           )),
           combinator::opt(sequence::delimited(
-            MiscParser::ws_before(char(',')),
+            ws_before(char(',')),
             multi::many_till(nom::character::complete::anychar, Self::terminator),
             Self::terminator,
           )), // )delimited )opt
-          MiscParser::ws_before(char(')')),
+          ws_before(char(')')),
         )),
       ),
       |(_open, name, args, body, _close)| {
-        PpAst::new_define(name, args, body.map(|(chars, _term)| chars.into_iter().collect::<String>()))
+        PpAst::new_define(
+          name,
+          args,
+          body.map(|(chars, _term)| chars.into_iter().collect::<String>()),
+        )
       },
     )(input)
   }
@@ -75,11 +81,11 @@ impl PreprocessorParser {
   fn parse_undef(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("undef")),
+        ws_before(tag("undef")),
         sequence::tuple((
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(Self::parse_macro_ident),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(Self::parse_macro_ident),
+          ws_before(char(')')),
         )),
       ),
       |(_open, ident, _close)| PpAst::new_undef(ident),
@@ -90,11 +96,11 @@ impl PreprocessorParser {
   fn parse_include(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("include")),
+        ws_before(tag("include")),
         sequence::tuple((
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(StringParser::parse_string),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(StringParser::parse_string),
+          ws_before(char(')')),
         )),
       ),
       |(_open, s, _close)| PpAst::new_include(s),
@@ -105,11 +111,11 @@ impl PreprocessorParser {
   fn parse_include_lib(input: &str) -> PpAstParserResult {
     combinator::map(
       sequence::preceded(
-        MiscParser::ws_before(tag("include_lib")),
+        ws_before(tag("include_lib")),
         sequence::tuple((
-          MiscParser::ws_before(char('(')),
-          MiscParser::ws_before(StringParser::parse_string),
-          MiscParser::ws_before(char(')')),
+          ws_before(char('(')),
+          ws_before(StringParser::parse_string),
+          ws_before(char(')')),
         )),
       ),
       |(_open, s, _close)| PpAst::new_include_lib(s),
@@ -119,8 +125,8 @@ impl PreprocessorParser {
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {
     sequence::delimited(
       // Preceded by a dash -
-      MiscParser::ws_before(char('-')),
-      MiscParser::ws_before_mut(branch::alt((branch::alt((
+      ws_before(char('-')),
+      ws_before_mut(branch::alt((branch::alt((
         // -define is special, it needs closing ).\n to consume the content
         context("'-define' directive", Self::parse_define),
         context("'-undef' directive", Self::parse_undef),
@@ -136,7 +142,7 @@ impl PreprocessorParser {
         context("'-include' directive", Self::parse_include),
       )),))),
       // Terminated by .\n
-      sequence::pair(MiscParser::ws_before(char('.')), MiscParser::newline_or_eof),
+      sequence::pair(ws_before(char('.')), newline_or_eof),
     )(input)
   }
 
@@ -144,7 +150,7 @@ impl PreprocessorParser {
   fn consume_one_line_of_text(input: &str) -> PpAstParserResult {
     combinator::map(
       combinator::verify(
-        MiscParser::ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
+        ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
         |text: &str| !text.is_empty(), //&& !text.starts_with('-'),
       ),
       PpAst::new_text,
@@ -157,7 +163,7 @@ impl PreprocessorParser {
       Self::parse_preproc_directive,
       Self::consume_one_line_of_text,
       // A final comment in file is not visible to consume_text
-      combinator::map(MiscParser::parse_line_comment, |_| PpAst::new_text("")),
+      combinator::map(parse_line_comment, |_| PpAst::new_text("")),
     ))(input)
   }
 

@@ -19,7 +19,11 @@ pub struct CatchClause {
 
 impl CatchClause {
   /// Create a new catch clause
-  pub fn new(exc_pattern: ExceptionPattern, when_guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+  pub fn new(
+    exc_pattern: ExceptionPattern,
+    when_guard: Option<Arc<ErlAst>>,
+    body: Arc<ErlAst>,
+  ) -> Self {
     Self { exc_pattern, when_guard, body }
   }
 }

@@ -8,11 +8,16 @@ use crate::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::syntax_tree::node::erl_var::ErlVar;
-use crate::syntax_tree::nom_parse::misc::MiscParser;
+use crate::syntax_tree::nom_parse::misc::{parse_varname, ws_before, ws_before_mut};
 use crate::syntax_tree::nom_parse::parse_binary::BinaryParser;
-use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
+use crate::syntax_tree::nom_parse::{
+  AstParserResult, ErlParser, ErlParserError, VecAstParserResult,
+};
 use libironclad_error::source_loc::SourceLoc;
-use nom::{branch, bytes, character::complete::char, combinator, combinator::cut, error::context, multi, sequence};
+use nom::{
+  branch, bytes, character::complete::char, combinator, combinator::cut, error::context, multi,
+  sequence,
+};
 
 impl ErlParser {
   /// Full expression including comma operator, for function bodies
@@ -41,7 +46,7 @@ impl ErlParser {
   }
 
   fn parse_var(input: &str) -> AstParserResult {
-    let (input, name) = MiscParser::parse_varname(input)?;
+    let (input, name) = parse_varname(input)?;
     let ast = ErlAst::Var(ErlVar::new(SourceLoc::None, &name)).into();
     Ok((input, ast))
   }
@@ -51,24 +56,23 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     sequence::delimited(
-      MiscParser::ws_before(char('(')),
+      ws_before(char('(')),
       context("function application arguments", cut(Self::parse_comma_sep_exprs0::<STYLE>)),
-      MiscParser::ws_before(char(')')),
+      ws_before(char(')')),
     )(input)
   }
 
   fn parse_list_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
     combinator::map(
       sequence::tuple((
-        MiscParser::ws_before(char('[')),
+        ws_before(char('[')),
         Self::parse_comma_sep_exprs0::<STYLE>,
-        combinator::opt(sequence::preceded(
-          MiscParser::ws_before(char('|')),
-          Self::parse_expr_prec13::<STYLE>,
-        )),
-        MiscParser::ws_before(char(']')),
+        combinator::opt(sequence::preceded(ws_before(char('|')), Self::parse_expr_prec13::<STYLE>)),
+        ws_before(char(']')),
       )),
-      |(_open, elements, maybe_tail, _close)| ErlAst::new_list(SourceLoc::None, elements, maybe_tail),
+      |(_open, elements, maybe_tail, _close)| {
+        ErlAst::new_list(SourceLoc::None, elements, maybe_tail)
+      },
     )(input)
   }
 
@@ -77,7 +81,7 @@ impl ErlParser {
     combinator::map(
       sequence::separated_pair(
         Self::parse_expr,
-        MiscParser::ws_before(bytes::complete::tag("<-")),
+        ws_before(bytes::complete::tag("<-")),
         Self::parse_expr,
       ),
       |(a, b)| ErlAst::new_list_comprehension_generator(SourceLoc::None, a, b),
@@ -87,7 +91,7 @@ impl ErlParser {
   /// Parses mix of generators and conditions for a list comprehension
   pub fn parse_list_comprehension_exprs_and_generators(input: &str) -> VecAstParserResult {
     multi::separated_list0(
-      MiscParser::ws_before(char(',')),
+      ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       branch::alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
     )(input)
@@ -97,7 +101,7 @@ impl ErlParser {
     combinator::map(
       sequence::separated_pair(
         Self::parse_expr,
-        MiscParser::ws_before(bytes::complete::tag("||")),
+        ws_before(bytes::complete::tag("||")),
         context(
           "list comprehension generators",
           cut(Self::parse_list_comprehension_exprs_and_generators),
@@ -109,18 +113,18 @@ impl ErlParser {
 
   fn parse_list_comprehension(input: &str) -> AstParserResult {
     sequence::delimited(
-      MiscParser::ws_before(char('[')),
+      ws_before(char('[')),
       Self::parse_list_comprehension_1,
-      MiscParser::ws_before(char(']')),
+      ws_before(char(']')),
     )(input)
   }
 
   fn parse_tuple_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
     combinator::map(
       sequence::delimited(
-        MiscParser::ws_before(char('{')),
+        ws_before(char('{')),
         Self::parse_comma_sep_exprs0::<STYLE>,
-        MiscParser::ws_before(char('}')),
+        ws_before(char('}')),
       ),
       |elements| ErlAst::new_tuple(SourceLoc::None, elements),
     )(input)
@@ -131,7 +135,7 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list0(
-      MiscParser::ws_before(char(',')),
+      ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
@@ -142,7 +146,7 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     multi::separated_list1(
-      MiscParser::ws_before(char(',')),
+      ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
@@ -150,9 +154,9 @@ impl ErlParser {
 
   fn parenthesized_expr<const STYLE: usize>(input: &str) -> AstParserResult {
     sequence::delimited(
-      MiscParser::ws_before(char('(')),
-      MiscParser::ws_before(Self::parse_expr_prec13::<STYLE>),
-      MiscParser::ws_before(char(')')),
+      ws_before(char('(')),
+      ws_before(Self::parse_expr_prec13::<STYLE>),
+      ws_before(char(')')),
     )(input)
   }
 
@@ -161,7 +165,7 @@ impl ErlParser {
     match STYLE {
       Self::EXPR_STYLE_FULL => context(
         "parse expression (highest precedence)",
-        MiscParser::ws_before_mut(branch::alt((
+        ws_before_mut(branch::alt((
           Self::parse_lambda,
           Self::parse_try_catch,
           Self::parse_if_statement,
@@ -177,7 +181,7 @@ impl ErlParser {
       )(input),
       Self::EXPR_STYLE_MATCHEXPR => context(
         "parse match expression (highest precedence)",
-        MiscParser::ws_before_mut(branch::alt((
+        ws_before_mut(branch::alt((
           Self::parenthesized_expr::<STYLE>,
           Self::parse_list_of_exprs::<STYLE>,
           Self::parse_tuple_of_exprs::<STYLE>,
@@ -187,7 +191,7 @@ impl ErlParser {
       )(input),
       Self::EXPR_STYLE_GUARD => context(
         "parse guard expression (highest precedence)",
-        MiscParser::ws_before_mut(branch::alt((
+        ws_before_mut(branch::alt((
           Self::parenthesized_expr::<STYLE>,
           Self::parse_var,
           Self::parse_literal,
@@ -214,7 +218,7 @@ impl ErlParser {
           // A pair: optional second expr for function name, and mandatory args
           sequence::pair(
             combinator::opt(sequence::preceded(
-              MiscParser::ws_before(char(':')),
+              ws_before(char(':')),
               Self::parse_expr_prec_primary::<STYLE>,
             )),
             Self::parse_parenthesized_list_of_exprs::<STYLE>,
@@ -250,13 +254,13 @@ impl ErlParser {
   fn parse_expr_prec03<const STYLE: usize>(input: &str) -> AstParserResult {
     combinator::map(
       sequence::pair(
-        MiscParser::ws_before_mut(branch::alt((
+        ws_before_mut(branch::alt((
           Self::unop_negative,
           Self::unop_positive,
           Self::unop_bnot,
           Self::unop_not,
         ))),
-        MiscParser::ws_before(Self::parse_expr_prec02::<STYLE>),
+        ws_before(Self::parse_expr_prec02::<STYLE>),
       ),
       |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, unop, expr),
     )(input)
@@ -270,7 +274,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec03::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((
+          ws_before_mut(branch::alt((
             Self::binop_floatdiv,
             Self::binop_multiply,
             Self::binop_intdiv,
@@ -278,7 +282,7 @@ impl ErlParser {
             Self::binop_band,
             Self::binop_and,
           ))),
-          MiscParser::ws_before(Self::parse_expr_prec03::<STYLE>),
+          ws_before(Self::parse_expr_prec03::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -292,7 +296,7 @@ impl ErlParser {
       sequence::tuple((
         Self::parse_expr_prec04::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((
+          ws_before_mut(branch::alt((
             Self::binop_add,
             Self::binop_bor,
             Self::binop_bsl,
@@ -302,7 +306,7 @@ impl ErlParser {
             Self::binop_subtract,
             Self::binop_xor,
           ))),
-          MiscParser::ws_before(Self::parse_expr_prec04::<STYLE>),
+          ws_before(Self::parse_expr_prec04::<STYLE>),
         )),
       )),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -316,8 +320,8 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec05::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((Self::binop_list_append, Self::binop_list_subtract))),
-          MiscParser::ws_before(Self::parse_expr_prec05::<STYLE>),
+          ws_before_mut(branch::alt((Self::binop_list_append, Self::binop_list_subtract))),
+          ws_before(Self::parse_expr_prec05::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
@@ -331,7 +335,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec06::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((
+          ws_before_mut(branch::alt((
             Self::binop_hard_equals,
             Self::binop_hard_not_equals,
             Self::binop_not_equals,
@@ -341,7 +345,7 @@ impl ErlParser {
             Self::binop_greater_eq,
             Self::binop_greater,
           ))),
-          MiscParser::ws_before(Self::parse_expr_prec06::<STYLE>),
+          ws_before(Self::parse_expr_prec06::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -355,8 +359,8 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec07::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(Self::binop_andalso),
-          MiscParser::ws_before(Self::parse_expr_prec07::<STYLE>),
+          ws_before_mut(Self::binop_andalso),
+          ws_before(Self::parse_expr_prec07::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -370,8 +374,8 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec08::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(Self::binop_orelse),
-          MiscParser::ws_before(Self::parse_expr_prec08::<STYLE>),
+          ws_before_mut(Self::binop_orelse),
+          ws_before(Self::parse_expr_prec08::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
@@ -385,8 +389,8 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec09::<STYLE>,
         multi::many0(sequence::pair(
-          MiscParser::ws_before_mut(branch::alt((Self::binop_match, Self::binop_bang))),
-          MiscParser::ws_before(Self::parse_expr_prec09::<STYLE>),
+          ws_before_mut(branch::alt((Self::binop_match, Self::binop_bang))),
+          ws_before(Self::parse_expr_prec09::<STYLE>),
         )),
       ),
       |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
@@ -398,13 +402,10 @@ impl ErlParser {
   fn parse_expr_prec11<const STYLE: usize>(input: &str) -> AstParserResult {
     // Try parse (catch Expr) otherwise try next precedence level
     combinator::map(
-      sequence::pair(
-        MiscParser::ws_before_mut(Self::unop_catch),
-        MiscParser::ws_before(Self::parse_expr_prec10::<STYLE>),
-      ),
+      sequence::pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
       |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, catch_op, expr),
     )(input)
-    .or_else(|_err| MiscParser::ws_before(Self::parse_expr_prec10::<STYLE>)(input))
+    .or_else(|_err| ws_before(Self::parse_expr_prec10::<STYLE>)(input))
   }
 
   // /// Public entry point to parse expression that cannot include comma or semicolon
@@ -438,10 +439,10 @@ impl ErlParser {
         combinator::map(
           // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
           sequence::pair(
-            MiscParser::ws_before(Self::parse_expr_prec11::<STYLE>),
+            ws_before(Self::parse_expr_prec11::<STYLE>),
             multi::many0(sequence::pair(
-              MiscParser::ws_before_mut(branch::alt((Self::binop_semicolon, Self::binop_comma))),
-              MiscParser::ws_before(Self::parse_expr_prec11::<STYLE>),
+              ws_before_mut(branch::alt((Self::binop_semicolon, Self::binop_comma))),
+              ws_before(Self::parse_expr_prec11::<STYLE>),
             )),
           ),
           |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
