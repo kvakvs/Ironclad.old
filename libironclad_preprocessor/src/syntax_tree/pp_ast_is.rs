@@ -20,4 +20,9 @@ impl PpAst {
   pub fn is_elseif(&self) -> bool {
     matches!(self, PpAst::_TemporaryElseIf(_))
   }
+
+  /// Check whether Preprocessor AST node is a temporary `-endif` node
+  pub fn is_endif(&self) -> bool {
+    matches!(self, PpAst::_TemporaryEndif)
+  }
 }

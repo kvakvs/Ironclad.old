@@ -7,7 +7,8 @@ use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::parse_str::StringParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser};
 use libironclad_error::source_loc::SourceLoc;
-use nom::{branch, combinator};
+use nom::branch::alt;
+use nom::combinator;
 
 impl ErlParser {
   fn parse_string_to_ast(input: &str) -> AstParserResult {
@@ -52,7 +53,7 @@ impl ErlParser {
 
   /// Read a literal value from input string
   pub fn parse_literal(input: &str) -> AstParserResult {
-    branch::alt((
+    alt((
       Self::parse_float_to_ast,
       Self::parse_int_to_ast,
       Self::parse_atom_to_ast,

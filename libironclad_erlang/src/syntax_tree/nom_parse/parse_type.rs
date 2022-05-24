@@ -10,9 +10,10 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
+use nom::branch::alt;
 use nom::{
-  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
+  multi, sequence,
 };
 use std::sync::Arc;
 
@@ -62,7 +63,7 @@ impl ErlTypeParser {
         // Return type for fn clause
         context(
           "return type in function clause spec",
-          branch::alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
+          alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
         ),
         // Optional: when <comma separated list of typevariables given types>
         context("when expression for typespec", combinator::opt(Self::parse_when_expr_for_type)),
@@ -106,7 +107,7 @@ impl ErlTypeParser {
   //     Self::ws(char(',')),
   //
   //     // Comma separated arguments spec can be typevars with optional `::type()`s or just types
-  //     branch::alt((
+  //     alt((
   //       Self::parse_typevar_with_opt_type,
   //       combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
   //     )),
@@ -135,7 +136,7 @@ impl ErlTypeParser {
   }
 
   fn alt_typevar_or_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
-    branch::alt((
+    alt((
       Self::parse_typevar_with_opt_type,
       combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
       // combinator::map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
@@ -236,7 +237,7 @@ impl ErlTypeParser {
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
   pub fn parse_nonunion_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    branch::alt((
+    alt((
       Self::parse_type_list,
       Self::parse_type_tuple,
       Self::parse_user_defined_type,

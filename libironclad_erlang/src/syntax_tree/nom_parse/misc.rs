@@ -1,8 +1,9 @@
 //! Helper functions for Nom parsing
 
 use crate::syntax_tree::nom_parse::{StrSliceParserResult, StringParserResult};
+use nom::branch::alt;
+use nom::combinator::recognize;
 use nom::{
-  branch,
   bytes::complete::tag,
   character,
   character::complete::{alphanumeric1, char, one_of},
@@ -13,10 +14,7 @@ use nom::{
 fn spaces_or_comments0<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  combinator::recognize(multi::many0(branch::alt((
-    character::complete::multispace1,
-    parse_line_comment,
-  ))))(input)
+  recognize(multi::many0(alt((character::complete::multispace1, parse_line_comment))))(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -66,11 +64,11 @@ where
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_ident(input: &str) -> StringParserResult {
   combinator::map(
-    combinator::recognize(sequence::pair(
+    recognize(sequence::pair(
       combinator::verify(character::complete::anychar, |c: &char| {
         c.is_alphabetic() && c.is_lowercase()
       }),
-      multi::many0(branch::alt((alphanumeric1, tag("_")))),
+      multi::many0(alt((alphanumeric1, tag("_")))),
     )),
     |result: &str| result.to_string(),
   )(input)
@@ -79,10 +77,10 @@ pub fn parse_ident(input: &str) -> StringParserResult {
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_varname(input: &str) -> StringParserResult {
   combinator::map(
-    combinator::recognize(sequence::pair(
+    recognize(sequence::pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
       combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
-      multi::many0(branch::alt((alphanumeric1, tag("_")))),
+      multi::many0(alt((alphanumeric1, tag("_")))),
     )),
     |result: &str| result.to_string(),
   )(input)
@@ -91,7 +89,7 @@ pub fn parse_varname(input: &str) -> StringParserResult {
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 /// From Nom examples
 pub fn parse_int(input: &str) -> StrSliceParserResult {
-  combinator::recognize(multi::many1(sequence::terminated(
+  recognize(multi::many1(sequence::terminated(
     one_of("0123456789"),
     multi::many0(char('_')),
   )))(input)
@@ -100,15 +98,15 @@ pub fn parse_int(input: &str) -> StrSliceParserResult {
 /// Parse a float with possibly scientific notation. Output is a string.
 /// From Nom examples
 pub fn parse_float(input: &str) -> StrSliceParserResult {
-  branch::alt((
+  alt((
     // Case one: .42
-    combinator::recognize(sequence::tuple((
+    recognize(sequence::tuple((
       char('.'),
       parse_int,
       combinator::opt(sequence::tuple((one_of("eE"), combinator::opt(one_of("+-")), parse_int))),
     ))),
     // Case two: 42e42 and 42.42e42
-    combinator::recognize(sequence::tuple((
+    recognize(sequence::tuple((
       parse_int,
       combinator::opt(sequence::preceded(char('.'), parse_int)),
       one_of("eE"),
@@ -116,14 +114,14 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
       parse_int,
     ))),
     // Case three: 42. (disallowed because end of function is also period) and 42.42
-    combinator::recognize(sequence::tuple((parse_int, char('.'), parse_int))),
+    recognize(sequence::tuple((parse_int, char('.'), parse_int))),
   ))(input)
 }
 
 // /// Matches newline \n or \r\n
 // pub fn newline(input: &str) -> nom::IResult<&str, (), ErlParserError> {
 //   combinator::map(
-//     branch::alt((
+//     alt((
 //       combinator::eof,
 //       Self::ws(tag("\r\n")),
 //       Self::ws(tag("\n"))
@@ -136,14 +134,14 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
 pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  combinator::recognize(branch::alt((tag("\r\n"), tag("\r"), tag("\n"), combinator::eof)))(input)
+  recognize(alt((tag("\r\n"), tag("\r"), tag("\n"), combinator::eof)))(input)
 }
 
 /// Recognizes `% text <newline>` consuming text
 pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  combinator::recognize(sequence::pair(
+  recognize(sequence::pair(
     multi::many1(char('%')),
     multi::many_till(character::complete::anychar, newline_or_eof),
   ))(input)

@@ -16,13 +16,16 @@ use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
 /// Try parse a simple pp directive -if(Expr).
 fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
-  let src = "-if(true).";
+  let input = "-if(true)"; // no terminating .
+  println!("In=«{}»", input);
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+  let (tail, result) = PreprocessorParser::parse_if_temporary(input)
     .finish()
     .unwrap();
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
-  println!("Out={:?}", out);
+  // assert_eq!(out.len(), 1, "Expecting exact one result");
+  assert!(matches!(result.deref(), PpAst::_TemporaryIf(_ast)));
+  println!("Out={:?}", result);
 }
 
 #[test]
@@ -30,12 +33,19 @@ fn test_fragment_if() {
 /// Try how splitting module into directives and text works
 fn parse_if_as_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
-  let src = "before_if\n-if(true).\non_true\n\n-else.\non_false\n-endif.\nafter_if";
-  println!("Parsing «{}»", src);
+  let input = "before_if
+-if(true).
+on_true
+-else.
+on_false
+-endif.
+after_if";
+  println!("In=«{}»", input);
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
+  let (tail, out) = PreprocessorParser::parse_fragments_collection(input)
     .finish()
     .unwrap();
+  println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   assert!(
@@ -59,7 +69,6 @@ fn parse_if_as_fragments() {
   }
 
   assert!(out[2].is_text_of("after_if"), "Expected text 'after_if', but got {:?}", out[2]);
-  // println!("Out={:?}", out);
 }
 
 #[test]
@@ -67,13 +76,17 @@ fn parse_if_as_fragments() {
 /// Try how splitting module into directives and text works; With comments
 fn test_fragments_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
-  let src = "hello\n-if(%true)\nfalse).\ntest\n\n-else.\n%%-endif.";
+  let input = "-if(%true)
+false).
+test\n
+-else.
+%%-endif.";
+  println!("In=«{}»", input);
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-    .finish()
-    .unwrap();
+  let (tail, out) = PreprocessorParser::parse_if_block(input).finish().unwrap();
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+  todo!("Check that returned `if` contains 'false'");
 }
 
 #[test]

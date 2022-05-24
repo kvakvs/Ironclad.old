@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
-use nom::{branch, combinator, multi};
+use nom::branch::alt;
+use nom::{combinator, multi};
 
 pub mod misc;
 pub mod parse_atom;
@@ -58,7 +59,7 @@ impl ErlParser {
 
   /// Parses an attribute or a function def
   pub fn parse_module_form(input: &str) -> AstParserResult {
-    branch::alt((ErlAttrParser::parse, Self::parse_fndef))(input)
+    alt((ErlAttrParser::parse, Self::parse_fndef))(input)
   }
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.

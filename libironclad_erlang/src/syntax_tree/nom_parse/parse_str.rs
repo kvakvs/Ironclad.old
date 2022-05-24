@@ -1,7 +1,7 @@
 //! Parse double quoted strings
 
+use nom::branch::alt;
 use nom::{
-  branch,
   bytes::streaming::{is_not, take_while_m_n},
   character, combinator, error, multi, sequence,
 };
@@ -70,7 +70,7 @@ impl StringParser {
       character::streaming::char('\\'),
       // `alt` tries each parser in sequence, returning the result of
       // the first successful match
-      branch::alt((
+      alt((
         Self::parse_unicode,
         // The `value` parser returns a fixed value (the first argument) if its
         // parser (the second argument) succeeds. In these cases, it looks for
@@ -117,7 +117,7 @@ impl StringParser {
   where
     E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
-    branch::alt((
+    alt((
       // The `map` combinator runs a parser, then applies a function to the output
       // of that parser.
       combinator::map(Self::parse_literal, StringFragment::Literal),

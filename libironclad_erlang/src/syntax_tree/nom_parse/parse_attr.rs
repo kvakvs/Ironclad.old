@@ -6,8 +6,9 @@ use crate::syntax_tree::nom_parse::parse_type::ErlTypeParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
+use nom::branch::alt;
 use nom::{
-  branch, bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
+  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
   error::context, multi, sequence,
 };
 
@@ -156,7 +157,7 @@ impl ErlAttrParser {
     sequence::terminated(
       sequence::preceded(
         ws_before(char('-')),
-        branch::alt((
+        alt((
           Self::parse_export_type_attr,
           Self::parse_export_attr,
           Self::parse_import_attr,

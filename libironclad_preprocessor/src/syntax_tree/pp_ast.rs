@@ -86,11 +86,13 @@ pub enum PpAst {
 
   // Temporary nodes, appear during parsing and should never appear into the final AST output.
   // These values never leave the parser module.
-  /// -else.
+  /// `-else.` node
   _TemporaryElse,
-  /// -if(...).
+  ///`-endif` node
+  _TemporaryEndif,
+  /// `-if(...).` node
   _TemporaryIf(Arc<ErlAst>),
-  /// -elif(...).
+  /// `-elif(...).` node
   _TemporaryElseIf(Arc<ErlAst>),
   /// -ifdef(...). is translated into `IfdefBlock`
   _TemporaryIfdef(String),

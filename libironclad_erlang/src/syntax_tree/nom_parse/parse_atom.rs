@@ -3,8 +3,8 @@
 
 use crate::syntax_tree::nom_parse::misc::parse_ident;
 use crate::syntax_tree::nom_parse::StringParserResult;
+use nom::branch::alt;
 use nom::{
-  branch,
   bytes::streaming::{is_not, take_while_m_n},
   character, combinator, error, multi, sequence,
 };
@@ -74,7 +74,7 @@ impl AtomParser {
       character::streaming::char('\\'),
       // `alt` tries each parser in sequence, returning the result of
       // the first successful match
-      branch::alt((
+      alt((
         Self::parse_unicode,
         // The `value` parser returns a fixed value (the first argument) if its
         // parser (the second argument) succeeds. In these cases, it looks for
@@ -121,7 +121,7 @@ impl AtomParser {
   where
     E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
-    branch::alt((
+    alt((
       // The `map` combinator runs a parser, then applies a function to the output
       // of that parser.
       combinator::map(Self::parse_literal, StringFragment::Literal),
@@ -169,7 +169,7 @@ impl AtomParser {
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
   /// delitmited string
   pub fn parse_atom(input: &str) -> StringParserResult {
-    branch::alt((
+    alt((
       combinator::verify(parse_ident, |s| !Self::is_erl_keyword(s)),
       Self::parse_quoted_atom,
     ))(input)

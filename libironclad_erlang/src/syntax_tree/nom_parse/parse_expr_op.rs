@@ -3,8 +3,9 @@
 
 use crate::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use nom::branch::alt;
 use nom::combinator::not;
-use nom::{branch, bytes::complete::tag, character::complete::char, combinator, Parser};
+use nom::{bytes::complete::tag, character::complete::char, combinator, Parser};
 
 type UnaryOpParserResult<'a> = nom::IResult<&'a str, ErlUnaryOp, ErlParserError<'a>>;
 type BinaryOpParserResult<'a> = nom::IResult<&'a str, ErlBinaryOp, ErlParserError<'a>>;
@@ -139,7 +140,7 @@ impl ErlParser {
   }
 
   pub fn binop_match(input: &str) -> BinaryOpParserResult {
-    combinator::map(tag("=").and(not(branch::alt((char(':'), char('/'), char('<'))))), |_| {
+    combinator::map(tag("=").and(not(alt((char(':'), char('/'), char('<'))))), |_| {
       ErlBinaryOp::Match
     })(input)
   }

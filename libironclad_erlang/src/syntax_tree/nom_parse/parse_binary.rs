@@ -8,9 +8,10 @@ use crate::syntax_tree::node::erl_binary_element::{
 use crate::syntax_tree::nom_parse::misc::{parse_int, parse_varname, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
+use nom::branch::alt;
 use nom::{
-  branch, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
+  multi, sequence,
 };
 use std::ops::Deref;
 use std::str::FromStr;
@@ -21,7 +22,7 @@ pub struct BinaryParser {}
 impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: &str) -> AstParserResult {
-    branch::alt((
+    alt((
       combinator::map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
       sequence::delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
@@ -46,13 +47,13 @@ impl BinaryParser {
   }
 
   fn parse_typespec_type(input: &str) -> ParserResult<TypeSpecifier> {
-    branch::alt((
+    alt((
       combinator::map(tag("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
       combinator::map(tag("float"), |_| TypeSpecifier::Type(ValueType::Float)),
-      combinator::map(branch::alt((tag("bytes"), tag("ironclad_exe"))), |_| {
+      combinator::map(alt((tag("bytes"), tag("ironclad_exe"))), |_| {
         TypeSpecifier::Type(ValueType::Bytes)
       }),
-      combinator::map(branch::alt((tag("bitstring"), tag("bits"))), |_| {
+      combinator::map(alt((tag("bitstring"), tag("bits"))), |_| {
         TypeSpecifier::Type(ValueType::Bitstring)
       }),
       combinator::map(tag("utf8"), |_| TypeSpecifier::Type(ValueType::Utf8)),
@@ -62,14 +63,14 @@ impl BinaryParser {
   }
 
   fn parse_typespec_signedness(input: &str) -> ParserResult<TypeSpecifier> {
-    branch::alt((
+    alt((
       combinator::map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
       combinator::map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
     ))(input)
   }
 
   fn parse_typespec_endianness(input: &str) -> ParserResult<TypeSpecifier> {
-    branch::alt((
+    alt((
       combinator::map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
       combinator::map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
       combinator::map(tag("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
@@ -83,7 +84,7 @@ impl BinaryParser {
   }
 
   fn parse_a_type_spec(input: &str) -> ParserResult<TypeSpecifier> {
-    branch::alt((
+    alt((
       Self::parse_typespec_type,
       Self::parse_typespec_signedness,
       Self::parse_typespec_endianness,

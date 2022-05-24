@@ -14,9 +14,9 @@ use crate::syntax_tree::nom_parse::{
   AstParserResult, ErlParser, ErlParserError, VecAstParserResult,
 };
 use libironclad_error::source_loc::SourceLoc;
+use nom::branch::alt;
 use nom::{
-  branch, bytes, character::complete::char, combinator, combinator::cut, error::context, multi,
-  sequence,
+  bytes, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
 };
 
 impl ErlParser {
@@ -93,7 +93,7 @@ impl ErlParser {
     multi::separated_list0(
       ws_before(char(',')),
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-      branch::alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
+      alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
     )(input)
   }
 
@@ -165,7 +165,7 @@ impl ErlParser {
     match STYLE {
       Self::EXPR_STYLE_FULL => context(
         "parse expression (highest precedence)",
-        ws_before_mut(branch::alt((
+        ws_before_mut(alt((
           Self::parse_lambda,
           Self::parse_try_catch,
           Self::parse_if_statement,
@@ -181,7 +181,7 @@ impl ErlParser {
       )(input),
       Self::EXPR_STYLE_MATCHEXPR => context(
         "parse match expression (highest precedence)",
-        ws_before_mut(branch::alt((
+        ws_before_mut(alt((
           Self::parenthesized_expr::<STYLE>,
           Self::parse_list_of_exprs::<STYLE>,
           Self::parse_tuple_of_exprs::<STYLE>,
@@ -191,7 +191,7 @@ impl ErlParser {
       )(input),
       Self::EXPR_STYLE_GUARD => context(
         "parse guard expression (highest precedence)",
-        ws_before_mut(branch::alt((
+        ws_before_mut(alt((
           Self::parenthesized_expr::<STYLE>,
           Self::parse_var,
           Self::parse_literal,
@@ -254,7 +254,7 @@ impl ErlParser {
   fn parse_expr_prec03<const STYLE: usize>(input: &str) -> AstParserResult {
     combinator::map(
       sequence::pair(
-        ws_before_mut(branch::alt((
+        ws_before_mut(alt((
           Self::unop_negative,
           Self::unop_positive,
           Self::unop_bnot,
@@ -274,7 +274,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec03::<STYLE>,
         multi::many0(sequence::pair(
-          ws_before_mut(branch::alt((
+          ws_before_mut(alt((
             Self::binop_floatdiv,
             Self::binop_multiply,
             Self::binop_intdiv,
@@ -296,7 +296,7 @@ impl ErlParser {
       sequence::tuple((
         Self::parse_expr_prec04::<STYLE>,
         multi::many0(sequence::pair(
-          ws_before_mut(branch::alt((
+          ws_before_mut(alt((
             Self::binop_add,
             Self::binop_bor,
             Self::binop_bsl,
@@ -320,7 +320,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec05::<STYLE>,
         multi::many0(sequence::pair(
-          ws_before_mut(branch::alt((Self::binop_list_append, Self::binop_list_subtract))),
+          ws_before_mut(alt((Self::binop_list_append, Self::binop_list_subtract))),
           ws_before(Self::parse_expr_prec05::<STYLE>),
         )),
       ),
@@ -335,7 +335,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec06::<STYLE>,
         multi::many0(sequence::pair(
-          ws_before_mut(branch::alt((
+          ws_before_mut(alt((
             Self::binop_hard_equals,
             Self::binop_hard_not_equals,
             Self::binop_not_equals,
@@ -389,7 +389,7 @@ impl ErlParser {
       sequence::pair(
         Self::parse_expr_prec09::<STYLE>,
         multi::many0(sequence::pair(
-          ws_before_mut(branch::alt((Self::binop_match, Self::binop_bang))),
+          ws_before_mut(alt((Self::binop_match, Self::binop_bang))),
           ws_before(Self::parse_expr_prec09::<STYLE>),
         )),
       ),
@@ -441,7 +441,7 @@ impl ErlParser {
           sequence::pair(
             ws_before(Self::parse_expr_prec11::<STYLE>),
             multi::many0(sequence::pair(
-              ws_before_mut(branch::alt((Self::binop_semicolon, Self::binop_comma))),
+              ws_before_mut(alt((Self::binop_semicolon, Self::binop_comma))),
               ws_before(Self::parse_expr_prec11::<STYLE>),
             )),
           ),
