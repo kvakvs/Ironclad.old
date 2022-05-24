@@ -1,7 +1,7 @@
 [*]
 charset = utf-8
 end_of_line = lf
-indent_size = 4
+indent_size = 2
 indent_style = space
 insert_final_newline = false
 max_line_length = 120
@@ -34,7 +34,7 @@ ij_css_use_double_quotes = true
 ij_css_value_alignment = do_not_align
 
 [*.rs]
-indent_size = 4
+indent_size = 2
 max_line_length = 100
 ij_continuation_indent_size = 4
 ij_rust_align_multiline_chained_methods = false

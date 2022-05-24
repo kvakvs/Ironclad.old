@@ -8,5 +8,5 @@ where
 
 #[allow(dead_code)]
 pub fn start(n: &str, descr: &str) {
-  println!("--- TEST {}: START ({}) ---", n, descr);
+  println!("▼╍╍╍╍╍╍ {} ╍╍╍ ({}) ╍╍╍╍╍╍", n, descr);
 }
