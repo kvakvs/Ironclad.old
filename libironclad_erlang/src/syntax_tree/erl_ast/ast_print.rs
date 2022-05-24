@@ -55,7 +55,7 @@ impl std::fmt::Display for ErlAst {
         for fc in erl_fndef.clauses.iter() {
           write!(f, "{};", fc)?;
         }
-        write!(f, "}}")
+        writeln!(f, "}}")
       }
       ErlAst::CClause(_loc, clause) => match &clause.guard {
         Some(g) => write!(f, "{} when {} -> {}", clause.pattern, g, clause.body),
@@ -66,7 +66,7 @@ impl std::fmt::Display for ErlAst {
       ErlAst::CaseStatement { expr, clauses, .. } => {
         write!(f, "case {} of", expr)?;
         Pretty::display_semicolon_separated(clauses, f)?;
-        write!(f, "end")
+        writeln!(f, "end")
       }
       ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
 
