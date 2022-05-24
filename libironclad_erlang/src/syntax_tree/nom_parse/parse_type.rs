@@ -12,7 +12,8 @@ use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi, sequence};
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
+use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
 use std::sync::Arc;
 
 /// Holds code for parsing types and typespecs
@@ -23,9 +24,9 @@ impl ErlTypeParser {
   /// Dash `-` is matched outside by the caller.
   pub fn parse_fn_spec(input: &str) -> AstParserResult {
     map(
-      sequence::preceded(
+      preceded(
         ws_before(tag("spec")),
-        sequence::tuple((
+        tuple((
           context("function spec: name", cut(ws_before(AtomParser::parse_atom))),
           multi::separated_list1(
             ws_before(char(';')),
@@ -49,7 +50,7 @@ impl ErlTypeParser {
   /// Parses a function clause args specs, return spec and optional `when`
   fn parse_fn_spec_fnclause(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
     map(
-      sequence::tuple((
+      tuple((
         // Function clause name
         ws_before_mut(opt(AtomParser::parse_atom)),
         // Args list (list of type variables with some types possibly)
@@ -90,7 +91,7 @@ impl ErlTypeParser {
   /// `A :: type()` or `A`
   fn parse_typevar_with_opt_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
     map(
-      sequence::pair(Self::parse_typevar_name, opt(Self::parse_coloncolon_type)),
+      pair(Self::parse_typevar_name, opt(Self::parse_coloncolon_type)),
       |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
     )(input)
   }
@@ -118,7 +119,7 @@ impl ErlTypeParser {
   ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = ws_before(char('('))(input)?;
 
-    sequence::terminated(Self::parse_comma_sep_typeargs0, ws_before(char(')')))(input)
+    terminated(Self::parse_comma_sep_typeargs0, ws_before(char(')')))(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -166,17 +167,17 @@ impl ErlTypeParser {
 
   /// Optional `module:` before typename in `module:type()`.
   fn parse_type_modulename_colon(input: &str) -> nom::IResult<&str, String, ErlParserError> {
-    sequence::terminated(ws_before(AtomParser::parse_atom), ws_before(char(':')))(input)
+    terminated(ws_before(AtomParser::parse_atom), ws_before(char(':')))(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
   /// Optional with module name `module:name()`.
   fn parse_user_defined_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
-      sequence::tuple((
+      tuple((
         opt(Self::parse_type_modulename_colon),
         ws_before(AtomParser::parse_atom),
-        sequence::delimited(
+        delimited(
           ws_before(char('(')),
           context("type arguments for a user-defined type", Self::parse_comma_sep_typeargs0),
           ws_before(char(')')),
@@ -191,7 +192,7 @@ impl ErlTypeParser {
     let (input, _open_tag) = ws_before(char('['))(input)?;
 
     map(
-      sequence::terminated(
+      terminated(
         context("type arguments for a list() type", Self::parse_comma_sep_typeargs0),
         ws_before(char(']')),
       ),
@@ -207,7 +208,7 @@ impl ErlTypeParser {
     let (input, _open_tag) = ws_before(char('{'))(input)?;
 
     map(
-      sequence::terminated(
+      terminated(
         context("type arguments for a tuple() type", Self::parse_comma_sep_typeargs0),
         ws_before(char('}')),
       ),

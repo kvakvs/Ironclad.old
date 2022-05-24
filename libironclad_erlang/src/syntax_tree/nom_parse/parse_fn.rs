@@ -10,15 +10,16 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::combinator::{map, opt};
+use nom::sequence::{preceded, terminated, tuple};
 use nom::{
   bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi, sequence,
+  multi,
 };
 
 impl ErlParser {
   fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
     map(
-      sequence::tuple((ws_before(tag("when")), cut(Self::parse_expr))),
+      tuple((ws_before(tag("when")), cut(Self::parse_expr))),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
     )(input)
   }
@@ -43,7 +44,7 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     map(
-      sequence::tuple((
+      tuple((
         // Function clause name
         ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
         // Function arguments
@@ -58,7 +59,7 @@ impl ErlParser {
         ),
         nom::error::context(
           "function clause body",
-          sequence::preceded(
+          preceded(
             ws_before(tag("->")),
             // Body as list of exprs
             cut(Self::parse_comma_sep_exprs1::<{ ErlParser::EXPR_STYLE_FULL }>),
@@ -93,7 +94,7 @@ impl ErlParser {
   /// Parse function definition
   pub fn parse_fndef(input: &str) -> AstParserResult {
     map(
-      sequence::terminated(
+      terminated(
         multi::separated_list1(
           ws_before(char(';')),
           // if parse fails under here, will show this context message in error
@@ -109,9 +110,9 @@ impl ErlParser {
   pub fn parse_lambda(input: &str) -> AstParserResult {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     map(
-      sequence::preceded(
+      preceded(
         ws_before(tag("fun")),
-        sequence::terminated(
+        terminated(
           context("", multi::separated_list1(ws_before(char(';')), Self::parse_fnclause::<false>)),
           ws_before(tag("end")),
         ),

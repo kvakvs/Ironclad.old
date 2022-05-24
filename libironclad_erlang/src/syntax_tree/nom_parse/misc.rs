@@ -3,11 +3,12 @@
 use crate::syntax_tree::nom_parse::{StrSliceParserResult, StringParserResult};
 use nom::branch::alt;
 use nom::combinator::{map, opt, recognize};
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::{
   bytes::complete::tag,
   character,
   character::complete::{alphanumeric1, char, one_of},
-  combinator, multi, sequence,
+  combinator, multi,
 };
 
 /// Recognizes 0 or more whitespaces and line comments
@@ -25,7 +26,7 @@ pub fn ws_before<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>
 where
   InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::preceded::<&'a str, &str, Out, ErrType, _, InnerFn>(spaces_or_comments0, inner)
+  preceded::<&'a str, &str, Out, ErrType, _, InnerFn>(spaces_or_comments0, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -36,7 +37,7 @@ pub fn ws_before_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a s
 where
   InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::preceded(spaces_or_comments0, inner)
+  preceded(spaces_or_comments0, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -47,7 +48,7 @@ pub fn ws<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
 where
   InnerFn: Fn(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::delimited(spaces_or_comments0, inner, spaces_or_comments0)
+  delimited(spaces_or_comments0, inner, spaces_or_comments0)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -58,13 +59,13 @@ pub fn ws_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<&'a str>>(
 where
   InnerFn: FnMut(&'a str) -> nom::IResult<&'a str, Out, ErrType>,
 {
-  sequence::delimited(spaces_or_comments0, inner, character::complete::multispace0)
+  delimited(spaces_or_comments0, inner, character::complete::multispace0)
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_ident(input: &str) -> StringParserResult {
   map(
-    recognize(sequence::pair(
+    recognize(pair(
       combinator::verify(character::complete::anychar, |c: &char| {
         c.is_alphabetic() && c.is_lowercase()
       }),
@@ -77,7 +78,7 @@ pub fn parse_ident(input: &str) -> StringParserResult {
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_varname(input: &str) -> StringParserResult {
   map(
-    recognize(sequence::pair(
+    recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
       combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
       multi::many0(alt((alphanumeric1, tag("_")))),
@@ -89,10 +90,7 @@ pub fn parse_varname(input: &str) -> StringParserResult {
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 /// From Nom examples
 pub fn parse_int(input: &str) -> StrSliceParserResult {
-  recognize(multi::many1(sequence::terminated(
-    one_of("0123456789"),
-    multi::many0(char('_')),
-  )))(input)
+  recognize(multi::many1(terminated(one_of("0123456789"), multi::many0(char('_')))))(input)
 }
 
 /// Parse a float with possibly scientific notation. Output is a string.
@@ -100,21 +98,21 @@ pub fn parse_int(input: &str) -> StrSliceParserResult {
 pub fn parse_float(input: &str) -> StrSliceParserResult {
   alt((
     // Case one: .42
-    recognize(sequence::tuple((
+    recognize(tuple((
       char('.'),
       parse_int,
-      opt(sequence::tuple((one_of("eE"), opt(one_of("+-")), parse_int))),
+      opt(tuple((one_of("eE"), opt(one_of("+-")), parse_int))),
     ))),
     // Case two: 42e42 and 42.42e42
-    recognize(sequence::tuple((
+    recognize(tuple((
       parse_int,
-      opt(sequence::preceded(char('.'), parse_int)),
+      opt(preceded(char('.'), parse_int)),
       one_of("eE"),
       opt(one_of("+-")),
       parse_int,
     ))),
     // Case three: 42. (disallowed because end of function is also period) and 42.42
-    recognize(sequence::tuple((parse_int, char('.'), parse_int))),
+    recognize(tuple((parse_int, char('.'), parse_int))),
   ))(input)
 }
 
@@ -141,7 +139,7 @@ pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
 pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  recognize(sequence::pair(
+  recognize(pair(
     multi::many1(char('%')),
     multi::many_till(character::complete::anychar, newline_or_eof),
   ))(input)

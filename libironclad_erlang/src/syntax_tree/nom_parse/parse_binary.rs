@@ -10,7 +10,8 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi, sequence};
+use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -23,7 +24,7 @@ impl BinaryParser {
     alt((
       map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
-      sequence::delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
+      delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
     ))(input)
   }
 
@@ -76,7 +77,7 @@ impl BinaryParser {
   }
 
   fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
-    map(sequence::preceded(tag("unit:"), parse_int), |i_str| {
+    map(preceded(tag("unit:"), parse_int), |i_str| {
       TypeSpecifier::Unit(usize::from_str(i_str).unwrap())
     })(input)
   }
@@ -92,7 +93,7 @@ impl BinaryParser {
 
   /// Parse a `-` separated list of typespecs
   fn parse_type_specs(input: &str) -> ParserResult<Vec<TypeSpecifier>> {
-    sequence::preceded(
+    preceded(
       ws_before(char('/')), // TODO: Whitespace allowed before?
       multi::separated_list1(
         ws_before(char('-')), // TODO: Whitespace allowed before?
@@ -105,9 +106,9 @@ impl BinaryParser {
   /// and followed by a `:bit-width` and `/type-specifier`
   fn parse_bin_element(input: &str) -> ParserResult<BinaryElement> {
     map(
-      sequence::tuple((
+      tuple((
         Self::parse_value,
-        opt(sequence::preceded(ws_before(char(':')), Self::parse_width)),
+        opt(preceded(ws_before(char(':')), Self::parse_width)),
         opt(Self::parse_type_specs),
       )),
       |(value, bit_width, type_specs)| {
@@ -127,7 +128,7 @@ impl BinaryParser {
 
     context(
       "ironclad_exe expression",
-      cut(sequence::terminated(
+      cut(terminated(
         map(
           multi::separated_list1(
             ws_before(char(',')),

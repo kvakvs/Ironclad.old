@@ -2,9 +2,10 @@
 
 use nom::branch::alt;
 use nom::combinator::map;
+use nom::sequence::{delimited, preceded};
 use nom::{
   bytes::streaming::{is_not, take_while_m_n},
-  character, combinator, error, multi, sequence,
+  character, combinator, error, multi,
 };
 
 /// A string fragment contains a fragment of a string being parsed: either
@@ -37,16 +38,12 @@ impl StringParser {
 
     // `preceded` takes a prefix parser, and if it succeeds, returns the result
     // of the body parser. In this case, it parses u{XXXX}.
-    let parse_delimited_hex = sequence::preceded(
+    let parse_delimited_hex = preceded(
       character::streaming::char('u'),
       // `delimited` is like `preceded`, but it parses both a prefix and a suffix.
       // It returns the result of the middle parser. In this case, it parses
       // {XXXX}, where XXXX is 1 to 6 hex numerals, and returns XXXX
-      sequence::delimited(
-        character::streaming::char('{'),
-        parse_hex,
-        character::streaming::char('}'),
-      ),
+      delimited(character::streaming::char('{'), parse_hex, character::streaming::char('}')),
     );
 
     // `map_res` takes the result of a parser and applies a function that returns
@@ -67,7 +64,7 @@ impl StringParser {
   where
     E: error::ParseError<&'a str> + error::FromExternalError<&'a str, std::num::ParseIntError>,
   {
-    sequence::preceded(
+    preceded(
       character::streaming::char('\\'),
       // `alt` tries each parser in sequence, returning the result of
       // the first successful match
@@ -94,7 +91,7 @@ impl StringParser {
   fn parse_escaped_whitespace<'a, E: error::ParseError<&'a str>>(
     input: &'a str,
   ) -> nom::IResult<&'a str, &'a str, E> {
-    sequence::preceded(character::streaming::char('\\'), character::streaming::multispace1)(input)
+    preceded(character::streaming::char('\\'), character::streaming::multispace1)(input)
   }
 
   /// Parse a non-empty block of text that doesn't include \ or "
@@ -156,7 +153,7 @@ impl StringParser {
     // " character, the closing delimiter " would never match. When using
     // `delimited` with a looping parser (like fold_many0), be sure that the
     // loop won't accidentally match your closing delimiter!
-    sequence::delimited(
+    delimited(
       character::streaming::char('\"'),
       build_quoted_atom_body,
       character::streaming::char('\"'),

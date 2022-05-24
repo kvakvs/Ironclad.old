@@ -7,7 +7,8 @@ use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
-use nom::{bytes::complete::tag, character::complete::char, error::context, multi, sequence};
+use nom::sequence::{preceded, terminated, tuple};
+use nom::{bytes::complete::tag, character::complete::char, error::context, multi};
 
 impl ErlParser {
   /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
@@ -15,10 +16,10 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
     map(
-      sequence::tuple((
+      tuple((
         Self::parse_matchexpr,
-        sequence::preceded(ws_before(char(':')), Self::parse_matchexpr),
-        opt(sequence::preceded(ws_before(char(':')), Self::parse_matchexpr)),
+        preceded(ws_before(char(':')), Self::parse_matchexpr),
+        opt(preceded(ws_before(char(':')), Self::parse_matchexpr)),
       )),
       |(class_pattern, err_pattern, stack_pattern)| {
         ExceptionPattern::new(class_pattern, err_pattern, stack_pattern)
@@ -29,16 +30,13 @@ impl ErlParser {
   /// Parses a repeated catch-clause part after `catch` keyword: `Expr when Expr -> Expr`
   pub fn parse_catch_clause(input: &str) -> nom::IResult<&str, CatchClause, ErlParserError> {
     map(
-      sequence::tuple((
+      tuple((
         // Class:Error:Stacktrace
         Self::parse_exception_pattern,
         // when <Expression>
-        opt(sequence::preceded(ws_before(tag("when")), Self::parse_guardexpr)),
+        opt(preceded(ws_before(tag("when")), Self::parse_guardexpr)),
         // -> Expression
-        sequence::preceded(
-          ws_before(tag("->")),
-          Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>,
-        ),
+        preceded(ws_before(tag("->")), Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
       )),
       |(exc_pattern, maybe_when, body)| {
         CatchClause::new(exc_pattern, maybe_when, ErlAst::new_comma_expr(SourceLoc::None, body))
@@ -48,18 +46,18 @@ impl ErlParser {
 
   fn parse_try_catch_inner(input: &str) -> AstParserResult {
     map(
-      sequence::tuple((
+      tuple((
         context(
           "try-catch block trial expression",
           cut(Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
         ),
         // Optional OF followed by match clauses
-        opt(sequence::preceded(
+        opt(preceded(
           ws_before(tag("of")),
           context("try block: 'of' clauses", cut(multi::many1(ws_before(Self::parse_case_clause)))),
         )),
         // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
-        sequence::preceded(
+        preceded(
           ws_before(tag("catch")),
           context(
             "try block: 'catch' clauses",
@@ -84,7 +82,7 @@ impl ErlParser {
 
     context(
       "try-catch or try-of block",
-      cut(sequence::terminated(Self::parse_try_catch_inner, ws_before(tag("end")))),
+      cut(terminated(Self::parse_try_catch_inner, ws_before(tag("end")))),
     )(input)
   }
 }

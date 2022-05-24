@@ -11,13 +11,14 @@ use libironclad_erlang::syntax_tree::nom_parse::misc::{
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use nom::branch::alt;
 use nom::combinator::{map, opt, recognize};
+use nom::sequence::{delimited, pair, preceded, tuple};
 use nom::{
   bytes::complete::tag,
   character,
   character::complete::{alphanumeric1, char},
   combinator,
   error::context,
-  multi, sequence,
+  multi,
 };
 
 pub mod pp_parse_if;
@@ -30,23 +31,23 @@ impl PreprocessorParser {
   }
 
   fn terminator(input: &str) -> PpParserResult<&str> {
-    recognize(sequence::tuple((ws_before(char(')')), ws_before(char('.')), newline_or_eof)))(input)
+    recognize(tuple((ws_before(char(')')), ws_before(char('.')), newline_or_eof)))(input)
   }
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
   pub fn parse_define(input: &str) -> PpAstParserResult {
     map(
-      sequence::delimited(
+      delimited(
         Self::match_dash_tag("define"),
-        sequence::tuple((
+        tuple((
           ws_before(char('(')),
           ws_before(parse_varname),
-          opt(sequence::delimited(
+          opt(delimited(
             ws_before(char('(')),
             Self::parse_comma_sep_varnames,
             ws_before(char(')')),
           )),
-          opt(sequence::delimited(
+          opt(delimited(
             ws_before(char(',')),
             multi::many_till(nom::character::complete::anychar, Self::terminator),
             Self::terminator,
@@ -68,7 +69,7 @@ impl PreprocessorParser {
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
   fn parse_macro_ident(input: &str) -> PpStringParserResult {
     map(
-      recognize(sequence::pair(
+      recognize(pair(
         combinator::verify(character::complete::anychar, |c: &char| c.is_alphabetic() || *c == '_'),
         multi::many1(alt((alphanumeric1, tag("_")))),
       )),
@@ -79,13 +80,9 @@ impl PreprocessorParser {
   /// Parse a `-undef(IDENT)`
   fn parse_undef(input: &str) -> PpAstParserResult {
     map(
-      sequence::delimited(
+      delimited(
         Self::match_dash_tag("undef"),
-        sequence::tuple((
-          ws_before(char('(')),
-          ws_before(Self::parse_macro_ident),
-          ws_before(char(')')),
-        )),
+        tuple((ws_before(char('(')), ws_before(Self::parse_macro_ident), ws_before(char(')')))),
         Self::dot_newline,
       ),
       |(_open, ident, _close)| PpAst::new_undef(ident),
@@ -95,9 +92,9 @@ impl PreprocessorParser {
   /// Parse a `-include(STRING)`
   fn parse_include(input: &str) -> PpAstParserResult {
     map(
-      sequence::preceded(
+      preceded(
         Self::match_dash_tag("include"),
-        sequence::tuple((
+        tuple((
           ws_before(char('(')),
           ws_before(StringParser::parse_string),
           ws_before(char(')')),
@@ -110,9 +107,9 @@ impl PreprocessorParser {
   /// Parse a `-include_lib(STRING)`
   fn parse_include_lib(input: &str) -> PpAstParserResult {
     map(
-      sequence::preceded(
+      preceded(
         Self::match_dash_tag("include_lib"),
-        sequence::tuple((
+        tuple((
           ws_before(char('(')),
           ws_before(StringParser::parse_string),
           ws_before(char(')')),
@@ -127,12 +124,12 @@ impl PreprocessorParser {
   fn match_dash_tag<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
     tag_str: &'static str,
   ) -> impl FnMut(&'a str) -> nom::IResult<&'a str, &'a str, ErrType> {
-    recognize(sequence::preceded(ws_before(char('-')), ws_before(tag(tag_str))))
+    recognize(preceded(ws_before(char('-')), ws_before(tag(tag_str))))
   }
 
   /// Recognizes end of a directive: `"." <newline>`
   fn dot_newline(input: &str) -> StrSliceParserResult {
-    recognize(sequence::pair(ws_before(char('.')), newline_or_eof))(input)
+    recognize(pair(ws_before(char('.')), newline_or_eof))(input)
   }
 
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {
