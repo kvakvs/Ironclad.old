@@ -4,6 +4,7 @@
 use crate::syntax_tree::nom_parse::misc::parse_ident;
 use crate::syntax_tree::nom_parse::StringParserResult;
 use nom::branch::alt;
+use nom::combinator::map;
 use nom::{
   bytes::streaming::{is_not, take_while_m_n},
   character, combinator, error, multi, sequence,
@@ -124,8 +125,8 @@ impl AtomParser {
     alt((
       // The `map` combinator runs a parser, then applies a function to the output
       // of that parser.
-      combinator::map(Self::parse_literal, StringFragment::Literal),
-      combinator::map(Self::parse_escaped_char, StringFragment::EscapedChar),
+      map(Self::parse_literal, StringFragment::Literal),
+      map(Self::parse_escaped_char, StringFragment::EscapedChar),
       combinator::value(StringFragment::EscapedWS, Self::parse_escaped_whitespace),
     ))(input)
   }

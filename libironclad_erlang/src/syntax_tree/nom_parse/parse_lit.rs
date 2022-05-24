@@ -8,11 +8,11 @@ use crate::syntax_tree::nom_parse::parse_str::StringParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::combinator;
+use nom::combinator::map;
 
 impl ErlParser {
   fn parse_string_to_ast(input: &str) -> AstParserResult {
-    combinator::map(StringParser::parse_string, |s| {
+    map(StringParser::parse_string, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::String(s).into(),
@@ -22,7 +22,7 @@ impl ErlParser {
   }
 
   fn parse_atom_to_ast(input: &str) -> AstParserResult {
-    combinator::map(AtomParser::parse_atom, |s| {
+    map(AtomParser::parse_atom, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::Atom(s).into(),
@@ -32,7 +32,7 @@ impl ErlParser {
   }
 
   fn parse_float_to_ast(input: &str) -> AstParserResult {
-    combinator::map(parse_float, |s| {
+    map(parse_float, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::Float(s.parse::<f64>().unwrap()).into(),
@@ -42,7 +42,7 @@ impl ErlParser {
   }
 
   fn parse_int_to_ast(input: &str) -> AstParserResult {
-    combinator::map(parse_int, |s| {
+    map(parse_int, |s| {
       ErlAst::Lit {
         location: SourceLoc::None,
         value: Literal::Integer(s.parse::<isize>().unwrap()).into(),

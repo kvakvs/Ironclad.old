@@ -9,6 +9,7 @@ use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
+use nom::combinator::{map, opt};
 use nom::{
   bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
   multi, sequence,
@@ -16,7 +17,7 @@ use nom::{
 
 impl ErlParser {
   fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::tuple((ws_before(tag("when")), cut(Self::parse_expr))),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
     )(input)
@@ -30,12 +31,10 @@ impl ErlParser {
   ) -> nom::IResult<&str, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
-      return combinator::map(AtomParser::parse_atom, Option::Some)(input);
+      return map(AtomParser::parse_atom, Option::Some)(input);
     }
     // Succeed if FN_NAME=false and there is no atom
-    combinator::map(combinator::peek(combinator::not(AtomParser::parse_atom)), |_| Option::None)(
-      input,
-    )
+    map(combinator::peek(combinator::not(AtomParser::parse_atom)), |_| Option::None)(input)
   }
 
   /// Parses a named clause for a top level function
@@ -43,7 +42,7 @@ impl ErlParser {
   fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
     input: &str,
   ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
-    combinator::map(
+    map(
       sequence::tuple((
         // Function clause name
         ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
@@ -55,7 +54,7 @@ impl ErlParser {
         // Optional: when <guard>
         nom::error::context(
           "when expression in a function clause",
-          combinator::opt(Self::parse_when_expr_for_fn),
+          opt(Self::parse_when_expr_for_fn),
         ),
         nom::error::context(
           "function clause body",
@@ -93,7 +92,7 @@ impl ErlParser {
 
   /// Parse function definition
   pub fn parse_fndef(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::terminated(
         multi::separated_list1(
           ws_before(char(';')),
@@ -109,7 +108,7 @@ impl ErlParser {
   /// Lambda is an inline function definition
   pub fn parse_lambda(input: &str) -> AstParserResult {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(tag("fun")),
         sequence::terminated(

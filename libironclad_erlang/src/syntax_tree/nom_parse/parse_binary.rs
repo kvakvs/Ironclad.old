@@ -9,10 +9,8 @@ use crate::syntax_tree::nom_parse::misc::{parse_int, parse_varname, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi, sequence,
-};
+use nom::combinator::{cut, map, opt};
+use nom::{bytes::complete::tag, character::complete::char, error::context, multi, sequence};
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -23,7 +21,7 @@ impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: &str) -> AstParserResult {
     alt((
-      combinator::map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
+      map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
       sequence::delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
     ))(input)
@@ -31,7 +29,7 @@ impl BinaryParser {
 
   /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
   fn parse_width(input: &str) -> ParserResult<ValueWidth> {
-    combinator::map(Self::parse_value, |v| {
+    map(Self::parse_value, |v| {
       if let ErlAst::Lit { value: lit_val, .. } = v.deref() {
         // TODO: Big Integer
         if let Literal::Integer(inner_val) = lit_val.deref() {
@@ -48,37 +46,37 @@ impl BinaryParser {
 
   fn parse_typespec_type(input: &str) -> ParserResult<TypeSpecifier> {
     alt((
-      combinator::map(tag("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
-      combinator::map(tag("float"), |_| TypeSpecifier::Type(ValueType::Float)),
-      combinator::map(alt((tag("bytes"), tag("ironclad_exe"))), |_| {
+      map(tag("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
+      map(tag("float"), |_| TypeSpecifier::Type(ValueType::Float)),
+      map(alt((tag("bytes"), tag("ironclad_exe"))), |_| {
         TypeSpecifier::Type(ValueType::Bytes)
       }),
-      combinator::map(alt((tag("bitstring"), tag("bits"))), |_| {
+      map(alt((tag("bitstring"), tag("bits"))), |_| {
         TypeSpecifier::Type(ValueType::Bitstring)
       }),
-      combinator::map(tag("utf8"), |_| TypeSpecifier::Type(ValueType::Utf8)),
-      combinator::map(tag("utf16"), |_| TypeSpecifier::Type(ValueType::Utf16)),
-      combinator::map(tag("utf32"), |_| TypeSpecifier::Type(ValueType::Utf32)),
+      map(tag("utf8"), |_| TypeSpecifier::Type(ValueType::Utf8)),
+      map(tag("utf16"), |_| TypeSpecifier::Type(ValueType::Utf16)),
+      map(tag("utf32"), |_| TypeSpecifier::Type(ValueType::Utf32)),
     ))(input)
   }
 
   fn parse_typespec_signedness(input: &str) -> ParserResult<TypeSpecifier> {
     alt((
-      combinator::map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
-      combinator::map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
+      map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
+      map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
     ))(input)
   }
 
   fn parse_typespec_endianness(input: &str) -> ParserResult<TypeSpecifier> {
     alt((
-      combinator::map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
-      combinator::map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
-      combinator::map(tag("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
+      map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
+      map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
+      map(tag("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
     ))(input)
   }
 
   fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
-    combinator::map(sequence::preceded(tag("unit:"), parse_int), |i_str| {
+    map(sequence::preceded(tag("unit:"), parse_int), |i_str| {
       TypeSpecifier::Unit(usize::from_str(i_str).unwrap())
     })(input)
   }
@@ -106,11 +104,11 @@ impl BinaryParser {
   /// Parse one comma-separated element of a ironclad_exe: number, variable, an expression,
   /// and followed by a `:bit-width` and `/type-specifier`
   fn parse_bin_element(input: &str) -> ParserResult<BinaryElement> {
-    combinator::map(
+    map(
       sequence::tuple((
         Self::parse_value,
-        combinator::opt(sequence::preceded(ws_before(char(':')), Self::parse_width)),
-        combinator::opt(Self::parse_type_specs),
+        opt(sequence::preceded(ws_before(char(':')), Self::parse_width)),
+        opt(Self::parse_type_specs),
       )),
       |(value, bit_width, type_specs)| {
         BinaryElement::new(
@@ -130,7 +128,7 @@ impl BinaryParser {
     context(
       "ironclad_exe expression",
       cut(sequence::terminated(
-        combinator::map(
+        map(
           multi::separated_list1(
             ws_before(char(',')),
             context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),

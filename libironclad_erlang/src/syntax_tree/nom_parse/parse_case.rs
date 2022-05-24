@@ -4,18 +4,19 @@ use crate::syntax_tree::node::erl_case_clause::ErlCaseClause;
 use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
+use nom::combinator::{map, opt};
 use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context, multi,
+  sequence,
 };
 
 impl ErlParser {
   /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
   pub fn parse_case_clause(input: &str) -> nom::IResult<&str, ErlCaseClause, ErlParserError> {
-    combinator::map(
+    map(
       sequence::tuple((
         Self::parse_matchexpr,
-        combinator::opt(sequence::preceded(
+        opt(sequence::preceded(
           ws_before(bytes::complete::tag("when")),
           context("case clause guard expression", cut(Self::parse_expr)),
         )),
@@ -41,7 +42,7 @@ impl ErlParser {
 
     context(
       "case block",
-      cut(combinator::map(
+      cut(map(
         sequence::tuple((
           sequence::terminated(ErlParser::parse_expr, ws_before(tag("of"))),
           multi::separated_list1(

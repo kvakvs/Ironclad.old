@@ -5,9 +5,10 @@ use crate::syntax_tree::node::erl_if_clause::ErlIfClause;
 use crate::syntax_tree::nom_parse::misc::ws_before;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
+use nom::combinator::map;
 use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context, multi,
+  sequence,
 };
 
 impl ErlParser {
@@ -17,7 +18,7 @@ impl ErlParser {
 
     context(
       "if block",
-      cut(combinator::map(
+      cut(map(
         sequence::terminated(
           multi::separated_list1(
             ws_before(char(';')),
@@ -32,7 +33,7 @@ impl ErlParser {
 
   /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
   pub fn parse_if_clause(input: &str) -> nom::IResult<&str, ErlIfClause, ErlParserError> {
-    combinator::map(
+    map(
       sequence::pair(
         Self::parse_expr,
         // The body after ->

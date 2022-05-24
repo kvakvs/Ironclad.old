@@ -10,7 +10,7 @@ use libironclad_erlang::syntax_tree::nom_parse::misc::{
 };
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use nom::branch::alt;
-use nom::combinator::recognize;
+use nom::combinator::{map, opt, recognize};
 use nom::{
   bytes::complete::tag,
   character,
@@ -35,18 +35,18 @@ impl PreprocessorParser {
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
   pub fn parse_define(input: &str) -> PpAstParserResult {
-    combinator::map(
+    map(
       sequence::delimited(
         Self::match_dash_tag("define"),
         sequence::tuple((
           ws_before(char('(')),
           ws_before(parse_varname),
-          combinator::opt(sequence::delimited(
+          opt(sequence::delimited(
             ws_before(char('(')),
             Self::parse_comma_sep_varnames,
             ws_before(char(')')),
           )),
-          combinator::opt(sequence::delimited(
+          opt(sequence::delimited(
             ws_before(char(',')),
             multi::many_till(nom::character::complete::anychar, Self::terminator),
             Self::terminator,
@@ -67,7 +67,7 @@ impl PreprocessorParser {
 
   /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
   fn parse_macro_ident(input: &str) -> PpStringParserResult {
-    combinator::map(
+    map(
       recognize(sequence::pair(
         combinator::verify(character::complete::anychar, |c: &char| c.is_alphabetic() || *c == '_'),
         multi::many1(alt((alphanumeric1, tag("_")))),
@@ -78,7 +78,7 @@ impl PreprocessorParser {
 
   /// Parse a `-undef(IDENT)`
   fn parse_undef(input: &str) -> PpAstParserResult {
-    combinator::map(
+    map(
       sequence::delimited(
         Self::match_dash_tag("undef"),
         sequence::tuple((
@@ -94,7 +94,7 @@ impl PreprocessorParser {
 
   /// Parse a `-include(STRING)`
   fn parse_include(input: &str) -> PpAstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         Self::match_dash_tag("include"),
         sequence::tuple((
@@ -109,7 +109,7 @@ impl PreprocessorParser {
 
   /// Parse a `-include_lib(STRING)`
   fn parse_include_lib(input: &str) -> PpAstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         Self::match_dash_tag("include_lib"),
         sequence::tuple((
@@ -156,7 +156,7 @@ impl PreprocessorParser {
 
   /// Parse full lines till a line which looks like a preprocessor directive is found
   fn consume_one_line_of_text(input: &str) -> PpAstParserResult {
-    combinator::map(
+    map(
       combinator::verify(
         ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
         |text: &str| !text.is_empty(), //&& !text.starts_with('-'),
@@ -171,7 +171,7 @@ impl PreprocessorParser {
       Self::parse_preproc_directive,
       Self::consume_one_line_of_text,
       // A final comment in file is not visible to consume_text
-      combinator::map(parse_line_comment, |_| PpAst::new_text("")),
+      map(parse_line_comment, |_| PpAst::new_text("")),
     ))(input)
   }
 

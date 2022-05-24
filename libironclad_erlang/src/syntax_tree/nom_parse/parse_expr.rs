@@ -15,9 +15,8 @@ use crate::syntax_tree::nom_parse::{
 };
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::{
-  bytes, character::complete::char, combinator, combinator::cut, error::context, multi, sequence,
-};
+use nom::combinator::{cut, map, opt};
+use nom::{bytes, character::complete::char, error::context, multi, sequence};
 
 impl ErlParser {
   /// Full expression including comma operator, for function bodies
@@ -33,7 +32,7 @@ impl ErlParser {
   #[allow(dead_code)]
   fn parse_apply(input: &str) -> AstParserResult {
     // Application consists of a callable expression, "(", list of args, and ")"
-    combinator::map(
+    map(
       sequence::tuple((
         Self::parse_expr,
         Self::parse_parenthesized_list_of_exprs::<{ Self::EXPR_STYLE_FULL }>,
@@ -63,11 +62,11 @@ impl ErlParser {
   }
 
   fn parse_list_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::tuple((
         ws_before(char('[')),
         Self::parse_comma_sep_exprs0::<STYLE>,
-        combinator::opt(sequence::preceded(ws_before(char('|')), Self::parse_expr_prec13::<STYLE>)),
+        opt(sequence::preceded(ws_before(char('|')), Self::parse_expr_prec13::<STYLE>)),
         ws_before(char(']')),
       )),
       |(_open, elements, maybe_tail, _close)| {
@@ -78,7 +77,7 @@ impl ErlParser {
 
   /// Parses a `Expr <- Expr` generator
   pub fn parse_list_comprehension_generator(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::separated_pair(
         Self::parse_expr,
         ws_before(bytes::complete::tag("<-")),
@@ -98,7 +97,7 @@ impl ErlParser {
   }
 
   fn parse_list_comprehension_1(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::separated_pair(
         Self::parse_expr,
         ws_before(bytes::complete::tag("||")),
@@ -120,7 +119,7 @@ impl ErlParser {
   }
 
   fn parse_tuple_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::delimited(
         ws_before(char('{')),
         Self::parse_comma_sep_exprs0::<STYLE>,
@@ -210,17 +209,14 @@ impl ErlParser {
       return Self::parse_expr_prec_primary::<STYLE>(input);
     }
 
-    combinator::map(
+    map(
       sequence::tuple((
         Self::parse_expr_prec_primary::<STYLE>,
         // An optional second expression after a ':', MUST be followed by parentheses with args
-        combinator::opt(
+        opt(
           // A pair: optional second expr for function name, and mandatory args
           sequence::pair(
-            combinator::opt(sequence::preceded(
-              ws_before(char(':')),
-              Self::parse_expr_prec_primary::<STYLE>,
-            )),
+            opt(sequence::preceded(ws_before(char(':')), Self::parse_expr_prec_primary::<STYLE>)),
             Self::parse_parenthesized_list_of_exprs::<STYLE>,
           ),
         ),
@@ -252,7 +248,7 @@ impl ErlParser {
 
   /// Precedence 3: Unary + - bnot not
   fn parse_expr_prec03<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::pair(
         ws_before_mut(alt((
           Self::unop_negative,
@@ -269,7 +265,7 @@ impl ErlParser {
 
   /// Precedence 4: / * div rem band and, left associative
   fn parse_expr_prec04<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec03::<STYLE>,
@@ -291,7 +287,7 @@ impl ErlParser {
 
   /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
   fn parse_expr_prec05<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::tuple((
         Self::parse_expr_prec04::<STYLE>,
@@ -315,7 +311,7 @@ impl ErlParser {
 
   /// Precedence 6: ++ --, right associative
   fn parse_expr_prec06<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec05::<STYLE>,
@@ -330,7 +326,7 @@ impl ErlParser {
 
   /// Precedence 7: == /= =< < >= > =:= =/=
   fn parse_expr_prec07<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec06::<STYLE>,
@@ -354,7 +350,7 @@ impl ErlParser {
 
   /// Precedence 8: andalso
   fn parse_expr_prec08<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec07::<STYLE>,
@@ -369,7 +365,7 @@ impl ErlParser {
 
   /// Precedence 9: orelse
   fn parse_expr_prec09<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec08::<STYLE>,
@@ -384,7 +380,7 @@ impl ErlParser {
 
   /// Precedence 10: assignment/match = operator, and send operator "!", right associative
   fn parse_expr_prec10<const STYLE: usize>(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
       sequence::pair(
         Self::parse_expr_prec09::<STYLE>,
@@ -401,7 +397,7 @@ impl ErlParser {
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
   fn parse_expr_prec11<const STYLE: usize>(input: &str) -> AstParserResult {
     // Try parse (catch Expr) otherwise try next precedence level
-    combinator::map(
+    map(
       sequence::pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
       |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, catch_op, expr),
     )(input)
@@ -436,7 +432,7 @@ impl ErlParser {
       Self::EXPR_STYLE_GUARD =>
       // Guard-style expressions allow both comma and semicolons
       {
-        combinator::map(
+        map(
           // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
           sequence::pair(
             ws_before(Self::parse_expr_prec11::<STYLE>),

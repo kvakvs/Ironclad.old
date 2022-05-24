@@ -2,7 +2,7 @@
 
 use crate::syntax_tree::nom_parse::{StrSliceParserResult, StringParserResult};
 use nom::branch::alt;
-use nom::combinator::recognize;
+use nom::combinator::{map, opt, recognize};
 use nom::{
   bytes::complete::tag,
   character,
@@ -63,7 +63,7 @@ where
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_ident(input: &str) -> StringParserResult {
-  combinator::map(
+  map(
     recognize(sequence::pair(
       combinator::verify(character::complete::anychar, |c: &char| {
         c.is_alphabetic() && c.is_lowercase()
@@ -76,7 +76,7 @@ pub fn parse_ident(input: &str) -> StringParserResult {
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_varname(input: &str) -> StringParserResult {
-  combinator::map(
+  map(
     recognize(sequence::pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
       combinator::verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
@@ -103,14 +103,14 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
     recognize(sequence::tuple((
       char('.'),
       parse_int,
-      combinator::opt(sequence::tuple((one_of("eE"), combinator::opt(one_of("+-")), parse_int))),
+      opt(sequence::tuple((one_of("eE"), opt(one_of("+-")), parse_int))),
     ))),
     // Case two: 42e42 and 42.42e42
     recognize(sequence::tuple((
       parse_int,
-      combinator::opt(sequence::preceded(char('.'), parse_int)),
+      opt(sequence::preceded(char('.'), parse_int)),
       one_of("eE"),
-      combinator::opt(one_of("+-")),
+      opt(one_of("+-")),
       parse_int,
     ))),
     // Case three: 42. (disallowed because end of function is also period) and 42.42
@@ -120,7 +120,7 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
 
 // /// Matches newline \n or \r\n
 // pub fn newline(input: &str) -> nom::IResult<&str, (), ErlParserError> {
-//   combinator::map(
+//   map(
 //     alt((
 //       combinator::eof,
 //       Self::ws(tag("\r\n")),

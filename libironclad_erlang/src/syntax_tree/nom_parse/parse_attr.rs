@@ -7,9 +7,10 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, 
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
+use nom::combinator::{map, opt};
 use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator, combinator::cut,
-  error::context, multi, sequence,
+  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context, multi,
+  sequence,
 };
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
@@ -20,11 +21,11 @@ impl ErlAttrParser {
   /// Given a string, try and consume a generic attribute line starting with `-ident` and ending with
   /// a `"." NEWLINE`.
   pub fn parse_generic_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       // Dash `-` and terminating `.` are matched outside by the caller.
       sequence::pair(
         ws_before(AtomParser::parse_atom),
-        combinator::opt(sequence::delimited(
+        opt(sequence::delimited(
           ws_before(char('(')),
           ErlParser::parse_expr,
           ws_before(char(')')),
@@ -37,7 +38,7 @@ impl ErlAttrParser {
   /// Parses a `-module(atom).` attribute.
   /// Dash `-` and terminating `.` are matched outside by the caller.
   pub fn parse_module_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(tag("module")),
         sequence::delimited(
@@ -52,7 +53,7 @@ impl ErlAttrParser {
 
   /// Parses a `fun/arity` atom with an integer.
   pub fn parse_funarity(input: &str) -> nom::IResult<&str, MFArity, ErlParserError> {
-    combinator::map(
+    map(
       sequence::tuple((AtomParser::parse_atom, char('/'), parse_int)),
       |(name, _slash, arity_s)| {
         let arity = arity_s.parse().unwrap_or(0);
@@ -81,7 +82,7 @@ impl ErlAttrParser {
   /// Parses an `-export([fn/arity, ...]).` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn parse_export_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(ws_before(bytes::complete::tag("export")), Self::parse_export_mfa_list),
       ErlAst::new_export_attr,
     )(input)
@@ -90,7 +91,7 @@ impl ErlAttrParser {
   /// Parses an `-export_type([type/arity, ...]).` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn parse_export_type_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(bytes::complete::tag("export_type")),
         Self::parse_export_mfa_list,
@@ -102,7 +103,7 @@ impl ErlAttrParser {
   /// Parses an `-import(module [fn/arity, ...]).` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn parse_import_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(bytes::complete::tag("import")),
         context(
@@ -136,7 +137,7 @@ impl ErlAttrParser {
   /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn parse_type_attr(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(tag("type")),
         sequence::tuple((

@@ -11,10 +11,8 @@ use crate::typing::typevar::Typevar;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
-use nom::{
-  bytes::complete::tag, character::complete::char, combinator, combinator::cut, error::context,
-  multi, sequence,
-};
+use nom::combinator::{cut, map, opt};
+use nom::{bytes::complete::tag, character::complete::char, error::context, multi, sequence};
 use std::sync::Arc;
 
 /// Holds code for parsing types and typespecs
@@ -24,7 +22,7 @@ impl ErlTypeParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
   pub fn parse_fn_spec(input: &str) -> AstParserResult {
-    combinator::map(
+    map(
       sequence::preceded(
         ws_before(tag("spec")),
         sequence::tuple((
@@ -50,10 +48,10 @@ impl ErlTypeParser {
 
   /// Parses a function clause args specs, return spec and optional `when`
   fn parse_fn_spec_fnclause(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
-    combinator::map(
+    map(
       sequence::tuple((
         // Function clause name
-        ws_before_mut(combinator::opt(AtomParser::parse_atom)),
+        ws_before_mut(opt(AtomParser::parse_atom)),
         // Args list (list of type variables with some types possibly)
         context(
           "arguments list in a function clause spec",
@@ -66,7 +64,7 @@ impl ErlTypeParser {
           alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
         ),
         // Optional: when <comma separated list of typevariables given types>
-        context("when expression for typespec", combinator::opt(Self::parse_when_expr_for_type)),
+        context("when expression for typespec", opt(Self::parse_when_expr_for_type)),
       )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
         // TODO: Check name equals function name, for module level functions
@@ -91,14 +89,14 @@ impl ErlTypeParser {
   /// Parse a capitalized type variable name with an optional `:: type()` part:
   /// `A :: type()` or `A`
   fn parse_typevar_with_opt_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
-    combinator::map(
-      sequence::pair(Self::parse_typevar_name, combinator::opt(Self::parse_coloncolon_type)),
+    map(
+      sequence::pair(Self::parse_typevar_name, opt(Self::parse_coloncolon_type)),
       |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
     )(input)
   }
 
   fn parse_type_as_typevar(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
-    combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t))(input)
+    map(Self::parse_type, |t| Typevar::from_erltype(&t))(input)
   }
 
   // /// Parses a list of comma separated typevars (function arg specs)
@@ -109,7 +107,7 @@ impl ErlTypeParser {
   //     // Comma separated arguments spec can be typevars with optional `::type()`s or just types
   //     alt((
   //       Self::parse_typevar_with_opt_type,
-  //       combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
+  //       map(Self::parse_type, |t| Typevar::from_erltype(&t)),
   //     )),
   //   )(input)
   // }
@@ -138,14 +136,14 @@ impl ErlTypeParser {
   fn alt_typevar_or_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
     alt((
       Self::parse_typevar_with_opt_type,
-      combinator::map(Self::parse_type, |t| Typevar::from_erltype(&t)),
-      // combinator::map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
+      map(Self::parse_type, |t| Typevar::from_erltype(&t)),
+      // map(Self::parse_typevar, |tvname| Typevar::new(Some(tvname), None)),
     ))(input)
   }
 
   #[allow(dead_code)]
   fn parse_typearg(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
-    combinator::map(ws_before(Self::parse_type), |t| Typevar::from_erltype(&t))(input)
+    map(ws_before(Self::parse_type), |t| Typevar::from_erltype(&t))(input)
   }
 
   /// Parses a comma separated list of 0 or more type arguments.
@@ -174,9 +172,9 @@ impl ErlTypeParser {
   /// Parse a user defined type with `name()` and 0 or more typevar args.
   /// Optional with module name `module:name()`.
   fn parse_user_defined_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    combinator::map(
+    map(
       sequence::tuple((
-        combinator::opt(Self::parse_type_modulename_colon),
+        opt(Self::parse_type_modulename_colon),
         ws_before(AtomParser::parse_atom),
         sequence::delimited(
           ws_before(char('(')),
@@ -192,7 +190,7 @@ impl ErlTypeParser {
   fn parse_type_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     let (input, _open_tag) = ws_before(char('['))(input)?;
 
-    combinator::map(
+    map(
       sequence::terminated(
         context("type arguments for a list() type", Self::parse_comma_sep_typeargs0),
         ws_before(char(']')),
@@ -208,7 +206,7 @@ impl ErlTypeParser {
   fn parse_type_tuple(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     let (input, _open_tag) = ws_before(char('{'))(input)?;
 
-    combinator::map(
+    map(
       sequence::terminated(
         context("type arguments for a tuple() type", Self::parse_comma_sep_typeargs0),
         ws_before(char('}')),
@@ -222,7 +220,7 @@ impl ErlTypeParser {
 
   /// Parse an integer and produce a literal integer type
   pub fn parse_int_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    combinator::map(parse_int, |i_str| {
+    map(parse_int, |i_str| {
       let i = i_str.parse().unwrap(); // TODO: Support big integers
       ErlType::new_singleton(&Literal::Integer(i).into())
     })(input)
@@ -230,7 +228,7 @@ impl ErlTypeParser {
 
   /// Parse an atom, and produce a literal atom type
   pub fn parse_atom_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    combinator::map(AtomParser::parse_atom, |a_str| {
+    map(AtomParser::parse_atom, |a_str| {
       ErlType::new_singleton(&Literal::Atom(a_str).into())
     })(input)
   }
@@ -249,7 +247,7 @@ impl ErlTypeParser {
   /// Parse any Erlang type, simple types like `atom()` with some `(args)` possibly, but could also be
   /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    combinator::map(
+    map(
       multi::separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
       |types| ErlType::new_union(&types),
     )(input)
@@ -257,8 +255,6 @@ impl ErlTypeParser {
 
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: &str) -> AstParserResult {
-    combinator::map(Self::parse_type, |t| ErlAst::Type { location: SourceLoc::None, ty: t }.into())(
-      input,
-    )
+    map(Self::parse_type, |t| ErlAst::Type { location: SourceLoc::None, ty: t }.into())(input)
   }
 }
