@@ -5,6 +5,7 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::stage::preprocess::PreprocessState;
+use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_preprocessor::nom_parser::pp_parse_types::PreprocessorParser;
 use nom::Finish;
 use std::ops::Deref;
@@ -19,9 +20,8 @@ fn test_fragment_if() {
   let input = "-if(true)"; // no terminating .
   println!("In=«{}»", input);
 
-  let (tail, result) = PreprocessorParser::parse_if_temporary(input)
-    .finish()
-    .unwrap();
+  let (tail, result) =
+    panicking_parser_error_reporter(input, PreprocessorParser::parse_if_temporary(input).finish());
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   // assert_eq!(out.len(), 1, "Expecting exact one result");
   assert!(matches!(result.deref(), PpAst::_TemporaryIf(_ast)));
@@ -42,9 +42,10 @@ on_false
 after_if";
   println!("In=«{}»", input);
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(input)
-    .finish()
-    .unwrap();
+  let (tail, out) = panicking_parser_error_reporter(
+    input,
+    PreprocessorParser::parse_fragments_collection(input).finish(),
+  );
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
@@ -69,12 +70,13 @@ after_if";
   }
 
   assert!(out[2].is_text_of("after_if"), "Expected text 'after_if', but got {:?}", out[2]);
+  todo!("Add an elseif test");
 }
 
 #[test]
 #[named]
 /// Try how splitting module into directives and text works; With comments
-fn test_fragments_with_comments() {
+fn parse_if_block_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let input = "-if(%true)
 false).
@@ -83,7 +85,8 @@ test\n
 %%-endif.";
   println!("In=«{}»", input);
 
-  let (tail, out) = PreprocessorParser::parse_if_block(input).finish().unwrap();
+  let (tail, out) =
+    panicking_parser_error_reporter(input, PreprocessorParser::parse_if_block(input).finish());
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   todo!("Check that returned `if` contains 'false'");
@@ -93,7 +96,7 @@ test\n
 #[named]
 fn parse_basic_define() {
   test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
-  let src = "define(AAA, true)"; // leading - and trailing . are not parsed in the parse_define
+  let src = "-define(AAA, true)."; // leading - and trailing . are not parsed in the parse_define
   let ast = PreprocessState::parse_helper(src, PreprocessorParser::parse_define).unwrap();
   if let PpAst::Define { .. } = ast.deref() {
     // pass
@@ -107,11 +110,12 @@ fn parse_basic_define() {
 /// Try parse a define macro where value contains another macro
 fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let src = "-define(AAA, 1).\n-define(BBB, ?AAA).";
+  let input = "-define(AAA, 1).\n-define(BBB, ?AAA).";
 
-  let (tail, out) = PreprocessorParser::parse_fragments_collection(src)
-    .finish()
-    .unwrap();
+  let (tail, out) = panicking_parser_error_reporter(
+    input,
+    PreprocessorParser::parse_fragments_collection(input).finish(),
+  );
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   println!("Out={:?}", out);

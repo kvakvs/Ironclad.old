@@ -3,6 +3,7 @@
 pub mod pp_define;
 pub mod pp_scope;
 
+use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
 use libironclad_preprocessor::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
@@ -48,27 +49,15 @@ impl PreprocessState {
   where
     Parser: Fn(&str) -> PpAstParserResult,
   {
-    let parse_result = parser(input).finish();
-
-    #[cfg(debug_assertions)]
-    if parse_result.is_err() {
-      println!("NomError: {:?}", parse_result);
-    }
-
-    match parse_result {
-      Ok((tail, ast)) => {
-        assert!(
-          tail.trim().is_empty(),
-          "Preprocessor: Not all input was consumed by parse.\n
-                \tTail: «{}»\n
-                \tAst: {}",
-          tail,
-          ast
-        );
-        Ok(ast)
-      }
-      Err(err) => PpError::from_nom_error(input, err),
-    }
+    let (tail, ast) = panicking_parser_error_reporter(input, parser(input).finish());
+    assert!(
+      tail.trim().is_empty(),
+      "Preprocessor: Not all input was consumed by parse.\n\tTail: «{}»\n\tAst: {}",
+      tail,
+      ast
+    );
+    Ok(ast)
+    //   Err(err) => PpError::from_nom_error(input, err),
   }
 
   /// Returns: True if a file was preprocessed

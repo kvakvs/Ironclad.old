@@ -123,7 +123,7 @@ impl PreprocessorParser {
   fn match_dash_tag<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
     tag_str: &'static str,
   ) -> impl FnMut(&'a str) -> nom::IResult<&'a str, &'a str, ErrType> {
-    recognize(preceded(ws_before(char('-')), ws_before(tag(tag_str))))
+    recognize(pair(ws_before(char('-')), ws_before(tag(tag_str))))
   }
 
   /// Recognizes end of a directive: `"." <newline>`

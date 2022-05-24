@@ -6,7 +6,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
-use libironclad_erlang::syntax_tree::erl_error::ErlError;
+use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
@@ -26,13 +26,10 @@ fn union_type_parse() -> IcResult<()> {
 	       {'integer',integer()} |
 	       'nil' |
 	       {'float',float()}";
-  match ErlAttrParser::parse_type_attr(input).finish() {
-    Ok((tail1, result1)) => {
-      assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
-      println!("Parsed: {}", result1);
-    }
-    Err(err) => return ErlError::from_nom_error(input, err),
-  }
+  let (tail1, result1) =
+    panicking_parser_error_reporter(input, ErlAttrParser::parse_type_attr(input).finish());
+  assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
+  println!("Parsed: {}", result1);
   Ok(())
 }
 
@@ -42,19 +39,16 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
 
   // Dash `-` and terminating `.` are matched outside by the caller.
-  let src = " fgsfds\n";
+  let input = " fgsfds\n";
 
-  match ErlAttrParser::parse_generic_attr(src).finish() {
-    Ok((tail1, result1)) => {
-      assert!(
-        tail1.trim().is_empty(),
-        "Not all input consumed from attr1_src, tail: «{}»",
-        tail1
-      );
-      println!("ErlAst for «{}»: {}", src, result1);
-    }
-    Err(err) => return ErlError::from_nom_error(src, err),
-  }
+  let (tail1, result1) =
+    panicking_parser_error_reporter(input, ErlAttrParser::parse_generic_attr(input).finish());
+  assert!(
+    tail1.trim().is_empty(),
+    "Not all input consumed from attr1_src, tail: «{}»",
+    tail1
+  );
+  println!("ErlAst for «{}»: {}", input, result1);
   Ok(())
 }
 
@@ -66,17 +60,14 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
   // Dash `-` and terminating `.` are matched outside by the caller.
   let input = " bbbggg (ababagalamaga()) ";
 
-  match ErlAttrParser::parse_generic_attr(input).finish() {
-    Ok((tail2, result2)) => {
-      assert!(
-        tail2.trim().is_empty(),
-        "Not all input consumed from attr2_src, tail: {}",
-        tail2
-      );
-      println!("ErlAst for attr2: {}", result2);
-    }
-    Err(err) => return ErlError::from_nom_error(input, err),
-  }
+  let (tail2, result2) =
+    panicking_parser_error_reporter(input, ErlAttrParser::parse_generic_attr(input).finish());
+  assert!(
+    tail2.trim().is_empty(),
+    "Not all input consumed from attr2_src, tail: {}",
+    tail2
+  );
+  println!("ErlAst for attr2: {}", result2);
   Ok(())
 }
 

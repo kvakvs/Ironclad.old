@@ -9,7 +9,7 @@ use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::literal::Literal;
 use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
-use libironclad_erlang::syntax_tree::erl_error::ErlError;
+use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
 use libironclad_error::ic_error::IcResult;
@@ -57,14 +57,10 @@ fn parse_export_attr() -> IcResult<()> {
 #[test]
 fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
-  let code = "    \n   \r\n  ";
-  let parse_result = ErlParser::parse_module_forms_collection(code);
-  match parse_result.finish() {
-    Ok((_tail, forms)) => {
-      println!("Parsed empty module forms collection: «{}»\nResult: {:?}", code, forms)
-    }
-    Err(err) => return ErlError::from_nom_error(code, err),
-  }
+  let input = "    \n   \r\n  ";
+  let parse_result = ErlParser::parse_module_forms_collection(input);
+  let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
+  println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
 }
 
@@ -76,14 +72,10 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     function_name!(),
     "Parse a string with 2 function defs in it as module forms collection",
   );
-  let code = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let parse_result = ErlParser::parse_module_forms_collection(code);
-  match parse_result.finish() {
-    Ok((_tail, forms)) => {
-      println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), code, forms)
-    }
-    Err(err) => return ErlError::from_nom_error(code, err),
-  }
+  let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
+  let parse_result = ErlParser::parse_module_forms_collection(input);
+  let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
+  println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
 }
 
