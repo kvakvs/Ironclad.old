@@ -1,6 +1,8 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::nom_parse::misc::{parse_int, ws_before};
+use crate::syntax_tree::nom_parse::misc::{
+  comma, par_close, par_open, parse_int, period, ws_before,
+};
 use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::parse_type::ErlTypeParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError, ParserResult};
@@ -24,7 +26,7 @@ impl ErlAttrParser {
       // Dash `-` and terminating `.` are matched outside by the caller.
       pair(
         ws_before(AtomParser::parse_atom),
-        opt(delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')')))),
+        opt(delimited(par_open, ErlParser::parse_expr, par_close)),
       ),
       |(tag, term)| ErlAst::new_generic_attr(SourceLoc::None, tag, term),
     )(input)
@@ -36,7 +38,7 @@ impl ErlAttrParser {
     map(
       preceded(
         ws_before(tag("module")),
-        delimited(ws_before(char('(')), ws_before(AtomParser::parse_atom), ws_before(char(')'))),
+        delimited(par_open, ws_before(AtomParser::parse_atom), par_close),
       ),
       ErlAst::new_module_start_attr,
     )(input)
@@ -57,17 +59,13 @@ impl ErlAttrParser {
   fn parse_square_funarity_list1(input: &str) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
     delimited(
       ws_before(char('[')),
-      separated_list1(ws_before(char(',')), ws_before(Self::parse_funarity)),
+      separated_list1(comma, ws_before(Self::parse_funarity)),
       ws_before(char(']')),
     )(input)
   }
 
   fn parse_export_mfa_list(input: &str) -> ParserResult<Vec<MFArity>> {
-    delimited(
-      ws_before(char('(')),
-      ws_before(Self::parse_square_funarity_list1),
-      ws_before(char(')')),
-    )(input)
+    delimited(par_open, ws_before(Self::parse_square_funarity_list1), par_close)(input)
   }
 
   /// Parses an `-export([fn/arity, ...]).` attribute.
@@ -97,13 +95,9 @@ impl ErlAttrParser {
         context(
           "import attribute",
           cut(delimited(
-            ws_before(char('(')),
-            tuple((
-              AtomParser::parse_atom,
-              ws_before(char(',')),
-              ws_before(Self::parse_square_funarity_list1),
-            )),
-            ws_before(char(')')),
+            par_open,
+            tuple((AtomParser::parse_atom, comma, ws_before(Self::parse_square_funarity_list1))),
+            par_close,
           )),
         ),
       ),
@@ -116,9 +110,9 @@ impl ErlAttrParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<String>, ErlParserError> {
     delimited(
-      ws_before(char('(')),
-      cut(separated_list0(ws_before(char(',')), ErlTypeParser::parse_typevar_name)),
-      ws_before(char(')')),
+      par_open,
+      cut(separated_list0(comma, ErlTypeParser::parse_typevar_name)),
+      par_close,
     )(input)
   }
 
@@ -158,7 +152,7 @@ impl ErlAttrParser {
         )),
       ),
       // terminated(
-      ws_before(char('.')),
+      period,
       // newline,
       // ),
     )(input)

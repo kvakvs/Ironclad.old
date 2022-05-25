@@ -5,9 +5,8 @@ use crate::nom_parser::pp_parse_types::{
 };
 use crate::nom_parser::PreprocessorParser;
 use crate::syntax_tree::pp_ast::PpAst;
-use libironclad_erlang::syntax_tree::nom_parse::misc::ws_before;
+use libironclad_erlang::syntax_tree::nom_parse::misc::{par_close, par_open, ws_before};
 use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
-use nom::character::complete::char;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;
@@ -61,7 +60,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("if"),
-        delimited(ws_before(char('(')), ws_before(ErlParser::parse_expr), ws_before(char(')'))),
+        delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
       ),
       PpAst::new_if_temporary, // Builds a temporary If node with erl expression in it
     )(input)
@@ -72,7 +71,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("elif"),
-        delimited(ws_before(char('(')), ws_before(ErlParser::parse_expr), ws_before(char(')'))),
+        delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
       ),
       PpAst::new_elif_temporary,
     )(input)
@@ -83,7 +82,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("ifdef"),
-        delimited(ws_before(char('(')), ws_before(Self::parse_macro_ident), ws_before(char(')'))),
+        delimited(par_open, ws_before(Self::parse_macro_ident), par_close),
       ),
       PpAst::new_ifdef_temporary,
     )(input)
@@ -94,7 +93,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("ifndef"),
-        delimited(ws_before(char('(')), ws_before(Self::parse_macro_ident), ws_before(char(')'))),
+        delimited(par_open, ws_before(Self::parse_macro_ident), par_close),
       ),
       PpAst::new_ifndef_temporary,
     )(input)
@@ -104,10 +103,7 @@ impl PreprocessorParser {
   pub fn parse_else_temporary(input: &str) -> PpAstParserResult {
     map(
       terminated(
-        preceded(
-          Self::match_dash_tag("else"),
-          opt(pair(ws_before(char('(')), ws_before(char(')')))),
-        ),
+        preceded(Self::match_dash_tag("else"), opt(pair(par_open, par_close))),
         Self::dot_newline,
       ),
       |_opt| PpAst::_TemporaryElse.into(),
@@ -115,7 +111,7 @@ impl PreprocessorParser {
   }
 
   fn maybe_empty_parens(input: &str) -> StrSliceParserResult {
-    recognize(opt(pair(ws_before(char('(')), ws_before(char(')')))))(input)
+    recognize(opt(pair(par_open, par_close)))(input)
   }
 
   /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
@@ -125,12 +121,4 @@ impl PreprocessorParser {
       |_opt| PpAst::_TemporaryEndif.into(),
     )(input)
   }
-
-  // /// Parse a `-endif.` and return it as a `&str` slice
-  // fn consume_endif(input: &str) -> StrSliceParserResult {
-  //   recognize(preceded(
-  //     Self::match_dash_tag("endif"),
-  //     opt(pair(ws_before(char('(')), ws_before(char(')')))),
-  //   ))(input)
-  // }
 }

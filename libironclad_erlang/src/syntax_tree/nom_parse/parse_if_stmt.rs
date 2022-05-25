@@ -2,15 +2,13 @@
 
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_if_clause::ErlIfClause;
-use crate::syntax_tree::nom_parse::misc::ws_before;
+use crate::syntax_tree::nom_parse::misc::{semicolon, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::{pair, preceded, terminated};
-use nom::{
-  bytes, bytes::complete::tag, character::complete::char, combinator::cut, error::context,
-};
+use nom::{bytes, bytes::complete::tag, combinator::cut, error::context};
 
 impl ErlParser {
   /// Parses `if COND -> EXPR; ... end`
@@ -21,10 +19,7 @@ impl ErlParser {
       "if block",
       cut(map(
         terminated(
-          separated_list1(
-            ws_before(char(';')),
-            context("if block clause", cut(Self::parse_if_clause)),
-          ),
+          separated_list1(semicolon, context("if block clause", cut(Self::parse_if_clause))),
           ws_before(tag("end")),
         ),
         |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),

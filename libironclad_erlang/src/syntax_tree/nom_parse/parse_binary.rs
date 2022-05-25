@@ -5,7 +5,9 @@ use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
-use crate::syntax_tree::nom_parse::misc::{parse_int, parse_varname, ws_before};
+use crate::syntax_tree::nom_parse::misc::{
+  comma, par_close, par_open, parse_int, parse_varname, ws_before,
+};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ParserResult};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -25,7 +27,7 @@ impl BinaryParser {
     alt((
       map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
       ErlParser::parse_literal,
-      delimited(ws_before(char('(')), ErlParser::parse_expr, ws_before(char(')'))),
+      delimited(par_open, ErlParser::parse_expr, par_close),
     ))(input)
   }
 
@@ -132,7 +134,7 @@ impl BinaryParser {
       cut(terminated(
         map(
           separated_list1(
-            ws_before(char(',')),
+            comma,
             context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
           ),
           |bin_exprs| ErlAst::new_binary_expr(SourceLoc::None, bin_exprs),

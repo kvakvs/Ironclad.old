@@ -1,13 +1,13 @@
 //! Parses `case of` and clause branches
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_case_clause::ErlCaseClause;
-use crate::syntax_tree::nom_parse::misc::ws_before;
+use crate::syntax_tree::nom_parse::misc::{semicolon, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{bytes, bytes::complete::tag, character::complete::char, error::context};
+use nom::{bytes, bytes::complete::tag, error::context};
 
 impl ErlParser {
   /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
@@ -44,10 +44,7 @@ impl ErlParser {
       cut(map(
         tuple((
           terminated(ErlParser::parse_expr, ws_before(tag("of"))),
-          separated_list1(
-            ws_before(char(';')),
-            context("case block clause", cut(Self::parse_case_clause)),
-          ),
+          separated_list1(semicolon, context("case block clause", cut(Self::parse_case_clause))),
           ws_before(tag("end")),
         )),
         |(expr, clauses, _end0)| ErlAst::new_case_statement(SourceLoc::None, expr, clauses),

@@ -6,10 +6,12 @@ use crate::nom_parser::pp_parse_types::{
 };
 use crate::syntax_tree::pp_ast::PpAst;
 use libironclad_erlang::syntax_tree::nom_parse::misc::{
-  newline_or_eof, parse_line_comment, parse_varname, ws, ws_before, ws_before_mut,
+  comma, newline_or_eof, par_close, par_open, parse_ident, parse_line_comment, period, ws,
+  ws_before, ws_before_mut,
 };
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
 use nom::branch::alt;
+use nom::character::complete::anychar;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::multi::{many1, many_till, separated_list0};
 use nom::sequence::{delimited, pair, preceded, tuple};
@@ -24,44 +26,60 @@ pub mod pp_parse_if;
 pub mod pp_parse_types;
 
 impl PreprocessorParser {
-  /// Parse a `Var1, Var2, ...` into a list
-  fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
-    separated_list0(ws_before(char(',')), parse_varname)(input)
+  // /// Parse a `Var1, Var2, ...` into a list
+  // fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
+  //   separated_list0(comma, parse_varname)(input)
+  // }
+
+  /// Parse a `ident1, ident2, ...` into a list
+  fn parse_comma_sep_idents(input: &str) -> PpParserResult<Vec<String>> {
+    separated_list0(comma, parse_ident)(input)
   }
 
-  fn terminator(input: &str) -> PpParserResult<&str> {
-    recognize(tuple((ws_before(char(')')), ws_before(char('.')), newline_or_eof)))(input)
+  fn parenthesis_dot_newline(input: &str) -> PpParserResult<&str> {
+    recognize(tuple((par_close, period, newline_or_eof)))(input)
   }
 
-  /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
-  pub fn parse_define(input: &str) -> PpAstParserResult {
+  /// Parses inner part of a `-define(IDENT)` variant
+  fn parse_define_ident_only(input: &str) -> PpAstParserResult {
+    map(ws_before(parse_ident), PpAst::new_define_name_only)(input)
+  }
+
+  /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
+  /// will consume end delimiter `").\n"`
+  fn parse_define_ident_args_with_terminator(input: &str) -> PpAstParserResult {
     map(
-      delimited(
-        Self::match_dash_tag("define"),
-        tuple((
-          ws_before(char('(')),
-          ws_before(parse_varname),
-          opt(delimited(
-            ws_before(char('(')),
-            Self::parse_comma_sep_varnames,
-            ws_before(char(')')),
-          )),
-          opt(delimited(
-            ws_before(char(',')),
-            many_till(nom::character::complete::anychar, Self::terminator),
-            Self::terminator,
-          )), // )delimited )opt
-          ws_before(char(')')),
+      tuple((
+        ws_before(parse_ident),
+        // Optional args
+        opt(delimited(par_open, Self::parse_comma_sep_idents, par_close)),
+        // Followed by a body
+        opt(delimited(
+          comma,
+          many_till(anychar, Self::parenthesis_dot_newline),
+          Self::parenthesis_dot_newline,
         )),
-        Self::dot_newline,
-      ),
-      |(_open, name, args, body, _close)| {
+      )),
+      |(name, args, body)| {
         PpAst::new_define(
           name,
           args,
           body.map(|(chars, _term)| chars.into_iter().collect::<String>()),
         )
       },
+    )(input)
+  }
+
+  /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
+  pub fn parse_define(input: &str) -> PpAstParserResult {
+    delimited(
+      Self::match_dash_tag("define"),
+      alt((
+        delimited(par_open, Self::parse_define_ident_only, par_close),
+        // `parse_define_ident_args_with_terminator` will consume end delimiter
+        preceded(par_open, Self::parse_define_ident_args_with_terminator),
+      )),
+      Self::dot_newline,
     )(input)
   }
 
@@ -81,7 +99,7 @@ impl PreprocessorParser {
     map(
       delimited(
         Self::match_dash_tag("undef"),
-        tuple((ws_before(char('(')), ws_before(Self::parse_macro_ident), ws_before(char(')')))),
+        tuple((par_open, ws_before(Self::parse_macro_ident), par_close)),
         Self::dot_newline,
       ),
       |(_open, ident, _close)| PpAst::new_undef(ident),
@@ -93,11 +111,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("include"),
-        tuple((
-          ws_before(char('(')),
-          ws_before(StringParser::parse_string),
-          ws_before(char(')')),
-        )),
+        tuple((par_open, ws_before(StringParser::parse_string), par_close)),
       ),
       |(_open, s, _close)| PpAst::new_include(s),
     )(input)
@@ -108,11 +122,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("include_lib"),
-        tuple((
-          ws_before(char('(')),
-          ws_before(StringParser::parse_string),
-          ws_before(char(')')),
-        )),
+        tuple((par_open, ws_before(StringParser::parse_string), par_close)),
       ),
       |(_open, s, _close)| PpAst::new_include_lib(s),
     )(input)
@@ -128,7 +138,7 @@ impl PreprocessorParser {
 
   /// Recognizes end of a directive: `"." <newline>`
   fn dot_newline(input: &str) -> StrSliceParserResult {
-    recognize(pair(ws_before(char('.')), newline_or_eof))(input)
+    recognize(pair(period, newline_or_eof))(input)
   }
 
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {

@@ -3,7 +3,7 @@
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::node::erl_catch_clause::CatchClause;
 use crate::syntax_tree::node::erl_exception_pattern::ExceptionPattern;
-use crate::syntax_tree::nom_parse::misc::ws_before;
+use crate::syntax_tree::nom_parse::misc::{semicolon, ws_before};
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
@@ -62,7 +62,7 @@ impl ErlParser {
           ws_before(tag("catch")),
           context(
             "try block: 'catch' clauses",
-            cut(separated_list1(ws_before(char(';')), Self::parse_catch_clause)),
+            cut(separated_list1(semicolon, Self::parse_catch_clause)),
           ),
         ),
       )),

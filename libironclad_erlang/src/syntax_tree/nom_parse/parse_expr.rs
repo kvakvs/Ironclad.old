@@ -8,7 +8,9 @@ use crate::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::syntax_tree::node::erl_var::ErlVar;
-use crate::syntax_tree::nom_parse::misc::{parse_varname, ws_before, ws_before_mut};
+use crate::syntax_tree::nom_parse::misc::{
+  comma, par_close, par_open, parse_varname, ws_before, ws_before_mut,
+};
 use crate::syntax_tree::nom_parse::parse_binary::BinaryParser;
 use crate::syntax_tree::nom_parse::{
   AstParserResult, ErlParser, ErlParserError, VecAstParserResult,
@@ -57,9 +59,9 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     delimited(
-      ws_before(char('(')),
+      par_open,
       context("function application arguments", cut(Self::parse_comma_sep_exprs0::<STYLE>)),
-      ws_before(char(')')),
+      par_close,
     )(input)
   }
 
@@ -88,7 +90,7 @@ impl ErlParser {
   /// Parses mix of generators and conditions for a list comprehension
   pub fn parse_list_comprehension_exprs_and_generators(input: &str) -> VecAstParserResult {
     separated_list0(
-      ws_before(char(',')),
+      comma,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
     )(input)
@@ -128,7 +130,7 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     separated_list0(
-      ws_before(char(',')),
+      comma,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
@@ -139,18 +141,14 @@ impl ErlParser {
     input: &str,
   ) -> nom::IResult<&str, Vec<Arc<ErlAst>>, ErlParserError> {
     separated_list1(
-      ws_before(char(',')),
+      comma,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
   }
 
   fn parenthesized_expr<const STYLE: usize>(input: &str) -> AstParserResult {
-    delimited(
-      ws_before(char('(')),
-      ws_before(Self::parse_expr_prec13::<STYLE>),
-      ws_before(char(')')),
-    )(input)
+    delimited(par_open, ws_before(Self::parse_expr_prec13::<STYLE>), par_close)(input)
   }
 
   /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)

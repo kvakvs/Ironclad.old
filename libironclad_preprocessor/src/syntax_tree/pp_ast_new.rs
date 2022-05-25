@@ -21,6 +21,11 @@ impl PpAst {
     PpAst::Define { name, args, body }.into()
   }
 
+  /// Create new macro definition with name only
+  pub fn new_define_name_only(name: String) -> Arc<Self> {
+    PpAst::Define { name, args: None, body: None }.into()
+  }
+
   /// Create new text fragment
   pub fn new_text(text: &str) -> Arc<Self> {
     if text.trim().is_empty() { PpAst::EmptyText } else { PpAst::Text(text.into()) }.into()

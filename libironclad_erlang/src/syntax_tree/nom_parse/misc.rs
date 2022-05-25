@@ -134,6 +134,46 @@ pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
   recognize(alt((tag("\r\n"), tag("\r"), tag("\n"), eof)))(input)
 }
 
+/// Matches an opening parenthesis "(" with 0+ whitespace before
+#[inline]
+pub fn par_open<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('(')))(input)
+}
+
+/// Matches a closing parenthesis ")" with 0+ whitespace before
+#[inline]
+pub fn par_close<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char(')')))(input)
+}
+
+/// Matches a comma "," with 0+ whitespace before
+#[inline]
+pub fn comma<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char(',')))(input)
+}
+
+/// Matches a period "." with 0+ whitespace before
+#[inline]
+pub fn period<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('.')))(input)
+}
+
+/// Matches a semicolon ";" with 0+ whitespace before
+#[inline]
+pub fn semicolon<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char(';')))(input)
+}
+
 /// Recognizes `% text <newline>` consuming text
 pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,

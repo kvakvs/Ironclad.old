@@ -5,6 +5,7 @@ use std::sync::Arc;
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use nom::branch::alt;
+use nom::character::complete::multispace0;
 use nom::combinator::complete;
 use nom::multi::many0;
 
@@ -50,7 +51,7 @@ impl ErlParser {
   /// Parses 0 or more module forms (attrs and function defs)
   pub fn parse_module_forms_collection(input: &str) -> VecAstParserResult {
     // Skip whitespace and check if no input remaining
-    let (input, _skip_space) = nom::character::complete::multispace0(input)?;
+    let (input, _skip_space) = multispace0(input)?;
     if input.is_empty() {
       return Ok((input, Vec::default()));
     }

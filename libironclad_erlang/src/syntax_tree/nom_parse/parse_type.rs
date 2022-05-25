@@ -2,7 +2,9 @@
 
 use crate::literal::Literal;
 use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::nom_parse::misc::{parse_int, parse_varname, ws_before, ws_before_mut};
+use crate::syntax_tree::nom_parse::misc::{
+  comma, par_close, par_open, parse_int, parse_varname, semicolon, ws_before, ws_before_mut,
+};
 use crate::syntax_tree::nom_parse::parse_atom::AtomParser;
 use crate::syntax_tree::nom_parse::{AstParserResult, ErlParserError};
 use crate::typing::erl_type::ErlType;
@@ -30,7 +32,7 @@ impl ErlTypeParser {
         tuple((
           context("function spec: name", cut(ws_before(AtomParser::parse_atom))),
           separated_list1(
-            ws_before(char(';')),
+            semicolon,
             context("function clause spec", cut(ws_before(Self::parse_fn_spec_fnclause))),
           ),
         )),
@@ -118,9 +120,9 @@ impl ErlTypeParser {
   pub fn parse_parenthesized_arg_spec_list(
     input: &str,
   ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    let (input, _) = ws_before(char('('))(input)?;
+    let (input, _) = par_open(input)?;
 
-    terminated(Self::parse_comma_sep_typeargs0, ws_before(char(')')))(input)
+    terminated(Self::parse_comma_sep_typeargs0, par_close)(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -151,19 +153,17 @@ impl ErlTypeParser {
   /// Parses a comma separated list of 0 or more type arguments.
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    separated_list0(
-      ws_before(char(',')),
-      context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
-    )(input)
+    separated_list0(comma, context("parsing items of a typeargs0_list", Self::alt_typevar_or_type))(
+      input,
+    )
   }
 
   /// Parses a comma separated list of 1 or more type arguments.
   /// A parametrized type accepts other types or typevar names
   fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
-    separated_list1(
-      ws_before(char(',')),
-      context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
-    )(input)
+    separated_list1(comma, context("parsing items of a typeargs1_list", Self::alt_typevar_or_type))(
+      input,
+    )
   }
 
   /// Optional `module:` before typename in `module:type()`.
@@ -179,9 +179,9 @@ impl ErlTypeParser {
         opt(Self::parse_type_modulename_colon),
         ws_before(AtomParser::parse_atom),
         delimited(
-          ws_before(char('(')),
+          par_open,
           context("type arguments for a user-defined type", Self::parse_comma_sep_typeargs0),
-          ws_before(char(')')),
+          par_close,
         ),
       )),
       |(maybe_module, type_name, elements)| ErlType::from_name(maybe_module, type_name, &elements),

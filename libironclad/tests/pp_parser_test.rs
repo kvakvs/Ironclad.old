@@ -94,14 +94,47 @@ test\n
 
 #[test]
 #[named]
-fn parse_basic_define() {
-  test_util::start(function_name!(), "Parse a basic -define macro with 0 params");
-  let src = "-define(AAA, true)."; // leading - and trailing . are not parsed in the parse_define
-  let ast = PreprocessState::parse_helper(src, PreprocessorParser::parse_define).unwrap();
-  if let PpAst::Define { .. } = ast.deref() {
-    // pass
+fn parse_define_ident_only() {
+  test_util::start(function_name!(), "Parse a basic -define macro with only ident");
+  let input = "-define(AAA).";
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  if let PpAst::Define { name, body, .. } = ast.deref() {
+    assert_eq!(name, "AAA");
+    assert!(body.is_none());
   } else {
-    panic!("Expected PpAst::Define, received {:?}", ast);
+    panic!("Expected Define, received {:?}", ast);
+  }
+}
+
+#[test]
+#[named]
+fn parse_define_with_body_no_args() {
+  test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
+  let input = "-define(BBB, [true)).";
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  if let PpAst::Define { name, body, .. } = ast.deref() {
+    assert_eq!(name, "BBB");
+    assert!(body.is_some());
+    assert_eq!(body.clone().unwrap(), "[true)");
+  } else {
+    panic!("Expected Define, received {:?}", ast);
+  }
+}
+
+#[test]
+#[named]
+fn parse_define_with_body_2_args() {
+  test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
+  let input = "-define(CCC(X,Y), 2args\nbody).";
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  if let PpAst::Define { name, args, body, .. } = ast.deref() {
+    assert_eq!(name, "CCC");
+    assert!(args.is_some());
+    assert_eq!(args.clone().unwrap().len(), 2);
+    assert!(body.is_some());
+    assert_eq!(body.clone().unwrap(), "2args\nbody");
+  } else {
+    panic!("Expected Define, received {:?}", ast);
   }
 }
 
