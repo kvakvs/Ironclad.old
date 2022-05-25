@@ -21,6 +21,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 pub mod ast_as;
+pub mod ast_expr;
 pub mod ast_extract_var;
 pub mod ast_is;
 pub mod ast_iter;

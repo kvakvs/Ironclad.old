@@ -2,6 +2,7 @@
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
+use crate::syntax_tree::literal_bool::LiteralBool;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
@@ -241,6 +242,31 @@ impl ErlBinaryOperatorExpr {
           TypeError::ListExpected { msg },
         )
       }
+    }
+  }
+
+  /// Try to figure out whether this binop resolves to a boolean
+  pub fn walk_boolean_litexpr(&self) -> LiteralBool {
+    let left_val = self.left.walk_boolean_litexpr();
+    let right_val = self.right.walk_boolean_litexpr();
+    match self.operator {
+      ErlBinaryOp::AndAlso | ErlBinaryOp::And | ErlBinaryOp::Comma => {
+        return left_val.and(&right_val)
+      }
+      ErlBinaryOp::OrElse | ErlBinaryOp::Or | ErlBinaryOp::Semicolon => {
+        return left_val.or(&right_val)
+      }
+      ErlBinaryOp::Xor => return left_val.xor(&right_val),
+      _ => {} // proceed to calculate non-booleans
+    }
+    match self.operator {
+      ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq => {
+        unimplemented!("LitExpr ordering comparisons")
+      }
+      ErlBinaryOp::Eq | ErlBinaryOp::NotEq | ErlBinaryOp::HardEq | ErlBinaryOp::HardNotEq => {
+        unimplemented!("LitExpr equality checks")
+      }
+      _ => LiteralBool::NotABoolean,
     }
   }
 }

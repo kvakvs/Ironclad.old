@@ -34,15 +34,11 @@ impl std::fmt::Display for PpAst {
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
       PpAst::IfBlock { cond, cond_true, cond_false } => {
         writeln!(f, "-if({}).", cond)?;
-        if let Some(branch_true) = cond_true {
-          for c in branch_true {
-            writeln!(f, "{}", c)?;
-          }
+        for c in cond_true {
+          writeln!(f, "{}", c)?;
         }
-        if let Some(branch_false) = cond_false {
-          for c in branch_false {
-            writeln!(f, "{}", c)?;
-          }
+        for c in cond_false {
+          writeln!(f, "{}", c)?;
         }
         writeln!(f, "-endif.")
       }

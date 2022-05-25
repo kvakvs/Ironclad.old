@@ -21,6 +21,7 @@ pub enum SourceLoc {
 }
 
 impl SourceLoc {
+  /// Warns about using None but does not prevent it
   pub fn unimplemented(file: &str, func: &str) -> Self {
     println!("Unimplemented sourceloc use {}() at {}", func, file);
     SourceLoc::None

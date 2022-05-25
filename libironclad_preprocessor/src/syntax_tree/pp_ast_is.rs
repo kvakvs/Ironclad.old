@@ -7,6 +7,8 @@ impl PpAst {
   pub fn is_text(&self) -> bool {
     matches!(self, PpAst::Text(_))
   }
+
+  /// Compare PpAst node with a given text sample
   pub fn is_text_of(&self, t: &str) -> bool {
     matches!(self, PpAst::Text(text) if text == t)
   }

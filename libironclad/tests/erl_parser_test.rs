@@ -251,6 +251,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
     let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error").unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
+    // TODO: Use panicking error reporter
     assert!(exc_tail.is_empty(), "Could not parse exception pattern");
     assert!(exc.class.is_var());
     assert!(exc.error.is_var());
@@ -260,6 +261,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
     let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error:Stack").unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
+    // TODO: Use panicking error reporter
     assert!(exc_tail.is_empty(), "Could not parse exception pattern");
     assert!(exc.class.is_var());
     assert!(exc.error.is_var());
@@ -274,6 +276,7 @@ fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
   let (tail, clause) = ErlParser::parse_catch_clause("A:B:C when true -> ok").unwrap();
+  // TODO: Use panicking error reporter
   assert!(tail.is_empty(), "Could not parse exception pattern");
   assert!(clause.exc_pattern.class.is_var());
   assert!(clause.when_guard.is_some());

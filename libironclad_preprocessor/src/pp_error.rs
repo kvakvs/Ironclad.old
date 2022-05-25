@@ -1,3 +1,4 @@
+//! Errors which can occur during preprocess stage
 use crate::nom_parser::pp_parse_types::PpParserError;
 use ::function_name::named;
 use libironclad_error::ic_error::IcResult;
@@ -6,6 +7,7 @@ use libironclad_error::ic_error_trait::{IcError, IcErrorT};
 use libironclad_error::source_loc::SourceLoc;
 use std::fmt::{Debug, Display, Formatter};
 
+/// Category for preprocessor errors
 #[derive(Debug)]
 pub enum PpErrorCategory {
   /// Error while parsing Erlang syntax
@@ -14,6 +16,8 @@ pub enum PpErrorCategory {
   ErrorDirective,
   /// `#warning` directive found
   WarningDirective,
+  /// Errors produced by -if/-ifdef directives
+  IfDirective,
 }
 
 /// Erlang libironclad errors all gathered together
@@ -83,6 +87,16 @@ impl PpError {
       SourceLoc::unimplemented(file!(), function_name!()),
       msg,
     ))
+  }
+
+  /// Builds PpError for an if-ifdef error situation
+  pub fn new_if_directive_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+    Err(Box::new(PpError::new(
+      IcErrorCategory::Preprocessor,
+      PpErrorCategory::IfDirective,
+      loc,
+      msg,
+    )))
   }
 
   // /// Creates an "Unacceptable" error

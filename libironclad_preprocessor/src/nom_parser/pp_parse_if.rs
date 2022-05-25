@@ -28,11 +28,11 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
-  pub fn if_directive(input: &str) -> PpAstParserResult {
+  pub fn if_block(input: &str) -> PpAstParserResult {
     map(
       terminated(
         tuple((
-          Self::parse_if_temporary,
+          Self::if_directive,
           // Consume lines and directives until an `-else` or `-endif`
           context("Condition true section of a preprocessor if", Self::parse_fragments_till_else),
           // Optional -else. <LINES> block
@@ -47,7 +47,11 @@ impl PreprocessorParser {
       |(pp_if_expr, branch_true, branch_false)| {
         if let PpAst::_TemporaryIf(if_expr) = pp_if_expr.deref() {
           let branch_true1 = if branch_true.is_empty() { None } else { Some(branch_true) };
-          PpAst::new_if(if_expr.clone(), branch_true1, branch_false)
+          PpAst::new_if(
+            if_expr.clone(),
+            branch_true1.unwrap_or_else(|| Vec::default()),
+            branch_false.unwrap_or_else(|| Vec::default()),
+          )
         } else {
           unreachable!("This code path should not execute")
         }
@@ -55,12 +59,13 @@ impl PreprocessorParser {
     )(input)
   }
 
-  /// Parse a `-if(EXPR)` and return a temporary node
-  pub fn parse_if_temporary(input: &str) -> PpAstParserResult {
+  /// Parse a `-if(EXPR).\n` and return a temporary node
+  pub fn if_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         Self::match_dash_tag("if"),
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
+        Self::dot_newline,
       ),
       PpAst::new_if_temporary, // Builds a temporary If node with erl expression in it
     )(input)

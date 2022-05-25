@@ -3,6 +3,7 @@
 pub mod pp_define;
 pub mod pp_scope;
 
+use libironclad_erlang::syntax_tree::literal_bool::LiteralBool;
 use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
@@ -197,13 +198,21 @@ impl PreprocessState {
       }
       PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
-          if let Some(nodes) = cond_true {
-            nodes_out.extend(nodes.iter().cloned());
-          }
-        } else if let Some(nodes) = cond_false {
-          nodes_out.extend(nodes.iter().cloned());
+          nodes_out.extend(cond_true.iter().cloned());
+        } else {
+          nodes_out.extend(cond_false.iter().cloned());
         }
       }
+      PpAst::IfBlock { cond, cond_true, cond_false } => match cond.walk_boolean_litexpr() {
+        LiteralBool::True => nodes_out.extend(cond_true.iter().cloned()),
+        LiteralBool::False => nodes_out.extend(cond_false.iter().cloned()),
+        LiteralBool::NotABoolean => {
+          return PpError::new_if_directive_error(
+            cond.location(),
+            "The expression must resolve to a boolean true or false".to_string(),
+          )
+        }
+      },
       PpAst::Text(_) => nodes_out.push(node.clone()),
       PpAst::EmptyText => {} // skip
       PpAst::Define { name, args, body } => {
@@ -215,7 +224,6 @@ impl PreprocessState {
       //     .define(name, Some(args.clone()), Some(body.clone()));
       // }
       PpAst::Undef(_) => {}
-      PpAst::IfBlock { .. } => {}
       PpAst::Error(msg) => {
         errors_out.push(PpError::new_error_directive(msg.clone()));
       }

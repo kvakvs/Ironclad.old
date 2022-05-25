@@ -1,3 +1,4 @@
+//! Erlang errors
 use crate::syntax_tree::nom_parse::ErlParserError;
 use crate::typing::type_error::TypeError;
 use libironclad_error::ic_error::IcResult;
@@ -7,6 +8,7 @@ use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Debug;
 
+/// Category of Erlang Errors
 #[derive(Debug)]
 pub enum ErlErrorCategory {
   /// Error while parsing Erlang syntax
@@ -16,14 +18,21 @@ pub enum ErlErrorCategory {
   /// Type discrepancy found
   TypeError,
   /// Local function not found
-  LocalFnNotFound { mfa: MFArity },
+  LocalFnNotFound {
+    /// Local function reference
+    mfa: MFArity,
+  },
   /// Variable not found
-  VariableNotFound { var: String },
+  VariableNotFound {
+    /// Variable which is not found
+    var: String,
+  },
 }
 
 /// Erlang libironclad errors all gathered together
 #[derive(Debug)]
 pub struct ErlError {
+  /// Library module/activity which produced an error
   pub ic_category: IcErrorCategory,
   /// Error kind, an enum which might contain extra values
   pub category: ErlErrorCategory,

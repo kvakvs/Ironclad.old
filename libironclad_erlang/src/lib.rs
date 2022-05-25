@@ -1,3 +1,5 @@
+//! Crate handling Erlang syntax and typing
+#![warn(missing_docs)]
 extern crate derivative;
 extern crate lazy_static;
 extern crate libironclad_error;

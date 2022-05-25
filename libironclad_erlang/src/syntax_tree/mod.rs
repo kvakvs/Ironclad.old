@@ -5,4 +5,5 @@ pub mod erl_error_fmt;
 pub mod erl_op;
 pub mod node;
 
+pub mod literal_bool;
 pub mod nom_parse;

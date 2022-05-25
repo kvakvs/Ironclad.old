@@ -181,12 +181,18 @@ pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<&'a str>>(
   recognize(pair(many1(char('%')), many_till(character::complete::anychar, newline_or_eof)))(input)
 }
 
+/// Print detailed error with source pointers, and panic
 pub fn panicking_parser_error_reporter<'a, Out>(
   input: &'a str,
   res: Result<(&'a str, Out), nom::error::VerboseError<&'a str>>,
 ) -> (&'a str, Out) {
   match res {
-    Ok(in_out) => in_out,
+    Ok((tail, out)) => {
+      if !tail.is_empty() {
+        panic!("Not all input was consumed: tail=«{}»", tail)
+      }
+      (tail, out)
+    }
     Err(e) => panic!("Nom parser error: {}", convert_error(input, e)),
   }
 }

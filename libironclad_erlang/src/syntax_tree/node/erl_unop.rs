@@ -1,6 +1,7 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
 use crate::syntax_tree::erl_ast::ErlAst;
 use crate::syntax_tree::erl_op::ErlUnaryOp;
+use crate::syntax_tree::literal_bool::LiteralBool;
 use libironclad_error::source_loc::SourceLoc;
 use std::sync::Arc;
 
@@ -21,5 +22,13 @@ impl ErlUnaryOperatorExpr {
       expr: ErlUnaryOperatorExpr { expr, operator },
     }
     .into()
+  }
+
+  /// Walk the literal expression and try to find whether it is true, false or neither
+  pub fn walk_boolean_litexpr(&self) -> LiteralBool {
+    match self.operator {
+      ErlUnaryOp::Not => self.expr.walk_boolean_litexpr().negate(),
+      _ => LiteralBool::NotABoolean,
+    }
   }
 }

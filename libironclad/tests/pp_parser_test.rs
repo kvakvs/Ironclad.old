@@ -18,12 +18,11 @@ use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
 /// Try parse a simple pp directive -if(Expr).
 fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
-  let input = "-if(true)"; // no terminating .
+  let input = "-if(true).";
   println!("In=«{}»", input);
 
-  let (tail, result) =
-    panicking_parser_error_reporter(input, PreprocessorParser::parse_if_temporary(input).finish());
-  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
+  let (_tail, result) =
+    panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
   // assert_eq!(out.len(), 1, "Expecting exact one result");
   assert!(matches!(result.deref(), PpAst::_TemporaryIf(_ast)));
   println!("Out={:?}", result);
@@ -43,12 +42,11 @@ on_false
 after_if";
   println!("In=«{}»", input);
 
-  let (tail, out) = panicking_parser_error_reporter(
+  let (_tail, out) = panicking_parser_error_reporter(
     input,
     PreprocessorParser::parse_fragments_collection(input).finish(),
   );
   println!("Out={:?}", out);
-  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   assert!(
     out[0].is_text_of("before_if"),
@@ -57,21 +55,17 @@ after_if";
   );
 
   if let PpAst::IfBlock { cond_true, cond_false, .. } = out[1].deref() {
-    let true_branch = cond_true
-      .clone()
-      .unwrap_or_else(|| panic!("must have true branch"));
-    assert!(true_branch[0].is_text_of("on_true"));
+    assert_eq!(cond_true.len(), 1, "must have true branch");
+    assert!(cond_true[0].is_text_of("on_true"));
 
-    let false_branch = cond_false
-      .clone()
-      .unwrap_or_else(|| panic!("must have false branch"));
-    assert!(false_branch[0].is_text_of("on_false"));
+    assert_eq!(cond_false.len(), 1, "must have false branch");
+    assert!(cond_false[0].is_text_of("on_false"));
   } else {
     panic!("If block is expected, but got {:?}", out[1]);
   }
 
   assert!(out[2].is_text_of("after_if"), "Expected text 'after_if', but got {:?}", out[2]);
-  todo!("Add an elseif test");
+  // TODO Add an elseif test
 }
 
 #[test]
@@ -81,16 +75,29 @@ fn parse_if_block_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let input = "-if(%true)
 false).
-test\n
+on_true\n
 -else.
-%%-endif.";
+%%-endif.
+on_false
+-endif().";
   println!("In=«{}»", input);
 
-  let (tail, out) =
-    panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
-  println!("Out={:?}", out);
-  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
-  todo!("Check that returned `if` contains 'false'");
+  let (_tail, ast) =
+    panicking_parser_error_reporter(input, PreprocessorParser::if_block(input).finish());
+  println!("Out={:?}", ast);
+
+  if let PpAst::IfBlock { cond, cond_true, cond_false } = ast.deref() {
+    assert!(cond.is_atom());
+    assert_eq!(cond.as_atom(), "false");
+
+    assert_eq!(cond_true.len(), 1, "true branch must have exact one item");
+    assert!(cond_true[0].is_text_of("on_true"));
+
+    assert_eq!(cond_false.len(), 1, "false branch must have exact one item");
+    assert!(cond_false[0].is_text_of("on_false"));
+  } else {
+    panic!("Expected PpAst::IfBlock, but received {:?}", ast);
+  }
 }
 
 #[test]
@@ -148,11 +155,10 @@ fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let input = "-define(AAA, 1).\n-define(BBB, ?AAA).";
 
-  let (tail, out) = panicking_parser_error_reporter(
+  let (_tail, out) = panicking_parser_error_reporter(
     input,
     PreprocessorParser::parse_fragments_collection(input).finish(),
   );
-  assert!(tail.is_empty(), "Not all input consumed: {}", tail);
 
   println!("Out={:?}", out);
 }

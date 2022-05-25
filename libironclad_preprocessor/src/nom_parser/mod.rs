@@ -97,7 +97,7 @@ impl PreprocessorParser {
       context("'-else' directive", Self::else_temporary_directive),
       context("'-ifdef' directive", Self::ifdef_temporary_directive),
       context("'-ifndef' directive", Self::ifndef_temporary_directive),
-      context("'-if' directive", Self::if_directive), // if must go after longer words ifdef and ifndef
+      context("'-if' directive", Self::if_block), // if must go after longer words ifdef and ifndef
       // Self::parse_error,
       // Self::parse_warning,
       context("'-include_lib' directive", Self::include_lib_directive),

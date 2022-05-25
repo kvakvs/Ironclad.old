@@ -46,6 +46,7 @@ pub enum IcErrorCategory {
 }
 
 impl IcErrorCategory {
+  /// Converts category to printable
   pub fn to_string(&self) -> &str {
     match self {
       IcErrorCategory::Multiple(_) => "Multiple errors",

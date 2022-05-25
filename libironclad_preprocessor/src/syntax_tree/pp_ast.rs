@@ -54,9 +54,9 @@ pub enum PpAst {
     /// The condition to check
     macro_name: String,
     /// The nested lines
-    cond_true: Option<Vec<Arc<PpAst>>>,
+    cond_true: Vec<Arc<PpAst>>,
     /// The nested lines for the else block (if it was present)
-    cond_false: Option<Vec<Arc<PpAst>>>,
+    cond_false: Vec<Arc<PpAst>>,
   },
 
   /// If(expression) stores an expression which must resolve to a constant value otherwise compile
@@ -65,9 +65,9 @@ pub enum PpAst {
     /// The condition to check
     cond: Arc<ErlAst>,
     /// The nested lines
-    cond_true: Option<Vec<Arc<PpAst>>>,
+    cond_true: Vec<Arc<PpAst>>,
     /// The nested lines for the else block (if it was present)
-    cond_false: Option<Vec<Arc<PpAst>>>,
+    cond_false: Vec<Arc<PpAst>>,
   },
 
   /// Produce a libironclad error

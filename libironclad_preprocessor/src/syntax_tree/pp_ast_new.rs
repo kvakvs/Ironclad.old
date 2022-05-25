@@ -34,8 +34,8 @@ impl PpAst {
   /// Creates a new preprocessor IF node
   pub fn new_if(
     expr: Arc<ErlAst>,
-    cond_true: Option<Vec<Arc<PpAst>>>,
-    cond_false: Option<Vec<Arc<PpAst>>>,
+    cond_true: Vec<Arc<PpAst>>,
+    cond_false: Vec<Arc<PpAst>>,
   ) -> Arc<Self> {
     PpAst::IfBlock { cond: expr, cond_true, cond_false }.into()
   }
