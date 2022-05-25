@@ -207,13 +207,13 @@ impl PreprocessState {
       PpAst::Text(_) => nodes_out.push(node.clone()),
       PpAst::EmptyText => {} // skip
       PpAst::Define { name, args, body } => {
-        self.scope = self.scope.define(name, args.clone(), body.clone());
+        self.scope = self.scope.define(name, &args, &body);
       }
-      PpAst::DefineFun { name, args, body } => {
-        self.scope = self
-          .scope
-          .define(name, Some(args.clone()), Some(body.clone()));
-      }
+      // PpAst::DefineFun { name, args, body } => {
+      //   self.scope = self
+      //     .scope
+      //     .define(name, Some(args.clone()), Some(body.clone()));
+      // }
       PpAst::Undef(_) => {}
       PpAst::IfBlock { .. } => {}
       PpAst::Error(msg) => {

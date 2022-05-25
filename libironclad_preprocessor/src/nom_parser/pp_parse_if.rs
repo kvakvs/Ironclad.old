@@ -28,7 +28,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
-  pub fn parse_if_block(input: &str) -> PpAstParserResult {
+  pub fn if_directive(input: &str) -> PpAstParserResult {
     map(
       terminated(
         tuple((
@@ -38,11 +38,11 @@ impl PreprocessorParser {
           // Optional -else. <LINES> block
           context(
             "Condition false section of a preprocessor if",
-            opt(preceded(Self::parse_else_temporary, Self::parse_fragments_till_endif)),
+            opt(preceded(Self::else_temporary_directive, Self::parse_fragments_till_endif)),
           ),
         )),
         // Ending with an endif
-        Self::parse_endif_temporary,
+        Self::endif_temporary_directive,
       ),
       |(pp_if_expr, branch_true, branch_false)| {
         if let PpAst::_TemporaryIf(if_expr) = pp_if_expr.deref() {
@@ -67,7 +67,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-elif(EXPR)` into a temporary AST node
-  pub(crate) fn parse_elif_temporary(input: &str) -> PpAstParserResult {
+  pub(crate) fn elif_temporary_directive(input: &str) -> PpAstParserResult {
     map(
       preceded(
         Self::match_dash_tag("elif"),
@@ -78,7 +78,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-ifdef(MACRO_NAME)`
-  pub(crate) fn parse_ifdef_temporary(input: &str) -> PpAstParserResult {
+  pub(crate) fn ifdef_temporary_directive(input: &str) -> PpAstParserResult {
     map(
       preceded(
         Self::match_dash_tag("ifdef"),
@@ -89,7 +89,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-ifndef(MACRO_NAME)`
-  pub fn parse_ifndef_temporary(input: &str) -> PpAstParserResult {
+  pub fn ifndef_temporary_directive(input: &str) -> PpAstParserResult {
     map(
       preceded(
         Self::match_dash_tag("ifndef"),
@@ -100,7 +100,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
-  pub fn parse_else_temporary(input: &str) -> PpAstParserResult {
+  pub fn else_temporary_directive(input: &str) -> PpAstParserResult {
     map(
       terminated(
         preceded(Self::match_dash_tag("else"), opt(pair(par_open, par_close))),
@@ -115,7 +115,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
-  pub fn parse_endif_temporary(input: &str) -> PpAstParserResult {
+  pub fn endif_temporary_directive(input: &str) -> PpAstParserResult {
     map(
       delimited(Self::match_dash_tag("endif"), Self::maybe_empty_parens, Self::dot_newline),
       |_opt| PpAst::_TemporaryEndif.into(),

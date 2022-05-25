@@ -6,6 +6,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad::stage::preprocess::PreprocessState;
 use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
+use libironclad_error::ic_error::IcResult;
 use libironclad_preprocessor::nom_parser::pp_parse_types::PreprocessorParser;
 use nom::Finish;
 use std::ops::Deref;
@@ -86,7 +87,7 @@ test\n
   println!("In=«{}»", input);
 
   let (tail, out) =
-    panicking_parser_error_reporter(input, PreprocessorParser::parse_if_block(input).finish());
+    panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
   println!("Out={:?}", out);
   assert!(tail.is_empty(), "Not all input consumed: {}", tail);
   todo!("Check that returned `if` contains 'false'");
@@ -97,10 +98,10 @@ test\n
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
   let input = "-define(AAA).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
   if let PpAst::Define { name, body, .. } = ast.deref() {
     assert_eq!(name, "AAA");
-    assert!(body.is_none());
+    assert!(body.is_empty());
   } else {
     panic!("Expected Define, received {:?}", ast);
   }
@@ -111,13 +112,12 @@ fn parse_define_ident_only() {
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
   if let PpAst::Define { name, body, .. } = ast.deref() {
     assert_eq!(name, "BBB");
-    assert!(body.is_some());
-    assert_eq!(body.clone().unwrap(), "[true)");
+    assert_eq!(body, "[true)");
   } else {
-    panic!("Expected Define, received {:?}", ast);
+    panic!("Expected Define(BBB, [], '[true)'), received {:?}", ast);
   }
 }
 
@@ -125,16 +125,19 @@ fn parse_define_with_body_no_args() {
 #[named]
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
-  let input = "-define(CCC(X,Y), 2args\nbody).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::parse_define).unwrap();
+  let input = "-define(CCC(X,y), 2args\nbody).";
+  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
   if let PpAst::Define { name, args, body, .. } = ast.deref() {
     assert_eq!(name, "CCC");
-    assert!(args.is_some());
-    assert_eq!(args.clone().unwrap().len(), 2);
-    assert!(body.is_some());
-    assert_eq!(body.clone().unwrap(), "2args\nbody");
+    assert!(!args.is_empty());
+
+    assert_eq!(args.len(), 2);
+    assert_eq!(args[0], "X");
+    assert_eq!(args[1], "y");
+
+    assert_eq!(body, "2args\nbody");
   } else {
-    panic!("Expected Define, received {:?}", ast);
+    panic!("Expected Define(CCC, [X, Y], '2args\\nbody'), received {:?}", ast);
   }
 }
 
@@ -156,31 +159,41 @@ fn test_macro_in_define() {
 
 #[test]
 #[named]
-fn parse_include_varied_spacing() {
+fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc1 = PreprocessState::from_source("-include (\"test\").\n").unwrap();
-  if let PpAst::File(ast) = inc1.deref() {
-    assert_eq!(ast.len(), 1);
-    if let PpAst::Include(t) = ast[0].deref() {
+  if let PpAst::File(nodes) = inc1.deref() {
+    assert_eq!(nodes.len(), 2); // define and empty line
+    if let PpAst::Include(t) = nodes[0].deref() {
       assert_eq!(t, "test");
     } else {
-      panic!("Expected File([Include]), received {:?}", ast);
+      panic!("Expected File([Include]), received {:?}", nodes);
     }
   }
+}
 
+#[test]
+#[named]
+fn parse_include_varied_spacing_2() {
+  test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc2 = PreprocessState::from_source(" - include(\"test\"\n).\n").unwrap();
   if let PpAst::File(ast) = inc2.deref() {
-    assert_eq!(ast.len(), 1);
+    assert_eq!(ast.len(), 2); // define and empty line
     if let PpAst::Include(t) = ast[0].deref() {
       assert_eq!(t, "test");
     } else {
       panic!("Expected File([Include]), received {:?}", ast);
     }
   }
+}
 
+#[test]
+#[named]
+fn parse_include_varied_spacing_3() {
+  test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc3 = PreprocessState::from_source("-include\n(\"test\"\n).\n").unwrap();
   if let PpAst::File(ast) = inc3.deref() {
-    assert_eq!(ast.len(), 1);
+    assert_eq!(ast.len(), 2); // define and empty line
     if let PpAst::Include(t) = ast[0].deref() {
       assert_eq!(t, "test");
     } else {
@@ -199,8 +212,8 @@ fn parse_define_varied_spacing() {
     assert_eq!(ast.len(), 1);
     if let PpAst::Define { name, args, body } = ast[0].deref() {
       assert_eq!(name, "AAA");
-      assert!(args.is_none());
-      assert_eq!(body.clone().unwrap(), "\"aaa\"");
+      assert!(args.is_empty());
+      assert_eq!(body, "\"aaa\"");
     } else {
       panic!(
         "Parsing define(AAA, \"aaa\"). failed, expected File([Define]), received {:?}",
@@ -209,13 +222,13 @@ fn parse_define_varied_spacing() {
     }
   }
 
-  let d1 = PreprocessState::from_source("-define(BBB, 666).").unwrap();
+  let d1 = PreprocessState::from_source("- define\n(BBB,\n666).").unwrap();
   if let PpAst::File(ast) = d1.deref() {
     assert_eq!(ast.len(), 1);
     if let PpAst::Define { name, args, body } = ast[0].deref() {
       assert_eq!(name, "BBB");
-      assert!(args.is_none());
-      assert_eq!(body.clone().unwrap(), "666");
+      assert!(args.is_empty());
+      assert_eq!(body, "666");
     } else {
       panic!("Parsing define(BBB, 666). failed, expected File([Define]), received {:?}", ast)
     }
@@ -223,15 +236,21 @@ fn parse_define_varied_spacing() {
 }
 
 #[test]
-fn test_define_fun() {
-  let d0 = PreprocessState::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
-  if let PpAst::DefineFun { name, args, body } = d0.deref() {
-    assert_eq!(name, "AAA");
-    assert_eq!(*args, vec!["X", "Y"]);
-    assert_eq!(body, "\"aaa\"");
-  } else {
-    panic!("Parsing -define() with args must return PpAst::DefineFun, received {:?}", d0)
+fn test_define_with_dquotes() -> IcResult<()> {
+  let file_ast = PreprocessState::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
+  if let PpAst::File(nodes) = file_ast.deref() {
+    if let PpAst::Define { name, args, body } = nodes[0].deref() {
+      assert_eq!(name, "AAA");
+      assert_eq!(*args, vec!["X", "Y"]);
+      assert_eq!(body, "\"aaa\"");
+      return Ok(());
+    }
   }
+
+  panic!(
+    "Parsing -define() with args expecting Define([AAA, [X, Y], '\"aaa\"'), received {:?}",
+    file_ast
+  )
 }
 
 // #[test]

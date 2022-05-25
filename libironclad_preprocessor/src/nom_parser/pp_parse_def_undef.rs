@@ -30,13 +30,17 @@ impl PreprocessorParser {
         many_till(anychar, Self::parenthesis_dot_newline),
       )),
       |(name, args, _comma, (body, _terminator))| {
-        PpAst::new_define(name, args, body.into_iter().collect::<String>())
+        PpAst::new_define(
+          name,
+          args.unwrap_or_else(|| Vec::default()),
+          body.into_iter().collect::<String>(),
+        )
       },
     )(input)
   }
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
-  pub fn parse_define(input: &str) -> PpAstParserResult {
+  pub fn define_directive(input: &str) -> PpAstParserResult {
     preceded(
       Self::match_dash_tag("define"),
       alt((
@@ -54,7 +58,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-undef(IDENT)`
-  pub fn parse_undef(input: &str) -> PpAstParserResult {
+  pub fn undef_directive(input: &str) -> PpAstParserResult {
     map(
       delimited(
         Self::match_dash_tag("undef"),

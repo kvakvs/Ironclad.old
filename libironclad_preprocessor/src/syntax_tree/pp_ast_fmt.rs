@@ -22,19 +22,13 @@ impl std::fmt::Display for PpAst {
       PpAst::IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       PpAst::Define { name, args, body } => {
         write!(f, "-define({}", name)?;
-        if let Some(args1) = args {
-          Pretty::display_paren_list(args1, f)?;
-          if body.is_some() {
+        if !args.is_empty() {
+          Pretty::display_paren_list(args, f)?;
+          if !body.is_empty() {
             write!(f, ", ")?;
           }
         }
-        if let Some(body1) = body {
-          write!(f, "{}", body1)?;
-        }
-        writeln!(f, ").")
-      }
-      PpAst::DefineFun { name, args, body } => {
-        write!(f, "-define({}({:?}), {})", name, args, body)
+        writeln!(f, "{}).", body)
       }
       PpAst::IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),

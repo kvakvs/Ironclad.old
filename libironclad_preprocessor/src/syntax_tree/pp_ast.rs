@@ -32,21 +32,20 @@ pub enum PpAst {
     /// Macro name
     name: String,
     /// Args if specified, different arity macros do not conflict each with other
-    args: Option<Vec<String>>,
-    /// Body if specified, any tokens, but since we have no tokenizer - any text
-    body: Option<String>,
-  },
-
-  /// Defines a macro with parameters, and body
-  DefineFun {
-    /// Name of the macro
-    name: String,
-    /// Arguments as strings
     args: Vec<String>,
-    /// Macro body
+    /// Body if specified, any tokens, but since we have no tokenizer - any text
     body: String,
   },
 
+  // /// Defines a macro with parameters, and body
+  // DefineFun {
+  //   /// Name of the macro
+  //   name: String,
+  //   /// Arguments as strings
+  //   args: Vec<String>,
+  //   /// Macro body
+  //   body: String,
+  // },
   /// Specific directive: -undef(NAME). removes a named macro definition
   Undef(String),
 

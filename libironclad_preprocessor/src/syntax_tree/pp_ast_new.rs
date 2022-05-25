@@ -17,14 +17,13 @@ impl PpAst {
   }
 
   /// Create new macro definition
-  pub fn new_define(name: String, args: Option<Vec<String>>, body: String) -> Arc<Self> {
-    let body1 = if body.trim().is_empty() { None } else { Some(body.trim().to_string()) };
-    PpAst::Define { name, args, body: body1 }.into()
+  pub fn new_define(name: String, args: Vec<String>, body: String) -> Arc<Self> {
+    PpAst::Define { name, args, body: body.trim().to_string() }.into()
   }
 
   /// Create new macro definition with name only
   pub fn new_define_name_only(name: String) -> Arc<Self> {
-    PpAst::Define { name, args: None, body: None }.into()
+    PpAst::Define { name, args: Vec::default(), body: String::new() }.into()
   }
 
   /// Create new text fragment

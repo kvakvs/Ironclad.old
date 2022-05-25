@@ -14,7 +14,7 @@ use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, recognize, verify};
 use nom::multi::{many0, many1, separated_list0};
-use nom::sequence::{pair, preceded, tuple};
+use nom::sequence::{delimited, pair, preceded, tuple};
 use nom::{
   bytes::complete::tag,
   character::complete::{alphanumeric1, char},
@@ -52,24 +52,24 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-include(STRING)`
-  fn parse_include(input: &str) -> PpAstParserResult {
+  fn include_directive(input: &str) -> PpAstParserResult {
     map(
       preceded(
         Self::match_dash_tag("include"),
-        tuple((par_open, ws_before(StringParser::parse_string), par_close)),
+        delimited(par_open, ws_before(StringParser::parse_string), par_close),
       ),
-      |(_open, s, _close)| PpAst::new_include(s),
+      PpAst::new_include,
     )(input)
   }
 
   /// Parse a `-include_lib(STRING)`
-  fn parse_include_lib(input: &str) -> PpAstParserResult {
+  fn include_lib_directive(input: &str) -> PpAstParserResult {
     map(
       preceded(
         Self::match_dash_tag("include_lib"),
-        tuple((par_open, ws_before(StringParser::parse_string), par_close)),
+        delimited(par_open, ws_before(StringParser::parse_string), par_close),
       ),
-      |(_open, s, _close)| PpAst::new_include_lib(s),
+      PpAst::new_include_lib,
     )(input)
   }
 
@@ -89,19 +89,19 @@ impl PreprocessorParser {
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {
     ws_before_mut(alt((
       // -define is special, it needs closing ).\n to consume the content
-      context("'-define' directive", Self::parse_define),
-      context("'-undef' directive", Self::parse_undef),
+      context("'-define' directive", Self::define_directive),
+      context("'-undef' directive", Self::undef_directive),
       // temporary nodes used by parse_if_block
-      context("'-endif' directive", Self::parse_endif_temporary),
-      context("'-elif' directive", Self::parse_elif_temporary),
-      context("'-else' directive", Self::parse_else_temporary),
-      context("'-ifdef' directive", Self::parse_ifdef_temporary),
-      context("'-ifndef' directive", Self::parse_ifndef_temporary),
-      context("'-if' directive", Self::parse_if_block), // if must go after longer words ifdef and ifndef
+      context("'-endif' directive", Self::endif_temporary_directive),
+      context("'-elif' directive", Self::elif_temporary_directive),
+      context("'-else' directive", Self::else_temporary_directive),
+      context("'-ifdef' directive", Self::ifdef_temporary_directive),
+      context("'-ifndef' directive", Self::ifndef_temporary_directive),
+      context("'-if' directive", Self::if_directive), // if must go after longer words ifdef and ifndef
       // Self::parse_error,
       // Self::parse_warning,
-      context("'-include_lib' directive", Self::parse_include_lib),
-      context("'-include' directive", Self::parse_include),
+      context("'-include_lib' directive", Self::include_lib_directive),
+      context("'-include' directive", Self::include_directive),
     )))(input)
   }
 
