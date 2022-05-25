@@ -8,6 +8,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAstType::FnDef;
 use libironclad_erlang::syntax_tree::erl_op::ErlBinaryOp;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
@@ -46,8 +47,8 @@ fn synth_simplefun_division() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let parsed = ErlModule::from_fun_source(&filename, "myfun(A) -> (A + 1) / 2.")?;
 
-  match parsed.ast.deref() {
-    ErlAst::FnDef(fn_def) => {
+  match &parsed.ast.content {
+    FnDef(fn_def) => {
       // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
       assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
       assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");

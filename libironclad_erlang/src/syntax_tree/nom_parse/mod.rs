@@ -3,10 +3,11 @@
 use std::sync::Arc;
 
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::ErlAstType::ModuleForms;
 use crate::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use nom::branch::alt;
 use nom::character::complete::multispace0;
-use nom::combinator::complete;
+use nom::combinator::{complete, map};
 use nom::multi::many0;
 
 pub mod misc;
@@ -66,7 +67,8 @@ impl ErlParser {
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
   pub fn parse_module(input: &str) -> AstParserResult {
-    let (input, forms) = Self::parse_module_forms_collection(input)?;
-    Ok((input, ErlAst::ModuleForms(forms).into()))
+    map(Self::parse_module_forms_collection, |forms| {
+      ErlAst::construct_without_location(ModuleForms(forms))
+    })(input)
   }
 }

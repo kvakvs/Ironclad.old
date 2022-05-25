@@ -5,13 +5,23 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_error::source_loc::SourceLoc;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
 /// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
 /// Lifetime note: Parse input string must live at least as long as this is alive
 #[derive(Debug, Clone)]
-pub enum PpAst {
+pub struct PpAst {
+  /// The node location in source
+  pub location: SourceLoc,
+  /// The node type and optional content
+  pub node_type: PpAstType,
+}
+
+/// Type of a Preprocessor AST node
+#[derive(Debug, Clone)]
+pub enum PpAstType {
   /// Root of a preprocessed file
   File(Vec<Arc<PpAst>>),
 

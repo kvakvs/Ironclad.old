@@ -1,7 +1,7 @@
 //! Contains parsers for function typespecs and type syntax.
 
 use crate::literal::Literal;
-use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
 use crate::syntax_tree::nom_parse::misc::{
   comma, par_close, par_open, parse_int, parse_varname, semicolon, ws_before, ws_before_mut,
 };
@@ -10,6 +10,7 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParserError};
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
+use ::function_name::named;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
@@ -256,7 +257,13 @@ impl ErlTypeParser {
   }
 
   /// Wraps parsed type into a type-AST-node
+  #[named]
   pub fn parse_type_node(input: &str) -> AstParserResult {
-    map(Self::parse_type, |t| ErlAst::Type { location: SourceLoc::None, ty: t }.into())(input)
+    map(Self::parse_type, |t| {
+      ErlAst::construct_with_location(
+        SourceLoc::unimplemented(file!(), function_name!()),
+        ErlAstType::Type { ty: t },
+      )
+    })(input)
   }
 }

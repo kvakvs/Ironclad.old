@@ -5,14 +5,13 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAstType;
 use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
-use std::ops::Deref;
 use std::path::PathBuf;
 
 #[named]
@@ -82,7 +81,7 @@ fn fn_typespec_parse_1() -> IcResult<()> {
   let spec1_src = format!("spec {}(A :: integer()) -> any()", function_name!());
   let spec1_m = ErlModule::from_fun_spec_source(&filename, &spec1_src)?;
 
-  if let ErlAst::FnSpec { funarity, spec, .. } = spec1_m.ast.deref() {
+  if let ErlAstType::FnSpec { funarity, spec, .. } = &spec1_m.ast.content {
     assert_eq!(
       funarity,
       &MFArity::new_local(function_name!(), 1),
@@ -108,7 +107,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
     format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
   let spec2_m = ErlModule::from_fun_spec_source(&filename, &spec2_src)?;
 
-  if let ErlAst::FnSpec { funarity, spec, .. } = spec2_m.ast.deref() {
+  if let ErlAstType::FnSpec { funarity, spec, .. } = &spec2_m.ast.content {
     assert_eq!(
       funarity,
       &MFArity::new_local(function_name!(), 1),

@@ -1,5 +1,6 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::ErlAstType::UnaryOp;
 use crate::syntax_tree::erl_op::ErlUnaryOp;
 use crate::syntax_tree::literal_bool::LiteralBool;
 use libironclad_error::source_loc::SourceLoc;
@@ -16,12 +17,9 @@ pub struct ErlUnaryOperatorExpr {
 
 impl ErlUnaryOperatorExpr {
   /// Create an unary operator and wrap it with ErlAst::UnaryOp
-  pub fn new_ast(loc: SourceLoc, operator: ErlUnaryOp, expr: Arc<ErlAst>) -> Arc<ErlAst> {
-    ErlAst::UnaryOp {
-      location: loc,
-      expr: ErlUnaryOperatorExpr { expr, operator },
-    }
-    .into()
+  pub fn new_ast(loc: &SourceLoc, operator: ErlUnaryOp, expr: Arc<ErlAst>) -> Arc<ErlAst> {
+    let unop_node = UnaryOp { expr: ErlUnaryOperatorExpr { expr, operator } };
+    ErlAst::construct_with_location(loc.clone(), unop_node)
   }
 
   /// Walk the literal expression and try to find whether it is true, false or neither

@@ -78,36 +78,44 @@ impl ErlError {
   }
 
   /// Creates an "Unacceptable" error
-  pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
-    let new_err =
-      ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
+  pub fn unacceptable<T>(loc: &SourceLoc, message: String) -> IcResult<T> {
+    let new_err = ErlError::new(
+      IcErrorCategory::ErlangParse,
+      ErlErrorCategory::Unacceptable,
+      loc.clone(),
+      message,
+    );
     Err(Box::new(new_err))
   }
 
   /// Creates an "TypeError" error
-  pub fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
+  pub fn type_error<T>(loc: &SourceLoc, type_err: TypeError) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::TypeError,
       ErlErrorCategory::TypeError,
-      loc,
+      loc.clone(),
       format!("{}", type_err),
     );
     Err(Box::new(new_err))
   }
 
   /// Creates an "Local Function Not Found" error
-  pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
-    let new_err =
-      ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
+  pub fn local_function_not_found<T>(loc: &SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
+    let new_err = ErlError::new(
+      IcErrorCategory::Erlang,
+      ErlErrorCategory::LocalFnNotFound { mfa },
+      loc.clone(),
+      msg,
+    );
     Err(Box::new(new_err))
   }
 
   /// Creates a "Variable Not Found" error
-  pub fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
+  pub fn variable_not_found<T>(loc: &SourceLoc, var: String) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::Erlang,
       ErlErrorCategory::VariableNotFound { var },
-      loc,
+      loc.clone(),
       String::default(),
     );
     Err(Box::new(new_err))

@@ -1,7 +1,7 @@
 //! Parse ironclad_exe expressions and ironclad_exe builders.
 
 use crate::literal::Literal;
-use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
 use crate::syntax_tree::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
@@ -34,7 +34,7 @@ impl BinaryParser {
   /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
   fn parse_width(input: &str) -> ParserResult<ValueWidth> {
     map(Self::parse_value, |v| {
-      if let ErlAst::Lit { value: lit_val, .. } = v.deref() {
+      if let ErlAstType::Lit { value: lit_val, .. } = &v.content {
         // TODO: Big Integer
         if let Literal::Integer(inner_val) = lit_val.deref() {
           assert!(*inner_val > 0);

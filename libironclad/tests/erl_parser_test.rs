@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::literal::Literal;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
+use libironclad_erlang::syntax_tree::erl_ast::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
 use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
 use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
@@ -87,7 +87,7 @@ fn parse_string_test() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "\"abc\"").unwrap();
 
-  if let ErlAst::Lit { value: lit, .. } = module.ast.deref() {
+  if let Lit { value: lit, .. } = &module.ast.content {
     if let Literal::String(value) = lit.deref() {
       assert_eq!(value, "abc");
       return Ok(());
@@ -103,11 +103,11 @@ fn parse_expr_2_plus_2() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let expr_2 = ErlModule::from_expr_source(&filename, " 2")?;
   println!("Parse \"2\": {}", expr_2.ast);
-  assert!(matches!(expr_2.ast.deref(), ErlAst::Lit { .. }));
+  assert!(matches!(&expr_2.ast.content, Lit { .. }));
 
   let expr_2_2 = ErlModule::from_expr_source(&filename, " 2         + 2       ")?;
   println!("Parse \"2+2\": {}", expr_2_2.ast);
-  assert!(matches!(expr_2_2.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&expr_2_2.ast.content, BinaryOp { .. }));
 
   Ok(())
 }
@@ -119,7 +119,7 @@ fn parse_expr_flat() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "A + 123 + 333 + 6 + atom + Test")?;
   println!("Parse \"A+123+333+6+atom+Test\": {}", module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
   Ok(())
 }
 
@@ -142,7 +142,7 @@ fn parse_expr_longer() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "123 + 1 / (2 * hello)")?;
   println!("Parse \"123+1/(2*hello)\": {}", module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
   Ok(())
 }
 
@@ -153,7 +153,7 @@ fn parse_expr_2() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "(A +1)/ 2")?;
   println!("Parse \"(A+1)/2\": {}", module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
   Ok(())
 }
 
@@ -166,7 +166,7 @@ fn parse_expr_comma() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let module = ErlModule::from_expr_source(&filename, "A, B, 123 * C")?;
   println!("Parse \"A,B,123*C\": {}", module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
 
   Ok(())
 }
@@ -180,7 +180,7 @@ fn parse_expr_containers() -> IcResult<()> {
   let src = "[1,2  ,3  ] + {a, b ,C}";
   let module = ErlModule::from_expr_source(&filename, src)?;
   println!("Parse «{}»: {}", src, module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
 
   Ok(())
 }
@@ -194,7 +194,7 @@ fn parse_expr_hard_eq() -> IcResult<()> {
   let src = "A =:= B2";
   let module = ErlModule::from_expr_source(&filename, src)?;
   println!("Parse «{}»: {}", src, module.ast);
-  assert!(matches!(module.ast.deref(), ErlAst::BinaryOp { .. }));
+  assert!(matches!(&module.ast.content, BinaryOp { .. }));
 
   Ok(())
 }
@@ -208,7 +208,7 @@ fn parse_fn1() -> IcResult<()> {
   let module = ErlModule::from_fun_source(&filename, "f(A) -> atom123.")?;
   println!("Parse \"f(A) -> atom123.\": {}", module.ast);
 
-  if let ErlAst::FnDef { .. } = module.ast.deref() {
+  if let FnDef { .. } = &module.ast.content {
     // ok
   } else {
     panic!("{} Expected: ErlAst::FunctionDef, got {}", function_name!(), module.ast);
@@ -313,7 +313,7 @@ fn parse_apply_1() -> IcResult<()> {
   let module = ErlModule::from_expr_source(&filename, "a_function()")?;
   println!("{}: parsed {}", function_name!(), module.ast);
 
-  if let ErlAst::Apply { .. } = module.ast.deref() {
+  if let Apply { .. } = &module.ast.content {
     // ok
   } else {
     panic!("{} Expected: ErlAst::App, got {}", function_name!(), module.ast);
@@ -481,7 +481,7 @@ fn parse_apply_2() -> IcResult<()> {
   let module = ErlModule::from_expr_source(&filename, "(123 + atom)()")?;
   println!("{}: parsed {}", function_name!(), module.ast);
 
-  if let ErlAst::Apply { .. } = module.ast.deref() {
+  if let Apply { .. } = &module.ast.content {
     // ok
   } else {
     panic!("{} Expected: ErlAst::App, got {}", function_name!(), module.ast);
@@ -499,7 +499,7 @@ fn parse_apply_3() -> IcResult<()> {
   let module = ErlModule::from_expr_source(&filename, "(F() + g())(test(), 123())")?;
   println!("{} parse_application 3 parsed {}", function_name!(), module.ast);
 
-  if let ErlAst::Apply { .. } = module.ast.deref() {
+  if let Apply { .. } = &module.ast.content {
     // ok
   } else {
     panic!("{} Expected: ErlAst::App, got {}", function_name!(), module.ast);

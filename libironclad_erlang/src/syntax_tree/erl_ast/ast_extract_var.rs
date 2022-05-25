@@ -1,13 +1,12 @@
 //! AST node-type checks
 
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
-use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
 use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::node::erl_binary_element::ValueWidth;
 use crate::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::sync::Arc;
 
 impl ErlAst {
@@ -18,12 +17,12 @@ impl ErlAst {
     node: &Arc<ErlAst>,
     variables: &mut HashMap<String, Arc<ErlType>>,
   ) -> IcResult<()> {
-    match node.deref() {
-      ErlAst::Var(v) => {
+    match &node.content {
+      ErlAstType::Var(v) => {
         variables.insert(v.name.clone(), ErlType::any());
         Ok(())
       }
-      ErlAst::BinaryExpr { elements, .. } => {
+      ErlAstType::BinaryExpr { elements, .. } => {
         for e in elements {
           Self::extract_variables(&e.value, variables)?;
           if let ValueWidth::Expr(expr_width) = &e.width {
@@ -32,24 +31,24 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::CommaExpr { elements, .. } => {
+      ErlAstType::CommaExpr { elements, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
         Ok(())
       }
-      ErlAst::ListComprehension { expr, generators, .. } => {
+      ErlAstType::ListComprehension { expr, generators, .. } => {
         Self::extract_variables(expr, variables)?;
         for g in generators {
           Self::extract_variables(g, variables)?;
         }
         Ok(())
       }
-      ErlAst::ListComprehensionGenerator { left, right, .. } => {
+      ErlAstType::ListComprehensionGenerator { left, right, .. } => {
         Self::extract_variables(left, variables)?;
         Self::extract_variables(right, variables)
       }
-      ErlAst::IfStatement { clauses, .. } => {
+      ErlAstType::IfStatement { clauses, .. } => {
         for clause in clauses {
           if let Some(children) = clause.children() {
             for child in children {
@@ -59,7 +58,7 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+      ErlAstType::TryCatch { body, of_branches, catch_clauses, .. } => {
         Self::extract_variables(body, variables)?;
         if let Some(ofb) = of_branches {
           for b in ofb {
@@ -83,7 +82,7 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::List { elements, tail, .. } => {
+      ErlAstType::List { elements, tail, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
@@ -92,13 +91,13 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAst::Tuple { elements, .. } => {
+      ErlAstType::Tuple { elements, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
         Ok(())
       }
-      ErlAst::Map { values, .. } => {
+      ErlAstType::Map { values, .. } => {
         // Cannot bind variable to a map key in arguments list
         for v in values {
           Self::extract_variables(v, variables)?;
@@ -106,27 +105,30 @@ impl ErlAst {
         Ok(())
       }
 
-      ErlAst::Empty | ErlAst::BinaryOp { .. } | ErlAst::Lit { .. } | ErlAst::Token { .. } => {
+      ErlAstType::Empty
+      | ErlAstType::BinaryOp { .. }
+      | ErlAstType::Lit { .. }
+      | ErlAstType::Token { .. } => {
         Ok(()) // do nothing
       }
 
-      ErlAst::FnSpec { .. }
-      | ErlAst::Type { .. }
-      | ErlAst::MFA { .. }
-      | ErlAst::ModuleStartAttr { .. }
-      | ErlAst::ExportAttr { .. }
-      | ErlAst::ExportTypeAttr { .. }
-      | ErlAst::TypeAttr { .. }
-      | ErlAst::ImportAttr { .. }
-      | ErlAst::ModuleForms(_)
-      | ErlAst::FnRef { .. }
-      | ErlAst::FnDef(_)
-      | ErlAst::CClause(_, _)
-      | ErlAst::CaseStatement { .. }
-      | ErlAst::Apply(_)
-      | ErlAst::UnaryOp { .. }
-      | ErlAst::GenericAttr { .. } => ErlError::unacceptable(
-        node.location(),
+      ErlAstType::FnSpec { .. }
+      | ErlAstType::Type { .. }
+      | ErlAstType::MFA { .. }
+      | ErlAstType::ModuleStartAttr { .. }
+      | ErlAstType::ExportAttr { .. }
+      | ErlAstType::ExportTypeAttr { .. }
+      | ErlAstType::TypeAttr { .. }
+      | ErlAstType::ImportAttr { .. }
+      | ErlAstType::ModuleForms(_)
+      | ErlAstType::FnRef { .. }
+      | ErlAstType::FnDef(_)
+      | ErlAstType::CClause(_, _)
+      | ErlAstType::CaseStatement { .. }
+      | ErlAstType::Apply(_)
+      | ErlAstType::UnaryOp { .. }
+      | ErlAstType::GenericAttr { .. } => ErlError::unacceptable(
+        &node.location,
         format!("{}: is unacceptable as a function argument", node),
       ),
     }

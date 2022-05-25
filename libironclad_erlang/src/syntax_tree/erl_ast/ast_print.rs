@@ -2,82 +2,88 @@
 
 use crate::literal::Literal;
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::ErlAstType::{
+  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
+  ExportTypeAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
+  ListComprehension, ListComprehensionGenerator, Lit, Map, ModuleForms, ModuleStartAttr, Token,
+  TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
+};
 use crate::syntax_tree::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use libironclad_util::pretty::Pretty;
 
 impl std::fmt::Display for ErlAst {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    match self {
-      ErlAst::Empty => writeln!(f, "% empty"),
-      ErlAst::Token { token: t, .. } => writeln!(f, "% token {}", t),
-      ErlAst::ModuleForms(forms) => {
+    match &self.content {
+      Empty => writeln!(f, "% empty"),
+      Token { token: t, .. } => writeln!(f, "% token {}", t),
+      ModuleForms(forms) => {
         for form in forms.iter() {
           write!(f, "{}", form)?;
         }
         Ok(())
       }
-      ErlAst::ModuleStartAttr { name, .. } => writeln!(f, "-module('{}').", name),
-      ErlAst::ExportAttr { exports, .. } => {
+      ModuleStartAttr { name, .. } => writeln!(f, "-module('{}').", name),
+      ExportAttr { exports, .. } => {
         write!(f, "-export(")?;
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
       }
-      ErlAst::ExportTypeAttr { exports, .. } => {
+      ExportTypeAttr { exports, .. } => {
         write!(f, "-export_type(")?;
         Pretty::display_square_list(exports, f)?;
         writeln!(f, ").")
       }
-      ErlAst::ImportAttr { import_from, imports, .. } => {
+      ImportAttr { import_from, imports, .. } => {
         write!(f, "-import({}, ", import_from)?;
         Pretty::display_square_list(imports, f)?;
         writeln!(f, ").")
       }
-      ErlAst::TypeAttr { name, vars, ty, .. } => {
+      TypeAttr { name, vars, ty, .. } => {
         write!(f, "-type {}", name)?;
         Pretty::display_paren_list(vars, f)?;
         write!(f, " :: {}", ty)?;
         writeln!(f, ".")
       }
-      ErlAst::GenericAttr { tag, term, .. } => {
+      GenericAttr { tag, term, .. } => {
         if let Some(t) = term {
           writeln!(f, "-{}({}).", tag, t)
         } else {
           writeln!(f, "-{}.", tag)
         }
       }
-      ErlAst::FnRef { mfa, .. } => write!(f, "fun {}", mfa),
-      ErlAst::FnDef(erl_fndef) => {
+      FnRef { mfa, .. } => write!(f, "fun {}", mfa),
+      FnDef(erl_fndef) => {
         write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
         for fc in erl_fndef.clauses.iter() {
           write!(f, "{};", fc)?;
         }
         writeln!(f, "}}")
       }
-      ErlAst::CClause(_loc, clause) => match &clause.guard {
+      CClause(_loc, clause) => match &clause.guard {
         Some(g) => write!(f, "{} when {} -> {}", clause.pattern, g, clause.body),
         None => write!(f, "{} -> {}", clause.pattern, clause.body),
       },
-      ErlAst::Var(var) => write!(f, "{}", var.name),
-      ErlAst::Apply(app) => write!(f, "{}", app),
-      ErlAst::CaseStatement { expr, clauses, .. } => {
+      Var(var) => write!(f, "{}", var.name),
+      Apply(app) => write!(f, "{}", app),
+      CaseStatement { expr, clauses, .. } => {
         write!(f, "case {} of", expr)?;
         Pretty::display_semicolon_separated(clauses, f)?;
         writeln!(f, "end")
       }
-      ErlAst::Lit { value: lit, .. } => write!(f, "{}", lit),
+      Lit { value: lit, .. } => write!(f, "{}", lit),
 
-      ErlAst::BinaryOp { expr: binop_expr, .. } => {
+      BinaryOp { expr: binop_expr, .. } => {
         write!(f, "({} {} {})", binop_expr.left, binop_expr.operator, binop_expr.right)
       }
-      ErlAst::UnaryOp { expr: unop_expr, .. } => {
+      UnaryOp { expr: unop_expr, .. } => {
         write!(f, "({} {})", unop_expr.operator, unop_expr.expr)
       }
-      ErlAst::MFA { mfarity: mfa, .. } => match &mfa.module {
+      MFA { mfarity: mfa, .. } => match &mfa.module {
         None => write!(f, "(fun {}/{})", mfa.name, mfa.arity),
         Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
       },
-      ErlAst::CommaExpr { elements, .. } => Pretty::display_comma_separated(elements, f),
-      ErlAst::List { elements, tail: maybe_tail, .. } => {
+      CommaExpr { elements, .. } => Pretty::display_comma_separated(elements, f),
+      List { elements, tail: maybe_tail, .. } => {
         write!(f, "[")?;
         Pretty::display_comma_separated(elements, f)?;
         if let Some(tail) = maybe_tail {
@@ -85,25 +91,25 @@ impl std::fmt::Display for ErlAst {
         }
         write!(f, "]")
       }
-      ErlAst::Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
-      ErlAst::FnSpec { funarity, spec, .. } => {
+      Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
+      FnSpec { funarity, spec, .. } => {
         write!(f, "-spec {}", funarity.name)?;
         Pretty::display_semicolon_separated(spec.as_fn_type().clauses(), f)?;
         write!(f, ".")
       }
-      ErlAst::Type { ty, .. } => write!(f, "{}", ty),
-      ErlAst::Map { .. } => {
+      Type { ty, .. } => write!(f, "{}", ty),
+      Map { .. } => {
         unimplemented!("Display for ErlAst::Map")
       }
-      ErlAst::ListComprehension { expr, generators, .. } => {
+      ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;
         Pretty::display_comma_separated(generators, f)?;
         write!(f, "]")
       }
-      ErlAst::ListComprehensionGenerator { left, right, .. } => {
+      ListComprehensionGenerator { left, right, .. } => {
         write!(f, "{} <- {}", left, right)
       }
-      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+      TryCatch { body, of_branches, catch_clauses, .. } => {
         write!(f, "try {}", body)?;
         if let Some(ofb) = of_branches {
           write!(f, "of")?;
@@ -111,12 +117,12 @@ impl std::fmt::Display for ErlAst {
         }
         Pretty::display_semicolon_separated(catch_clauses, f)
       }
-      ErlAst::IfStatement { clauses, .. } => {
+      IfStatement { clauses, .. } => {
         write!(f, "if ")?;
         Pretty::display_semicolon_separated(clauses, f)?;
         write!(f, " end")
       }
-      ErlAst::BinaryExpr { elements, .. } => {
+      BinaryExpr { elements, .. } => {
         write!(f, "<<")?;
         Pretty::display_comma_separated(elements, f)?;
         write!(f, ">>")

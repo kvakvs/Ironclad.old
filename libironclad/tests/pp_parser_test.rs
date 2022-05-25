@@ -9,9 +9,9 @@ use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_rep
 use libironclad_error::ic_error::IcResult;
 use libironclad_preprocessor::nom_parser::pp_parse_types::PreprocessorParser;
 use nom::Finish;
-use std::ops::Deref;
 
-use libironclad_preprocessor::syntax_tree::pp_ast::PpAst;
+use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType;
+use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType::{Define, File, Include};
 
 #[test]
 #[named]
@@ -24,7 +24,7 @@ fn test_fragment_if() {
   let (_tail, result) =
     panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
   // assert_eq!(out.len(), 1, "Expecting exact one result");
-  assert!(matches!(result.deref(), PpAst::_TemporaryIf(_ast)));
+  assert!(matches!(&result.node_type, PpAstType::_TemporaryIf(_ast)));
   println!("Out={:?}", result);
 }
 
@@ -54,7 +54,7 @@ after_if";
     out[0]
   );
 
-  if let PpAst::IfBlock { cond_true, cond_false, .. } = out[1].deref() {
+  if let PpAstType::IfBlock { cond_true, cond_false, .. } = &out[1].node_type {
     assert_eq!(cond_true.len(), 1, "must have true branch");
     assert!(cond_true[0].is_text_of("on_true"));
 
@@ -86,7 +86,7 @@ on_false
     panicking_parser_error_reporter(input, PreprocessorParser::if_block(input).finish());
   println!("Out={:?}", ast);
 
-  if let PpAst::IfBlock { cond, cond_true, cond_false } = ast.deref() {
+  if let PpAstType::IfBlock { cond, cond_true, cond_false } = &ast.node_type {
     assert!(cond.is_atom());
     assert_eq!(cond.as_atom(), "false");
 
@@ -106,7 +106,7 @@ fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
   let input = "-define(AAA).";
   let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
-  if let PpAst::Define { name, body, .. } = ast.deref() {
+  if let Define { name, body, .. } = &ast.node_type {
     assert_eq!(name, "AAA");
     assert!(body.is_empty());
   } else {
@@ -120,7 +120,7 @@ fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
   let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
-  if let PpAst::Define { name, body, .. } = ast.deref() {
+  if let Define { name, body, .. } = &ast.node_type {
     assert_eq!(name, "BBB");
     assert_eq!(body, "[true)");
   } else {
@@ -134,7 +134,8 @@ fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
   let input = "-define(CCC(X,y), 2args\nbody).";
   let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
-  if let PpAst::Define { name, args, body, .. } = ast.deref() {
+
+  if let Define { name, args, body, .. } = &ast.node_type {
     assert_eq!(name, "CCC");
     assert!(!args.is_empty());
 
@@ -168,9 +169,9 @@ fn test_macro_in_define() {
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc1 = PreprocessState::from_source("-include (\"test\").\n").unwrap();
-  if let PpAst::File(nodes) = inc1.deref() {
+  if let File(nodes) = &inc1.node_type {
     assert_eq!(nodes.len(), 2); // define and empty line
-    if let PpAst::Include(t) = nodes[0].deref() {
+    if let Include(t) = &nodes[0].node_type {
       assert_eq!(t, "test");
     } else {
       panic!("Expected File([Include]), received {:?}", nodes);
@@ -183,9 +184,9 @@ fn parse_include_varied_spacing_1() {
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc2 = PreprocessState::from_source(" - include(\"test\"\n).\n").unwrap();
-  if let PpAst::File(ast) = inc2.deref() {
+  if let File(ast) = &inc2.node_type {
     assert_eq!(ast.len(), 2); // define and empty line
-    if let PpAst::Include(t) = ast[0].deref() {
+    if let Include(t) = &ast[0].node_type {
       assert_eq!(t, "test");
     } else {
       panic!("Expected File([Include]), received {:?}", ast);
@@ -198,9 +199,9 @@ fn parse_include_varied_spacing_2() {
 fn parse_include_varied_spacing_3() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let inc3 = PreprocessState::from_source("-include\n(\"test\"\n).\n").unwrap();
-  if let PpAst::File(ast) = inc3.deref() {
+  if let File(ast) = &inc3.node_type {
     assert_eq!(ast.len(), 2); // define and empty line
-    if let PpAst::Include(t) = ast[0].deref() {
+    if let Include(t) = &ast[0].node_type {
       assert_eq!(t, "test");
     } else {
       panic!("Expected File([Include]), received {:?}", ast);
@@ -214,9 +215,9 @@ fn parse_define_varied_spacing() {
   test_util::start(function_name!(), "Parse -define() directives with varied spacing");
 
   let d0 = PreprocessState::from_source("- define(AAA, \"aaa\").").unwrap();
-  if let PpAst::File(ast) = d0.deref() {
+  if let File(ast) = &d0.node_type {
     assert_eq!(ast.len(), 1);
-    if let PpAst::Define { name, args, body } = ast[0].deref() {
+    if let Define { name, args, body } = &ast[0].node_type {
       assert_eq!(name, "AAA");
       assert!(args.is_empty());
       assert_eq!(body, "\"aaa\"");
@@ -229,9 +230,9 @@ fn parse_define_varied_spacing() {
   }
 
   let d1 = PreprocessState::from_source("- define\n(BBB,\n666).").unwrap();
-  if let PpAst::File(ast) = d1.deref() {
+  if let File(ast) = &d1.node_type {
     assert_eq!(ast.len(), 1);
-    if let PpAst::Define { name, args, body } = ast[0].deref() {
+    if let Define { name, args, body } = &ast[0].node_type {
       assert_eq!(name, "BBB");
       assert!(args.is_empty());
       assert_eq!(body, "666");
@@ -244,8 +245,8 @@ fn parse_define_varied_spacing() {
 #[test]
 fn test_define_with_dquotes() -> IcResult<()> {
   let file_ast = PreprocessState::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
-  if let PpAst::File(nodes) = file_ast.deref() {
-    if let PpAst::Define { name, args, body } = nodes[0].deref() {
+  if let File(nodes) = &file_ast.node_type {
+    if let Define { name, args, body } = &nodes[0].node_type {
       assert_eq!(name, "AAA");
       assert_eq!(*args, vec!["X", "Y"]);
       assert_eq!(body, "\"aaa\"");

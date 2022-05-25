@@ -2,7 +2,9 @@
 
 use crate::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use crate::syntax_tree::pp_ast::PpAst;
+use ::function_name::named;
 use libironclad_erlang::syntax_tree::nom_parse::misc::{comma, par_close, par_open, ws_before};
+use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, opt};
@@ -12,12 +14,16 @@ use nom::sequence::{delimited, preceded, tuple};
 
 impl PreprocessorParser {
   /// Parses inner part of a `-define(IDENT)` variant
+  #[named]
   fn define_no_args_no_body(input: &str) -> PpAstParserResult {
-    map(Self::macro_ident, PpAst::new_define_name_only)(input)
+    map(Self::macro_ident, |name| {
+      PpAst::new_define_name_only(&SourceLoc::unimplemented(file!(), function_name!()), name)
+    })(input)
   }
 
   /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
   /// will consume end delimiter `").\n"`
+  #[named]
   fn define_with_args_body_and_terminator(input: &str) -> PpAstParserResult {
     map(
       tuple((
@@ -31,6 +37,7 @@ impl PreprocessorParser {
       )),
       |(name, args, _comma, (body, _terminator))| {
         PpAst::new_define(
+          &SourceLoc::unimplemented(file!(), function_name!()),
           name,
           args.unwrap_or_else(|| Vec::default()),
           body.into_iter().collect::<String>(),
@@ -65,7 +72,7 @@ impl PreprocessorParser {
         tuple((par_open, ws_before(Self::macro_ident), par_close)),
         Self::dot_newline,
       ),
-      |(_open, ident, _close)| PpAst::new_undef(ident),
+      |(_open, ident, _close)| PpAst::new_undef(&SourceLoc::from_input(input), ident),
     )(input)
   }
 }

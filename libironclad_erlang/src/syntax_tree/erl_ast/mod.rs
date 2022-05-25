@@ -1,5 +1,6 @@
 //! AST syntax structure of an Erlang file
 use crate::literal::Literal;
+use crate::syntax_tree::erl_ast::ErlAstType::{FnDef, ModuleForms};
 use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
 use crate::syntax_tree::node::erl_apply::ErlApply;
@@ -30,14 +31,21 @@ pub mod ast_print;
 
 /// AST node in parsed Erlang source
 #[derive(Debug)]
-pub enum ErlAst {
+pub struct ErlAst {
+  /// Source file pointer
+  pub location: SourceLoc,
+  /// Node type and optional content
+  pub content: ErlAstType,
+}
+
+/// Type for an Erlang AST node
+#[derive(Debug)]
+pub enum ErlAstType {
   /// Default value for when AST tree is empty. Should create error, not a valid AST node.
   Empty,
 
   /// A token to be consumed by AST builder, temporary, must not exist in final AST
   Token {
-    /// Source file pointer
-    location: SourceLoc,
     /// The token enum
     token: ErlToken,
   },
@@ -47,32 +55,24 @@ pub enum ErlAst {
 
   /// -module(name). attribute, defines module start
   ModuleStartAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// Module name atom, stored as string
     name: String,
   },
 
   /// `-export([f/a, ......]).` attribute, defines exports
   ExportAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// List of funarities (MFAs with module=None)
     exports: Vec<MFArity>,
   },
 
   /// `-export_type([f/a, ......]).` attribute, defines exports for types
   ExportTypeAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// List of typename/arities (MFAs with module=None)
     exports: Vec<MFArity>,
   },
 
   /// `-type ATOM(ARG, ...) :: TYPE` attribute, defines a new type
   TypeAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// Type name
     name: String,
     /// List of type variables
@@ -83,8 +83,6 @@ pub enum ErlAst {
 
   /// `-import([f/a, ......]).` attribute, defines imports
   ImportAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// Module to import from
     import_from: String,
     /// List of funarities to import (MFAs with module=None)
@@ -93,8 +91,6 @@ pub enum ErlAst {
 
   /// A generic attribute `"-name" ... "."\n` extracted from the source, parsed at a later stage
   GenericAttr {
-    /// Source file pointer
-    location: SourceLoc,
     /// Attr name atom, stored as string
     tag: String,
     /// Attr value (any expression)
@@ -109,16 +105,12 @@ pub enum ErlAst {
   /// Points to a function, replaced from apply calls and fun exprs, where we know that the
   /// expression must be callable
   FnRef {
-    /// Code source location
-    location: SourceLoc,
     /// Function name
     mfa: MFArity,
   },
 
   /// A function spec, written as `-spec myfun(...) -> <ret type> when ... <optional when>.`
   FnSpec {
-    /// Code source location
-    location: SourceLoc,
     /// The function name and arity, module as None
     funarity: MFArity,
     /// Type for all function clauses
@@ -127,8 +119,6 @@ pub enum ErlAst {
 
   /// A temporary node wrapper for parsed types. TODO: Use more extensively in typespecs and maybe in the augmented syntax?
   Type {
-    /// Code source location
-    location: SourceLoc,
     /// The type
     ty: Arc<ErlType>,
   },
@@ -138,12 +128,8 @@ pub enum ErlAst {
 
   /// Name/arity which refers to a function in the current module
   MFA {
-    /// Code location
-    location: SourceLoc,
     /// fun/arity in the current module, or full mod:fun/arity if external
     mfarity: MFArity,
-    // /// Known function clause types from the function name lookup, empty if not known
-    // clause_types: Vec<FnClauseType>,
   },
 
   /// A named variable
@@ -154,8 +140,6 @@ pub enum ErlAst {
 
   /// Case switch containing the argument to check, and case clauses
   CaseStatement {
-    /// Source code location
-    location: SourceLoc,
     /// Argument X in `case X of`
     expr: Arc<ErlAst>,
     /// All case clauses in order
@@ -164,32 +148,24 @@ pub enum ErlAst {
 
   /// A literal value, constant. Type is known via literal.get_type()
   Lit {
-    /// Source code location
-    location: SourceLoc,
     /// The literal value
     value: Arc<Literal>,
   },
 
   /// Binary operation with two arguments
   BinaryOp {
-    /// Source code location
-    location: SourceLoc,
     /// The contained ironclad_exe A&B expression
     expr: ErlBinaryOperatorExpr,
   },
 
   /// Unary operation with 1 argument
   UnaryOp {
-    /// Source code location
-    location: SourceLoc,
     /// The contained unary &B expression
     expr: ErlUnaryOperatorExpr,
   },
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())
   List {
-    /// Source code location
-    location: SourceLoc,
     /// List elements
     elements: Vec<Arc<ErlAst>>,
     /// Optional tail element if not NIL
@@ -198,16 +174,12 @@ pub enum ErlAst {
 
   /// A tuple of some expressions, TODO: constant folding
   Tuple {
-    /// Source code location
-    location: SourceLoc,
     /// Tuple elements
     elements: Vec<Arc<ErlAst>>,
   },
 
   /// A map of some keys and some values
   Map {
-    /// Source code location
-    location: SourceLoc,
     /// Map keys, matching values by index
     keys: Vec<Arc<ErlAst>>,
     /// Map values, matching keys by index
@@ -216,16 +188,12 @@ pub enum ErlAst {
 
   /// Comma-separated list of expressions, final expression is the result
   CommaExpr {
-    /// Source code location
-    location: SourceLoc,
     /// Comma-expression elements
     elements: Vec<Arc<ErlAst>>,
   },
 
   /// A list comprehension expression
   ListComprehension {
-    /// Source code location
-    location: SourceLoc,
     /// The result expression
     expr: Arc<ErlAst>,
     /// The generators which produce the list comprehension inpits, and the conditions
@@ -234,8 +202,6 @@ pub enum ErlAst {
 
   /// A list comprehension generator expression `Expr <- Expr`
   ListComprehensionGenerator {
-    /// Source code location
-    location: SourceLoc,
     /// The output match expression
     left: Arc<ErlAst>,
     /// The input expression (source of the values)
@@ -244,8 +210,6 @@ pub enum ErlAst {
 
   /// Try/Catch block with optional OF... branches and multiple catch clauses
   TryCatch {
-    /// Source code location
-    location: SourceLoc,
     /// The expression to be tried
     body: Arc<ErlAst>,
     /// Optional `try ... of Pattern -> ...` clauses
@@ -256,16 +220,12 @@ pub enum ErlAst {
 
   /// IF statement: `if COND -> EXPR; ... end`
   IfStatement {
-    /// Source code location
-    location: SourceLoc,
     /// The branches to be tried till `true` is found
     clauses: Vec<ErlIfClause>,
   },
 
   /// A list of ironclad_exe elements constructing a ironclad_exe value, or serving as a ironclad_exe match expression
   BinaryExpr {
-    /// Source code location
-    location: SourceLoc,
     /// Comma separated elements of a ironclad_exe, with `:bit-widths` and `/type-specs`
     elements: Vec<BinaryElement>,
   },
@@ -274,20 +234,24 @@ pub enum ErlAst {
 impl ErlAst {
   /// Returns true for ErlAst::Var
   pub fn is_var(&self) -> bool {
-    matches!(self, ErlAst::Var(..))
+    matches!(&self.content, ErlAstType::Var(..))
   }
 
-  /// Swaps a value and Empty AST, returns the taken value
-  pub fn take(from: &mut ErlAst) -> ErlAst {
-    let mut swap_in = ErlAst::Empty;
-    std::mem::swap(from, &mut swap_in);
-    swap_in
-  }
+  // /// Swaps a value and Empty AST, returns the taken value
+  // pub fn take(from: &mut ErlAst) -> ErlAst {
+  //   let mut swap_in = ErlAst::Empty;
+  //   std::mem::swap(from, &mut swap_in);
+  //   swap_in
+  // }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
   pub fn temporary_token(t: ErlToken) -> Arc<ErlAst> {
-    ErlAst::Token { location: SourceLoc::None, token: t }.into()
+    ErlAst {
+      location: SourceLoc::None,
+      content: ErlAstType::Token { token: t },
+    }
+    .into()
   }
 
   // /// Create a new Comma operator from list of AST expressions
@@ -302,8 +266,8 @@ impl ErlAst {
 
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
-    match self {
-      ErlAst::Lit { value: lit, .. } => {
+    match &self.content {
+      ErlAstType::Lit { value: lit, .. } => {
         if let Literal::Atom(s) = lit.deref() {
           Some(s.clone())
         } else {
@@ -319,8 +283,8 @@ impl ErlAst {
   /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
   /// A non-comma AST-node becomes a single result element.
   pub fn comma_to_vec(comma_ast: &Arc<ErlAst>, dst: &mut Vec<Arc<ErlAst>>) {
-    match comma_ast.deref() {
-      ErlAst::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
+    match &comma_ast.content {
+      ErlAstType::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
         Self::comma_to_vec(&binexpr.left, dst);
         Self::comma_to_vec(&binexpr.right, dst);
       }
@@ -328,35 +292,35 @@ impl ErlAst {
     }
   }
 
-  /// Retrieve source file location for an AST element
-  pub fn location(&self) -> SourceLoc {
-    match self {
-      ErlAst::Token { location: loc, .. } => loc.clone(),
-      ErlAst::ModuleStartAttr { location: loc, .. } => loc.clone(),
-      // ErlAst::Comma { location: loc, .. } => loc.clone(),
-      ErlAst::FnDef(erl_fndef) => erl_fndef.location.clone(),
-      // ErlAst::FClause(loc, _) => loc.clone(),
-      ErlAst::CClause(loc, _) => loc.clone(),
-      ErlAst::MFA { location: loc, .. } => loc.clone(),
-      ErlAst::Var(var) => var.location.clone(),
-      ErlAst::Apply(app) => app.location.clone(),
-      ErlAst::CaseStatement { location, .. } => location.clone(),
-      ErlAst::Lit { location: loc, .. } => loc.clone(),
-      ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
-      ErlAst::UnaryOp { location: loc, .. } => loc.clone(),
-
-      _ => SourceLoc::None,
-    }
-  }
+  // /// Retrieve source file location for an AST element
+  // pub fn location(&self) -> SourceLoc {
+  //   match self {
+  //     ErlAst::Token { location: loc, .. } => loc.clone(),
+  //     ErlAst::ModuleStartAttr { location: loc, .. } => loc.clone(),
+  //     // ErlAst::Comma { location: loc, .. } => loc.clone(),
+  //     ErlAst::FnDef(erl_fndef) => erl_fndef.location.clone(),
+  //     // ErlAst::FClause(loc, _) => loc.clone(),
+  //     ErlAst::CClause(loc, _) => loc.clone(),
+  //     ErlAst::MFA { location: loc, .. } => loc.clone(),
+  //     ErlAst::Var(var) => var.location.clone(),
+  //     ErlAst::Apply(app) => app.location.clone(),
+  //     ErlAst::CaseStatement { location, .. } => location.clone(),
+  //     ErlAst::Lit { location: loc, .. } => loc.clone(),
+  //     ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
+  //     ErlAst::UnaryOp { location: loc, .. } => loc.clone(),
+  //
+  //     _ => SourceLoc::None,
+  //   }
+  // }
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
   pub fn find_function_def(this: &Arc<ErlAst>, funarity: &MFArity) -> IcResult<Arc<ErlAst>> {
-    match this.deref() {
-      ErlAst::FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
+    match &this.content {
+      FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
         return Ok(this.clone());
       }
-      ErlAst::ModuleForms(forms) => {
+      ModuleForms(forms) => {
         // Find first in forms for which `find_function_def` returns something
         let find_result = forms
           .iter()
@@ -368,7 +332,7 @@ impl ErlAst {
       }
       _ => {}
     }
-    ErlError::type_error(this.location(), TypeError::FunctionNotFound { mfa: funarity.clone() })
+    ErlError::type_error(&this.location, TypeError::FunctionNotFound { mfa: funarity.clone() })
   }
 }
 

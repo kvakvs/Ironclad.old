@@ -24,13 +24,11 @@ impl TypeCheck {
     );
 
     if !synthesized_ty.is_subtype_of(expected_ty) {
-      ErlError::type_error(
-        ast.location(),
-        TypeError::ExpectedType {
-          expected_type: format!("{}", expected_ty),
-          actual_type: format!("{}", synthesized_ty),
-        },
-      )
+      let type_err = TypeError::ExpectedType {
+        expected_type: format!("{}", expected_ty),
+        actual_type: format!("{}", synthesized_ty),
+      };
+      ErlError::type_error(&ast.location, type_err)
     } else {
       Ok(true)
     }

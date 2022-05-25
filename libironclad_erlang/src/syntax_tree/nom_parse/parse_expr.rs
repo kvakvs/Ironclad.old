@@ -4,6 +4,7 @@ use ::function_name::named;
 use std::sync::Arc;
 
 use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::ErlAstType::Var;
 use crate::syntax_tree::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::syntax_tree::node::erl_callable_target::CallableTarget;
 use crate::syntax_tree::node::erl_unop::ErlUnaryOperatorExpr;
@@ -49,9 +50,7 @@ impl ErlParser {
   }
 
   fn parse_var(input: &str) -> AstParserResult {
-    let (input, name) = parse_varname(input)?;
-    let ast = ErlAst::Var(ErlVar::new(SourceLoc::None, &name)).into();
-    Ok((input, ast))
+    map(parse_varname, |n| ErlAst::construct_without_location(Var(ErlVar::new(&n))))(input)
   }
 
   /// Parses a list of comma separated expressions in (parentheses)
@@ -239,6 +238,7 @@ impl ErlParser {
   }
 
   /// Precedence 3: Unary + - bnot not
+  #[named]
   fn parse_expr_prec03<const STYLE: usize>(input: &str) -> AstParserResult {
     map(
       pair(
@@ -250,7 +250,13 @@ impl ErlParser {
         ))),
         ws_before(Self::parse_expr_prec02::<STYLE>),
       ),
-      |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, unop, expr),
+      |(unop, expr)| {
+        ErlUnaryOperatorExpr::new_ast(
+          &SourceLoc::unimplemented(file!(), function_name!()),
+          unop,
+          expr,
+        )
+      },
     )(input)
     .or_else(|_err| Self::parse_expr_prec02::<STYLE>(input))
   }
@@ -387,11 +393,18 @@ impl ErlParser {
 
   /// Precedence 11: Catch operator, then continue to higher precedences
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
+  #[named]
   fn parse_expr_prec11<const STYLE: usize>(input: &str) -> AstParserResult {
     // Try parse (catch Expr) otherwise try next precedence level
     map(
       pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
-      |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::None, catch_op, expr),
+      |(catch_op, expr)| {
+        ErlUnaryOperatorExpr::new_ast(
+          &SourceLoc::unimplemented(file!(), function_name!()),
+          catch_op,
+          expr,
+        )
+      },
     )(input)
     .or_else(|_err| ws_before(Self::parse_expr_prec10::<STYLE>)(input))
   }

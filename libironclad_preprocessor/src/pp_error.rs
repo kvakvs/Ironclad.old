@@ -90,11 +90,11 @@ impl PpError {
   }
 
   /// Builds PpError for an if-ifdef error situation
-  pub fn new_if_directive_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+  pub fn new_if_directive_error<T>(loc: &SourceLoc, msg: String) -> IcResult<T> {
     Err(Box::new(PpError::new(
       IcErrorCategory::Preprocessor,
       PpErrorCategory::IfDirective,
-      loc,
+      loc.clone(),
       msg,
     )))
   }

@@ -1,13 +1,12 @@
 //! Code to support variable scopes
 
 use crate::syntax_tree::erl_ast::ast_iter::AstNode;
-use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
 use crate::syntax_tree::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::collections::HashMap;
 use std::fmt::Formatter;
-use std::ops::Deref;
 use std::sync::{Arc, RwLock, Weak};
 
 /// Contains identifiers known in the current scope
@@ -161,7 +160,7 @@ impl Scope {
 
   /// Recursive descend into AST saving FnDef nodes
   fn do_update_from_ast(&mut self, ast: &Arc<ErlAst>) {
-    if let ErlAst::FnDef(fndef) = ast.deref() {
+    if let ErlAstType::FnDef(fndef) = &ast.content {
       self.add_fn(&fndef.funarity, ast.clone());
     }
 

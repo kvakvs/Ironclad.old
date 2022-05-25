@@ -1,5 +1,5 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
-use crate::syntax_tree::erl_ast::ErlAst;
+use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
 use crate::syntax_tree::erl_error::ErlError;
 use crate::syntax_tree::erl_op::ErlBinaryOp;
 use crate::syntax_tree::literal_bool::LiteralBool;
@@ -45,11 +45,10 @@ impl ErlBinaryOperatorExpr {
     let (op, right) = &tail[tail.len() - 1];
     let build_left_side = Self::new_right_assoc(loc, left, &tail[0..tail.len() - 1]);
 
-    ErlAst::BinaryOp {
-      location: loc.clone(),
+    let bin_node = ErlAstType::BinaryOp {
       expr: Self::new(build_left_side, *op, right.clone()),
-    }
-    .into()
+    };
+    ErlAst::construct_with_location(loc.clone(), bin_node)
   }
 
   /// From left and multiple right components, build a left-associative tree of expressions.
@@ -68,15 +67,16 @@ impl ErlBinaryOperatorExpr {
     let (op, first) = &tail[0];
     let build_right_side = Self::new_left_assoc(loc, first.clone(), &tail[1..tail.len()]);
 
-    ErlAst::BinaryOp {
-      location: loc.clone(),
-      expr: Self::new(left, *op, build_right_side),
-    }
-    .into()
+    let bin_node = ErlAstType::BinaryOp { expr: Self::new(left, *op, build_right_side) };
+    ErlAst::construct_with_location(loc.clone(), bin_node)
   }
 
   /// Gets the result type of a ironclad_exe operation
-  pub fn synthesize_binop_type(&self, scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  pub fn synthesize_binop_type(
+    &self,
+    location: &SourceLoc,
+    scope: &RwLock<Scope>,
+  ) -> IcResult<Arc<ErlType>> {
     let left = self.left.synthesize(scope)?;
     let right = self.right.synthesize(scope)?;
 
@@ -108,7 +108,7 @@ impl ErlBinaryOperatorExpr {
       | ErlBinaryOp::HardEq
       | ErlBinaryOp::HardNotEq => Ok(ErlType::boolean()),
 
-      ErlBinaryOp::ListAppend => Self::synthesize_list_append_op(scope, &left, &right),
+      ErlBinaryOp::ListAppend => Self::synthesize_list_append_op(location, scope, &left, &right),
       ErlBinaryOp::ListSubtract => {
         // Type of -- will be left, probably some elements which should be missing, but how do we know?
         Ok(left)
@@ -126,8 +126,8 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `any list() ++ any list()` operation
-  #[named]
   fn synthesize_list_append_op(
+    location: &SourceLoc,
     scope: &RwLock<Scope>,
     left: &Arc<ErlType>,
     right: &Arc<ErlType>,
@@ -146,7 +146,7 @@ impl ErlBinaryOperatorExpr {
       }
 
       ErlType::List { elements: left_elements, tail: left_tail } => {
-        Self::synthesize_list_of_t_append(scope, left, right, left_elements, left_tail)
+        Self::synthesize_list_of_t_append(location, scope, left, right, left_elements, left_tail)
       }
 
       other_left => {
@@ -155,10 +155,7 @@ impl ErlBinaryOperatorExpr {
           "List append operation ++ expected a list in its left argument, got {}",
           other_left
         );
-        ErlError::type_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          TypeError::ListExpected { msg },
-        )
+        ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }
   }
@@ -201,7 +198,7 @@ impl ErlBinaryOperatorExpr {
           other_right
         );
         ErlError::type_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
+          &SourceLoc::unimplemented(file!(), function_name!()),
           TypeError::ListExpected { msg },
         )
       }
@@ -209,8 +206,8 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `list(T) ++ any list` operation
-  #[named]
   fn synthesize_list_of_t_append(
+    location: &SourceLoc,
     _scope: &RwLock<Scope>,
     _left: &Arc<ErlType>,
     right: &Arc<ErlType>,
@@ -237,28 +234,30 @@ impl ErlBinaryOperatorExpr {
           "List append operation ++ expected a list in its right argument, got {}",
           other_right
         );
-        ErlError::type_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          TypeError::ListExpected { msg },
-        )
+        ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }
   }
 
   /// Try to figure out whether this binop resolves to a boolean
   pub fn walk_boolean_litexpr(&self) -> LiteralBool {
-    let left_val = self.left.walk_boolean_litexpr();
-    let right_val = self.right.walk_boolean_litexpr();
+    let left_bool = self.left.walk_boolean_litexpr();
+    let right_bool = self.right.walk_boolean_litexpr();
+
     match self.operator {
       ErlBinaryOp::AndAlso | ErlBinaryOp::And | ErlBinaryOp::Comma => {
-        return left_val.and(&right_val)
+        return left_bool.and(&right_bool)
       }
       ErlBinaryOp::OrElse | ErlBinaryOp::Or | ErlBinaryOp::Semicolon => {
-        return left_val.or(&right_val)
+        return left_bool.or(&right_bool)
       }
-      ErlBinaryOp::Xor => return left_val.xor(&right_val),
+      ErlBinaryOp::Xor => return left_bool.xor(&right_bool),
       _ => {} // proceed to calculate non-booleans
     }
+
+    // let left_val = self.left.walk_litexpr();
+    // let right_val = self.right.walk_litexpr();
+
     match self.operator {
       ErlBinaryOp::Less | ErlBinaryOp::Greater | ErlBinaryOp::LessEq | ErlBinaryOp::GreaterEq => {
         unimplemented!("LitExpr ordering comparisons")

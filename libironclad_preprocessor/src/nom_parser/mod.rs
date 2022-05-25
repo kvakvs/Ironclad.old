@@ -10,6 +10,7 @@ use libironclad_erlang::syntax_tree::nom_parse::misc::{
   ws_before_mut,
 };
 use libironclad_erlang::syntax_tree::nom_parse::parse_str::StringParser;
+use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, recognize, verify};
@@ -58,7 +59,7 @@ impl PreprocessorParser {
         Self::match_dash_tag("include"),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
       ),
-      PpAst::new_include,
+      |t| PpAst::new_include(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -69,7 +70,7 @@ impl PreprocessorParser {
         Self::match_dash_tag("include_lib"),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
       ),
-      PpAst::new_include_lib,
+      |t| PpAst::new_include_lib(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -112,7 +113,7 @@ impl PreprocessorParser {
         ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
         |text: &str| !text.is_empty(), //&& !text.starts_with('-'),
       ),
-      PpAst::new_text,
+      |t| PpAst::new_text(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -122,7 +123,7 @@ impl PreprocessorParser {
       Self::parse_preproc_directive,
       Self::consume_one_line_of_text,
       // A final comment in file is not visible to consume_text
-      map(parse_line_comment, |_| PpAst::new_text("")),
+      map(parse_line_comment, |_| PpAst::new_text(&SourceLoc::from_input(input), "")),
     ))(input)
   }
 
@@ -135,7 +136,8 @@ impl PreprocessorParser {
   /// Parses file contents into mix of preprocessor directives and text fragments.
   /// Comments are eliminated.
   pub fn parse_module(input: &str) -> PpAstParserResult {
-    let (input, fragments) = Self::parse_fragments_collection(input)?;
-    Ok((input, PpAst::new_file(fragments)))
+    map(Self::parse_fragments_collection, |fragments| {
+      PpAst::new_file(&SourceLoc::from_input(input), fragments)
+    })(input)
   }
 }

@@ -2,6 +2,11 @@
 use crate::syntax_tree::erl_ast::ErlAst;
 use ::function_name::named;
 
+use crate::syntax_tree::erl_ast::ErlAstType::{
+  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
+  IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit, ModuleForms,
+  ModuleStartAttr, Token, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
+};
 use crate::syntax_tree::node::erl_binary_element::ValueWidth;
 use std::sync::Arc;
 
@@ -18,21 +23,21 @@ impl AstNode for ErlAst {
   /// Returns `AstChild` wrapped because some nodes are RefCells.
   #[named]
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    match self {
-      ErlAst::ModuleStartAttr { .. }
-      | ErlAst::ExportAttr { .. }
-      | ErlAst::ImportAttr { .. }
-      | ErlAst::FnSpec { .. }
-      | ErlAst::Lit { .. }
-      | ErlAst::MFA { .. }
-      | ErlAst::Type { .. }
-      | ErlAst::Var { .. } => None,
+    match &self.content {
+      ModuleStartAttr { .. }
+      | ExportAttr { .. }
+      | ImportAttr { .. }
+      | FnSpec { .. }
+      | Lit { .. }
+      | MFA { .. }
+      | Type { .. }
+      | Var { .. } => None,
 
-      ErlAst::ModuleForms(f) => Some(f.to_vec()),
-      ErlAst::FnDef(fn_def) => fn_def.children(),
-      ErlAst::Apply(app) => app.children(),
+      ModuleForms(f) => Some(f.to_vec()),
+      FnDef(fn_def) => fn_def.children(),
+      Apply(app) => app.children(),
 
-      ErlAst::CaseStatement { expr, clauses, .. } => {
+      CaseStatement { expr, clauses, .. } => {
         let mut r: Vec<Arc<ErlAst>> = vec![expr.clone()];
 
         for cc in clauses {
@@ -50,31 +55,29 @@ impl AstNode for ErlAst {
         }
       }
 
-      ErlAst::CClause(_loc, clause) => {
+      CClause(_loc, clause) => {
         if let Some(g) = &clause.guard {
           Some(vec![clause.pattern.clone(), g.clone(), clause.body.clone()])
         } else {
           Some(vec![clause.pattern.clone(), clause.body.clone()])
         }
       }
-      ErlAst::BinaryOp { expr: binop_expr, .. } => {
+      BinaryOp { expr: binop_expr, .. } => {
         Some(vec![binop_expr.left.clone(), binop_expr.right.clone()])
       }
-      ErlAst::UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
-      ErlAst::List { elements, .. } => Some(elements.to_vec()),
-      ErlAst::Tuple { elements, .. } => Some(elements.to_vec()),
+      UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
+      List { elements, .. } => Some(elements.to_vec()),
+      Tuple { elements, .. } => Some(elements.to_vec()),
 
-      ErlAst::ListComprehension { expr, generators, .. } => {
+      ListComprehension { expr, generators, .. } => {
         let mut result = vec![expr.clone()];
         result.extend(generators.iter().cloned());
         Some(result)
       }
-      ErlAst::ListComprehensionGenerator { left, right, .. } => {
-        Some(vec![left.clone(), right.clone()])
-      }
+      ListComprehensionGenerator { left, right, .. } => Some(vec![left.clone(), right.clone()]),
 
-      ErlAst::Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
-      ErlAst::TryCatch { body, of_branches, catch_clauses, .. } => {
+      Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
+      TryCatch { body, of_branches, catch_clauses, .. } => {
         let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch
         if let Some(ofb) = of_branches {
@@ -95,7 +98,7 @@ impl AstNode for ErlAst {
           Some(r)
         }
       }
-      ErlAst::CommaExpr { elements, .. } => {
+      CommaExpr { elements, .. } => {
         let mut r = Vec::default();
         for e in elements.iter() {
           if let Some(c) = e.children() {
@@ -108,7 +111,7 @@ impl AstNode for ErlAst {
           Some(r)
         }
       }
-      ErlAst::IfStatement { clauses, .. } => {
+      IfStatement { clauses, .. } => {
         let mut r = Vec::default();
         for ifc in clauses.iter() {
           if let Some(c) = ifc.children() {
@@ -121,7 +124,7 @@ impl AstNode for ErlAst {
           Some(r)
         }
       }
-      ErlAst::BinaryExpr { elements, .. } => {
+      BinaryExpr { elements, .. } => {
         let mut r = Vec::default();
         for bel in elements.iter() {
           if let ValueWidth::Expr(expr_width) = &bel.width {

@@ -9,9 +9,12 @@ use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
 use libironclad_preprocessor::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use libironclad_preprocessor::pp_error::PpError;
+use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType::{
+  Define, EmptyText, Error, File, IfBlock, IfdefBlock, Include, IncludeLib, IncludedFile, Text,
+  Undef, Warning,
+};
 use libironclad_preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
 use nom::Finish;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
@@ -106,10 +109,10 @@ fn interpret_include_directive(
   ast_cache: Arc<RwLock<PpAstCache>>,
   file_cache: Arc<RwLock<FileContentsCache>>,
 ) -> IcResult<Arc<PpAst>> {
-  match node.deref() {
+  match &node.node_type {
     // Found an attr directive which is -include("something")
     // TODO: Refactor into a outside function with error handling
-    PpAst::IncludeLib(path) | PpAst::Include(path) => {
+    IncludeLib(path) | Include(path) => {
       // Take source file's parent dir and append to it the include path (unless it was absolute?)
       let source_path = &source_file.file_name;
 
@@ -137,10 +140,10 @@ fn interpret_include_directive(
             .items
             .insert(include_path.clone(), ast_tree.clone());
 
-          Ok(PpAst::new_included_file(&include_path, ast_tree))
+          Ok(PpAst::new_included_file(&node.location, &include_path, ast_tree))
         }
         Some(arc_ast) => {
-          let result = PpAst::new_included_file(&include_path, arc_ast.clone());
+          let result = PpAst::new_included_file(&node.location, &include_path, arc_ast.clone());
           Ok(result)
         }
       }
@@ -177,45 +180,45 @@ impl PreprocessState {
     errors_out: &mut Vec<IcError>,
   ) -> IcResult<()> {
     // First process ifdef/if!def/else/endif
-    match node.deref() {
-      PpAst::File(nodes) => {
+    match &node.node_type {
+      File(nodes) => {
         for n in nodes {
           self.interpret_preprocessor_node(n, source_file, nodes_out, warnings_out, errors_out)?;
         }
       }
-      PpAst::Include(arg) => {
+      Include(arg) => {
         let found_path = self.find_include(arg)?;
         let (incl_file, node) = self.load_include(&found_path)?;
         self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
       }
-      PpAst::IncludeLib(arg) => {
+      IncludeLib(arg) => {
         let found_path = self.find_include_lib(arg)?;
         let (incl_file, node) = self.load_include(&found_path)?;
         self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
       }
-      PpAst::IncludedFile { ast, .. } => {
+      IncludedFile { ast, .. } => {
         self.interpret_preprocessor_node(ast, source_file, nodes_out, warnings_out, errors_out)?;
       }
-      PpAst::IfdefBlock { macro_name, cond_true, cond_false } => {
+      IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
           nodes_out.extend(cond_true.iter().cloned());
         } else {
           nodes_out.extend(cond_false.iter().cloned());
         }
       }
-      PpAst::IfBlock { cond, cond_true, cond_false } => match cond.walk_boolean_litexpr() {
+      IfBlock { cond, cond_true, cond_false } => match cond.walk_boolean_litexpr() {
         LiteralBool::True => nodes_out.extend(cond_true.iter().cloned()),
         LiteralBool::False => nodes_out.extend(cond_false.iter().cloned()),
         LiteralBool::NotABoolean => {
           return PpError::new_if_directive_error(
-            cond.location(),
+            &node.location,
             "The expression must resolve to a boolean true or false".to_string(),
           )
         }
       },
-      PpAst::Text(_) => nodes_out.push(node.clone()),
-      PpAst::EmptyText => {} // skip
-      PpAst::Define { name, args, body } => {
+      Text(_) => nodes_out.push(node.clone()),
+      EmptyText => {} // skip
+      Define { name, args, body } => {
         self.scope = self.scope.define(name, &args, &body);
       }
       // PpAst::DefineFun { name, args, body } => {
@@ -223,11 +226,11 @@ impl PreprocessState {
       //     .scope
       //     .define(name, Some(args.clone()), Some(body.clone()));
       // }
-      PpAst::Undef(_) => {}
-      PpAst::Error(msg) => {
+      Undef(_) => {}
+      Error(msg) => {
         errors_out.push(PpError::new_error_directive(msg.clone()));
       }
-      PpAst::Warning(_) => {}
+      Warning(_) => {}
       _ => {}
     }
 
@@ -276,7 +279,8 @@ impl PreprocessState {
     } else if !warnings_out.is_empty() {
       Err(IroncladError::multiple(warnings_out))
     } else {
-      Ok(PpAst::File(nodes_out).into())
+      let included_ast = PpAst::construct_with_location(&ast_tree.location, File(nodes_out));
+      Ok(included_ast)
     }
   }
 

@@ -45,7 +45,7 @@ impl Default for ErlModule {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: Arc::new(ErlAst::Empty),
+      ast: ErlAst::new_empty(),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
