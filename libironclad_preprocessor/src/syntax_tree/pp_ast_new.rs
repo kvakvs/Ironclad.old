@@ -17,8 +17,9 @@ impl PpAst {
   }
 
   /// Create new macro definition
-  pub fn new_define(name: String, args: Option<Vec<String>>, body: Option<String>) -> Arc<Self> {
-    PpAst::Define { name, args, body }.into()
+  pub fn new_define(name: String, args: Option<Vec<String>>, body: String) -> Arc<Self> {
+    let body1 = if body.trim().is_empty() { None } else { Some(body.trim().to_string()) };
+    PpAst::Define { name, args, body: body1 }.into()
   }
 
   /// Create new macro definition with name only

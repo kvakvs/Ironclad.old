@@ -66,10 +66,10 @@ where
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_ident(input: &str) -> StringParserResult {
   map(
-    recognize(pair(
+    ws_before_mut(recognize(pair(
       verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
       many0(alt((alphanumeric1, tag("_")))),
-    )),
+    ))),
     |result: &str| result.to_string(),
   )(input)
 }

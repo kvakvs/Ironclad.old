@@ -1,0 +1,67 @@
+//! Parse helpers for `-define`/`-undef` preprocessor
+
+use crate::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
+use crate::syntax_tree::pp_ast::PpAst;
+use libironclad_erlang::syntax_tree::nom_parse::misc::{comma, par_close, par_open, ws_before};
+use nom::branch::alt;
+use nom::character::complete::anychar;
+use nom::combinator::{map, opt};
+use nom::error::context;
+use nom::multi::many_till;
+use nom::sequence::{delimited, preceded, tuple};
+
+impl PreprocessorParser {
+  /// Parses inner part of a `-define(IDENT)` variant
+  fn define_no_args_no_body(input: &str) -> PpAstParserResult {
+    map(Self::macro_ident, PpAst::new_define_name_only)(input)
+  }
+
+  /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
+  /// will consume end delimiter `").\n"`
+  fn define_with_args_body_and_terminator(input: &str) -> PpAstParserResult {
+    map(
+      tuple((
+        // Macro name
+        Self::macro_ident,
+        // Optional (ARG1, ARG2, ...) with trailing comma
+        opt(delimited(par_open, Self::comma_sep_macro_idents, par_close)),
+        comma,
+        // Followed by a body
+        many_till(anychar, Self::parenthesis_dot_newline),
+      )),
+      |(name, args, _comma, (body, _terminator))| {
+        PpAst::new_define(name, args, body.into_iter().collect::<String>())
+      },
+    )(input)
+  }
+
+  /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
+  pub fn parse_define(input: &str) -> PpAstParserResult {
+    preceded(
+      Self::match_dash_tag("define"),
+      alt((
+        context(
+          "-define directive with no args and no body",
+          delimited(par_open, Self::define_no_args_no_body, Self::parenthesis_dot_newline),
+        ),
+        // `define_with_args_body_and_terminator` will consume end delimiter
+        context(
+          "-define directive with optional args and body",
+          preceded(par_open, Self::define_with_args_body_and_terminator),
+        ),
+      )),
+    )(input)
+  }
+
+  /// Parse a `-undef(IDENT)`
+  pub fn parse_undef(input: &str) -> PpAstParserResult {
+    map(
+      delimited(
+        Self::match_dash_tag("undef"),
+        tuple((par_open, ws_before(Self::macro_ident), par_close)),
+        Self::dot_newline,
+      ),
+      |(_open, ident, _close)| PpAst::new_undef(ident),
+    )(input)
+  }
+}

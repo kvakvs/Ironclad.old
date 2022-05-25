@@ -82,7 +82,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("ifdef"),
-        delimited(par_open, ws_before(Self::parse_macro_ident), par_close),
+        delimited(par_open, ws_before(Self::macro_ident), par_close),
       ),
       PpAst::new_ifdef_temporary,
     )(input)
@@ -93,7 +93,7 @@ impl PreprocessorParser {
     map(
       preceded(
         Self::match_dash_tag("ifndef"),
-        delimited(par_open, ws_before(Self::parse_macro_ident), par_close),
+        delimited(par_open, ws_before(Self::macro_ident), par_close),
       ),
       PpAst::new_ifndef_temporary,
     )(input)
