@@ -40,10 +40,11 @@ impl<'a> FileContentsCache {
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
   pub(crate) fn get_or_load(&mut self, file_name: &Path) -> IroncladResult<Arc<SourceFile>> {
-    match self.all_files.get(file_name) {
+    let canon = file_name.canonicalize().unwrap();
+    match self.all_files.get(&canon) {
       None => {
-        self.preload_file(file_name)?;
-        self.get_or_load(file_name)
+        self.preload_file(&canon)?;
+        self.get_or_load(&canon)
       }
       Some(contents) => Ok(contents.clone()),
     }

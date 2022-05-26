@@ -1,5 +1,6 @@
 //! Trait for Ironclad errors
 
+use crate::ic_error::IroncladError;
 use crate::ic_error_category::IcErrorCategory;
 use crate::source_loc::SourceLoc;
 
@@ -20,3 +21,9 @@ pub trait IcErrorT: std::fmt::Display + std::fmt::Debug {
 
 /// A boxed dynamic pointer to an unknown error, implementor of `IcErrorT` trait
 pub type IcError = Box<dyn IcErrorT>;
+
+impl From<IroncladError> for IcError {
+  fn from(ironclad_err: IroncladError) -> IcError {
+    Box::new(ironclad_err)
+  }
+}

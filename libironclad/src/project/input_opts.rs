@@ -12,6 +12,9 @@ pub struct InputOpts {
   /// If not specified, defaults to "."
   pub directories: Vec<String>,
 
+  /// Search these directories for `-include()` and `-include_lib()`
+  pub include_paths: Vec<String>,
+
   /// If not specified, defaults to empty
   #[allow(dead_code)]
   pub exclude_files: Vec<String>,
@@ -26,6 +29,7 @@ impl Default for InputOpts {
     Self {
       files: vec![String::from("*.erl")],
       directories: vec![String::from(".")],
+      include_paths: vec![],
       exclude_files: vec![],
       exclude_directories: vec![],
     }
@@ -37,6 +41,7 @@ impl From<InputOptsConf> for InputOpts {
     let self_default = Self::default();
     Self {
       files: opts.files.unwrap_or(self_default.files),
+      include_paths: opts.include_paths.unwrap_or(self_default.include_paths),
       directories: opts.directories.unwrap_or(self_default.directories),
       exclude_files: opts.exclude_files.unwrap_or(self_default.exclude_files),
       exclude_directories: opts

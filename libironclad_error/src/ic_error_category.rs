@@ -1,6 +1,7 @@
 //! Larger categories for errors
 
 use crate::ic_error_trait::IcError;
+use std::path::PathBuf;
 
 /// General error type covering all system errors, parser errors, compiler errors, etc.
 #[derive(Debug)]
@@ -43,6 +44,14 @@ pub enum IcErrorCategory {
 
   /// A variable was referenced that's not in the scope
   VariableNotFound(String),
+
+  /// File loading failed for whatever reason
+  FileNotFound {
+    /// The file which was searched
+    file: PathBuf,
+    /// The action which failed due to a missing file
+    while_verb: String,
+  },
 }
 
 impl IcErrorCategory {
@@ -62,6 +71,7 @@ impl IcErrorCategory {
       IcErrorCategory::VariableNotFound(_) => "Variable not found",
       IcErrorCategory::TypeError => "Type error",
       IcErrorCategory::Erlang => "Program structure error",
+      IcErrorCategory::FileNotFound { .. } => "File was not found",
     }
   }
 }

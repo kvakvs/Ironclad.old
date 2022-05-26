@@ -33,7 +33,7 @@ pub struct ErlProject {
   pub compiler_opts_per_file: HashMap<PathBuf, Arc<CompilerOpts>>,
 
   /// Input files and directories (wildcards are allowed)
-  input_opts: InputOpts,
+  pub input_opts: InputOpts,
 
   /// Prepared paths, scanned from Self::inputs, and with exclusions filtered out
   pub inputs: Vec<PathBuf>,

@@ -9,6 +9,9 @@ pub struct InputOptsConf {
   /// If not specified, defaults to *.erl
   pub files: Option<Vec<String>>,
 
+  /// Search these directories for `-include()` and `-include_lib()`
+  pub include_paths: Option<Vec<String>>,
+
   /// If not specified, defaults to "."
   pub directories: Option<Vec<String>>,
 

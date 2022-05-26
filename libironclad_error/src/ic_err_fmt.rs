@@ -22,6 +22,9 @@ impl std::fmt::Display for IroncladError {
         }
         Ok(())
       }
+      IcErrorCategory::FileNotFound { file, while_verb } => {
+        writeln!(f, "file: {} while {}", file.to_string_lossy(), while_verb)
+      }
       IcErrorCategory::Io(ioerr) => writeln!(f, "{}", ioerr),
       IcErrorCategory::Glob(gerr) => write!(f, "{}", gerr),
       IcErrorCategory::GlobPattern(gperr) => write!(f, "{}", gperr),

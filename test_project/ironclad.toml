@@ -1,8 +1,9 @@
 ﻿[compiler_options]
-include_paths = []          # default []
+# TODO not working? include_paths = ["test_project/src"]    # default []
 
 [inputs]
-files = ["*.erl"]           # default ["*.erl"]
-directories = ["test_project/src"]       # default ["."]
+include_paths = ["test_project/src"]      # default []
+files = ["*.erl"]                         # default ["*.erl"]
+directories = ["test_project/src"]        # default ["."]
 exclude_files = []          # TODO: not implemented; default []
 exclude_directories = []    # TODO: not implemented; default []

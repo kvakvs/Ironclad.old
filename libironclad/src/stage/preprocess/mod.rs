@@ -7,6 +7,7 @@ use libironclad_erlang::syntax_tree::literal_bool::LiteralBool;
 use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
+use libironclad_error::source_loc::SourceLoc;
 use libironclad_preprocessor::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use libironclad_preprocessor::pp_error::PpError;
 use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType::{
@@ -65,7 +66,7 @@ impl PreprocessState {
   }
 
   /// Returns: True if a file was preprocessed
-  fn preprocess_file(&mut self, file_name: &Path) -> IcResult<()> {
+  fn preprocess_file(&mut self, project: &ErlProject, file_name: &Path) -> IcResult<()> {
     // trust that file exists
     let contents = {
       let file_cache1 = self.file_cache.read().unwrap();
@@ -87,7 +88,7 @@ impl PreprocessState {
       }
     };
 
-    let pp_ast = self.interpret_pp_ast(&contents, &ast_tree)?;
+    let pp_ast = self.interpret_pp_ast(project, &contents, &ast_tree)?;
 
     // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
     let output: String = pp_ast.to_string();
@@ -153,18 +154,47 @@ fn interpret_include_directive(
 }
 
 impl PreprocessState {
-  fn load_include(&mut self, path: &Path) -> IcResult<(Arc<SourceFile>, Arc<PpAst>)> {
-    unimplemented!("load_include not impl: {}", path.to_string_lossy())
+  fn load_include(&mut self, location: &SourceLoc, file: &Path) -> IcResult<Arc<SourceFile>> {
+    if let Ok(mut cache) = self.file_cache.write() {
+      return cache.get_or_load(file).map_err(IcError::from);
+    }
+    IroncladError::file_not_found(location, file, "loading an include file")
   }
 
-  fn find_include(&mut self, path: &str) -> IcResult<PathBuf> {
-    // unimplemented!("find_include not impl: {}", path)
-    Ok(PathBuf::from(path))
+  fn find_include(
+    &mut self,
+    project: &ErlProject,
+    location: &SourceLoc,
+    path: &Path,
+  ) -> IcResult<PathBuf> {
+    for inc_path in &project.input_opts.include_paths {
+      let try_path = Path::new(&inc_path).join(path);
+      todo!("Check PpAST cache for already parsed");
+      // println!("Trying include path: {}", try_path.canonicalize().unwrap().to_string_lossy());
+      if try_path.exists() {
+        return Ok(PathBuf::from(try_path));
+      }
+    }
+    IroncladError::file_not_found(location, path, "searching for an -include() path")
   }
 
-  fn find_include_lib(&mut self, path: &str) -> IcResult<PathBuf> {
-    // unimplemented!("find_include_lib not impl: {}", path)
-    Ok(PathBuf::from(path))
+  /// `include_lib` is similar to `include`, but should not point out an absolute file. Instead,
+  /// the first path component (possibly after variable substitution) is assumed to be the name
+  /// of an application.
+  ///
+  /// Example:
+  ///     -include_lib("kernel/include/file.hrl").
+  ///
+  /// The code server uses `code:lib_dir(kernel)` to find the directory of the current (latest)
+  /// version of Kernel, and then the subdirectory include is searched for the file `file.hrl`.
+  fn find_include_lib(
+    &mut self,
+    _project: &ErlProject,
+    location: &SourceLoc,
+    path: &Path,
+  ) -> IcResult<PathBuf> {
+    // Ok(PathBuf::from(path))
+    IroncladError::file_not_found(location, path, "searching for an -include_lib() path")
   }
 
   /// This is called for each Preprocessor AST node to make the final decision whether the node
@@ -173,6 +203,7 @@ impl PreprocessState {
   /// ifdef/if blocks.
   fn interpret_preprocessor_node(
     &mut self,
+    project: &ErlProject,
     node: &Arc<PpAst>,
     source_file: &Arc<SourceFile>,
     nodes_out: &mut Vec<Arc<PpAst>>,
@@ -183,21 +214,51 @@ impl PreprocessState {
     match &node.node_type {
       File(nodes) => {
         for n in nodes {
-          self.interpret_preprocessor_node(n, source_file, nodes_out, warnings_out, errors_out)?;
+          self.interpret_preprocessor_node(
+            project,
+            n,
+            source_file,
+            nodes_out,
+            warnings_out,
+            errors_out,
+          )?;
         }
       }
       Include(arg) => {
-        let found_path = self.find_include(arg)?;
-        let (incl_file, node) = self.load_include(&found_path)?;
-        self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
+        let found_path = self.find_include(project, &node.location, Path::new(arg))?;
+        let incl_file = self.load_include(&node.location, &found_path)?;
+        let node = Self::parse_helper(&incl_file.text, PreprocessorParser::parse_module)?;
+        self.interpret_preprocessor_node(
+          project,
+          &node,
+          &incl_file,
+          nodes_out,
+          warnings_out,
+          errors_out,
+        )?;
       }
       IncludeLib(arg) => {
-        let found_path = self.find_include_lib(arg)?;
-        let (incl_file, node) = self.load_include(&found_path)?;
-        self.interpret_preprocessor_node(&node, &incl_file, nodes_out, warnings_out, errors_out)?;
+        let found_path = self.find_include_lib(project, &node.location, Path::new(arg))?;
+        let incl_file = self.load_include(&node.location, &found_path)?;
+        let node = Self::parse_helper(&incl_file.text, PreprocessorParser::parse_module)?;
+        self.interpret_preprocessor_node(
+          project,
+          &node,
+          &incl_file,
+          nodes_out,
+          warnings_out,
+          errors_out,
+        )?;
       }
       IncludedFile { ast, .. } => {
-        self.interpret_preprocessor_node(ast, source_file, nodes_out, warnings_out, errors_out)?;
+        self.interpret_preprocessor_node(
+          project,
+          ast,
+          source_file,
+          nodes_out,
+          warnings_out,
+          errors_out,
+        )?;
       }
       IfdefBlock { macro_name, cond_true, cond_false } => {
         if self.scope.is_defined(macro_name) {
@@ -259,6 +320,7 @@ impl PreprocessState {
   /// Return: a new preprocessed string joined together.
   fn interpret_pp_ast(
     &mut self,
+    project: &ErlProject,
     source_file: &Arc<SourceFile>,
     ast_tree: &Arc<PpAst>,
   ) -> IcResult<Arc<PpAst>> {
@@ -267,6 +329,7 @@ impl PreprocessState {
     let mut errors_out: Vec<IcError> = Vec::default();
 
     self.interpret_preprocessor_node(
+      project,
       ast_tree,
       source_file,
       &mut nodes_out,
@@ -317,7 +380,7 @@ impl PreprocessState {
       // Create starting scope (from project settings and command line)
       let starting_scope = project.get_preprocessor_scope(path);
       let mut stage = PreprocessState::new(&ast_cache, &file_cache, starting_scope);
-      stage.preprocess_file(path)?;
+      stage.preprocess_file(project, path)?;
       preprocessed_count += 1;
     }
 
