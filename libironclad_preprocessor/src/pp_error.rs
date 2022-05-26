@@ -1,6 +1,5 @@
 //! Errors which can occur during preprocess stage
 use crate::nom_parser::pp_parse_types::PpParserError;
-use ::function_name::named;
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
 use libironclad_error::ic_error_trait::{IcError, IcErrorT};
@@ -67,24 +66,22 @@ impl PpError {
   }
 
   /// Builds PpError with nice error details from input string and Nom's verbose error
-  #[named]
   pub fn from_nom_error<T>(input: &str, value: PpParserError) -> IcResult<T> {
     let new_err = Self {
       ic_category: IcErrorCategory::PreprocessorParse,
       category: PpErrorCategory::Parser,
-      loc: SourceLoc::unimplemented(file!(), function_name!()),
+      loc: SourceLoc::from_input(input),
       msg: nom::error::convert_error(input, value),
     };
     Err(Box::new(new_err))
   }
 
   /// Builds PpError for #error directive
-  #[named]
-  pub fn new_error_directive(msg: String) -> IcError {
+  pub fn new_error_directive(location: &SourceLoc, msg: String) -> IcError {
     Box::new(PpError::new(
       IcErrorCategory::Preprocessor,
       PpErrorCategory::ErrorDirective,
-      SourceLoc::unimplemented(file!(), function_name!()),
+      location.clone(),
       msg,
     ))
   }

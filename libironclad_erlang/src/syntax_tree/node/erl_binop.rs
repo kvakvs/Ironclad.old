@@ -6,7 +6,6 @@ use crate::syntax_tree::literal_bool::LiteralBool;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use ::function_name::named;
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::source_loc::SourceLoc;
 use std::ops::Deref;
@@ -142,7 +141,7 @@ impl ErlBinaryOperatorExpr {
       }
 
       ErlType::StronglyTypedList { elements: left_elements, tail: left_tail } => {
-        Self::synthesize_stronglist_append(scope, left, left_elements, left_tail, right)
+        Self::synthesize_stronglist_append(location, scope, left, left_elements, left_tail, right)
       }
 
       ErlType::List { elements: left_elements, tail: left_tail } => {
@@ -161,8 +160,8 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `list() ++ list(T1, T2...)` operation
-  #[named]
   fn synthesize_stronglist_append(
+    location: &SourceLoc,
     _scope: &RwLock<Scope>,
     left: &Arc<ErlType>,
     left_elements: &[Arc<ErlType>],
@@ -197,10 +196,7 @@ impl ErlBinaryOperatorExpr {
           "List append operation ++ expected a list in its right argument, got {}",
           other_right
         );
-        ErlError::type_error(
-          &SourceLoc::unimplemented(file!(), function_name!()),
-          TypeError::ListExpected { msg },
-        )
+        ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }
   }

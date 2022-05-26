@@ -10,7 +10,6 @@ use crate::syntax_tree::nom_parse::{AstParserResult, ErlParserError};
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
-use ::function_name::named;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
@@ -257,13 +256,9 @@ impl ErlTypeParser {
   }
 
   /// Wraps parsed type into a type-AST-node
-  #[named]
   pub fn parse_type_node(input: &str) -> AstParserResult {
     map(Self::parse_type, |t| {
-      ErlAst::construct_with_location(
-        SourceLoc::unimplemented(file!(), function_name!()),
-        ErlAstType::Type { ty: t },
-      )
+      ErlAst::construct_with_location(SourceLoc::from_input(input), ErlAstType::Type { ty: t })
     })(input)
   }
 }

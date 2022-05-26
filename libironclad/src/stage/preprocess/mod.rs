@@ -228,7 +228,7 @@ impl PreprocessState {
       // }
       Undef(_) => {}
       Error(msg) => {
-        errors_out.push(PpError::new_error_directive(msg.clone()));
+        errors_out.push(PpError::new_error_directive(&node.location, msg.clone()));
       }
       Warning(_) => {}
       _ => {}

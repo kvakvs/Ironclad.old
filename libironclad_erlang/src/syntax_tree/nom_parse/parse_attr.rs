@@ -40,7 +40,7 @@ impl ErlAttrParser {
         ws_before(tag("module")),
         delimited(par_open, ws_before(AtomParser::parse_atom), par_close),
       ),
-      ErlAst::new_module_start_attr,
+      |t| ErlAst::new_module_start_attr(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -73,7 +73,7 @@ impl ErlAttrParser {
   pub fn parse_export_attr(input: &str) -> AstParserResult {
     map(
       preceded(ws_before(bytes::complete::tag("export")), Self::parse_export_mfa_list),
-      ErlAst::new_export_attr,
+      |t| ErlAst::new_export_attr(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -82,7 +82,7 @@ impl ErlAttrParser {
   pub fn parse_export_type_attr(input: &str) -> AstParserResult {
     map(
       preceded(ws_before(bytes::complete::tag("export_type")), Self::parse_export_mfa_list),
-      ErlAst::new_export_type_attr,
+      |t| ErlAst::new_export_type_attr(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -101,7 +101,9 @@ impl ErlAttrParser {
           )),
         ),
       ),
-      |(mod_name, _comma1, imports)| ErlAst::new_import_attr(mod_name, imports),
+      |(mod_name, _comma1, imports)| {
+        ErlAst::new_import_attr(&SourceLoc::from_input(input), mod_name, imports)
+      },
     )(input)
   }
 
@@ -130,7 +132,7 @@ impl ErlAttrParser {
         )),
       ),
       |(type_name, type_args, _coloncolon, new_type)| {
-        ErlAst::new_type_attr(type_name, type_args, new_type)
+        ErlAst::new_type_attr(&SourceLoc::from_input(input), type_name, type_args, new_type)
       },
     )(input)
   }

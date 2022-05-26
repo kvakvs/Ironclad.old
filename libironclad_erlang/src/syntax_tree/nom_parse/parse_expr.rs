@@ -238,7 +238,6 @@ impl ErlParser {
   }
 
   /// Precedence 3: Unary + - bnot not
-  #[named]
   fn parse_expr_prec03<const STYLE: usize>(input: &str) -> AstParserResult {
     map(
       pair(
@@ -250,13 +249,7 @@ impl ErlParser {
         ))),
         ws_before(Self::parse_expr_prec02::<STYLE>),
       ),
-      |(unop, expr)| {
-        ErlUnaryOperatorExpr::new_ast(
-          &SourceLoc::unimplemented(file!(), function_name!()),
-          unop,
-          expr,
-        )
-      },
+      |(unop, expr)| ErlUnaryOperatorExpr::new_ast(&SourceLoc::from_input(input), unop, expr),
     )(input)
     .or_else(|_err| Self::parse_expr_prec02::<STYLE>(input))
   }
@@ -393,17 +386,12 @@ impl ErlParser {
 
   /// Precedence 11: Catch operator, then continue to higher precedences
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
-  #[named]
   fn parse_expr_prec11<const STYLE: usize>(input: &str) -> AstParserResult {
     // Try parse (catch Expr) otherwise try next precedence level
     map(
       pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
       |(catch_op, expr)| {
-        ErlUnaryOperatorExpr::new_ast(
-          &SourceLoc::unimplemented(file!(), function_name!()),
-          catch_op,
-          expr,
-        )
+        ErlUnaryOperatorExpr::new_ast(&SourceLoc::from_input(input), catch_op, expr)
       },
     )(input)
     .or_else(|_err| ws_before(Self::parse_expr_prec10::<STYLE>)(input))

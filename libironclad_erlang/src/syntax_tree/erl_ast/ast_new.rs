@@ -19,7 +19,6 @@ use crate::syntax_tree::node::erl_fn_def::ErlFnDef;
 use crate::syntax_tree::node::erl_if_clause::ErlIfClause;
 use crate::syntax_tree::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
-use ::function_name::named;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use std::sync::Arc;
@@ -161,12 +160,8 @@ impl ErlAst {
   }
 
   /// Create a new `-module(m).` module attr.
-  #[named]
-  pub fn new_module_start_attr(name: String) -> Arc<ErlAst> {
-    ErlAst::construct_with_location(
-      SourceLoc::unimplemented(file!(), function_name!()),
-      ModuleStartAttr { name },
-    )
+  pub fn new_module_start_attr(location: &SourceLoc, name: String) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location.clone(), ModuleStartAttr { name })
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.
@@ -179,39 +174,32 @@ impl ErlAst {
   }
 
   /// Create a new `-export([...]).` module attr.
-  #[named]
-  pub fn new_export_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::construct_with_location(
-      SourceLoc::unimplemented(file!(), function_name!()),
-      ExportAttr { exports },
-    )
+  pub fn new_export_attr(location: &SourceLoc, exports: Vec<MFArity>) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location.clone(), ExportAttr { exports })
   }
 
   /// Create a new `-export_type([...]).` module attr.
-  #[named]
-  pub fn new_export_type_attr(exports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::construct_with_location(
-      SourceLoc::unimplemented(file!(), function_name!()),
-      ExportTypeAttr { exports },
-    )
+  pub fn new_export_type_attr(location: &SourceLoc, exports: Vec<MFArity>) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location.clone(), ExportTypeAttr { exports })
   }
 
   /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.
-  #[named]
-  pub fn new_type_attr(name: String, vars: Vec<String>, ty: Arc<ErlType>) -> Arc<ErlAst> {
-    ErlAst::construct_with_location(
-      SourceLoc::unimplemented(file!(), function_name!()),
-      TypeAttr { name, vars, ty },
-    )
+  pub fn new_type_attr(
+    location: &SourceLoc,
+    name: String,
+    vars: Vec<String>,
+    ty: Arc<ErlType>,
+  ) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location.clone(), TypeAttr { name, vars, ty })
   }
 
   /// Create a new `-import(modulename, [...]).` module attr.
-  #[named]
-  pub fn new_import_attr(import_from: String, imports: Vec<MFArity>) -> Arc<ErlAst> {
-    ErlAst::construct_with_location(
-      SourceLoc::unimplemented(file!(), function_name!()),
-      ImportAttr { import_from, imports },
-    )
+  pub fn new_import_attr(
+    location: &SourceLoc,
+    import_from: String,
+    imports: Vec<MFArity>,
+  ) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location.clone(), ImportAttr { import_from, imports })
   }
 
   /// Create a new try-catch AST node
