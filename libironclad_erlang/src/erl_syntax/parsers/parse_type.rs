@@ -2,12 +2,13 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname,
-  period_newline, semicolon, square_close, square_open, ws_before,
+  colon_colon, comma, curly_close, curly_open, hash_symbol, match_dash_tag, par_close, par_open,
+  parse_int, parse_varname, period_newline, semicolon, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
 use crate::literal::Literal;
+use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
@@ -16,7 +17,7 @@ use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, preceded, terminated, tuple};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::sync::Arc;
 
@@ -130,7 +131,7 @@ impl ErlTypeParser {
   ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = par_open(input)?;
 
-    terminated(Self::parse_comma_sep_typeargs0, par_close)(input)
+    terminated(Self::comma_sep_typeargs0, par_close)(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -160,7 +161,7 @@ impl ErlTypeParser {
 
   /// Parses a comma separated list of 0 or more type arguments.
   /// A parametrized type accepts other types or typevar names
-  fn parse_comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
+  fn comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     separated_list0(comma, context("parsing items of a typeargs0_list", Self::alt_typevar_or_type))(
       input,
     )
@@ -181,14 +182,14 @@ impl ErlTypeParser {
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
   /// Optional with module name `module:name()`.
-  fn parse_user_defined_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+  fn user_defined_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
       tuple((
         opt(Self::parse_type_modulename_colon),
         AtomParser::atom,
         delimited(
           par_open,
-          context("type arguments for a user-defined type", Self::parse_comma_sep_typeargs0),
+          context("type arguments for a user-defined type", Self::comma_sep_typeargs0),
           par_close,
         ),
       )),
@@ -197,11 +198,11 @@ impl ErlTypeParser {
   }
 
   /// Parse a list of types, returns a temporary list-type
-  fn parse_type_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+  fn type_of_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
         square_open,
-        context("type arguments for a list() type", Self::parse_comma_sep_typeargs0),
+        context("type arguments for a list() type", Self::comma_sep_typeargs0),
         square_close,
       ),
       |elements| {
@@ -212,14 +213,9 @@ impl ErlTypeParser {
   }
 
   /// Parse a tuple of types, returns a temporary tuple-type
-  fn parse_type_tuple(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    let (input, _open_tag) = ws_before(char('{'))(input)?;
-
+  fn type_of_tuple(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
-      terminated(
-        context("type arguments for a tuple() type", Self::parse_comma_sep_typeargs0),
-        ws_before(char('}')),
-      ),
+      delimited(curly_open, context("a tuple() type", Self::comma_sep_typeargs0), curly_close),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
         ErlType::new_tuple_move(typevar_types)
@@ -227,8 +223,37 @@ impl ErlTypeParser {
     )(input)
   }
 
+  fn map_member_type(input: &str) -> nom::IResult<&str, MapMemberType, ErlParserError> {
+    map(
+      separated_pair(Self::alt_typevar_or_type, ws_before(tag("=>")), Self::alt_typevar_or_type),
+      |(key, value)| MapMemberType {
+        key: ErlType::new_typevar(key),
+        value: ErlType::new_typevar(value),
+      },
+    )(input)
+  }
+
+  /// Parses a comma separated list of map field types
+  fn comma_sep_map_members0(input: &str) -> nom::IResult<&str, Vec<MapMemberType>, ErlParserError> {
+    separated_list0(comma, context("parsing member types of a map type", Self::map_member_type))(
+      input,
+    )
+  }
+
+  /// Parse a map of types, returns a map-type
+  fn type_of_map(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+    map(
+      delimited(
+        pair(hash_symbol, curly_open),
+        context("a map() type", Self::comma_sep_map_members0),
+        curly_close,
+      ),
+      ErlType::new_map,
+    )(input)
+  }
+
   /// Parse an integer and produce a literal integer type
-  pub fn parse_int_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+  pub fn int_literal_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(parse_int, |i_str| {
       let i = i_str.parse().unwrap(); // TODO: Support big integers
       ErlType::new_singleton(&Literal::Integer(i).into())
@@ -236,18 +261,19 @@ impl ErlTypeParser {
   }
 
   /// Parse an atom, and produce a literal atom type
-  pub fn parse_atom_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+  pub fn atom_literal_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(AtomParser::atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
   pub fn parse_nonunion_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     alt((
-      Self::parse_type_list,
-      Self::parse_type_tuple,
-      Self::parse_user_defined_type,
-      Self::parse_int_lit_type,
-      Self::parse_atom_lit_type,
+      Self::type_of_list,
+      Self::type_of_tuple,
+      Self::type_of_map,
+      Self::user_defined_type,
+      Self::int_literal_type,
+      Self::atom_literal_type,
     ))(input)
   }
 

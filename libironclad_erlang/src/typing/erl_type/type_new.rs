@@ -1,6 +1,7 @@
 //! Constructors for complex ErlTypes
 
 use crate::literal::Literal;
+use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::erl_type::ErlType::UserDefinedType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -97,6 +98,11 @@ impl ErlType {
   /// Construct a new tuple-type
   pub fn new_tuple(elements: &[Arc<ErlType>]) -> Arc<ErlType> {
     ErlType::Tuple { elements: elements.into() }.into()
+  }
+
+  /// Construct a new map-type
+  pub fn new_map(members: Vec<MapMemberType>) -> Arc<ErlType> {
+    ErlType::Map { members }.into()
   }
 
   /// Consumes argument.

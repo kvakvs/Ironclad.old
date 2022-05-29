@@ -1,5 +1,6 @@
 //! Defines an Erlang-type
 use crate::literal::Literal;
+use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
@@ -7,6 +8,7 @@ use crate::typing::typevar::Typevar;
 use libironclad_util::mfarity::MFArity;
 use std::sync::Arc;
 
+pub mod map_type;
 pub mod type_as;
 pub mod type_is;
 pub mod type_new;
@@ -78,7 +80,7 @@ pub enum ErlType {
   /// Type for a dictionary of key=>value style
   Map {
     /// Defines map key/value type pairs
-    items: Vec<(Arc<ErlType>, Arc<ErlType>)>,
+    members: Vec<MapMemberType>,
   },
 
   /// Any ironclad_exe of any size
