@@ -15,16 +15,16 @@ impl ErlParser {
   fn parse_string_to_ast(input: &str) -> AstParserResult {
     map(StringParser::parse_string, |s| {
       ErlAst::construct_with_location(
-        SourceLoc::from_input(input),
+        &SourceLoc::from_input(input),
         Lit { value: Literal::String(s).into() },
       )
     })(input)
   }
 
   fn parse_atom_to_ast(input: &str) -> AstParserResult {
-    map(AtomParser::parse_atom, |s| {
+    map(AtomParser::atom, |s| {
       ErlAst::construct_with_location(
-        SourceLoc::from_input(input),
+        &SourceLoc::from_input(input),
         Lit { value: Literal::Atom(s).into() },
       )
     })(input)
@@ -35,7 +35,7 @@ impl ErlParser {
       let lit_node = Lit {
         value: Literal::Float(s.parse::<f64>().unwrap()).into(),
       };
-      ErlAst::construct_with_location(SourceLoc::from_input(input), lit_node)
+      ErlAst::construct_with_location(&SourceLoc::from_input(input), lit_node)
     })(input)
   }
 
@@ -44,7 +44,7 @@ impl ErlParser {
       let lit_node = Lit {
         value: Literal::Integer(s.parse::<isize>().unwrap()).into(),
       };
-      ErlAst::construct_with_location(SourceLoc::from_input(input), lit_node)
+      ErlAst::construct_with_location(&SourceLoc::from_input(input), lit_node)
     })(input)
   }
 

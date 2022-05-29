@@ -47,7 +47,7 @@ impl ErlBinaryOperatorExpr {
     let bin_node = ErlAstType::BinaryOp {
       expr: Self::new(build_left_side, *op, right.clone()),
     };
-    ErlAst::construct_with_location(loc.clone(), bin_node)
+    ErlAst::construct_with_location(loc, bin_node)
   }
 
   /// From left and multiple right components, build a left-associative tree of expressions.
@@ -67,7 +67,7 @@ impl ErlBinaryOperatorExpr {
     let build_right_side = Self::new_left_assoc(loc, first.clone(), &tail[1..tail.len()]);
 
     let bin_node = ErlAstType::BinaryOp { expr: Self::new(left, *op, build_right_side) };
-    ErlAst::construct_with_location(loc.clone(), bin_node)
+    ErlAst::construct_with_location(loc, bin_node)
   }
 
   /// Gets the result type of a ironclad_exe operation

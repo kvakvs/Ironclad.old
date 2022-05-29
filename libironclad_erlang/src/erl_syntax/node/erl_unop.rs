@@ -19,7 +19,7 @@ impl ErlUnaryOperatorExpr {
   /// Create an unary operator and wrap it with ErlAst::UnaryOp
   pub fn new_ast(loc: &SourceLoc, operator: ErlUnaryOp, expr: Arc<ErlAst>) -> Arc<ErlAst> {
     let unop_node = UnaryOp { expr: ErlUnaryOperatorExpr { expr, operator } };
-    ErlAst::construct_with_location(loc.clone(), unop_node)
+    ErlAst::construct_with_location(loc, unop_node)
   }
 
   /// Walk the literal expression and try to find whether it is true, false or neither

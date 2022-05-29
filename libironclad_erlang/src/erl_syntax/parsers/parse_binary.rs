@@ -25,7 +25,7 @@ impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: &str) -> AstParserResult {
     alt((
-      map(parse_varname, |v| ErlAst::new_var(SourceLoc::None, &v)),
+      map(parse_varname, |v| ErlAst::new_var(&SourceLoc::from_input(input), &v)),
       ErlParser::parse_literal,
       delimited(par_open, ErlParser::parse_expr, par_close),
     ))(input)
@@ -137,7 +137,7 @@ impl BinaryParser {
             comma,
             context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
           ),
-          |bin_exprs| ErlAst::new_binary_expr(SourceLoc::None, bin_exprs),
+          |bin_exprs| ErlAst::new_binary_expr(&SourceLoc::from_input(input), bin_exprs),
         ),
         ws_before(tag(">>")),
       )),

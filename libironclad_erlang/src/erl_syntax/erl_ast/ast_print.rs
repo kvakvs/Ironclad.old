@@ -1,12 +1,12 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
-use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::erl_ast::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
   ExportTypeAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
   ListComprehension, ListComprehensionGenerator, Lit, Map, ModuleForms, ModuleStartAttr, Token,
   TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
 };
+use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::literal::Literal;
 use libironclad_util::pretty::Pretty;
@@ -126,6 +126,11 @@ impl std::fmt::Display for ErlAst {
         write!(f, "<<")?;
         Pretty::display_comma_separated(elements, f)?;
         write!(f, ">>")
+      }
+      ErlAstType::RecordDefinition { tag, fields } => {
+        write!(f, "-record({}, {{", tag)?;
+        Pretty::display_comma_separated(fields, f)?;
+        write!(f, "}}")
       }
     }
   }

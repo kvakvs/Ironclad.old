@@ -1,7 +1,7 @@
 //! Complex support code to parse 'delimited' atom strings and atoms in general
 //! String parsing code from Nom examples.
 
-use crate::erl_syntax::parsers::misc::parse_ident;
+use crate::erl_syntax::parsers::misc::{parse_ident, ws_before_mut};
 use crate::erl_syntax::parsers::StringParserResult;
 use nom::branch::alt;
 use nom::combinator::{map, map_opt, map_res, value, verify};
@@ -166,8 +166,11 @@ impl AtomParser {
 
   /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
   /// delitmited string
-  pub fn parse_atom(input: &str) -> StringParserResult {
-    alt((verify(parse_ident, |s| !Self::is_erl_keyword(s)), Self::parse_quoted_atom))(input)
+  pub fn atom(input: &str) -> StringParserResult {
+    ws_before_mut(alt((
+      verify(parse_ident, |s| !Self::is_erl_keyword(s)),
+      Self::parse_quoted_atom,
+    )))(input)
   }
 
   fn is_erl_keyword(s: &str) -> bool {

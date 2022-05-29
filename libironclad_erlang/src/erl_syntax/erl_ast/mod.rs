@@ -9,6 +9,7 @@ use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
+use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_token::ErlToken;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
@@ -229,6 +230,13 @@ pub enum ErlAstType {
     /// Comma separated elements of a ironclad_exe, with `:bit-widths` and `/type-specs`
     elements: Vec<BinaryElement>,
   },
+  /// A new record definition, created by `-record(name, {fields,...}).` attribute
+  RecordDefinition {
+    /// Record tag
+    tag: String,
+    /// Fields with optional initializers and optional type ascriptions
+    fields: Vec<RecordField>,
+  },
 }
 
 impl ErlAst {
@@ -253,16 +261,6 @@ impl ErlAst {
     }
     .into()
   }
-
-  // /// Create a new Comma operator from list of AST expressions
-  // pub fn new_comma(location: SourceLoc, left: ErlAst, right: ErlAst) -> Self {
-  //   ErlAst::Comma {
-  //     location,
-  //     left: Box::new(left),
-  //     right: Box::new(right),
-  //     ty: TypeVar::new(),
-  //   }
-  // }
 
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
@@ -291,27 +289,6 @@ impl ErlAst {
       _ => dst.push(comma_ast.clone()),
     }
   }
-
-  // /// Retrieve source file location for an AST element
-  // pub fn location(&self) -> SourceLoc {
-  //   match self {
-  //     ErlAst::Token { location: loc, .. } => loc.clone(),
-  //     ErlAst::ModuleStartAttr { location: loc, .. } => loc.clone(),
-  //     // ErlAst::Comma { location: loc, .. } => loc.clone(),
-  //     ErlAst::FnDef(erl_fndef) => erl_fndef.location.clone(),
-  //     // ErlAst::FClause(loc, _) => loc.clone(),
-  //     ErlAst::CClause(loc, _) => loc.clone(),
-  //     ErlAst::MFA { location: loc, .. } => loc.clone(),
-  //     ErlAst::Var(var) => var.location.clone(),
-  //     ErlAst::Apply(app) => app.location.clone(),
-  //     ErlAst::CaseStatement { location, .. } => location.clone(),
-  //     ErlAst::Lit { location: loc, .. } => loc.clone(),
-  //     ErlAst::BinaryOp { location: loc, .. } => loc.clone(),
-  //     ErlAst::UnaryOp { location: loc, .. } => loc.clone(),
-  //
-  //     _ => SourceLoc::None,
-  //   }
-  // }
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`

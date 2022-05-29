@@ -22,7 +22,7 @@ impl ErlParser {
           separated_list1(semicolon, context("if block clause", cut(Self::parse_if_clause))),
           ws_before(tag("end")),
         ),
-        |clauses| ErlAst::new_if_statement(SourceLoc::None, clauses),
+        |clauses| ErlAst::new_if_statement(&SourceLoc::from_input(input), clauses),
       )),
     )(input)
   }

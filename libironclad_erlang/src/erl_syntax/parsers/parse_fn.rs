@@ -30,10 +30,10 @@ impl ErlParser {
   ) -> nom::IResult<&str, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
-      return map(AtomParser::parse_atom, Option::Some)(input);
+      return map(AtomParser::atom, Option::Some)(input);
     }
     // Succeed if FN_NAME=false and there is no atom
-    map(peek(not(AtomParser::parse_atom)), |_| Option::None)(input)
+    map(peek(not(AtomParser::atom)), |_| Option::None)(input)
   }
 
   /// Parses a named clause for a top level function
@@ -65,13 +65,18 @@ impl ErlParser {
         ),
       )),
       |(maybe_name, args, when_expr, body)| {
-        ErlFnClause::new(maybe_name, args, ErlAst::new_comma_expr(SourceLoc::None, body), when_expr)
+        ErlFnClause::new(
+          maybe_name,
+          args,
+          ErlAst::new_comma_expr(&SourceLoc::from_input(input), body),
+          when_expr,
+        )
       },
     )(input)
   }
 
   /// Builds a function definition from multiple parsed clauses
-  fn _construct_fndef(fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
+  fn _construct_fndef(location: &SourceLoc, fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
     assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even..."); // unreachable
                                                                                              // println!("Construct fdef: {:?}", fnclauses);
 
@@ -86,7 +91,7 @@ impl ErlParser {
       panic!("Not all clauses have same arity")
     }
 
-    ErlAst::new_fndef(SourceLoc::None, funarity, fnclauses)
+    ErlAst::new_fndef(location, funarity, fnclauses)
   }
 
   /// Parse function definition
@@ -100,7 +105,7 @@ impl ErlParser {
         ),
         period,
       ),
-      Self::_construct_fndef,
+      |t| Self::_construct_fndef(&SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -115,7 +120,7 @@ impl ErlParser {
           ws_before(tag("end")),
         ),
       ),
-      Self::_construct_fndef,
+      |t| Self::_construct_fndef(&SourceLoc::from_input(input), t),
     )(input)
   }
 }

@@ -40,7 +40,11 @@ impl ErlParser {
         preceded(ws_before(tag("->")), Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
       )),
       |(exc_pattern, maybe_when, body)| {
-        CatchClause::new(exc_pattern, maybe_when, ErlAst::new_comma_expr(SourceLoc::None, body))
+        CatchClause::new(
+          exc_pattern,
+          maybe_when,
+          ErlAst::new_comma_expr(&SourceLoc::from_input(input), body),
+        )
       },
     )(input)
   }
@@ -67,12 +71,8 @@ impl ErlParser {
         ),
       )),
       |(body, of_branches, catch_clauses)| {
-        ErlAst::new_try_catch(
-          SourceLoc::None,
-          ErlAst::new_comma_expr(SourceLoc::None, body),
-          of_branches,
-          catch_clauses,
-        )
+        let loc = SourceLoc::from_input(input);
+        ErlAst::new_try_catch(&loc, ErlAst::new_comma_expr(&loc, body), of_branches, catch_clauses)
       },
     )(input)
   }

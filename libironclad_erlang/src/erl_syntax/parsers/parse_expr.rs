@@ -42,7 +42,7 @@ impl ErlParser {
       )),
       |(expr, args)| {
         let target = CallableTarget::new_expr(expr);
-        ErlAst::new_application(SourceLoc::None, target, args)
+        ErlAst::new_application(&SourceLoc::from_input(input), target, args)
       },
     )(input)
   }
@@ -71,7 +71,7 @@ impl ErlParser {
         ws_before(char(']')),
       )),
       |(_open, elements, maybe_tail, _close)| {
-        ErlAst::new_list(SourceLoc::None, elements, maybe_tail)
+        ErlAst::new_list(&SourceLoc::from_input(input), elements, maybe_tail)
       },
     )(input)
   }
@@ -80,7 +80,7 @@ impl ErlParser {
   pub fn parse_list_comprehension_generator(input: &str) -> AstParserResult {
     map(
       separated_pair(Self::parse_expr, ws_before(bytes::complete::tag("<-")), Self::parse_expr),
-      |(a, b)| ErlAst::new_list_comprehension_generator(SourceLoc::None, a, b),
+      |(a, b)| ErlAst::new_list_comprehension_generator(&SourceLoc::from_input(input), a, b),
     )(input)
   }
 
@@ -103,7 +103,9 @@ impl ErlParser {
           cut(Self::parse_list_comprehension_exprs_and_generators),
         ),
       ),
-      |(expr, generators)| ErlAst::new_list_comprehension(SourceLoc::None, expr, generators),
+      |(expr, generators)| {
+        ErlAst::new_list_comprehension(&SourceLoc::from_input(input), expr, generators)
+      },
     )(input)
   }
 
@@ -118,7 +120,7 @@ impl ErlParser {
         Self::parse_comma_sep_exprs0::<STYLE>,
         ws_before(char('}')),
       ),
-      |elements| ErlAst::new_tuple(SourceLoc::None, elements),
+      |elements| ErlAst::new_tuple(&SourceLoc::from_input(input), elements),
     )(input)
   }
 
@@ -216,11 +218,11 @@ impl ErlParser {
             Some(expr2) => {
               // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
               let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args.len());
-              ErlAst::new_application(SourceLoc::None, target, args)
+              ErlAst::new_application(&SourceLoc::from_input(input), target, args)
             }
             None => {
               let target = CallableTarget::new_expr(expr1);
-              ErlAst::new_application(SourceLoc::None, target, args)
+              ErlAst::new_application(&SourceLoc::from_input(input), target, args)
             }
           }
         } else {

@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  comma, par_close, par_open, parse_int, parse_varname, semicolon, ws_before, ws_before_mut,
+  comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, semicolon, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
@@ -28,9 +28,9 @@ impl ErlTypeParser {
   pub fn fn_spec(input: &str) -> AstParserResult {
     map(
       preceded(
-        ws_before(tag("spec")),
+        match_dash_tag("spec"),
         tuple((
-          context("function spec: name", cut(ws_before(AtomParser::parse_atom))),
+          context("function spec: name", cut(AtomParser::atom)),
           separated_list1(
             semicolon,
             context("function clause spec", cut(ws_before(Self::parse_fn_spec_fnclause))),
@@ -45,7 +45,7 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        ErlAst::new_fn_spec(SourceLoc::None, funarity, fntypespec.into())
+        ErlAst::new_fn_spec(&SourceLoc::from_input(input), funarity, fntypespec.into())
       },
     )(input)
   }
@@ -55,7 +55,7 @@ impl ErlTypeParser {
     map(
       tuple((
         // Function clause name
-        ws_before_mut(opt(AtomParser::parse_atom)),
+        opt(AtomParser::atom),
         // Args list (list of type variables with some types possibly)
         context(
           "arguments list in a function clause spec",
@@ -168,7 +168,7 @@ impl ErlTypeParser {
 
   /// Optional `module:` before typename in `module:type()`.
   fn parse_type_modulename_colon(input: &str) -> nom::IResult<&str, String, ErlParserError> {
-    terminated(ws_before(AtomParser::parse_atom), ws_before(char(':')))(input)
+    terminated(AtomParser::atom, ws_before(char(':')))(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
@@ -177,7 +177,7 @@ impl ErlTypeParser {
     map(
       tuple((
         opt(Self::parse_type_modulename_colon),
-        ws_before(AtomParser::parse_atom),
+        AtomParser::atom,
         delimited(
           par_open,
           context("type arguments for a user-defined type", Self::parse_comma_sep_typeargs0),
@@ -230,9 +230,7 @@ impl ErlTypeParser {
 
   /// Parse an atom, and produce a literal atom type
   pub fn parse_atom_lit_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    map(AtomParser::parse_atom, |a_str| {
-      ErlType::new_singleton(&Literal::Atom(a_str).into())
-    })(input)
+    map(AtomParser::atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
@@ -258,7 +256,7 @@ impl ErlTypeParser {
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: &str) -> AstParserResult {
     map(Self::parse_type, |t| {
-      ErlAst::construct_with_location(SourceLoc::from_input(input), ErlAstType::Type { ty: t })
+      ErlAst::construct_with_location(&SourceLoc::from_input(input), ErlAstType::Type { ty: t })
     })(input)
   }
 }

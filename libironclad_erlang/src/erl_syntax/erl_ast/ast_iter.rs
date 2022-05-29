@@ -5,7 +5,7 @@ use ::function_name::named;
 use crate::erl_syntax::erl_ast::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit, ModuleForms,
-  ModuleStartAttr, Token, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
+  ModuleStartAttr, RecordDefinition, Token, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use std::sync::Arc;
@@ -25,6 +25,7 @@ impl AstNode for ErlAst {
   fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
     match &self.content {
       ModuleStartAttr { .. }
+      | RecordDefinition { .. }
       | ExportAttr { .. }
       | ImportAttr { .. }
       | FnSpec { .. }

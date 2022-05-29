@@ -105,7 +105,8 @@ impl ErlAst {
         Ok(())
       }
 
-      ErlAstType::Empty
+      ErlAstType::RecordDefinition { .. }
+      | ErlAstType::Empty
       | ErlAstType::BinaryOp { .. }
       | ErlAstType::Lit { .. }
       | ErlAstType::Token { .. } => {

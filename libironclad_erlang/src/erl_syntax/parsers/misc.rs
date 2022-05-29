@@ -150,6 +150,22 @@ pub fn par_close<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(ws_before(char(')')))(input)
 }
 
+/// Matches an opening curly bracket "{" with 0+ whitespace before
+#[inline]
+pub fn curly_open<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('{')))(input)
+}
+
+/// Matches a closing curly bracket "}" with 0+ whitespace before
+#[inline]
+pub fn curly_close<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('}')))(input)
+}
+
 /// Matches a comma "," with 0+ whitespace before
 #[inline]
 pub fn comma<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
@@ -172,6 +188,22 @@ pub fn semicolon<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
   recognize(ws_before(char(';')))(input)
+}
+
+/// Matches a double colon "::" with 0+ whitespace before
+#[inline]
+pub fn colon_colon<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(tag("::")))(input)
+}
+
+/// Matches an equals sign "=" with 0+ whitespace before
+#[inline]
+pub fn equals_sign<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('=')))(input)
 }
 
 /// Recognizes `% text <newline>` consuming text

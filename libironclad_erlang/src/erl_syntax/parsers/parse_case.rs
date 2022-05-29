@@ -29,8 +29,11 @@ impl ErlParser {
         ),
       )),
       |(pattern, maybe_when, body)| {
-        let loc = SourceLoc::None;
-        ErlCaseClause::new(pattern, maybe_when, ErlAst::new_comma_expr(loc, body))
+        ErlCaseClause::new(
+          pattern,
+          maybe_when,
+          ErlAst::new_comma_expr(&SourceLoc::from_input(input), body),
+        )
       },
     )(input)
   }
@@ -47,7 +50,9 @@ impl ErlParser {
           separated_list1(semicolon, context("case block clause", cut(Self::parse_case_clause))),
           ws_before(tag("end")),
         )),
-        |(expr, clauses, _end0)| ErlAst::new_case_statement(SourceLoc::None, expr, clauses),
+        |(expr, clauses, _end0)| {
+          ErlAst::new_case_statement(&SourceLoc::from_input(input), expr, clauses)
+        },
       )),
     )(input)
   }
