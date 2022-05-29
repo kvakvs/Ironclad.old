@@ -7,6 +7,8 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstNode;
+use libironclad_erlang::erl_syntax::erl_ast::ErlAstType;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
@@ -49,6 +51,23 @@ fn parse_export_attr() -> IcResult<()> {
   );
   let parsed = ErlModule::from_module_source(&filename, &code)?;
   println!("Parsed module with export attr: «{}»\nAST: {}", code, &parsed.ast);
+  Ok(())
+}
+
+/// Try parse `-import(atom, [mfa,...]).` attr
+#[named]
+#[test]
+fn parse_import_attr() -> IcResult<()> {
+  test_util::start(function_name!(), "parse an import attr");
+
+  let filename = PathBuf::from(function_name!());
+  let code = format!(
+    "-module({}).\n
+-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n",
+    function_name!()
+  );
+  let parsed = ErlModule::from_module_source(&filename, &code)?;
+  println!("Parsed module with export attr: «{}»\nAST: {:?}", code, &parsed.ast);
   Ok(())
 }
 
@@ -551,5 +570,9 @@ fn parse_record_with_module() -> IcResult<()> {
   let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
   let parsed = ErlModule::parse_helper(&filename, &input, ErlParser::parse_module)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+
+  let contents = parsed.ast.children().unwrap();
+  assert_eq!(contents.len(), 2); // -module() and -record() nodes
+  assert!(matches!(contents[1].content, ErlAstType::RecordDefinition { .. }));
   Ok(())
 }

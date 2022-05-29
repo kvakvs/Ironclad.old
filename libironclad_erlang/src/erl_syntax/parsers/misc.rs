@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::{StrSliceParserResult, StringParserResult};
 use nom::branch::alt;
-use nom::combinator::{eof, map, opt, recognize, verify};
+use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
 use nom::error::convert_error;
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
@@ -252,5 +252,19 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 pub fn match_dash_tag<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   tag_str: &'static str,
 ) -> impl FnMut(&'a str) -> nom::IResult<&'a str, &'a str, ErrType> {
-  recognize(pair(ws_before(char('-')), ws_before(tag(tag_str))))
+  recognize(pair(ws_before(char('-')), match_word(tag_str)))
+}
+
+/// Matches a non-letter, use with `peek` to mark where word ends
+pub fn word_break<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(not(alphanumeric1))(input)
+}
+
+/// Matches a tag which is followed by a non-letter (word break)
+pub fn match_word<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  tag_str: &'static str,
+) -> impl FnMut(&'a str) -> nom::IResult<&'a str, &'a str, ErrType> {
+  recognize(terminated(ws_before(tag(tag_str)), peek(word_break)))
 }

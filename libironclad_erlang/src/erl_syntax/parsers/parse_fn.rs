@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
-use crate::erl_syntax::parsers::misc::{period, semicolon, ws_before, ws_before_mut};
+use crate::erl_syntax::parsers::misc::{match_word, period, semicolon, ws_before, ws_before_mut};
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
@@ -30,10 +30,13 @@ impl ErlParser {
   ) -> nom::IResult<&str, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
-      return map(AtomParser::atom, Option::Some)(input);
+      return context("function clause name", cut(map(AtomParser::atom, Some)))(input);
     }
     // Succeed if FN_NAME=false and there is no atom
-    map(peek(not(AtomParser::atom)), |_| Option::None)(input)
+    context(
+      "function clause without a name (must not begin with an atom)",
+      cut(map(peek(not(AtomParser::atom)), |_| None)),
+    )(input)
   }
 
   /// Parses a named clause for a top level function
@@ -46,16 +49,13 @@ impl ErlParser {
         // Function clause name
         ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
         // Function arguments
-        nom::error::context(
+        context(
           "function clause arguments",
           Self::parse_parenthesized_list_of_exprs::<{ ErlParser::EXPR_STYLE_MATCHEXPR }>,
         ),
         // Optional: when <guard>
-        nom::error::context(
-          "when expression in a function clause",
-          opt(Self::parse_when_expr_for_fn),
-        ),
-        nom::error::context(
+        context("when expression in a function clause", opt(Self::parse_when_expr_for_fn)),
+        context(
           "function clause body",
           preceded(
             ws_before(tag("->")),
@@ -101,7 +101,7 @@ impl ErlParser {
         separated_list1(
           semicolon,
           // if parse fails under here, will show this context message in error
-          context("function clause", cut(Self::parse_fnclause::<true>)),
+          context("function clause of a function definition", cut(Self::parse_fnclause::<true>)),
         ),
         period,
       ),
@@ -114,10 +114,10 @@ impl ErlParser {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     map(
       preceded(
-        ws_before(tag("fun")),
+        match_word("fun"),
         terminated(
           context("", separated_list1(semicolon, Self::parse_fnclause::<false>)),
-          ws_before(tag("end")),
+          match_word("end"),
         ),
       ),
       |t| Self::_construct_fndef(&SourceLoc::from_input(input), t),
