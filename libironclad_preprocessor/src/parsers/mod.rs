@@ -1,8 +1,7 @@
 //! Quick scan through a source file, split it using preprocessor directives as a divider
 
 use crate::parsers::pp_parse_types::{
-  PpAstParserResult, PpParserResult, PpStringParserResult, PreprocessorParser,
-  StrSliceParserResult, VecPpAstParserResult,
+  PpAstParserResult, PpParserResult, PpStringParserResult, PreprocessorParser, VecPpAstParserResult,
 };
 use crate::preprocessor_syntax::pp_ast::PpAst;
 use libironclad_erlang::erl_syntax::parsers::misc::{
@@ -68,11 +67,6 @@ impl PreprocessorParser {
       ),
       |t| PpAst::new_include_lib(&SourceLoc::from_input(input), t),
     )(input)
-  }
-
-  /// Recognizes end of a directive: `"." <newline>`
-  fn dot_newline(input: &str) -> StrSliceParserResult {
-    recognize(pair(period, newline_or_eof))(input)
   }
 
   fn parse_preproc_directive(input: &str) -> PpAstParserResult {

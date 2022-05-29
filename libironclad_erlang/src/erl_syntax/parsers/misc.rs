@@ -198,6 +198,14 @@ pub fn period<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(ws_before(char('.')))(input)
 }
 
+/// Recognizes end of a directive or module attribute in `-<attr> ... "." <newline>`
+#[inline]
+pub fn period_newline<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(pair(period, newline_or_eof))(input)
+}
+
 /// Matches a semicolon ";" with 0+ whitespace before
 #[inline]
 pub fn semicolon<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(

@@ -3,7 +3,7 @@ use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, equals_sign, match_dash_tag, par_close, par_open,
-  parse_int, period, square_close, square_open, ws_before,
+  parse_int, period_newline, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
@@ -15,11 +15,29 @@ use nom::combinator::{cut, map, opt};
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
 use nom::{character::complete::char, error::context};
+use std::sync::Arc;
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
 pub struct ErlAttrParser {}
 
 impl ErlAttrParser {
+  /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
+  fn parse_parentheses_no_expr(input: &str) -> ParserResult<Option<Arc<ErlAst>>> {
+    map(pair(par_open, par_close), |_| None)(input)
+  }
+
+  /// Parse a `( EXPR )` for a generic attribute `-<atom> ( EXPR ).`
+  fn parse_generic_attr_expr(input: &str) -> ParserResult<Option<Arc<ErlAst>>> {
+    map(
+      delimited(
+        par_open,
+        context("an expression inside a custom -<name>() attribute", cut(ErlParser::parse_expr)),
+        par_close,
+      ),
+      Option::Some,
+    )(input)
+  }
+
   /// Parses a generic `-TAG(TERM)."` attribute.
   /// Given a string, try and consume a generic attribute line starting with `-ident` and ending with
   /// a `"." NEWLINE`.
@@ -29,16 +47,10 @@ impl ErlAttrParser {
         ws_before(char('-')),
         pair(
           AtomParser::atom,
-          opt(delimited(
-            par_open,
-            context(
-              "An expression inside a custom -<name>() module attribute",
-              cut(ErlParser::parse_expr),
-            ),
-            par_close,
-          )),
+          // Expr in parentheses
+          alt((Self::parse_generic_attr_expr, Self::parse_parentheses_no_expr)),
         ),
-        period,
+        period_newline,
       ),
       |(tag, term)| ErlAst::new_generic_attr(&SourceLoc::from_input(input), tag, term),
     )(input)
@@ -51,10 +63,10 @@ impl ErlAttrParser {
       delimited(
         match_dash_tag("module"),
         context(
-          "Module name in a -module() attribute",
+          "the module name in a -module() attribute",
           cut(delimited(par_open, AtomParser::atom, par_close)),
         ),
-        period,
+        period_newline,
       ),
       |t| ErlAst::new_module_start_attr(&SourceLoc::from_input(input), t),
     )(input)
@@ -87,8 +99,8 @@ impl ErlAttrParser {
     map(
       delimited(
         match_dash_tag("export"),
-        context("List of exports in an -export() attribute", cut(Self::parse_export_mfa_list)),
-        period,
+        context("list of exports in an -export() attribute", cut(Self::parse_export_mfa_list)),
+        period_newline,
       ),
       |t| ErlAst::new_export_attr(&SourceLoc::from_input(input), t),
     )(input)
@@ -101,10 +113,10 @@ impl ErlAttrParser {
       delimited(
         match_dash_tag("export_type"),
         context(
-          "List of exports in an -export_type() attribute",
+          "list of exports in an -export_type() attribute",
           cut(Self::parse_export_mfa_list),
         ),
-        period,
+        period_newline,
       ),
       |t| ErlAst::new_export_type_attr(&SourceLoc::from_input(input), t),
     )(input)
@@ -117,14 +129,14 @@ impl ErlAttrParser {
       delimited(
         match_dash_tag("import"),
         context(
-          "List of imports in an -import() attribute",
+          "list of imports in an -import() attribute",
           cut(delimited(
             par_open,
             separated_pair(AtomParser::atom, comma, Self::parse_square_funarity_list1),
             par_close,
           )),
         ),
-        period,
+        period_newline,
       ),
       |(mod_name, imports)| {
         ErlAst::new_import_attr(&SourceLoc::from_input(input), mod_name, imports)
@@ -152,13 +164,13 @@ impl ErlAttrParser {
         tuple((
           AtomParser::atom,
           context(
-            "Type arguments in a -type() definition attribute",
+            "type arguments in a -type() definition attribute",
             cut(Self::parse_parenthesized_list_of_vars),
           ),
           colon_colon,
-          context("Type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
+          context("type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
         )),
-        period,
+        period_newline,
       ),
       |(type_name, type_args, _coloncolon, new_type)| {
         ErlAst::new_type_attr(&SourceLoc::from_input(input), type_name, type_args, new_type)
@@ -200,10 +212,10 @@ impl ErlAttrParser {
     delimited(
       match_dash_tag("record"),
       context(
-        "Record definition in a -record() attribute",
+        "record definition in a -record() attribute",
         cut(delimited(par_open, Self::record_definition_inner, par_close)),
       ),
-      period,
+      period_newline,
     )(input)
   }
 

@@ -50,13 +50,13 @@ impl ErlParser {
         ws_before_mut(Self::parse_fnclause_name::<REQUIRE_FN_NAME>),
         // Function arguments
         context(
-          "function clause arguments",
+          "function clause arguments of a function definition",
           Self::parse_parenthesized_list_of_exprs::<{ ErlParser::EXPR_STYLE_MATCHEXPR }>,
         ),
         // Optional: when <guard>
-        context("when expression in a function clause", opt(Self::parse_when_expr_for_fn)),
+        context("`when` expression of a function clause", opt(Self::parse_when_expr_for_fn)),
         context(
-          "function clause body",
+          "function clause body of a function definition",
           preceded(
             ws_before(tag("->")),
             // Body as list of exprs
@@ -101,7 +101,7 @@ impl ErlParser {
         separated_list1(
           semicolon,
           // if parse fails under here, will show this context message in error
-          context("function clause of a function definition", cut(Self::parse_fnclause::<true>)),
+          context("function clause of a function definition", Self::parse_fnclause::<true>),
         ),
         period,
       ),

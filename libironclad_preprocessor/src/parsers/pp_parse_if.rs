@@ -7,7 +7,7 @@ use crate::parsers::PreprocessorParser;
 use crate::preprocessor_syntax::pp_ast::PpAstType::{_TemporaryElse, _TemporaryEndif};
 use crate::preprocessor_syntax::pp_ast::{PpAst, PpAstType};
 use libironclad_erlang::erl_syntax::parsers::misc::{
-  match_dash_tag, par_close, par_open, ws_before,
+  match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_error::source_loc::SourceLoc;
@@ -69,7 +69,7 @@ impl PreprocessorParser {
       delimited(
         match_dash_tag("if"),
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
-        Self::dot_newline,
+        period_newline,
       ),
       // Builds a temporary If node with erl expression in it
       |t| PpAst::new_if_temporary(&SourceLoc::from_input(input), t),
@@ -112,10 +112,7 @@ impl PreprocessorParser {
   /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
   pub fn else_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      terminated(
-        preceded(match_dash_tag("else"), opt(pair(par_open, par_close))),
-        Self::dot_newline,
-      ),
+      terminated(preceded(match_dash_tag("else"), opt(pair(par_open, par_close))), period_newline),
       |_opt| PpAst::construct_with_location(&SourceLoc::from_input(input), _TemporaryElse),
     )(input)
   }
@@ -127,7 +124,7 @@ impl PreprocessorParser {
   /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
   pub fn endif_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      delimited(match_dash_tag("endif"), Self::maybe_empty_parens, Self::dot_newline),
+      delimited(match_dash_tag("endif"), Self::maybe_empty_parens, period_newline),
       |_opt| PpAst::construct_with_location(&SourceLoc::from_input(input), _TemporaryEndif),
     )(input)
   }

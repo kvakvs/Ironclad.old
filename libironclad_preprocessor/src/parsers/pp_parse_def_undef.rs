@@ -3,7 +3,7 @@
 use crate::parsers::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use crate::preprocessor_syntax::pp_ast::PpAst;
 use libironclad_erlang::erl_syntax::parsers::misc::{
-  comma, match_dash_tag, par_close, par_open, ws_before,
+  comma, match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -69,7 +69,7 @@ impl PreprocessorParser {
       delimited(
         match_dash_tag("undef"),
         tuple((par_open, ws_before(Self::macro_ident), par_close)),
-        Self::dot_newline,
+        period_newline,
       ),
       |(_open, ident, _close)| PpAst::new_undef(&SourceLoc::from_input(input), ident),
     )(input)
