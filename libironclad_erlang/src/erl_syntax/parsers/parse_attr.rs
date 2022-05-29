@@ -89,6 +89,7 @@ impl ErlAttrParser {
     )(input)
   }
 
+  /// Parses a list of mfarities: `( MFA/1, MFA/2, ... )` for export attr
   fn parse_export_mfa_list(input: &str) -> ParserResult<Vec<MFArity>> {
     delimited(par_open, ws_before(Self::parse_square_funarity_list1), par_close)(input)
   }

@@ -5,8 +5,8 @@ use crate::parsers::pp_parse_types::{
 };
 use crate::preprocessor_syntax::pp_ast::PpAst;
 use libironclad_erlang::erl_syntax::parsers::misc::{
-  comma, match_dash_tag, newline_or_eof, par_close, par_open, parse_line_comment, period, ws,
-  ws_before, ws_before_mut,
+  comma, match_dash_tag, newline_or_eof, par_close, par_open, parse_line_comment, period,
+  period_newline, ws, ws_before, ws_before_mut,
 };
 use libironclad_erlang::erl_syntax::parsers::parse_str::StringParser;
 use libironclad_error::source_loc::SourceLoc;
@@ -50,9 +50,10 @@ impl PreprocessorParser {
   /// Parse a `-include(STRING)`
   fn include_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("include"),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
+        period_newline,
       ),
       |t| PpAst::new_include(&SourceLoc::from_input(input), t),
     )(input)
@@ -61,9 +62,10 @@ impl PreprocessorParser {
   /// Parse a `-include_lib(STRING)`
   fn include_lib_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("include_lib"),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
+        period_newline,
       ),
       |t| PpAst::new_include_lib(&SourceLoc::from_input(input), t),
     )(input)

@@ -9,9 +9,10 @@ use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
+use nom::character::complete::char;
 use nom::combinator::{cut, map, not, opt, peek};
 use nom::multi::separated_list1;
-use nom::sequence::{preceded, terminated, tuple};
+use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, error::context};
 
 impl ErlParser {
@@ -97,7 +98,9 @@ impl ErlParser {
   /// Parse function definition
   pub fn parse_fndef(input: &str) -> AstParserResult {
     map(
-      terminated(
+      delimited(
+        // does not begin with - (that would be a mis-parsed attribute)
+        not(peek(ws_before(char('-')))),
         separated_list1(
           semicolon,
           // if parse fails under here, will show this context message in error

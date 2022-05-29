@@ -131,7 +131,10 @@ pub fn parse_float(input: &str) -> StrSliceParserResult {
 pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<&'a str>>(
   input: &'a str,
 ) -> nom::IResult<&str, &str, ErrType> {
-  recognize(alt((tag("\r\n"), tag("\r"), tag("\n"), eof)))(input)
+  recognize(preceded(
+    many0(alt((char(' '), char('\t')))),
+    alt((tag("\r\n"), tag("\r"), tag("\n"), eof)),
+  ))(input)
 }
 
 /// Matches an opening parenthesis "(" with 0+ whitespace before

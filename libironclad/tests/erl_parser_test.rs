@@ -576,3 +576,18 @@ fn parse_record_with_module() -> IcResult<()> {
   assert!(matches!(contents[1].content, ErlAstType::RecordDefinition { .. }));
   Ok(())
 }
+
+/// Try parse `-record(name, {fields})` with a map in it
+#[named]
+#[test]
+fn parse_record_with_map() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition");
+
+  let filename = PathBuf::from(function_name!());
+  let input = "-record(t_tuple, {size=0 :: integer(),
+    exact=false :: boolean(),
+    elements=#{} :: tuple_elements()}).";
+  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+  Ok(())
+}

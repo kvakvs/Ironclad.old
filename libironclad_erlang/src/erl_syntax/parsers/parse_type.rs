@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, period,
+  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname,
   period_newline, semicolon, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
@@ -41,7 +41,7 @@ impl ErlTypeParser {
             ),
           ),
         )),
-        period,
+        period_newline,
       ),
       |(name, clauses)| {
         let arity = clauses[0].arity();
@@ -59,26 +59,23 @@ impl ErlTypeParser {
   /// Parses a function clause args specs, return spec and optional `when`
   fn parse_fn_spec_fnclause(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
     map(
-      terminated(
-        tuple((
-          // Function clause name
-          opt(AtomParser::atom),
-          // Args list (list of type variables with some types possibly)
-          context(
-            "arguments list in a function clause spec",
-            Self::parse_parenthesized_arg_spec_list,
-          ),
-          ws_before(tag("->")),
-          // Return type for fn clause
-          context(
-            "return type in function clause spec",
-            alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
-          ),
-          // Optional: when <comma separated list of typevariables given types>
-          context("when expression for typespec", opt(Self::parse_when_expr_for_type)),
-        )),
-        period_newline,
-      ),
+      tuple((
+        // Function clause name
+        opt(AtomParser::atom),
+        // Args list (list of type variables with some types possibly)
+        context(
+          "arguments list in a function clause spec",
+          Self::parse_parenthesized_arg_spec_list,
+        ),
+        ws_before(tag("->")),
+        // Return type for fn clause
+        context(
+          "return type in function clause spec",
+          alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
+        ),
+        // Optional: when <comma separated list of typevariables given types>
+        context("when expression for typespec", opt(Self::parse_when_expr_for_type)),
+      )),
       |(_name, args, _arrow, ret_ty, when_expr)| {
         // TODO: Check name equals function name, for module level functions
         if let Some(when_expr_val) = when_expr {
