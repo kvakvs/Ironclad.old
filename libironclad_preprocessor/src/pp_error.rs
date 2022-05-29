@@ -1,5 +1,5 @@
 //! Errors which can occur during preprocess stage
-use crate::nom_parser::pp_parse_types::PpParserError;
+use crate::parsers::pp_parse_types::PpParserError;
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
 use libironclad_error::ic_error_trait::{IcError, IcErrorT};

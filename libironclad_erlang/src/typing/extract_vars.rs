@@ -1,7 +1,7 @@
 //! Analyze AST and extract new variables from it
 
-use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
-use crate::syntax_tree::node::erl_var::ErlVar;
+use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::node::erl_var::ErlVar;
 use ::function_name::named;
 
 /// Hosts code to extract new introduced variables from Core AST

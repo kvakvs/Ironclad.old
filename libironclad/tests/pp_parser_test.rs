@@ -5,13 +5,13 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::stage::preprocess::PreprocessState;
-use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::IcResult;
-use libironclad_preprocessor::nom_parser::pp_parse_types::PreprocessorParser;
+use libironclad_preprocessor::parsers::pp_parse_types::PreprocessorParser;
 use nom::Finish;
 
-use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType;
-use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType::{Define, File, Include};
+use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstType;
+use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstType::{Define, File, Include};
 
 #[test]
 #[named]

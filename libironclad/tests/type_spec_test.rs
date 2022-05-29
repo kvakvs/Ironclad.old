@@ -5,9 +5,9 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAstType;
-use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
-use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
+use libironclad_erlang::erl_syntax::erl_ast::ErlAstType;
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
@@ -26,7 +26,7 @@ fn union_type_parse() -> IcResult<()> {
 	       'nil' |
 	       {'float',float()}";
   let (tail1, result1) =
-    panicking_parser_error_reporter(input, ErlAttrParser::parse_type_attr(input).finish());
+    panicking_parser_error_reporter(input, ErlAttrParser::type_definition_attr(input).finish());
   assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
   println!("Parsed: {}", result1);
   Ok(())

@@ -1,8 +1,8 @@
 //! Code to support variable scopes
 
-use crate::syntax_tree::erl_ast::ast_iter::AstNode;
-use crate::syntax_tree::erl_ast::{ErlAst, ErlAstType};
-use crate::syntax_tree::node::erl_var::ErlVar;
+use crate::erl_syntax::erl_ast::ast_iter::AstNode;
+use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::collections::HashMap;

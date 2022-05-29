@@ -3,18 +3,18 @@
 pub mod pp_define;
 pub mod pp_scope;
 
-use libironclad_erlang::syntax_tree::literal_bool::LiteralBool;
-use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::literal_bool::LiteralBool;
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
 use libironclad_error::source_loc::SourceLoc;
-use libironclad_preprocessor::nom_parser::pp_parse_types::{PpAstParserResult, PreprocessorParser};
+use libironclad_preprocessor::parsers::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use libironclad_preprocessor::pp_error::PpError;
-use libironclad_preprocessor::syntax_tree::pp_ast::PpAstType::{
+use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstType::{
   Define, EmptyText, Error, File, IfBlock, IfdefBlock, Include, IncludeLib, IncludedFile, Text,
   Undef, Warning,
 };
-use libironclad_preprocessor::syntax_tree::pp_ast::{PpAst, PpAstCache};
+use libironclad_preprocessor::preprocessor_syntax::pp_ast::{PpAst, PpAstCache};
 use nom::Finish;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

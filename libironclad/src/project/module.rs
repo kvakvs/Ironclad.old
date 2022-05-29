@@ -8,10 +8,10 @@ use std::sync::{Arc, RwLock};
 
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
-use libironclad_erlang::syntax_tree::erl_error::ErlError;
-use libironclad_erlang::syntax_tree::nom_parse::parse_type::ErlTypeParser;
-use libironclad_erlang::syntax_tree::nom_parse::{ErlParser, ErlParserError};
+use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
+use libironclad_erlang::erl_syntax::erl_error::ErlError;
+use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
+use libironclad_erlang::erl_syntax::parsers::{ErlParser, ErlParserError};
 use libironclad_erlang::typing::scope::Scope;
 use libironclad_error::ic_error::IcResult;
 
@@ -123,7 +123,7 @@ impl ErlModule {
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
   pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
-    Self::parse_helper(filename, input, ErlTypeParser::parse_fn_spec)
+    Self::parse_helper(filename, input, ErlTypeParser::fn_spec)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`

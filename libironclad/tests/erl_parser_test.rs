@@ -7,11 +7,11 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
+use libironclad_erlang::erl_syntax::erl_ast::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
+use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_erlang::literal::Literal;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
-use libironclad_erlang::syntax_tree::nom_parse::misc::panicking_parser_error_reporter;
-use libironclad_erlang::syntax_tree::nom_parse::parse_attr::ErlAttrParser;
-use libironclad_erlang::syntax_tree::nom_parse::ErlParser;
 use libironclad_error::ic_error::IcResult;
 use nom::Finish;
 

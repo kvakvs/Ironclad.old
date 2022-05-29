@@ -7,9 +7,9 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAst;
-use libironclad_erlang::syntax_tree::erl_ast::ErlAstType::FnDef;
-use libironclad_erlang::syntax_tree::erl_op::ErlBinaryOp;
+use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
+use libironclad_erlang::erl_syntax::erl_ast::ErlAstType::FnDef;
+use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;

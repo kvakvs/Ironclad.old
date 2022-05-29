@@ -1,7 +1,7 @@
 //! Checks whether a type matches synthesized type for AST
 
-use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::erl_error::ErlError;
+use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;

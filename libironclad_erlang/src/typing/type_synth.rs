@@ -1,10 +1,10 @@
 //! Synthesize a type from AST node
 
-use crate::syntax_tree::erl_ast::ErlAst;
-use crate::syntax_tree::erl_ast::ErlAstType::{
+use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::ErlAstType::{
   Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, ModuleStartAttr, Tuple, Var,
 };
-use crate::syntax_tree::erl_error::ErlError;
+use crate::erl_syntax::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use ::function_name::named;
