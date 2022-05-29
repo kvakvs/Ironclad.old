@@ -2,7 +2,7 @@
 # TODO not working? include_paths = ["test_project/src"]    # default []
 
 [inputs]
-include_paths = ["test_project/src"]      # default []
+include_paths = ["test_project/src", "test_project/include"] # default []
 files = ["*.erl"]                         # default ["*.erl"]
 directories = ["test_project/src"]        # default ["."]
 exclude_files = []          # TODO: not implemented; default []

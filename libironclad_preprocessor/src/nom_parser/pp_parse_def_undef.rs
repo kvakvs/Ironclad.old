@@ -36,7 +36,7 @@ impl PreprocessorParser {
         PpAst::new_define(
           &SourceLoc::from_input(input),
           name,
-          args.unwrap_or_else(|| Vec::default()),
+          args.unwrap_or_default(),
           body.into_iter().collect::<String>(),
         )
       },

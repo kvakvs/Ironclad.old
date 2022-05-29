@@ -51,8 +51,8 @@ impl PreprocessorParser {
           PpAst::new_if(
             &SourceLoc::from_input(input),
             if_expr.clone(),
-            branch_true1.unwrap_or_else(|| Vec::default()),
-            branch_false.unwrap_or_else(|| Vec::default()),
+            branch_true1.unwrap_or_default(),
+            branch_false.unwrap_or_default(),
           )
         } else {
           unreachable!("This code path should not execute")
