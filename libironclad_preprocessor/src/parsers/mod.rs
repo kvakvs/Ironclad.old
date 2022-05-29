@@ -14,7 +14,7 @@ use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, recognize, verify};
 use nom::multi::{many0, many1, separated_list0};
-use nom::sequence::{delimited, pair, preceded, tuple};
+use nom::sequence::{delimited, pair, tuple};
 use nom::{bytes::complete::tag, character::complete::alphanumeric1, error::context};
 
 pub mod pp_parse_def_undef;

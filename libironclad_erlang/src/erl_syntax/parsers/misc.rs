@@ -193,6 +193,14 @@ pub fn comma<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(ws_before(char(',')))(input)
 }
 
+/// Matches a hash symbol `"#"` with 0+ whitespace before
+#[inline]
+pub fn hash_symbol<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('#')))(input)
+}
+
 /// Matches a period "." with 0+ whitespace before
 #[inline]
 pub fn period<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(

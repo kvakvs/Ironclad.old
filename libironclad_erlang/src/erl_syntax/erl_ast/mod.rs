@@ -9,6 +9,7 @@ use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
+use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_token::ErlToken;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
@@ -179,12 +180,10 @@ pub enum ErlAstType {
     elements: Vec<Arc<ErlAst>>,
   },
 
-  /// A map of some keys and some values
-  Map {
+  /// A map of some keys and some values, using `=>` syntax for construction
+  MapBuilder {
     /// Map keys, matching values by index
-    keys: Vec<Arc<ErlAst>>,
-    /// Map values, matching keys by index
-    values: Vec<Arc<ErlAst>>,
+    members: Vec<MapBuilderMember>,
   },
 
   /// Comma-separated list of expressions, final expression is the result

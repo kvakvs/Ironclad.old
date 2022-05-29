@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypeAttr, FnDef,
   FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, ModuleStartAttr, TryCatch, Tuple, TypeAttr, Var,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleStartAttr, TryCatch, Tuple, TypeAttr, Var,
 };
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::erl_op::ErlBinaryOp;
@@ -16,6 +16,7 @@ use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
+use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::literal::Literal;
@@ -124,6 +125,11 @@ impl ErlAst {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
     // Use Self::walk_litexpr
     ErlAst::construct_with_location(location, Tuple { elements })
+  }
+
+  /// Create a new AST node for a map builder
+  pub fn new_map_builder(location: &SourceLoc, members: Vec<MapBuilderMember>) -> Arc<ErlAst> {
+    ErlAst::construct_with_location(location, MapBuilder { members })
   }
 
   /// Create a new AST node for a comma-expression

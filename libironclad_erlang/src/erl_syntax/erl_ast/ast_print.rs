@@ -3,8 +3,8 @@
 use crate::erl_syntax::erl_ast::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
   ExportTypeAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
-  ListComprehension, ListComprehensionGenerator, Lit, Map, ModuleForms, ModuleStartAttr, Token,
-  TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
+  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, ModuleStartAttr,
+  Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -98,8 +98,10 @@ impl std::fmt::Display for ErlAst {
         write!(f, ".")
       }
       Type { ty, .. } => write!(f, "{}", ty),
-      Map { .. } => {
-        unimplemented!("Display for ErlAst::Map")
+      MapBuilder { members } => {
+        write!(f, "#{{")?;
+        Pretty::display_comma_separated(members, f)?;
+        write!(f, "}}")
       }
       ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;

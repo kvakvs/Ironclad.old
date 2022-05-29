@@ -97,10 +97,11 @@ impl ErlAst {
         }
         Ok(())
       }
-      ErlAstType::Map { values, .. } => {
+      ErlAstType::MapBuilder { members, .. } => {
         // Cannot bind variable to a map key in arguments list
-        for v in values {
-          Self::extract_variables(v, variables)?;
+        for v in members {
+          Self::extract_variables(&v.key, variables)?;
+          Self::extract_variables(&v.value, variables)?;
         }
         Ok(())
       }

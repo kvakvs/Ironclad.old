@@ -7,15 +7,20 @@ use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::erl_ast::ErlAstType::Var;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
+use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::misc::{
-  comma, par_close, par_open, parse_varname, square_close, square_open, ws_before, ws_before_mut,
+  comma, curly_close, curly_open, hash_symbol, par_close, par_open, parse_varname, square_close,
+  square_open, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_binary::BinaryParser;
-use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
+use crate::erl_syntax::parsers::{
+  AstParserResult, ErlParser, ErlParserError, ParserResult, VecAstParserResult,
+};
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
+use nom::bytes::complete::tag;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
@@ -113,14 +118,36 @@ impl ErlParser {
     delimited(square_open, Self::parse_list_comprehension_1, square_close)(input)
   }
 
+  /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
   fn parse_tuple_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
     map(
-      delimited(
-        ws_before(char('{')),
-        Self::parse_comma_sep_exprs0::<STYLE>,
-        ws_before(char('}')),
-      ),
+      delimited(curly_open, Self::parse_comma_sep_exprs0::<STYLE>, curly_close),
       |elements| ErlAst::new_tuple(&SourceLoc::from_input(input), elements),
+    )(input)
+  }
+
+  /// Parse one member of a map builder `keyExpr "=>" valueExpr`
+  fn map_builder_member<const STYLE: usize>(input: &str) -> ParserResult<MapBuilderMember> {
+    map(
+      separated_pair(
+        Self::parse_expr_prec13::<STYLE>,
+        ws_before(tag("=>")),
+        Self::parse_expr_prec13::<STYLE>,
+      ),
+      |(key, value)| MapBuilderMember { key, value },
+    )(input)
+  }
+
+  /// Parse a map builder expression, which uses `=>` to assign the values.
+  /// Contrary to a map matcher, which would use `:=`.
+  fn map_builder_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
+    map(
+      delimited(
+        pair(hash_symbol, curly_open),
+        separated_list0(comma, Self::map_builder_member::<STYLE>),
+        ws_before(curly_close),
+      ),
+      |members| ErlAst::new_map_builder(&SourceLoc::from_input(input), members),
     )(input)
   }
 
@@ -165,6 +192,7 @@ impl ErlParser {
           Self::parse_list_comprehension,
           Self::parse_list_of_exprs::<STYLE>,
           Self::parse_tuple_of_exprs::<STYLE>,
+          Self::map_builder_of_exprs::<STYLE>,
           Self::parse_var,
           Self::parse_literal,
         ))),
