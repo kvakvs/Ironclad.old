@@ -19,8 +19,8 @@ impl std::fmt::Display for PpAst {
         Ok(())
       }
 
-      Text(s) => write!(f, "text ⊏{}⊐", s),
-      EmptyText => write!(f, "text ∅"),
+      Text(s) => write!(f, "{}", s),
+      EmptyText => write!(f, "% empty text"),
 
       IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       Define { name, args, body } => {

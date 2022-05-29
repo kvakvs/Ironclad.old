@@ -10,6 +10,7 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
 use libironclad_erlang::erl_syntax::erl_error::ErlError;
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::erl_syntax::parsers::{ErlParser, ErlParserError};
 use libironclad_erlang::typing::scope::Scope;
@@ -76,33 +77,33 @@ impl ErlModule {
     println!("Parsing from {}", filename.to_string_lossy());
 
     let mut module = ErlModule::default();
-    let parse_result = parse_fn(input);
+    let (tail, forms) = panicking_parser_error_reporter(input, parse_fn(input).finish());
 
-    #[cfg(debug_assertions)]
-    if parse_result.is_err() {
-      println!("NomError: {:?}", parse_result);
-    }
+    // #[cfg(debug_assertions)]
+    // if parse_result.is_err() {
+    //   println!("NomError: {:?}", parse_result);
+    // }
 
-    match parse_result.finish() {
-      Ok((tail, forms)) => {
-        println!("Parse result AST: «{}»", &forms);
+    // match parse_result.finish() {
+    //   Ok((tail, forms)) => {
+    println!("Parse result AST: «{}»", &forms);
 
-        assert!(
-          tail.trim().is_empty(),
-          "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}",
-          tail,
-          forms
-        );
-        module.source_file = SourceFile::new(filename, String::from(input));
-        module.ast = forms;
+    assert!(
+      tail.trim().is_empty(),
+      "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}",
+      tail,
+      forms
+    );
+    module.source_file = SourceFile::new(filename, String::from(input));
+    module.ast = forms;
 
-        // Scan AST and find FnDef nodes, update functions knowledge
-        Scope::update_from_ast(&module.scope, &module.ast);
+    // Scan AST and find FnDef nodes, update functions knowledge
+    Scope::update_from_ast(&module.scope, &module.ast);
 
-        Ok(module)
-      }
-      Err(err) => ErlError::from_nom_error(input, err),
-    }
+    Ok(module)
+    // }
+    // Err(err) => ErlError::from_nom_error(input, err),
+    // }
   }
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions

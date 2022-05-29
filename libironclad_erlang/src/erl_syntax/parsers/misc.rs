@@ -220,8 +220,10 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 ) -> (&'a str, Out) {
   match res {
     Ok((tail, out)) => {
-      if !tail.is_empty() {
-        panic!("Not all input was consumed: tail=«{}»", tail)
+      let tail_trim_whitespace = tail.trim();
+
+      if !tail_trim_whitespace.is_empty() {
+        panic!("Not all input was consumed: tail=«{}»", tail_trim_whitespace)
       }
       (tail, out)
     }
