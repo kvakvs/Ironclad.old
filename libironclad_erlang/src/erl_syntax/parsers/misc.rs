@@ -287,3 +287,7 @@ pub fn match_word<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
 ) -> impl FnMut(&'a str) -> nom::IResult<&'a str, &'a str, ErrType> {
   recognize(terminated(ws_before(tag(tag_str)), peek(word_break)))
 }
+
+pub fn print_input(fn_name: &str, input: &str) {
+  println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
+}

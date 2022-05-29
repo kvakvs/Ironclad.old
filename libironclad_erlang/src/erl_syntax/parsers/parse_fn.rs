@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
-use crate::erl_syntax::parsers::misc::{match_word, period, semicolon, ws_before, ws_before_mut};
+use crate::erl_syntax::parsers::misc::{
+  match_word, period, print_input, semicolon, ws_before, ws_before_mut,
+};
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError};
 use libironclad_error::source_loc::SourceLoc;
@@ -56,11 +58,11 @@ impl ErlParser {
         ),
         // Optional: when <guard>
         context("`when` expression of a function clause", opt(Self::parse_when_expr_for_fn)),
-        context(
-          "function clause body of a function definition",
-          preceded(
-            ws_before(tag("->")),
-            // Body as list of exprs
+        preceded(
+          ws_before(tag("->")),
+          // Body as list of exprs
+          context(
+            "function clause body of a function definition",
             cut(Self::parse_comma_sep_exprs1::<{ ErlParser::EXPR_STYLE_FULL }>),
           ),
         ),
@@ -97,6 +99,7 @@ impl ErlParser {
 
   /// Parse function definition
   pub fn parse_fndef(input: &str) -> AstParserResult {
+    print_input("parse_fndef", input);
     map(
       delimited(
         // does not begin with - (that would be a mis-parsed attribute)

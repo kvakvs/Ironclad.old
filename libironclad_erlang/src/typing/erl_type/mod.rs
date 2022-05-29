@@ -131,6 +131,12 @@ pub enum ErlType {
 
   /// A type variable, possibly with a name, and possibly with a pinned type
   Typevar(Typevar),
+
+  /// Refers to a record by its tag name
+  RecordRef {
+    /// Record tag
+    tag: String,
+  },
 }
 
 //

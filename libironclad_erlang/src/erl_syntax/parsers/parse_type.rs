@@ -197,6 +197,14 @@ impl ErlTypeParser {
     )(input)
   }
 
+  /// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
+  fn record_ref(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+    map(
+      preceded(hash_symbol, pair(AtomParser::atom, pair(curly_open, curly_close))),
+      |(tag, (_, _))| ErlType::new_record_ref(tag),
+    )(input)
+  }
+
   /// Parse a list of types, returns a temporary list-type
   fn type_of_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
@@ -271,6 +279,7 @@ impl ErlTypeParser {
       Self::type_of_list,
       Self::type_of_tuple,
       Self::type_of_map,
+      Self::record_ref,
       Self::user_defined_type,
       Self::int_literal_type,
       Self::atom_literal_type,

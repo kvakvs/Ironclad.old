@@ -116,6 +116,11 @@ impl ErlType {
     ErlType::Typevar(tv).into()
   }
 
+  /// Construct a new record reference by tag name
+  pub fn new_record_ref(tag: String) -> Arc<ErlType> {
+    ErlType::RecordRef { tag }.into()
+  }
+
   /// Try match type name and arity vs known basic types
   pub fn from_name(
     maybe_module: Option<String>,

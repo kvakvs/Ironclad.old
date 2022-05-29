@@ -53,6 +53,7 @@ impl std::fmt::Display for ErlType {
       ErlType::Pid => write!(f, "pid()"),
       ErlType::Reference => write!(f, "reference()"),
       ErlType::Port => write!(f, "port()"),
+      ErlType::RecordRef { tag } => write!(f, "#{}{{}}", tag),
       ErlType::Singleton { val } => write!(f, "{}", val),
       ErlType::Union(u) => Pretty::display_separated(&u.types, "|", f),
       ErlType::UserDefinedType { name, args } => {
