@@ -249,7 +249,7 @@ impl ErlTypeParser {
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
       separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
-      |types| ErlType::new_union(&types),
+      |types| ErlType::new_union_skip_normalize(&types),
     )(input)
   }
 

@@ -84,6 +84,15 @@ impl ErlType {
     }
   }
 
+  /// Create a new union but do not normalize
+  pub fn new_union_skip_normalize(types: &[Arc<ErlType>]) -> Arc<ErlType> {
+    match types.len() {
+      0 => ErlType::none(),
+      1 => types[0].clone(),
+      _ => ErlType::Union(TypeUnion::new(types)).into(),
+    }
+  }
+
   /// Construct a new tuple-type
   pub fn new_tuple(elements: &[Arc<ErlType>]) -> Arc<ErlType> {
     ErlType::Tuple { elements: elements.into() }.into()

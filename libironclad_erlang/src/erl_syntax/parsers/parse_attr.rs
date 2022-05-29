@@ -81,7 +81,7 @@ impl ErlAttrParser {
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn import_attr(input: &str) -> AstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("import"),
         context(
           "import attribute",
@@ -91,6 +91,7 @@ impl ErlAttrParser {
             par_close,
           )),
         ),
+        period,
       ),
       |(mod_name, _comma1, imports)| {
         ErlAst::new_import_attr(&SourceLoc::from_input(input), mod_name, imports)
@@ -159,9 +160,10 @@ impl ErlAttrParser {
 
   /// Parses a `-record(atom(), {field :: type()... }).` attribute.
   fn record_definition(input: &str) -> AstParserResult {
-    preceded(
+    delimited(
       match_dash_tag("record"),
       delimited(par_open, Self::record_definition_inner, par_close),
+      period,
     )(input)
   }
 
