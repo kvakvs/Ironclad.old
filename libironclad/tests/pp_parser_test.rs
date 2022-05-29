@@ -104,8 +104,11 @@ on_false
 #[named]
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
+  let pp_state = PreprocessState::new_self_contained();
   let input = "-define(AAA).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
+  let ast = pp_state
+    .parse_helper(input, PreprocessorParser::define_directive)
+    .unwrap();
   if let Define { name, body, .. } = &ast.node_type {
     assert_eq!(name, "AAA");
     assert!(body.is_empty());
@@ -118,8 +121,11 @@ fn parse_define_ident_only() {
 #[named]
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
+  let pp_state = PreprocessState::new_self_contained();
   let input = "-define(BBB, [true)).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
+  let ast = pp_state
+    .parse_helper(input, PreprocessorParser::define_directive)
+    .unwrap();
   if let Define { name, body, .. } = &ast.node_type {
     assert_eq!(name, "BBB");
     assert_eq!(body, "[true)");
@@ -132,8 +138,11 @@ fn parse_define_with_body_no_args() {
 #[named]
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
+  let pp_state = PreprocessState::new_self_contained();
   let input = "-define(CCC(X,y), 2args\nbody).";
-  let ast = PreprocessState::parse_helper(input, PreprocessorParser::define_directive).unwrap();
+  let ast = pp_state
+    .parse_helper(input, PreprocessorParser::define_directive)
+    .unwrap();
 
   if let Define { name, args, body, .. } = &ast.node_type {
     assert_eq!(name, "CCC");
@@ -168,7 +177,11 @@ fn test_macro_in_define() {
 #[named]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let inc1 = PreprocessState::from_source("-include (\"test\").\n").unwrap();
+  let pp_state = PreprocessState::new_self_contained();
+  let input = "-include (\"test\").\n";
+  let inc1 = pp_state
+    .parse_helper(input, PreprocessorParser::module)
+    .unwrap();
   if let File(nodes) = &inc1.node_type {
     assert_eq!(nodes.len(), 2); // define and empty line
     if let Include(t) = &nodes[0].node_type {
@@ -183,7 +196,11 @@ fn parse_include_varied_spacing_1() {
 #[named]
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let inc2 = PreprocessState::from_source(" - include(\"test\"\n).\n").unwrap();
+  let pp_state = PreprocessState::new_self_contained();
+  let input = " - include(\"test\"\n).\n";
+  let inc2 = pp_state
+    .parse_helper(input, PreprocessorParser::module)
+    .unwrap();
   if let File(ast) = &inc2.node_type {
     assert_eq!(ast.len(), 2); // define and empty line
     if let Include(t) = &ast[0].node_type {
@@ -198,7 +215,11 @@ fn parse_include_varied_spacing_2() {
 #[named]
 fn parse_include_varied_spacing_3() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let inc3 = PreprocessState::from_source("-include\n(\"test\"\n).\n").unwrap();
+  let pp_state = PreprocessState::new_self_contained();
+  let input = "-include\n(\"test\"\n).\n";
+  let inc3 = pp_state
+    .parse_helper(input, PreprocessorParser::module)
+    .unwrap();
   if let File(ast) = &inc3.node_type {
     assert_eq!(ast.len(), 2); // define and empty line
     if let Include(t) = &ast[0].node_type {
@@ -214,8 +235,13 @@ fn parse_include_varied_spacing_3() {
 fn parse_define_varied_spacing() {
   test_util::start(function_name!(), "Parse -define() directives with varied spacing");
 
-  let d0 = PreprocessState::from_source("- define(AAA, \"aaa\").").unwrap();
-  if let File(ast) = &d0.node_type {
+  let pp_state = PreprocessState::new_self_contained();
+  let input1 = "- define(AAA, \"aaa\").";
+  let d1 = pp_state
+    .parse_helper(input1, PreprocessorParser::module)
+    .unwrap();
+
+  if let File(ast) = &d1.node_type {
     assert_eq!(ast.len(), 1);
     if let Define { name, args, body } = &ast[0].node_type {
       assert_eq!(name, "AAA");
@@ -229,8 +255,11 @@ fn parse_define_varied_spacing() {
     }
   }
 
-  let d1 = PreprocessState::from_source("- define\n(BBB,\n666).").unwrap();
-  if let File(ast) = &d1.node_type {
+  let input2 = "- define\n(BBB,\n666).";
+  let d2 = pp_state
+    .parse_helper(input2, PreprocessorParser::module)
+    .unwrap();
+  if let File(ast) = &d2.node_type {
     assert_eq!(ast.len(), 1);
     if let Define { name, args, body } = &ast[0].node_type {
       assert_eq!(name, "BBB");
@@ -244,7 +273,11 @@ fn parse_define_varied_spacing() {
 
 #[test]
 fn test_define_with_dquotes() -> IcResult<()> {
-  let file_ast = PreprocessState::from_source("-define(AAA(X,Y), \"aaa\").\n").unwrap();
+  let pp_state = PreprocessState::new_self_contained();
+  let input = "-define(AAA(X,Y), \"aaa\").\n";
+  let file_ast = pp_state
+    .parse_helper(input, PreprocessorParser::module)
+    .unwrap();
   if let File(nodes) = &file_ast.node_type {
     if let Define { name, args, body } = &nodes[0].node_type {
       assert_eq!(name, "AAA");

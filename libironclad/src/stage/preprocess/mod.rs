@@ -37,17 +37,6 @@ pub struct PreprocessState {
 }
 
 impl PreprocessState {
-  // /// Split input file into fragments using preprocessor directives as separators
-  // pub fn from_source_file(source_file: &Arc<SourceFile>) -> IcResult<Arc<PpAst>> {
-  //   let input = &source_file.text;
-  //   Self::from_source(input)
-  // }
-
-  // /// Split input file into fragments using preprocessor directives as separators
-  // pub fn from_source(input: &str) -> IcResult<Arc<PpAst>> {
-  //   Self::parse_helper(input, PreprocessorParser::parse_module)
-  // }
-
   /// Check AST cache if the file is already parsed, and then return the cached ppAst
   /// Otherwise pass the control to the parser
   pub fn parse_file_helper<Parser>(
@@ -108,7 +97,7 @@ impl PreprocessState {
     };
 
     // If cached, try get it, otherwise parse and save
-    let ast_tree = self.parse_file_helper(&contents, PreprocessorParser::parse_module)?;
+    let ast_tree = self.parse_file_helper(&contents, PreprocessorParser::module)?;
     let pp_ast = self.interpret_pp_ast(project, &contents, &ast_tree)?;
 
     // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
@@ -156,7 +145,7 @@ impl PreprocessState {
               file_cache1.get_or_load(&include_path).unwrap()
             };
             let ast_tree =
-              self.parse_file_helper(&include_source_file, PreprocessorParser::parse_module)?;
+              self.parse_file_helper(&include_source_file, PreprocessorParser::module)?;
 
             // let mut ast_cache1 = ast_cache.lock().unwrap();
             ast_cache1
@@ -248,7 +237,7 @@ impl PreprocessState {
       Include(arg) => {
         let found_path = self.find_include(project, &node.location, Path::new(arg))?;
         let incl_file = self.load_include(&node.location, &found_path)?;
-        let node = self.parse_file_helper(&incl_file, PreprocessorParser::parse_module)?;
+        let node = self.parse_file_helper(&incl_file, PreprocessorParser::module)?;
         self.interpret_preprocessor_node(
           project,
           &node,
@@ -261,7 +250,7 @@ impl PreprocessState {
       IncludeLib(arg) => {
         let found_path = self.find_include_lib(project, &node.location, Path::new(arg))?;
         let incl_file = self.load_include(&node.location, &found_path)?;
-        let node = self.parse_file_helper(&incl_file, PreprocessorParser::parse_module)?;
+        let node = self.parse_file_helper(&incl_file, PreprocessorParser::module)?;
         self.interpret_preprocessor_node(
           project,
           &node,
@@ -331,6 +320,15 @@ impl PreprocessState {
       file_cache: file_cache.clone(),
       scope,
     }
+  }
+
+  /// Create a self-contained preprocessor stage used for testing, does not take any inputs and
+  /// builds everything for itself
+  pub fn new_self_contained() -> Self {
+    let ast_cache = Arc::new(RwLock::new(PpAstCache::default()));
+    let file_cache = Arc::new(RwLock::new(FileContentsCache::default()));
+    let scope = PreprocessorScope::default().into();
+    Self::new(&ast_cache, &file_cache, scope)
   }
 
   /// Interpret parsed attributes/preprocess directives from top to bottom

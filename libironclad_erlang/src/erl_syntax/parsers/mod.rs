@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::erl_ast::ErlAstType::ModuleForms;
+use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use nom::branch::alt;
-use nom::character::complete::multispace0;
 use nom::combinator::{complete, map};
 use nom::multi::many0;
 
@@ -49,25 +49,19 @@ pub type VoidParserResult<'a> = ParserResult<'a, ()>;
 pub struct ErlParser {}
 
 impl ErlParser {
-  /// Parses 0 or more module forms (attrs and function defs)
-  pub fn parse_module_forms_collection(input: &str) -> VecAstParserResult {
-    // Skip whitespace and check if no input remaining
-    let (input, _skip_space) = multispace0(input)?;
-    if input.is_empty() {
-      return Ok((input, Vec::default()));
-    }
-
-    many0(complete(Self::parse_module_form))(input)
+  /// Parses an attribute or a function def
+  pub fn module_form(input: &str) -> AstParserResult {
+    alt((ErlAttrParser::attr, Self::parse_fndef))(input)
   }
 
-  /// Parses an attribute or a function def
-  pub fn parse_module_form(input: &str) -> AstParserResult {
-    alt((ErlAttrParser::parse, Self::parse_fndef))(input)
+  /// Parses 0 or more module forms (attrs and function defs)
+  pub fn module_forms_collection(input: &str) -> VecAstParserResult {
+    ws_mut(many0(complete(Self::module_form)))(input)
   }
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
   pub fn parse_module(input: &str) -> AstParserResult {
-    map(Self::parse_module_forms_collection, |forms| {
+    map(Self::module_forms_collection, |forms| {
       ErlAst::construct_without_location(ModuleForms(forms))
     })(input)
   }

@@ -123,7 +123,7 @@ impl PreprocessorParser {
 
   /// Parses file contents into mix of preprocessor directives and text fragments.
   /// Comments are eliminated.
-  pub fn parse_module(input: &str) -> PpAstParserResult {
+  pub fn module(input: &str) -> PpAstParserResult {
     map(Self::parse_fragments_collection, |fragments| {
       PpAst::new_file(&SourceLoc::from_input(input), fragments)
     })(input)

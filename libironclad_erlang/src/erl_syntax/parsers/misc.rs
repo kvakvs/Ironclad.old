@@ -166,6 +166,22 @@ pub fn curly_close<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(ws_before(char('}')))(input)
 }
 
+/// Matches an opening square bracket "[" with 0+ whitespace before
+#[inline]
+pub fn square_open<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char('[')))(input)
+}
+
+/// Matches a closing square bracket "]" with 0+ whitespace before
+#[inline]
+pub fn square_close<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(char(']')))(input)
+}
+
 /// Matches a comma "," with 0+ whitespace before
 #[inline]
 pub fn comma<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(

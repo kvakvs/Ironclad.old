@@ -58,7 +58,7 @@ fn parse_export_attr() -> IcResult<()> {
 fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
-  let parse_result = ErlParser::parse_module_forms_collection(input);
+  let parse_result = ErlParser::module_forms_collection(input);
   let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
@@ -73,7 +73,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     "Parse a string with 2 function defs in it as module forms collection",
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let parse_result = ErlParser::parse_module_forms_collection(input);
+  let parse_result = ErlParser::module_forms_collection(input);
   let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
@@ -507,14 +507,8 @@ fn parse_apply_3() -> IcResult<()> {
   Ok(())
 }
 
-/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
-#[named]
-#[test]
-fn parse_record() -> IcResult<()> {
-  test_util::start(function_name!(), "parse a record definition");
-
-  let filename = PathBuf::from(function_name!());
-  let input = "%%\n
+fn sample_record_input() -> &'static str {
+  "%%\n
 %% Generic compiler options, passed from the erl_compile module.\n
 -record(options,
 	 {includes=[] :: [file:filename()],	% Include paths (list of
@@ -531,8 +525,31 @@ fn parse_record() -> IcResult<()> {
 	  outfile=\"\"  :: file:filename(),	% Name of output file (internal
 						% use in erl_compile.erl).
 	  cwd	      :: file:filename()	% Current working directory for erlc.
-	 }).\n";
+	 }).\n"
+}
+
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_record() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition");
+
+  let filename = PathBuf::from(function_name!());
+  let input = sample_record_input();
   let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+  Ok(())
+}
+
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl` as a part of a module
+#[named]
+#[test]
+fn parse_record_with_module() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition as a part of a module");
+
+  let filename = PathBuf::from(function_name!());
+  let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
+  let parsed = ErlModule::parse_helper(&filename, &input, ErlParser::parse_module)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }

@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::misc::{
-  comma, par_close, par_open, parse_varname, ws_before, ws_before_mut,
+  comma, par_close, par_open, parse_varname, square_close, square_open, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_binary::BinaryParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError, VecAstParserResult};
@@ -65,10 +65,10 @@ impl ErlParser {
   fn parse_list_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {
     map(
       tuple((
-        ws_before(char('[')),
+        square_open,
         Self::parse_comma_sep_exprs0::<STYLE>,
         opt(preceded(ws_before(char('|')), Self::parse_expr_prec13::<STYLE>)),
-        ws_before(char(']')),
+        square_close,
       )),
       |(_open, elements, maybe_tail, _close)| {
         ErlAst::new_list(&SourceLoc::from_input(input), elements, maybe_tail)
@@ -110,7 +110,7 @@ impl ErlParser {
   }
 
   fn parse_list_comprehension(input: &str) -> AstParserResult {
-    delimited(ws_before(char('[')), Self::parse_list_comprehension_1, ws_before(char(']')))(input)
+    delimited(square_open, Self::parse_list_comprehension_1, square_close)(input)
   }
 
   fn parse_tuple_of_exprs<const STYLE: usize>(input: &str) -> AstParserResult {

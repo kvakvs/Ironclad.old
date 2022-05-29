@@ -2,8 +2,8 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, semicolon,
-  ws_before,
+  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, period,
+  semicolon, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
@@ -28,7 +28,8 @@ impl ErlTypeParser {
   /// Dash `-` is matched outside by the caller.
   pub fn fn_spec_attr(input: &str) -> AstParserResult {
     map(
-      preceded(
+      // all between -spec and .
+      delimited(
         match_dash_tag("spec"),
         tuple((
           context("Function name in a -spec() attribute", cut(AtomParser::atom)),
@@ -40,7 +41,8 @@ impl ErlTypeParser {
             ),
           ),
         )),
-      ), // preceded by -spec
+        period,
+      ),
       |(name, clauses)| {
         let arity = clauses[0].arity();
         assert!(
@@ -196,12 +198,11 @@ impl ErlTypeParser {
 
   /// Parse a list of types, returns a temporary list-type
   fn parse_type_list(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    let (input, _open_tag) = ws_before(char('['))(input)?;
-
     map(
-      terminated(
+      delimited(
+        square_open,
         context("type arguments for a list() type", Self::parse_comma_sep_typeargs0),
-        ws_before(char(']')),
+        square_close,
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
