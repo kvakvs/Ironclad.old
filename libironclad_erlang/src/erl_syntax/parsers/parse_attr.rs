@@ -14,7 +14,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context};
+use nom::{character::complete::char, error::context};
 
 /// Holds code for parsing `-attr ... .` for any kind of module attributes
 pub struct ErlAttrParser {}
@@ -25,8 +25,21 @@ impl ErlAttrParser {
   /// a `"." NEWLINE`.
   pub fn parse_generic_attr(input: &str) -> AstParserResult {
     map(
-      // Dash `-` and terminating `.` are matched outside by the caller.
-      pair(AtomParser::atom, opt(delimited(par_open, ErlParser::parse_expr, par_close))),
+      delimited(
+        ws_before(char('-')),
+        pair(
+          AtomParser::atom,
+          opt(delimited(
+            par_open,
+            context(
+              "An expression inside a custom -<name>() module attribute",
+              cut(ErlParser::parse_expr),
+            ),
+            par_close,
+          )),
+        ),
+        period,
+      ),
       |(tag, term)| ErlAst::new_generic_attr(&SourceLoc::from_input(input), tag, term),
     )(input)
   }
@@ -35,7 +48,13 @@ impl ErlAttrParser {
   /// Dash `-` and terminating `.` are matched outside by the caller.
   pub fn module_attr(input: &str) -> AstParserResult {
     map(
-      preceded(match_dash_tag("module"), delimited(par_open, AtomParser::atom, par_close)),
+      preceded(
+        match_dash_tag("module"),
+        context(
+          "Module name in a -module() attribute",
+          cut(delimited(par_open, AtomParser::atom, par_close)),
+        ),
+      ),
       |t| ErlAst::new_module_start_attr(&SourceLoc::from_input(input), t),
     )(input)
   }
@@ -64,17 +83,28 @@ impl ErlAttrParser {
   /// Parses an `-export([fn/arity, ...]).` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn export_attr(input: &str) -> AstParserResult {
-    map(preceded(match_dash_tag("export"), Self::parse_export_mfa_list), |t| {
-      ErlAst::new_export_attr(&SourceLoc::from_input(input), t)
-    })(input)
+    map(
+      preceded(
+        match_dash_tag("export"),
+        context("List of exports in an -export() attribute", cut(Self::parse_export_mfa_list)),
+      ),
+      |t| ErlAst::new_export_attr(&SourceLoc::from_input(input), t),
+    )(input)
   }
 
   /// Parses an `-export_type([type/arity, ...]).` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn export_type_attr(input: &str) -> AstParserResult {
-    map(preceded(match_dash_tag("export_type"), Self::parse_export_mfa_list), |t| {
-      ErlAst::new_export_type_attr(&SourceLoc::from_input(input), t)
-    })(input)
+    map(
+      preceded(
+        match_dash_tag("export_type"),
+        context(
+          "List of exports in an -export_type() attribute",
+          cut(Self::parse_export_mfa_list),
+        ),
+      ),
+      |t| ErlAst::new_export_type_attr(&SourceLoc::from_input(input), t),
+    )(input)
   }
 
   /// Parses an `-import(module [fn/arity, ...]).` attribute.
@@ -84,7 +114,7 @@ impl ErlAttrParser {
       delimited(
         match_dash_tag("import"),
         context(
-          "import attribute",
+          "List of imports in an -import() attribute",
           cut(delimited(
             par_open,
             tuple((AtomParser::atom, comma, ws_before(Self::parse_square_funarity_list1))),
@@ -118,9 +148,12 @@ impl ErlAttrParser {
         match_dash_tag("type"),
         tuple((
           AtomParser::atom,
-          context("new type: type arguments", cut(Self::parse_parenthesized_list_of_vars)),
-          ws_before(tag("::")),
-          context("new type: type definition", cut(ErlTypeParser::parse_type)),
+          context(
+            "Type arguments in a -type() definition attribute",
+            cut(Self::parse_parenthesized_list_of_vars),
+          ),
+          colon_colon,
+          context("Type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
         )),
       ),
       |(type_name, type_args, _coloncolon, new_type)| {
@@ -159,10 +192,13 @@ impl ErlAttrParser {
   }
 
   /// Parses a `-record(atom(), {field :: type()... }).` attribute.
-  fn record_definition(input: &str) -> AstParserResult {
+  pub fn record_definition(input: &str) -> AstParserResult {
     delimited(
       match_dash_tag("record"),
-      delimited(par_open, Self::record_definition_inner, par_close),
+      context(
+        "Record definition in a -record() attribute",
+        cut(delimited(par_open, Self::record_definition_inner, par_close)),
+      ),
       period,
     )(input)
   }
@@ -176,7 +212,7 @@ impl ErlAttrParser {
         Self::import_attr,
         Self::type_definition_attr,
         Self::module_attr,
-        ErlTypeParser::fn_spec,
+        ErlTypeParser::fn_spec_attr,
         Self::record_definition,
         // Generic parser will try consume any `-IDENT(EXPR).`
         Self::parse_generic_attr,

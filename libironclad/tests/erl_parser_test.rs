@@ -506,3 +506,33 @@ fn parse_apply_3() -> IcResult<()> {
   }
   Ok(())
 }
+
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_record() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition");
+
+  let filename = PathBuf::from(function_name!());
+  let input = "%%\n
+%% Generic compiler options, passed from the erl_compile module.\n
+-record(options,
+	 {includes=[] :: [file:filename()],	% Include paths (list of
+						% absolute directory names).
+	  outdir=\".\"  :: file:filename(),	% Directory for result (absolute path).
+	  output_type=undefined :: atom(),	% Type of output file.
+	  defines=[]  :: [atom() | {atom(),_}],	% Preprocessor defines.  Each element is an atom
+						% (the name to define), or a {Name, Value} tuple.
+	  warning=1   :: non_neg_integer(),	% Warning level (0 - no warnings, 1 - standard level,
+						% 2, 3, ... - more warnings).
+	  verbose=false :: boolean(),		% Verbose (true/false).
+	  optimize=999,				% Optimize options.
+	  specific=[] :: [_],			% Compiler specific options.
+	  outfile=\"\"  :: file:filename(),	% Name of output file (internal
+						% use in erl_compile.erl).
+	  cwd	      :: file:filename()	% Current working directory for erlc.
+	 }).\n";
+  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+  Ok(())
+}

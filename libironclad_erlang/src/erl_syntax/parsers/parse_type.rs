@@ -2,7 +2,8 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, semicolon, ws_before,
+  colon_colon, comma, match_dash_tag, par_close, par_open, parse_int, parse_varname, semicolon,
+  ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
@@ -25,15 +26,18 @@ pub struct ErlTypeParser {}
 impl ErlTypeParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
-  pub fn fn_spec(input: &str) -> AstParserResult {
+  pub fn fn_spec_attr(input: &str) -> AstParserResult {
     map(
       preceded(
         match_dash_tag("spec"),
         tuple((
-          context("function spec: name", cut(AtomParser::atom)),
+          context("Function name in a -spec() attribute", cut(AtomParser::atom)),
           separated_list1(
             semicolon,
-            context("function clause spec", cut(ws_before(Self::parse_fn_spec_fnclause))),
+            context(
+              "Function clause in a -spec() attribute",
+              cut(ws_before(Self::parse_fn_spec_fnclause)),
+            ),
           ),
         )),
       ), // preceded by -spec
@@ -86,8 +90,10 @@ impl ErlTypeParser {
 
   /// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
   fn parse_coloncolon_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    let (input, _tag) = ws_before(tag("::"))(input)?;
-    context("::type()", ws_before(Self::parse_type))(input)
+    preceded(
+      colon_colon,
+      context("Type ascription or a type after ::", ws_before(Self::parse_type)),
+    )(input)
   }
 
   /// Parse a capitalized type variable name with an optional `:: type()` part:

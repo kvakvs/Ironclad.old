@@ -121,8 +121,8 @@ pub enum ErlType {
 
   /// A user-defined type referred by a string, with 0 or more type parameters.
   UserDefinedType {
-    /// User-defined type name
-    name: String,
+    /// User-defined module and name, arity must match args length
+    name: MFArity,
     /// Type variable arguments for `typename(arg1, arg2, ...)`
     args: Vec<Typevar>,
   },

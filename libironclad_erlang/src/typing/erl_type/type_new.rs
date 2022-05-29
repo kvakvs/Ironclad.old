@@ -7,6 +7,7 @@ use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::type_union::TypeUnion;
 use crate::typing::typevar::Typevar;
+use libironclad_util::mfarity::MFArity;
 use std::iter;
 use std::sync::Arc;
 
@@ -111,7 +112,7 @@ impl ErlType {
 
   /// Try match type name and arity vs known basic types
   pub fn from_name(
-    _maybe_module: Option<String>,
+    maybe_module: Option<String>,
     type_name: String,
     args: &[Typevar],
   ) -> Arc<ErlType> {
@@ -141,6 +142,10 @@ impl ErlType {
       _ => {}
     }
     // We were not able to find a basic type of that name and arity
-    UserDefinedType { name: type_name, args: args.to_vec() }.into()
+    UserDefinedType {
+      name: MFArity::new(maybe_module, &type_name, args.len()),
+      args: args.to_vec(),
+    }
+    .into()
   }
 }

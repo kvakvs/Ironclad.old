@@ -79,13 +79,6 @@ impl ErlModule {
     let mut module = ErlModule::default();
     let (tail, forms) = panicking_parser_error_reporter(input, parse_fn(input).finish());
 
-    // #[cfg(debug_assertions)]
-    // if parse_result.is_err() {
-    //   println!("NomError: {:?}", parse_result);
-    // }
-
-    // match parse_result.finish() {
-    //   Ok((tail, forms)) => {
     println!("Parse result AST: «{}»", &forms);
 
     assert!(
@@ -101,9 +94,6 @@ impl ErlModule {
     Scope::update_from_ast(&module.scope, &module.ast);
 
     Ok(module)
-    // }
-    // Err(err) => ErlError::from_nom_error(input, err),
-    // }
   }
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
@@ -124,7 +114,7 @@ impl ErlModule {
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
   pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
-    Self::parse_helper(filename, input, ErlTypeParser::fn_spec)
+    Self::parse_helper(filename, input, ErlTypeParser::fn_spec_attr)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
