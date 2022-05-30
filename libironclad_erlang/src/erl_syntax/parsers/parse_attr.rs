@@ -3,7 +3,7 @@ use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, equals_sign, match_dash_tag, par_close, par_open,
-  parse_int, period_newline, square_close, square_open, ws_before,
+  parse_int, period_newline, print_input, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
@@ -74,8 +74,8 @@ impl ErlAttrParser {
 
   /// Parses a `fun/arity` atom with an integer.
   pub fn parse_funarity(input: &str) -> nom::IResult<&str, MFArity, ErlParserError> {
-    map(tuple((AtomParser::atom, char('/'), parse_int)), |(name, _slash, arity_s)| {
-      let arity = arity_s.parse().unwrap_or(0);
+    map(tuple((AtomParser::atom, char('/'), parse_int)), |(name, _slash, erl_int)| {
+      let arity = erl_int.as_usize().unwrap_or_default();
       MFArity::new_local_from_string(name, arity)
     })(input)
   }
@@ -159,6 +159,7 @@ impl ErlAttrParser {
   /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn type_definition_attr(input: &str) -> AstParserResult {
+    print_input("type_definition_attr", input);
     map(
       delimited(
         match_dash_tag("type"),

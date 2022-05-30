@@ -7,7 +7,6 @@ use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParser};
 use crate::literal::Literal;
-use crate::typing::erl_integer::ErlInteger;
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::map;
@@ -41,10 +40,10 @@ impl ErlParser {
   }
 
   fn parse_int_to_ast(input: &str) -> AstParserResult {
-    map(parse_int, |s| {
+    map(parse_int, |erl_int| {
       let lit_node = Lit {
         // TODO: Can parsed integer create a parse error?
-        value: Literal::Integer(ErlInteger::new_from_string(s).unwrap()).into(),
+        value: Literal::Integer(erl_int).into(),
       };
       ErlAst::construct_with_location(&SourceLoc::from_input(input), lit_node)
     })(input)

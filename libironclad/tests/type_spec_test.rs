@@ -201,11 +201,14 @@ fn parse_spec_test() {
 
 #[named]
 #[test]
-fn int_range_test() {
+fn parse_int_range_test() {
   test_util::start(function_name!(), "Parse an integer range");
 
   let filename = PathBuf::from(function_name!());
   let input = "-type reg_num() :: 0 .. 1023.";
-  let result = ErlModule::from_module_source(&filename, &input).unwrap();
-  // assert!(matches!(result.ast.content, ErlAstType::FnSpec { .. }));
+  let result =
+    ErlModule::parse_helper(&filename, &input, ErlAttrParser::type_definition_attr).unwrap();
+  println!("Parsed typeattr: {:?}", result.ast);
+  // let content = result.ast.children().unwrap();
+  // assert!(matches!(content[0].content, ErlAstType::TypeAttr { .. }));
 }

@@ -1,6 +1,7 @@
 //! Helper functions for Nom parsing
 
-use crate::erl_syntax::parsers::{StrSliceParserResult, StringParserResult};
+use crate::erl_syntax::parsers::{ParserResult, StrSliceParserResult, StringParserResult};
+use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
 use nom::error::convert_error;
@@ -86,10 +87,29 @@ pub fn parse_varname(input: &str) -> StringParserResult {
   )(input)
 }
 
+fn parse_int_unsigned_body(input: &str) -> StrSliceParserResult {
+  recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
+}
+
+/// Matches + or -
+fn parse_sign(input: &str) -> StrSliceParserResult {
+  recognize(alt((char('-'), char('+'))))(input)
+}
+
+/// Parse a decimal integer
+fn parse_int_decimal(input: &str) -> ParserResult<ErlInteger> {
+  map(
+    ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
+    |num| {
+      ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
+    },
+  )(input)
+}
+
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 /// From Nom examples
-pub fn parse_int(input: &str) -> StrSliceParserResult {
-  recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
+pub fn parse_int(input: &str) -> ParserResult<ErlInteger> {
+  parse_int_decimal(input)
 }
 
 /// Parse a float with possibly scientific notation. Output is a string.

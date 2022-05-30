@@ -16,7 +16,6 @@ use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
-use std::str::FromStr;
 
 /// Wraps functions for parsing binaries and ironclad_exe builders
 pub struct BinaryParser {}
@@ -79,8 +78,8 @@ impl BinaryParser {
   }
 
   fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
-    map(preceded(tag("unit:"), parse_int), |i_str| {
-      TypeSpecifier::Unit(usize::from_str(i_str).unwrap())
+    map(preceded(tag("unit:"), parse_int), |erl_int| {
+      TypeSpecifier::Unit(erl_int.as_usize().unwrap_or_default())
     })(input)
   }
 

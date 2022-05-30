@@ -9,7 +9,6 @@ use crate::erl_syntax::parsers::misc::{
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
 use crate::literal::Literal;
-use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -264,20 +263,17 @@ impl ErlTypeParser {
 
   /// Parse an integer and produce a literal integer type
   pub fn int_literal_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
-    map(parse_int, |i_str| {
+    map(parse_int, |erl_int| {
       // TODO: Can a parsed integer parse with an error?
-      let i = ErlInteger::new_from_string(i_str).unwrap();
-      ErlType::new_singleton(&Literal::Integer(i).into())
+      ErlType::new_singleton(&Literal::Integer(erl_int).into())
     })(input)
   }
 
   /// Parse an integer range
   pub fn int_range_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     // print_input("int_range_type", input);
-    map(separated_pair(parse_int, dot_dot, parse_int), |(a_str, b_str)| {
+    map(separated_pair(parse_int, dot_dot, parse_int), |(a, b)| {
       // TODO: Can a parsed integer parse with an error?
-      let a = ErlInteger::new_from_string(a_str).unwrap();
-      let b = ErlInteger::new_from_string(b_str).unwrap();
       ErlType::new_range(a, b)
     })(input)
   }
