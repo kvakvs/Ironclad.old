@@ -79,9 +79,10 @@ impl PreprocessorParser {
   /// Parse a `-elif(EXPR)` into a temporary AST node
   pub(crate) fn elif_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("elif"),
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
+        period_newline,
       ),
       |t| PpAst::new_elif_temporary(&SourceLoc::from_input(input), t),
     )(input)
@@ -90,9 +91,10 @@ impl PreprocessorParser {
   /// Parse a `-ifdef(MACRO_NAME)`
   pub(crate) fn ifdef_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("ifdef"),
         delimited(par_open, ws_before(Self::macro_ident), par_close),
+        period_newline,
       ),
       |t| PpAst::new_ifdef_temporary(&SourceLoc::from_input(input), t),
     )(input)
@@ -101,9 +103,10 @@ impl PreprocessorParser {
   /// Parse a `-ifndef(MACRO_NAME)`
   pub fn ifndef_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      preceded(
+      delimited(
         match_dash_tag("ifndef"),
         delimited(par_open, ws_before(Self::macro_ident), par_close),
+        period_newline,
       ),
       |t| PpAst::new_ifndef_temporary(&SourceLoc::from_input(input), t),
     )(input)
@@ -112,7 +115,7 @@ impl PreprocessorParser {
   /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
   pub fn else_temporary_directive(input: &str) -> PpAstParserResult {
     map(
-      terminated(preceded(match_dash_tag("else"), opt(pair(par_open, par_close))), period_newline),
+      delimited(match_dash_tag("else"), opt(pair(par_open, par_close)), period_newline),
       |_opt| PpAst::construct_with_location(&SourceLoc::from_input(input), _TemporaryElse),
     )(input)
   }

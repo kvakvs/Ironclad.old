@@ -3,8 +3,8 @@
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, par_close,
-  par_open, parse_int, parse_varname, period_newline, print_input, semicolon, square_close,
-  square_open, ws_before,
+  par_open, parse_int, parse_varname, period_newline, semicolon, square_close, square_open,
+  ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};

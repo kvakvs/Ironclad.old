@@ -198,3 +198,14 @@ fn parse_spec_test() {
   let result = ErlModule::parse_helper(&filename, &input, ErlTypeParser::fn_spec_attr).unwrap();
   assert!(matches!(result.ast.content, ErlAstType::FnSpec { .. }));
 }
+
+#[named]
+#[test]
+fn int_range_test() {
+  test_util::start(function_name!(), "Parse an integer range");
+
+  let filename = PathBuf::from(function_name!());
+  let input = "-type reg_num() :: 0 .. 1023.";
+  let result = ErlModule::from_module_source(&filename, &input).unwrap();
+  // assert!(matches!(result.ast.content, ErlAstType::FnSpec { .. }));
+}

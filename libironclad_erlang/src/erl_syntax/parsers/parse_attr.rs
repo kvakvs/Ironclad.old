@@ -222,6 +222,7 @@ impl ErlAttrParser {
 
   /// Any module attribute goes here
   pub fn attr(input: &str) -> AstParserResult {
+    // print_input("attr", input);
     alt((
       Self::export_type_attr,
       Self::export_attr,
