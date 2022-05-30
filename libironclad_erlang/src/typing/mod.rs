@@ -1,5 +1,6 @@
 //! Contains types and typecheck related code
 pub mod check;
+pub mod erl_integer;
 pub mod erl_type;
 pub mod extract_vars;
 pub mod fn_clause_type;

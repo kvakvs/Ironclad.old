@@ -2,12 +2,14 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, curly_close, curly_open, hash_symbol, match_dash_tag, par_close, par_open,
-  parse_int, parse_varname, period_newline, semicolon, square_close, square_open, ws_before,
+  colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, par_close,
+  par_open, parse_int, parse_varname, period_newline, print_input, semicolon, square_close,
+  square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
 use crate::literal::Literal;
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -263,8 +265,20 @@ impl ErlTypeParser {
   /// Parse an integer and produce a literal integer type
   pub fn int_literal_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(parse_int, |i_str| {
-      let i = i_str.parse().unwrap(); // TODO: Support big integers
+      // TODO: Can a parsed integer parse with an error?
+      let i = ErlInteger::new_from_string(i_str).unwrap();
       ErlType::new_singleton(&Literal::Integer(i).into())
+    })(input)
+  }
+
+  /// Parse an integer range
+  pub fn int_range_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+    // print_input("int_range_type", input);
+    map(separated_pair(parse_int, dot_dot, parse_int), |(a_str, b_str)| {
+      // TODO: Can a parsed integer parse with an error?
+      let a = ErlInteger::new_from_string(a_str).unwrap();
+      let b = ErlInteger::new_from_string(b_str).unwrap();
+      ErlType::new_range(a, b)
     })(input)
   }
 
@@ -276,6 +290,7 @@ impl ErlTypeParser {
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
   pub fn parse_nonunion_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     alt((
+      Self::int_range_type,
       Self::type_of_list,
       Self::type_of_tuple,
       Self::type_of_map,
@@ -291,7 +306,7 @@ impl ErlTypeParser {
   pub fn parse_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     map(
       separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
-      |types| ErlType::new_union_skip_normalize(&types),
+      |types| ErlType::new_union(&types),
     )(input)
   }
 

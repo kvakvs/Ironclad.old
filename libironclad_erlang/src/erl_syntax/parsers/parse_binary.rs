@@ -35,10 +35,9 @@ impl BinaryParser {
   fn parse_width(input: &str) -> ParserResult<ValueWidth> {
     map(Self::parse_value, |v| {
       if let ErlAstType::Lit { value: lit_val, .. } = &v.content {
-        // TODO: Big Integer
-        if let Literal::Integer(inner_val) = lit_val.deref() {
-          assert!(*inner_val > 0);
-          ValueWidth::Literal(inner_val.abs() as usize)
+        if let Literal::Integer(i) = lit_val.deref() {
+          assert!(i.is_non_negative());
+          ValueWidth::Literal(i.as_usize().unwrap()) // TODO: Error if value too big
         } else {
           panic!("For bit width only positive integers are accepted")
         }

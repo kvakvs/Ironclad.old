@@ -2,6 +2,7 @@
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::ErlType;
 use std::sync::Arc;
 
@@ -9,9 +10,7 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub enum Literal {
   /// Small enough to fit into a machine word
-  Integer(isize),
-  /// TODO: Contains big integer
-  BigInteger,
+  Integer(ErlInteger),
 
   /// A 8-byte wide float
   Float(f64),
@@ -50,7 +49,6 @@ impl Hash for Literal {
         'i'.hash(state);
         n.hash(state);
       }
-      Literal::BigInteger => unimplemented!("Big integer hash"),
       Literal::Float(f) => {
         'f'.hash(state);
         format!("{}", f).hash(state);
@@ -93,7 +91,7 @@ impl Literal {
   /// Synthesizes a type of this literal
   pub fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
-      Literal::Integer(_) | Literal::BigInteger => ErlType::integer(),
+      Literal::Integer(_) => ErlType::integer(),
       Literal::Float(_) => ErlType::float(),
       Literal::Atom(_) => ErlType::atom(),
       Literal::Bool(_) => ErlType::boolean(),
@@ -133,7 +131,7 @@ impl Eq for Literal {}
 impl PartialEq for Literal {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
-      (Literal::Integer(a), Literal::Integer(b)) => a == b,
+      (Literal::Integer(a), Literal::Integer(b)) => a.eq(b),
       (Literal::Float(a), Literal::Float(b)) => (a - b).abs() <= f64::EPSILON,
       (Literal::Atom(a), Literal::Atom(b)) => a == b,
       (Literal::Bool(a), Literal::Bool(b)) => a == b,
@@ -167,7 +165,7 @@ impl Literal {
   /// Compares two literals of same kind, otherwise general ordering applies
   pub fn cmp_same_type(&self, other: &Literal) -> Ordering {
     match (self, other) {
-      (Literal::Integer(a), Literal::Integer(b)) => a.cmp(b),
+      (Literal::Integer(a), Literal::Integer(b)) => a.partial_cmp(b).unwrap_or(Ordering::Equal),
       (Literal::Float(a), Literal::Float(b)) => {
         if (a - b).abs() <= f64::EPSILON {
           Ordering::Equal

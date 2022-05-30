@@ -233,6 +233,14 @@ pub fn colon_colon<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(ws_before(tag("::")))(input)
 }
 
+/// Matches a double dot (double period) ".." with 0+ whitespace before
+#[inline]
+pub fn dot_dot<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
+  input: &'a str,
+) -> nom::IResult<&str, &str, ErrType> {
+  recognize(ws_before(tag("..")))(input)
+}
+
 /// Matches an equals sign "=" with 0+ whitespace before
 #[inline]
 pub fn equals_sign<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
@@ -288,6 +296,7 @@ pub fn match_word<'a, ErrType: 'a + nom::error::ParseError<&'a str>>(
   recognize(terminated(ws_before(tag(tag_str)), peek(word_break)))
 }
 
+/// Print function location and trimmed input, for debugging
 pub fn print_input(fn_name: &str, input: &str) {
   println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
 }

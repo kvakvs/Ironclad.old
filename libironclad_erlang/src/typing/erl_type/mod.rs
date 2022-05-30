@@ -1,5 +1,6 @@
 //! Defines an Erlang-type
 use crate::literal::Literal;
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
@@ -36,9 +37,9 @@ pub enum ErlType {
   /// Defines integer range A..B, cannot be single element or empty
   IntegerRange {
     /// First value of the range
-    from: Literal,
+    from: ErlInteger,
     /// Last value of the range
-    to: Literal,
+    to: ErlInteger,
   },
 
   /// Any tuple of any size

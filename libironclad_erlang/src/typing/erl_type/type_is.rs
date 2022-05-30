@@ -38,7 +38,7 @@ impl ErlType {
     return match self {
       ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger | Literal::Float(_))
+        matches!(val.deref(), Literal::Integer(_) | Literal::Float(_))
       }
       _ => false,
     };
@@ -65,7 +65,7 @@ impl ErlType {
     return match self {
       ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
-        matches!(val.deref(), Literal::Integer(_) | Literal::BigInteger)
+        matches!(val.deref(), Literal::Integer(_))
       }
       _ => false,
     };

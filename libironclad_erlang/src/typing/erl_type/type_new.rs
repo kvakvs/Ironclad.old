@@ -1,6 +1,7 @@
 //! Constructors for complex ErlTypes
 
 use crate::literal::Literal;
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::erl_type::ErlType::UserDefinedType;
@@ -119,6 +120,11 @@ impl ErlType {
   /// Construct a new record reference by tag name
   pub fn new_record_ref(tag: String) -> Arc<ErlType> {
     ErlType::RecordRef { tag }.into()
+  }
+
+  /// Construct a new integer range
+  pub fn new_range(a: ErlInteger, b: ErlInteger) -> Arc<ErlType> {
+    ErlType::IntegerRange { from: a, to: b }.into()
   }
 
   /// Try match type name and arity vs known basic types

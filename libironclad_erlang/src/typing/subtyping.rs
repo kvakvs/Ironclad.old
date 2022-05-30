@@ -72,6 +72,8 @@ impl SubtypeChecker {
       ErlType::Pid | ErlType::Reference | ErlType::Port => false,
 
       ErlType::Singleton { .. } => false,
+      ErlType::UserDefinedType { .. } => false, // can't check type inclusion for user-defined
+      ErlType::RecordRef { .. } => false,       // can't check type inclusion for records
 
       _ => unimplemented!(
         "Subtype check for sub={} in super={}\nsub={:?}\nsuper={:?}",

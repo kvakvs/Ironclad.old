@@ -20,6 +20,7 @@ use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::literal::Literal;
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::ErlType;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
@@ -79,7 +80,7 @@ impl ErlAst {
   }
 
   /// Create a new literal AST node of an integer
-  pub fn new_lit_int(location: &SourceLoc, val: isize) -> Arc<ErlAst> {
+  pub fn new_lit_int(location: &SourceLoc, val: ErlInteger) -> Arc<ErlAst> {
     let lit_node = Lit { value: Literal::Integer(val).into() };
     ErlAst::construct_with_location(location, lit_node)
   }
