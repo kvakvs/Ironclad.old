@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::project::source_file::SourceFile;
+use crate::stage::preprocess::pp_stats::CacheStats;
 use libironclad_error::ic_error::IroncladResult;
 use std::sync::Arc;
 
@@ -24,27 +25,32 @@ impl Default for FileContentsCache {
 
 impl<'a> FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
-  pub(crate) fn preload_file(&mut self, file_name: &Path) -> IroncladResult<()> {
+  pub fn preload_file(&mut self, file_name: &Path) -> IroncladResult<Arc<SourceFile>> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
     self.read_bytes_count += contents.len();
 
-    let src_file_definition = SourceFile::new(file_name, contents);
+    let src_file = SourceFile::new(file_name, contents);
     self
       .all_files
-      .insert(file_name.to_path_buf(), src_file_definition);
-    Ok(())
+      .insert(file_name.to_path_buf(), src_file.clone());
+    Ok(src_file)
   }
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
-  pub(crate) fn get_or_load(&mut self, file_name: &Path) -> IroncladResult<Arc<SourceFile>> {
-    let canon = file_name.canonicalize().unwrap();
-    match self.all_files.get(&canon) {
+  pub(crate) fn get_or_load(
+    &mut self,
+    cache_stats: &mut CacheStats,
+    file_name: &Path,
+  ) -> IroncladResult<Arc<SourceFile>> {
+    let canon_path = file_name.canonicalize().unwrap();
+    match self.all_files.get(&canon_path) {
       None => {
-        self.preload_file(&canon)?;
-        self.get_or_load(&canon)
+        cache_stats.misses += 1;
+        let src_file = self.preload_file(&canon_path)?;
+        Ok(src_file)
       }
       Some(contents) => Ok(contents.clone()),
     }

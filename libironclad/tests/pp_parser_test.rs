@@ -4,7 +4,7 @@ extern crate libironclad_preprocessor;
 mod test_util;
 
 use ::function_name::named;
-use libironclad::stage::preprocess::PreprocessState;
+use libironclad::stage::preprocess::PreprocessStage;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::IcResult;
 use libironclad_preprocessor::parsers::pp_parse_types::PreprocessorParser;
@@ -104,7 +104,7 @@ on_false
 #[named]
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-define(AAA).";
   let ast = pp_state
     .parse_helper(input, PreprocessorParser::define_directive)
@@ -121,7 +121,7 @@ fn parse_define_ident_only() {
 #[named]
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-define(BBB, [true)).";
   let ast = pp_state
     .parse_helper(input, PreprocessorParser::define_directive)
@@ -138,7 +138,7 @@ fn parse_define_with_body_no_args() {
 #[named]
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-define(CCC(X,y), 2args\nbody).";
   let ast = pp_state
     .parse_helper(input, PreprocessorParser::define_directive)
@@ -177,7 +177,7 @@ fn test_macro_in_define() {
 #[named]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-include (\"test\").\n";
   let inc1 = pp_state
     .parse_helper(input, PreprocessorParser::module)
@@ -196,7 +196,7 @@ fn parse_include_varied_spacing_1() {
 #[named]
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = " - include(\"test\"\n).\n";
   let inc2 = pp_state
     .parse_helper(input, PreprocessorParser::module)
@@ -215,7 +215,7 @@ fn parse_include_varied_spacing_2() {
 #[named]
 fn parse_include_varied_spacing_3() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-include\n(\"test\"\n).\n";
   let inc3 = pp_state
     .parse_helper(input, PreprocessorParser::module)
@@ -235,7 +235,7 @@ fn parse_include_varied_spacing_3() {
 fn parse_define_varied_spacing() {
   test_util::start(function_name!(), "Parse -define() directives with varied spacing");
 
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input1 = "- define(AAA, \"aaa\").";
   let d1 = pp_state
     .parse_helper(input1, PreprocessorParser::module)
@@ -273,7 +273,7 @@ fn parse_define_varied_spacing() {
 
 #[test]
 fn test_define_with_dquotes() -> IcResult<()> {
-  let pp_state = PreprocessState::new_self_contained();
+  let pp_state = PreprocessStage::new_self_contained();
   let input = "-define(AAA(X,Y), \"aaa\").\n";
   let file_ast = pp_state
     .parse_helper(input, PreprocessorParser::module)
