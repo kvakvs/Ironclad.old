@@ -4,7 +4,9 @@ use crate::project::source_file::SourceFile;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
-use crate::stage::preprocess::pp_stats::PreprocessorStats;
+use crate::stats::cache_stats::CacheStats;
+use crate::stats::io_stats::IOStats;
+use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_erlang::erl_syntax::literal_bool::LiteralBool;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_error::ic_error::{IcResult, IroncladError};
@@ -60,6 +62,7 @@ impl PreprocessFile {
   /// Otherwise pass the control to the parser
   pub fn parse_file_helper<Parser>(
     &self,
+    ast_cache_stats: &mut CacheStats,
     input_file: &SourceFile,
     parser: Parser,
   ) -> IcResult<Arc<PpAst>>
@@ -71,12 +74,14 @@ impl PreprocessFile {
       let maybe_cache_hit = ast_cache.items.get(&input_file.file_name);
       if let Some(maybe_cache_hit1) = maybe_cache_hit {
         // Found already parsed
+        ast_cache_stats.hits += 1;
         return Ok(maybe_cache_hit1.clone());
+      } else {
+        ast_cache_stats.misses += 1;
       }
     }
 
     let result = self.parse_helper(&input_file.text, parser);
-    // let result = Self::from_source_file(&contents)?;
 
     if let Ok(result_ok) = &result {
       if let Ok(mut ast_cache) = self.ast_cache.write() {
@@ -125,9 +130,10 @@ impl PreprocessFile {
     };
 
     // If cached, try get it, otherwise parse and save
-    let ast_tree = self.parse_file_helper(&contents, PreprocessorParser::module)?;
+    let ast_tree =
+      self.parse_file_helper(&mut stats.ast_cache, &contents, PreprocessorParser::module)?;
 
-    let pp_ast = self.interpret_pp_ast(project, stats, &contents, &ast_tree)?;
+    let pp_ast = self.interpret_preprocessor_ast(project, stats, &contents, &ast_tree)?;
 
     // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
     let output: String = pp_ast.to_string();
@@ -142,67 +148,17 @@ impl PreprocessFile {
     Ok(())
   }
 
-  // fn interpret_include_directive(
-  //   &self,
-  //   source_file: &SourceFile,
-  //   node: &Arc<PpAst>,
-  //   ast_cache: Arc<RwLock<PpAstCache>>,
-  //   file_cache: Arc<RwLock<FileContentsCache>>,
-  // ) -> IcResult<Arc<PpAst>> {
-  //   match &node.node_type {
-  //     // Found an attr directive which is -include("something")
-  //     // TODO: Refactor into a outside function with error handling
-  //     IncludeLib(path) | Include(path) => {
-  //       // Take source file's parent dir and append to it the include path (unless it was absolute?)
-  //       let source_path = &source_file.file_name;
-  //
-  //       let include_path0 = PathBuf::from(path);
-  //       let include_path = if include_path0.is_absolute() {
-  //         include_path0
-  //       } else {
-  //         source_path.parent().unwrap().join(include_path0)
-  //       };
-  //
-  //       // TODO: Path resolution relative to the file path
-  //       let mut ast_cache1 = ast_cache.write().unwrap();
-  //       let find_result = ast_cache1.items.get(&include_path);
-  //
-  //       match find_result {
-  //         None => {
-  //           let include_source_file = {
-  //             let mut file_cache1 = file_cache.write().unwrap();
-  //             file_cache1.get_or_load(&include_path).unwrap()
-  //           };
-  //           let ast_tree =
-  //             self.parse_file_helper(&include_source_file, PreprocessorParser::module)?;
-  //
-  //           // let mut ast_cache1 = ast_cache.lock().unwrap();
-  //           ast_cache1
-  //             .items
-  //             .insert(include_path.clone(), ast_tree.clone());
-  //
-  //           Ok(PpAst::new_included_file(&node.location, &include_path, ast_tree))
-  //         }
-  //         Some(arc_ast) => {
-  //           let result = PpAst::new_included_file(&node.location, &include_path, arc_ast.clone());
-  //           Ok(result)
-  //         }
-  //       }
-  //     }
-  //     _ => Ok(node.clone()),
-  //   }
-  // }
-
   fn load_include(
     &mut self,
-    stats: &mut PreprocessorStats,
+    io_stats: &mut IOStats,
+    file_cache_stats: &mut CacheStats,
     location: &SourceLoc,
     file: &Path,
   ) -> IcResult<Arc<SourceFile>> {
     // Check if already loaded in the File Cache?
     if let Ok(mut cache) = self.file_cache.write() {
       return cache
-        .get_or_load(&mut stats.file_cache, file)
+        .get_or_load(file_cache_stats, io_stats, file)
         .map_err(IcError::from);
     }
     IroncladError::file_not_found(location, file, "loading an include file")
@@ -272,8 +228,10 @@ impl PreprocessFile {
       }
       Include(arg) => {
         let found_path = self.find_include(project, &node.location, Path::new(arg))?;
-        let incl_file = self.load_include(stats, &node.location, &found_path)?;
-        let node = self.parse_file_helper(&incl_file, PreprocessorParser::module)?;
+        let incl_file =
+          self.load_include(&mut stats.io, &mut stats.file_cache, &node.location, &found_path)?;
+        let node =
+          self.parse_file_helper(&mut stats.ast_cache, &incl_file, PreprocessorParser::module)?;
         self.interpret_preprocessor_node(
           project,
           stats,
@@ -286,8 +244,10 @@ impl PreprocessFile {
       }
       IncludeLib(arg) => {
         let found_path = self.find_include_lib(project, &node.location, Path::new(arg))?;
-        let incl_file = self.load_include(stats, &node.location, &found_path)?;
-        let node = self.parse_file_helper(&incl_file, PreprocessorParser::module)?;
+        let incl_file =
+          self.load_include(&mut stats.io, &mut stats.file_cache, &node.location, &found_path)?;
+        let node =
+          self.parse_file_helper(&mut stats.ast_cache, &incl_file, PreprocessorParser::module)?;
         self.interpret_preprocessor_node(
           project,
           stats,
@@ -353,7 +313,7 @@ impl PreprocessFile {
   /// - Substitute macros.
   ///
   /// Return: a new preprocessed string joined together.
-  fn interpret_pp_ast(
+  fn interpret_preprocessor_ast(
     &mut self,
     project: &ErlProject,
     stats: &mut PreprocessorStats,

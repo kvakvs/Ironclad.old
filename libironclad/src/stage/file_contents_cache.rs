@@ -3,15 +3,14 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::project::source_file::SourceFile;
-use crate::stage::preprocess::pp_stats::CacheStats;
+use crate::stats::cache_stats::CacheStats;
+use crate::stats::io_stats::IOStats;
 use libironclad_error::ic_error::IroncladResult;
 use std::sync::Arc;
 
 /// Contains loaded files ready for parsing by the preprocessor.
 /// More files will be added in preprocess stage, as include directives are parsed
 pub struct FileContentsCache {
-  /// Statistics of bytes read
-  pub read_bytes_count: usize,
   /// File contents stored here
   pub all_files: BTreeMap<PathBuf, Arc<SourceFile>>,
 }
@@ -19,17 +18,22 @@ pub struct FileContentsCache {
 impl Default for FileContentsCache {
   /// Create a new empty file cache
   fn default() -> Self {
-    Self { read_bytes_count: 0, all_files: Default::default() }
+    Self { all_files: Default::default() }
   }
 }
 
 impl<'a> FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
-  pub fn preload_file(&mut self, file_name: &Path) -> IroncladResult<Arc<SourceFile>> {
+  pub fn preload_file(
+    &mut self,
+    io_stats: &mut IOStats,
+    file_name: &Path,
+  ) -> IroncladResult<Arc<SourceFile>> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
-    self.read_bytes_count += contents.len();
+    io_stats.files_read += 1;
+    io_stats.bytes_read += contents.len();
 
     let src_file = SourceFile::new(file_name, contents);
     self
@@ -43,16 +47,22 @@ impl<'a> FileContentsCache {
   pub(crate) fn get_or_load(
     &mut self,
     cache_stats: &mut CacheStats,
+    io_stats: &mut IOStats,
     file_name: &Path,
   ) -> IroncladResult<Arc<SourceFile>> {
     let canon_path = file_name.canonicalize().unwrap();
+
     match self.all_files.get(&canon_path) {
       None => {
         cache_stats.misses += 1;
-        let src_file = self.preload_file(&canon_path)?;
+        let src_file = self.preload_file(io_stats, &canon_path)?;
         Ok(src_file)
       }
-      Some(contents) => Ok(contents.clone()),
+
+      Some(contents) => {
+        cache_stats.hits += 1;
+        Ok(contents.clone())
+      }
     }
   }
 

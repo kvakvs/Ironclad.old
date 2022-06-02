@@ -4,4 +4,3 @@ pub mod pp_define;
 pub mod pp_scope;
 pub mod pp_stage;
 pub mod pp_stage_file;
-pub mod pp_stats;

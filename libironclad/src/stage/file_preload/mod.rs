@@ -1,35 +1,10 @@
 //! Scans the project directory structure and preloads all ERL and HRL source files into memory
 
 use crate::stage::file_contents_cache::FileContentsCache;
+use crate::stats::preload_stats::FilePreloadStats;
 use libironclad_error::ic_error::IroncladResult;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use std::time::SystemTime;
-
-/// Statistics for file preload stage
-pub struct FilePreloadStats {
-  /// Files read count
-  files_read: usize,
-  /// Read bytes count
-  bytes_read: usize,
-  /// Start time for benchmark
-  started: SystemTime,
-  /// Finish time
-  finished: SystemTime,
-}
-
-impl FilePreloadStats {
-  /// Create new stats struct
-  pub fn new() -> Self {
-    let time_now = SystemTime::now();
-    Self {
-      files_read: 0,
-      bytes_read: 0,
-      started: time_now,
-      finished: time_now,
-    }
-  }
-}
 
 /// Handles loading/caching text files in memory
 pub struct FilePreloadStage {
@@ -48,17 +23,16 @@ impl FilePreloadStage {
   /// Preload stage will visit all input files and load them in memory.
   /// Future improvement: Lazy loading as required, timestamp checks
   pub fn run(&mut self, inputs: &[PathBuf]) -> IroncladResult<Arc<RwLock<FileContentsCache>>> {
-    let mut state = FileContentsCache::default();
+    let mut f_cache = FileContentsCache::default();
 
     for filename in inputs {
-      state.preload_file(filename)?;
+      f_cache.preload_file(&mut self.stats.io, filename)?;
     }
-    println!(
-      "Read {} files, {} bytes (without include files)",
-      state.all_files.len(),
-      state.read_bytes_count
-    );
 
-    Ok(RwLock::new(state).into())
+    // Print runtime and counters
+    self.stats.time.stage_finished(); // mark ending time
+    print!("{}", self.stats);
+
+    Ok(RwLock::new(f_cache).into())
   }
 }

@@ -3,7 +3,7 @@
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::stage::preprocess::pp_stage_file::PreprocessFile;
-use crate::stage::preprocess::pp_stats::PreprocessorStats;
+use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_error::ic_error::IcResult;
 use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstCache;
 use std::path::PathBuf;
@@ -61,12 +61,10 @@ impl PreprocessStage {
       stage_file.preprocess_file(&mut self.stats, project, path)?;
     }
 
-    // let cached_ast_trees_count = {
-    //   let ast_cache_r = ast_cache.read().unwrap();
-    //   ast_cache_r.items.len()
-    // };
+    // Print stage counters
+    self.stats.time.stage_finished(); // mark end time
+    print!("{}", self.stats);
 
-    self.stats.print();
     Ok(ast_cache)
   }
 }
