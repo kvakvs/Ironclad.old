@@ -5,6 +5,7 @@ use crate::preprocessor_syntax::pp_ast::PpAstType::{
   _TemporaryElseIf, _TemporaryIf, _TemporaryIfdef, _TemporaryIfndef,
 };
 use crate::preprocessor_syntax::pp_ast::{PpAst, PpAstType};
+use crate::preprocessor_syntax::pp_macro_string::MacroString;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
 use libironclad_error::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
@@ -38,16 +39,20 @@ impl PpAst {
     location: &SourceLoc,
     name: String,
     args: Vec<String>,
-    body: String,
+    body: MacroString,
   ) -> Arc<Self> {
-    PpAst::construct_with_location(location, Define { name, args, body: body.trim().to_string() })
+    PpAst::construct_with_location(location, Define { name, args, body })
   }
 
   /// Create new macro definition with name only
   pub fn new_define_name_only(location: &SourceLoc, name: String) -> Arc<Self> {
     PpAst::construct_with_location(
       location,
-      Define { name, args: Vec::default(), body: String::new() },
+      Define {
+        name,
+        args: Vec::default(),
+        body: MacroString::new(""),
+      },
     )
   }
 
@@ -56,7 +61,7 @@ impl PpAst {
     if text.trim().is_empty() {
       PpAst::construct_with_location(location, EmptyText)
     } else {
-      PpAst::construct_with_location(location, Text(text.into()))
+      PpAst::construct_with_location(location, Text(MacroString::new(text)))
     }
   }
 

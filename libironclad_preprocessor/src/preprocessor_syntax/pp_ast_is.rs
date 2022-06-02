@@ -10,7 +10,7 @@ impl PpAst {
 
   /// Compare PpAst node with a given text sample
   pub fn is_text_of(&self, t: &str) -> bool {
-    matches!(&self.node_type, PpAstType::Text(text) if text == t)
+    matches!(&self.node_type, PpAstType::Text(text) if text.text.borrow().eq(t))
   }
 
   /// Check whether Preprocessor AST node is a temporary `-else` node

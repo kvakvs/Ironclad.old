@@ -135,6 +135,7 @@ impl PreprocessFile {
 
     let pp_ast = self.interpret_preprocessor_ast(project, stats, &contents, &ast_tree)?;
 
+    // Render to string
     // TODO: Output preprocessed source as iolist, and stream-process in Erlang parser? to minimize the copying
     let output: String = pp_ast.to_string();
 

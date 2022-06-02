@@ -19,19 +19,21 @@ impl std::fmt::Display for PpAst {
         Ok(())
       }
 
-      Text(s) => write!(f, "{}", s),
+      Text(s) => write!(f, "{}", s.text.borrow()),
       EmptyText => write!(f, "% empty text"),
 
       IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       Define { name, args, body } => {
         write!(f, "-define({}", name)?;
+
+        let body_ref = body.text.borrow();
         if !args.is_empty() {
           Pretty::display_paren_list(args, f)?;
-          if !body.is_empty() {
+          if !body_ref.is_empty() {
             write!(f, ", ")?;
           }
         }
-        writeln!(f, "{}).", body)
+        writeln!(f, "{}).", body_ref)
       }
       IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),

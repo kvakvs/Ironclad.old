@@ -2,6 +2,7 @@
 
 use crate::parsers::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use crate::preprocessor_syntax::pp_ast::PpAst;
+use crate::preprocessor_syntax::pp_macro_string::MacroString;
 use libironclad_erlang::erl_syntax::parsers::misc::{
   comma, match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
@@ -39,7 +40,7 @@ impl PreprocessorParser {
           &SourceLoc::from_input(input),
           name,
           args.unwrap_or_default(),
-          body.into_iter().collect::<String>(),
+          MacroString::new_string(body.into_iter().collect::<String>()),
         )
       },
     )(input)
