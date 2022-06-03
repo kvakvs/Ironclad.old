@@ -3,6 +3,7 @@
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
+use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use std::ops::Deref;
@@ -49,6 +50,14 @@ impl ErlAst {
         _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
       },
       _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
+    }
+  }
+
+  /// Unwrap a preprocessor node
+  pub fn as_preprocessor(&self) -> &PreprocessorNodeType {
+    match &self.content {
+      ErlAstType::Preprocessor(pp) => pp,
+      _ => panic!("Expected Preprocessor() AST node, but got {}", self),
     }
   }
 }

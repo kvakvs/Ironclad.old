@@ -2,6 +2,7 @@
 
 use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
 use crate::erl_syntax::erl_op::ErlBinaryOp;
+use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::literal::Literal;
 use std::ops::Deref;
 
@@ -42,5 +43,15 @@ impl ErlAst {
   /// Checks whether an ErlAst node is a Function Application (a call)
   pub fn is_application(&self) -> bool {
     matches!(&self.content, ErlAstType::Apply(_))
+  }
+
+  /// Checks whether an ErlAst node is a Preprocessor Warning with given text
+  pub fn is_preprocessor_warning(&self, text: &str) -> bool {
+    let pp_node = self.as_preprocessor();
+    if let PreprocessorNodeType::Warning(s) = pp_node {
+      s == text
+    } else {
+      panic!("Preprocessor::Warning node was expected, but found {}", pp_node)
+    }
   }
 }

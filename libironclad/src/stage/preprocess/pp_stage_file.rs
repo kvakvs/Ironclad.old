@@ -23,7 +23,6 @@ pub struct PreprocessFile {
   ast_cache: Arc<RwLock<PpAstCache>>,
 
   file_cache: Arc<RwLock<FileContentsCache>>,
-
   /// Contains preprocessor definitions from config, from command line or from the file. Evolves as
   /// the parser progresses through the file and encounters new preprocessor directives.
   scope: Arc<PreprocessorScope>,
