@@ -1,3 +1,4 @@
+#![cfg(feature = "separate_preprocessor_lib")]
 //! Preprocessor stage shared state for all files
 
 use crate::project::ErlProject;

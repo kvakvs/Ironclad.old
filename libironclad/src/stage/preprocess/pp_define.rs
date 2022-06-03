@@ -1,6 +1,6 @@
 //! Preprocessor definition, sometimes with args
 
-use libironclad_preprocessor::preprocessor_syntax::pp_macro_string::MacroString;
+use libironclad_erlang::erl_syntax::preprocessor::macro_string::MacroString;
 use std::sync::Arc;
 
 /// A key to preprocessor defines dictionary, as defines can coexist with same name but different

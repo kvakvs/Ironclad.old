@@ -1,35 +1,13 @@
-//! Defines AST structure for Erlang Preprocessor
-use std::collections::HashMap;
-use std::fmt::Debug;
+//! Preprocessor subnode, stored in `ErlAst::Preprocessor()` enum variant
+
+use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::preprocessor::macro_string::MacroString;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::preprocessor_syntax::pp_macro_string::MacroString;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
-use libironclad_error::source_loc::SourceLoc;
-
-/// While preprocessing source, the text is parsed into these segments
-/// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and
-/// comments where macros cannot occur. The rest of the text is parsed unchanged into tokens.
-/// Lifetime note: Parse input string must live at least as long as this is alive
-#[deprecated = "Belonged to libironclad_preprocessor crate"]
+/// Preprocessor syntax tree nodes, are stored in `ErlAst::Preprocessor()` enum variant
 #[derive(Debug, Clone)]
-pub struct PpAst {
-  /// The node location in source
-  pub location: SourceLoc,
-  /// The node type and optional content
-  pub node_type: PpAstType,
-}
-
-/// Type of a Preprocessor AST node
-#[derive(Debug, Clone)]
-pub enum PpAstType {
-  /// Root of a preprocessed file
-  File(Vec<Arc<PpAst>>),
-  /// Any text. `Cell` in `MacroString` will allow replacing string with substituted macro values
-  Text(MacroString),
-  /// Text("") shortcut
-  EmptyText,
+pub enum PreprocessorNodeType {
   /// Specific directive: -include("path").
   Include(String),
   /// Specific directive: -include_lib("path").
@@ -50,9 +28,9 @@ pub enum PpAstType {
     /// The condition to check
     macro_name: String,
     /// The nested lines
-    cond_true: Vec<Arc<PpAst>>,
+    cond_true: Vec<Arc<ErlAst>>,
     /// The nested lines for the else block (if it was present)
-    cond_false: Vec<Arc<PpAst>>,
+    cond_false: Vec<Arc<ErlAst>>,
   },
   /// If(expression) stores an expression which must resolve to a constant value otherwise compile
   /// error will be triggered.
@@ -60,9 +38,9 @@ pub enum PpAstType {
     /// The condition to check
     cond: Arc<ErlAst>,
     /// The nested lines
-    cond_true: Vec<Arc<PpAst>>,
+    cond_true: Vec<Arc<ErlAst>>,
     /// The nested lines for the else block (if it was present)
-    cond_false: Vec<Arc<PpAst>>,
+    cond_false: Vec<Arc<ErlAst>>,
   },
   /// Produce a libironclad error
   Error(String),
@@ -73,7 +51,7 @@ pub enum PpAstType {
     /// Filename for this included file
     filename: PathBuf,
     /// Preprocessor sub-tree to descend into the includefile
-    ast: Arc<PpAst>,
+    ast: Arc<ErlAst>,
   },
   // Temporary nodes, appear during parsing and should never appear into the final AST output.
   // These values never leave the parser module.
@@ -89,20 +67,4 @@ pub enum PpAstType {
   _TemporaryIfdef(String),
   /// -ifndef(...). is translated into `IfdefBlock`
   _TemporaryIfndef(String),
-}
-
-impl PpAst {
-  /// Trim the contents to CLAMP_LENGTH characters for convenient narrow debug printing
-  #[allow(dead_code)]
-  fn trim(s: &str) -> &str {
-    let trimmed = s.trim();
-    &trimmed[..usize::min(trimmed.len(), 40) - 1]
-  }
-}
-
-/// Parsed preprocessor AST cache
-#[derive(Default)]
-pub struct PpAstCache {
-  /// AST trees keyed by filename
-  pub items: HashMap<PathBuf, Arc<PpAst>>,
 }

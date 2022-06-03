@@ -59,8 +59,7 @@ directory will be scanned for `"*.erl"` files, with all nested subdirectories.
 - Project configuration `libironclad`
   - [x] Basic TOML syntax to not be parsing Erlang terms early in project's life
   - [x] Load the config and overlay over the default settings
-----------
-- Preprocessor `libironclad_preprocessor`
+  - Preprocessor `libironclad_preprocessor`
     - [x] Parsing directives as a Preprocessor AST tree
     - [ ] Include directives `-include/include_lib`
     - [ ] Parse and interpret `-define/-if*/-else/-endif` directives by removing chunks of guarded code

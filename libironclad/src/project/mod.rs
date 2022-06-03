@@ -14,6 +14,7 @@ use crate::project::input_opts::InputOpts;
 use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
+#[cfg(feature = "separate_preprocessor_lib")]
 use crate::stage::preprocess::pp_stage::PreprocessStage;
 
 pub mod compiler_opts;
@@ -132,12 +133,12 @@ impl ErlProject {
       Err(e) => return Err(Box::new(e)),
     };
 
-    //-------------------------
-    // PREPROCESSING
-    //-------------------------
-    // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-    let mut pp_stage = PreprocessStage::new();
-    let _pp_ast_cache = pp_stage.run(self, file_cache.clone()).unwrap();
+    // //-------------------------
+    // // PREPROCESSING
+    // //-------------------------
+    // // Preprocess erl files, and store preprocessed PpAst in a new hashmap
+    // let mut pp_stage = PreprocessStage::new();
+    // let _pp_ast_cache = pp_stage.run(self, file_cache.clone()).unwrap();
 
     //-------------------------
     // PARSING ERLANG AST

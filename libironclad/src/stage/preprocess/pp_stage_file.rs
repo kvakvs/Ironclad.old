@@ -1,3 +1,4 @@
+#![cfg(feature = "separate_preprocessor_lib")]
 //! Preprocessor state for one file
 
 use crate::project::source_file::SourceFile;
@@ -12,12 +13,6 @@ use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_report
 use libironclad_error::ic_error::{IcResult, IroncladError};
 use libironclad_error::ic_error_trait::IcError;
 use libironclad_error::source_loc::SourceLoc;
-use libironclad_preprocessor::parsers::pp_parse_types::{PpAstParserResult, PreprocessorParser};
-use libironclad_preprocessor::pp_error::PpError;
-use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstType::{
-  Define, IfBlock, IfdefBlock, Include, IncludeLib, IncludedFile, Undef, Warning,
-};
-use libironclad_preprocessor::preprocessor_syntax::pp_ast::{PpAst, PpAstCache, PpAstType};
 use nom::Finish;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

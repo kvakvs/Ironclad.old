@@ -6,6 +6,7 @@ use crate::erl_syntax::erl_ast::ErlAst;
 use crate::erl_syntax::erl_ast::ErlAstType::ModuleForms;
 use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::ErlAttrParser;
+use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
 use nom::branch::alt;
 use nom::combinator::{complete, map};
 use nom::multi::many0;
@@ -51,7 +52,11 @@ pub struct ErlParser {}
 impl ErlParser {
   /// Parses an attribute or a function def
   pub fn module_form(input: &str) -> AstParserResult {
-    alt((ErlAttrParser::attr, Self::parse_fndef))(input)
+    alt((
+      PreprocessorParser::parse_preproc_directive,
+      ErlAttrParser::attr,
+      Self::parse_fndef,
+    ))(input)
   }
 
   /// Parses 0 or more module forms (attrs and function defs)

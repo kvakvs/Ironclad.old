@@ -1,7 +1,7 @@
 //! Preprocessor scope for the current file, currently available defines
 
 use crate::stage::preprocess::pp_define::{NameArity, PreprocessorDefine};
-use libironclad_preprocessor::preprocessor_syntax::pp_macro_string::MacroString;
+use libironclad_erlang::erl_syntax::preprocessor::macro_string::MacroString;
 use std::collections::HashMap;
 use std::sync::Arc;
 

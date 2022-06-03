@@ -9,7 +9,6 @@ edition = "2021"
 [dependencies]
 libironclad_util = { path = "../libironclad_util" }
 libironclad_erlang = { path = "../libironclad_erlang" }
-libironclad_preprocessor = { path = "../libironclad_preprocessor" }
 libironclad_error = { path = "../libironclad_error" }
 
 toml = "0.5.8"

@@ -133,6 +133,9 @@ impl ErlAst {
         &node.location,
         format!("{}: is unacceptable as a function argument", node),
       ),
+      ErlAstType::Preprocessor(_) => {
+        panic!("Preprocessor nodes should be eliminated by the time you're extracting variables")
+      }
     }
   }
 }

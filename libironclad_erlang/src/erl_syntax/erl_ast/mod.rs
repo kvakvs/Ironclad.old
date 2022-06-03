@@ -14,6 +14,7 @@ use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_token::ErlToken;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
+use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
 use crate::typing::type_error::TypeError;
@@ -236,6 +237,9 @@ pub enum ErlAstType {
     /// Fields with optional initializers and optional type ascriptions
     fields: Vec<RecordField>,
   },
+
+  /// Preprocessor node types grouped
+  Preprocessor(PreprocessorNodeType),
 }
 
 impl ErlAst {
@@ -243,13 +247,6 @@ impl ErlAst {
   pub fn is_var(&self) -> bool {
     matches!(&self.content, ErlAstType::Var(..))
   }
-
-  // /// Swaps a value and Empty AST, returns the taken value
-  // pub fn take(from: &mut ErlAst) -> ErlAst {
-  //   let mut swap_in = ErlAst::Empty;
-  //   std::mem::swap(from, &mut swap_in);
-  //   swap_in
-  // }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.

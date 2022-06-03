@@ -134,6 +134,7 @@ impl std::fmt::Display for ErlAst {
         Pretty::display_comma_separated(fields, f)?;
         write!(f, "}}")
       }
+      ErlAstType::Preprocessor(pp) => write!(f, "{}", pp),
     }
   }
 }

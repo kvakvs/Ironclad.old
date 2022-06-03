@@ -1,12 +1,13 @@
 //! Contains code to wrap `String` with macro substitution features
 
-use libironclad_erlang::typing::scope::Scope;
+use crate::typing::scope::Scope;
 use std::cell::RefCell;
 use std::fmt::Formatter;
 
 /// A string container which can have its string replaced entirely.
 pub struct MacroString {
-  /// Hello
+  /// Replaceable cell containing text for the node. If it contains preprocessor definitions,
+  /// values will be substituted before further processing
   pub text: RefCell<String>,
 }
 

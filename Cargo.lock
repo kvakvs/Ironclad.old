@@ -155,7 +155,6 @@ dependencies = [
  "lazy_static",
  "libironclad_erlang",
  "libironclad_error",
- "libironclad_preprocessor",
  "libironclad_util",
  "nom",
  "serde",
@@ -184,17 +183,6 @@ dependencies = [
  "glob",
  "libironclad_util",
  "toml",
-]
-
-[[package]]
-name = "libironclad_preprocessor"
-version = "2022.5.0"
-dependencies = [
- "function_name",
- "libironclad_erlang",
- "libironclad_error",
- "libironclad_util",
- "nom",
 ]
 
 [[package]]
