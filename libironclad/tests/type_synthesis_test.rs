@@ -7,8 +7,8 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAstType::FnDef;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_error::ic_error::IcResult;
@@ -149,14 +149,15 @@ fn synth_fun_call() -> IcResult<()> {
   // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
-    let add_fn_ast = ErlAst::find_function_def(&module.ast, &MFArity::new_local("add", 2)).unwrap();
+    let add_fn_ast =
+      AstNodeImpl::find_function_def(&module.ast, &MFArity::new_local("add", 2)).unwrap();
     let add_fn_type = add_fn_ast.synthesize(&module.scope)?;
     println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
   }
 
   {
     let main_fn_ast =
-      ErlAst::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
+      AstNodeImpl::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
     let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
     println!(
       "{}: Synthesized for main/1 {} 🡆 {}",
@@ -190,7 +191,8 @@ fn synth_multiple_clause_test() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let parsed = ErlModule::from_module_source(&filename, &source)?;
 
-  let main_fn_ast = ErlAst::find_function_def(&parsed.ast, &MFArity::new_local("main", 1)).unwrap();
+  let main_fn_ast =
+    AstNodeImpl::find_function_def(&parsed.ast, &MFArity::new_local("main", 1)).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
   let main_ty = main_fn_ast.synthesize(&parsed.scope)?;

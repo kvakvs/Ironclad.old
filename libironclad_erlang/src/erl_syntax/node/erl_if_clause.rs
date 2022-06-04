@@ -1,21 +1,20 @@
 //! A branch of `if COND -> EXPR; ... end`
 
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
-use std::sync::Arc;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 
 /// AST node for a clause in a `if COND -> EXPR; ... end` statement.
 #[derive(Debug)]
 pub struct ErlIfClause {
   /// A condition expression
-  pub cond: Arc<ErlAst>,
+  pub cond: AstNode,
   /// If clause body expression
-  pub body: Arc<ErlAst>,
+  pub body: AstNode,
 }
 
 impl ErlIfClause {
   /// Create a new `if` clause branch
-  pub fn new(cond: Arc<ErlAst>, body: Arc<ErlAst>) -> Self {
+  pub fn new(cond: AstNode, body: AstNode) -> Self {
     Self { cond, body }
   }
 }
@@ -26,8 +25,8 @@ impl std::fmt::Display for ErlIfClause {
   }
 }
 
-impl AstNode for ErlIfClause {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+impl TAstNode for ErlIfClause {
+  fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = self.cond.children().unwrap_or_default();
     if let Some(body_children) = self.body.children() {
       r.extend(body_children.iter().cloned());

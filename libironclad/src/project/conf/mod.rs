@@ -5,6 +5,7 @@ use core::fmt;
 use core::fmt::Debug;
 use core::option::Option;
 use core::result::Result;
+use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_error::ic_error::{IroncladError, IroncladResult};
 use serde_derive::Deserialize;
 use std::convert::Into;
@@ -34,7 +35,7 @@ impl ProjectConf {
   }
 
   /// Creates project struct from a TOML config as a string
-  pub fn from_string(input: &str) -> Result<Self, IroncladError> {
+  pub fn from_string(input: ParserInput) -> Result<Self, IroncladError> {
     // Parse, and convert toml error into ErlError
     toml::from_str(input).map_err(|e| e.into())
   }

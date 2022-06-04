@@ -1,7 +1,8 @@
 //! Defines a FClause struct for a new function clause AST node
 use std::fmt::Formatter;
 
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
@@ -17,11 +18,11 @@ pub struct ErlFnClause {
   /// For inline defined lambdas name will be `None`, take care and give it a good name later
   pub name: Option<String>,
   /// Function clause arguments, binding/match expressions
-  pub args: Vec<Arc<ErlAst>>,
+  pub args: Vec<AstNode>,
   /// Function clause body: a comma-expression which is a vec of expressions, and result is the last one
-  pub body: Arc<ErlAst>,
+  pub body: AstNode,
   /// Guard expression, if exists
-  pub guard_expr: Option<Arc<ErlAst>>,
+  pub guard_expr: Option<AstNode>,
   /// Function scope (variables and passed arguments)
   pub scope: RwLock<Scope>,
 }
@@ -30,9 +31,9 @@ impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
   pub fn new(
     name: Option<String>,
-    args: Vec<Arc<ErlAst>>,
-    body: Arc<ErlAst>,
-    guard_expr: Option<Arc<ErlAst>>,
+    args: Vec<AstNode>,
+    body: AstNode,
+    guard_expr: Option<AstNode>,
   ) -> Self {
     // TODO: For root level function defs assert that name is Some. For lambdas: that name is None
     let scope_name = match &name {
@@ -43,7 +44,7 @@ impl ErlFnClause {
     // Extract all bindable variables which introduce a new variable name in the scope
     let mut variables = Default::default();
     for arg in &args {
-      ErlAst::extract_variables(arg, &mut variables).unwrap();
+      AstNodeImpl::extract_variables(arg, &mut variables).unwrap();
     }
 
     let clause_scope = Scope::new(scope_name, Weak::new(), variables).into();

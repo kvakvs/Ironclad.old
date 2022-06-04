@@ -1,6 +1,6 @@
 //! Define a ErlFnDef struct for a new function AST node
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -59,9 +59,9 @@ impl ErlFnDef {
   }
 }
 
-impl AstNode for ErlFnDef {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let r: Vec<Arc<ErlAst>> = self
+impl TAstNode for ErlFnDef {
+  fn children(&self) -> Option<Vec<AstNode>> {
+    let r: Vec<AstNode> = self
       .clauses
       .iter()
       .map(|fclause| fclause.body.clone())

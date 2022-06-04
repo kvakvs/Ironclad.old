@@ -23,21 +23,21 @@ pub mod pp_parse_types;
 
 impl PreprocessorParser {
   // /// Parse a `Var1, Var2, ...` into a list
-  // fn parse_comma_sep_varnames(input: &str) -> PpParserResult<Vec<String>> {
+  // fn parse_comma_sep_varnames(input: ParserInput) -> PpParserResult<Vec<String>> {
   //   separated_list0(comma, parse_varname)(input)
   // }
 
   /// Parse a `Macroident1, Macroident2, ...` into a list
-  fn comma_sep_macro_idents(input: &str) -> PpParserResult<Vec<String>> {
+  fn comma_sep_macro_idents(input: ParserInput) -> PpParserResult<Vec<String>> {
     separated_list0(comma, Self::macro_ident)(input)
   }
 
-  fn parenthesis_dot_newline(input: &str) -> PpParserResult<&str> {
+  fn parenthesis_dot_newline(input: ParserInput) -> PpParserResult<&str> {
     recognize(tuple((par_close, period, newline_or_eof)))(input)
   }
 
   /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-  fn macro_ident(input: &str) -> PpStringParserResult {
+  fn macro_ident(input: ParserInput) -> PpStringParserResult {
     map(
       recognize(pair(
         verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
@@ -48,7 +48,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-include(STRING)`
-  fn include_directive(input: &str) -> PpAstParserResult {
+  fn include_directive(input: ParserInput) -> PpAstParserResult {
     map(
       delimited(
         match_dash_tag("include"),
@@ -60,7 +60,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-include_lib(STRING)`
-  fn include_lib_directive(input: &str) -> PpAstParserResult {
+  fn include_lib_directive(input: ParserInput) -> PpAstParserResult {
     map(
       delimited(
         match_dash_tag("include_lib"),
@@ -71,7 +71,7 @@ impl PreprocessorParser {
     )(input)
   }
 
-  fn parse_preproc_directive(input: &str) -> PpAstParserResult {
+  fn parse_preproc_directive(input: ParserInput) -> PpAstParserResult {
     ws_before_mut(alt((
       // -define is special, it needs closing ).\n to consume the content
       context("'-define' directive", Self::define_directive),
@@ -91,7 +91,7 @@ impl PreprocessorParser {
   }
 
   /// Parse full lines till a line which looks like a preprocessor directive is found
-  fn consume_one_line_of_text(input: &str) -> PpAstParserResult {
+  fn consume_one_line_of_text(input: ParserInput) -> PpAstParserResult {
     map(
       verify(
         ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
@@ -102,7 +102,7 @@ impl PreprocessorParser {
   }
 
   /// Parses either a preprocessor directive or block, or consumes one line of text
-  fn parse_fragment(input: &str) -> PpAstParserResult {
+  fn parse_fragment(input: ParserInput) -> PpAstParserResult {
     alt((
       Self::parse_preproc_directive,
       Self::consume_one_line_of_text,
@@ -112,14 +112,14 @@ impl PreprocessorParser {
   }
 
   /// Split input into AST nodes for preprocessor directives and any irrelevant text in between
-  pub fn parse_fragments_collection(input: &str) -> VecPpAstParserResult {
+  pub fn parse_fragments_collection(input: ParserInput) -> VecPpAstParserResult {
     // Followed by 1 or more directive or another text fragment
     many1(Self::parse_fragment)(input)
   }
 
   /// Parses file contents into mix of preprocessor directives and text fragments.
   /// Comments are eliminated.
-  pub fn module(input: &str) -> PpAstParserResult {
+  pub fn module(input: ParserInput) -> PpAstParserResult {
     map(Self::parse_fragments_collection, |fragments| {
       PpAst::new_file(&SourceLoc::from_input(input), fragments)
     })(input)

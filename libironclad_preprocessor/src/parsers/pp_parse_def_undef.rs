@@ -2,7 +2,7 @@
 
 use crate::parsers::pp_parse_types::{PpAstParserResult, PreprocessorParser};
 use crate::preprocessor_syntax::pp_ast::PpAst;
-use crate::preprocessor_syntax::pp_macro_string::MacroString;
+use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::parsers::misc::{
   comma, match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
@@ -16,7 +16,7 @@ use nom::sequence::{delimited, preceded, tuple};
 
 impl PreprocessorParser {
   /// Parses inner part of a `-define(IDENT)` variant
-  fn define_no_args_no_body(input: &str) -> PpAstParserResult {
+  fn define_no_args_no_body(input: ParserInput) -> PpAstParserResult {
     map(Self::macro_ident, |name| {
       PpAst::new_define_name_only(&SourceLoc::from_input(input), name)
     })(input)
@@ -24,7 +24,7 @@ impl PreprocessorParser {
 
   /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
   /// will consume end delimiter `").\n"`
-  fn define_with_args_body_and_terminator(input: &str) -> PpAstParserResult {
+  fn define_with_args_body_and_terminator(input: ParserInput) -> PpAstParserResult {
     map(
       tuple((
         // Macro name
@@ -40,14 +40,14 @@ impl PreprocessorParser {
           &SourceLoc::from_input(input),
           name,
           args.unwrap_or_default(),
-          MacroString::new_string(body.into_iter().collect::<String>()),
+          String::new_string(body.into_iter().collect::<String>()),
         )
       },
     )(input)
   }
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
-  pub fn define_directive(input: &str) -> PpAstParserResult {
+  pub fn define_directive(input: ParserInput) -> PpAstParserResult {
     preceded(
       match_dash_tag("define"),
       alt((
@@ -65,7 +65,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-undef(IDENT)`
-  pub fn undef_directive(input: &str) -> PpAstParserResult {
+  pub fn undef_directive(input: ParserInput) -> PpAstParserResult {
     map(
       delimited(
         match_dash_tag("undef"),

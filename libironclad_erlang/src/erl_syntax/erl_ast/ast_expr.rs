@@ -1,11 +1,11 @@
 //! Support for constant expressions (literals and expressions of literals) which can be calculated
 //! in compile time.
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::literal::Literal;
 
-impl ErlAst {
+impl AstNodeImpl {
   /// Checks whether an expression is a `ErlAst::Lit`
   pub fn is_literal(&self) -> bool {
     matches!(self.content, ErlAstType::Lit { .. })

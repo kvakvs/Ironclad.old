@@ -1,12 +1,12 @@
 //! AST node-type checks
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::literal::Literal;
 use std::ops::Deref;
 
-impl ErlAst {
+impl AstNodeImpl {
   /// Checks whether an ErlAst node is a function definition
   pub fn is_fn_def(&self) -> bool {
     matches!(&self.content, ErlAstType::FnDef(_))

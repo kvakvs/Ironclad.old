@@ -1,6 +1,6 @@
 //! Record definition: Fields
 
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
 use std::sync::Arc;
@@ -12,7 +12,7 @@ pub struct RecordField {
   /// Record field name atom, stored as string
   pub field_tag: String,
   /// Optional initializer for construction of the record
-  pub initializer: Option<Arc<ErlAst>>,
+  pub initializer: Option<AstNode>,
   /// Optional type ascription
   pub type_ascription: Option<Arc<ErlType>>,
 }

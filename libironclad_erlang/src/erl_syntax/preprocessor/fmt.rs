@@ -16,14 +16,13 @@ impl std::fmt::Display for PreprocessorNodeType {
       Define { name, args, body } => {
         write!(f, "-define({}", name)?;
 
-        let body_ref = body.text.borrow();
         if !args.is_empty() {
           Pretty::display_paren_list(args, f)?;
-          if !body_ref.is_empty() {
+          if !body.is_empty() {
             write!(f, ", ")?;
           }
         }
-        writeln!(f, "{}).", body_ref)
+        writeln!(f, "{}).", body)
       }
       IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),

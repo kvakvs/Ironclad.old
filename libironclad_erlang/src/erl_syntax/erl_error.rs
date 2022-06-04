@@ -1,5 +1,5 @@
 //! Erlang errors
-use crate::erl_syntax::parsers::ErlParserError;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
 use crate::typing::type_error::TypeError;
 use libironclad_error::ic_error::IcResult;
 use libironclad_error::ic_error_category::IcErrorCategory;
@@ -67,7 +67,7 @@ impl ErlError {
   }
 
   /// Builds ErlError with nice error details from input string and Nom's verbose error
-  pub fn from_nom_error<T>(input: &str, value: ErlParserError) -> IcResult<T> {
+  pub fn from_nom_error<T>(input: ParserInput, value: ErlParserError) -> IcResult<T> {
     let new_err = Self {
       ic_category: IcErrorCategory::ErlangParse,
       category: ErlErrorCategory::Parser,

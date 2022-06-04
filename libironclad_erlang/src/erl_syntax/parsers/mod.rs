@@ -1,16 +1,18 @@
 //! Parsers for Erlang syntax based on Nom
 
-use std::sync::Arc;
-
-use crate::erl_syntax::erl_ast::ErlAst;
-use crate::erl_syntax::erl_ast::ErlAstType::ModuleForms;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::node_impl::ErlAstType::ModuleForms;
+use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
+use defs::VecAstParserResult;
 use nom::branch::alt;
 use nom::combinator::{complete, map};
 use nom::multi::many0;
 
+pub mod defs;
 pub mod misc;
 pub mod parse_atom;
 pub mod parse_attr;
@@ -25,33 +27,12 @@ pub mod parse_str;
 pub mod parse_try_catch;
 pub mod parse_type;
 
-/// Gathers multiple errors and contexts together
-pub type ErlParserError<'a> = nom::error::VerboseError<&'a str>;
-
-/// Generic return value from a Nom parser which takes &str and returns `Out`
-pub type ParserResult<'a, Out> = nom::IResult<&'a str, Out, ErlParserError<'a>>;
-
-/// Return value from a Nom parser which takes &str and returns `Arc<ErlAst>`
-pub type AstParserResult<'a> = ParserResult<'a, Arc<ErlAst>>;
-
-/// Return value from a Nom parser which takes &str and returns `Vec<Arc<ErlAst>>`
-pub type VecAstParserResult<'a> = ParserResult<'a, Vec<Arc<ErlAst>>>;
-
-/// Return value from a Nom parser which takes &str and returns `String`
-pub type StringParserResult<'a> = ParserResult<'a, String>;
-
-/// Return value from a Nom parser which takes &str and returns `&str`
-pub type StrSliceParserResult<'a> = ParserResult<'a, &'a str>;
-
-/// Return value from a Nom parser which takes &str and returns `()`
-pub type VoidParserResult<'a> = ParserResult<'a, ()>;
-
 /// Groups functions for parsing Erlang syntax together
 pub struct ErlParser {}
 
 impl ErlParser {
   /// Parses an attribute or a function def
-  pub fn module_form(input: &str) -> AstParserResult {
+  pub fn module_form(input: ParserInput) -> ParserResult<AstNode> {
     alt((
       PreprocessorParser::parse_preproc_directive,
       ErlAttrParser::attr,
@@ -65,9 +46,9 @@ impl ErlParser {
   }
 
   /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
-  pub fn parse_module(input: &str) -> AstParserResult {
+  pub fn parse_module(input: &str) -> ParserResult<AstNode> {
     map(Self::module_forms_collection, |forms| {
-      ErlAst::construct_without_location(ModuleForms(forms))
+      AstNodeImpl::construct_without_location(ModuleForms(forms))
     })(input)
   }
 }

@@ -1,22 +1,21 @@
 //! Declares AST node for a clause in `case of` expression
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
-use std::sync::Arc;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 
 /// AST node for a clause in a `case X of` expression.
 #[derive(Debug)]
 pub struct ErlCaseClause {
   /// A match expression, matched vs. case arg
-  pub pattern: Arc<ErlAst>,
+  pub pattern: AstNode,
   /// Must resolve to bool, or an exception
-  pub guard: Option<Arc<ErlAst>>,
+  pub guard: Option<AstNode>,
   /// Case clause body expression
-  pub body: Arc<ErlAst>,
+  pub body: AstNode,
 }
 
 impl ErlCaseClause {
   /// Create a new case clause branch
-  pub fn new(pattern: Arc<ErlAst>, guard: Option<Arc<ErlAst>>, body: Arc<ErlAst>) -> Self {
+  pub fn new(pattern: AstNode, guard: Option<AstNode>, body: AstNode) -> Self {
     Self { pattern, guard, body }
   }
 }
@@ -30,8 +29,8 @@ impl std::fmt::Display for ErlCaseClause {
   }
 }
 
-impl AstNode for ErlCaseClause {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+impl TAstNode for ErlCaseClause {
+  fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = self.pattern.children().unwrap_or_default();
     if let Some(g) = &self.guard {
       if let Some(g_children) = g.children() {

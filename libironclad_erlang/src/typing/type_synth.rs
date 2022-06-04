@@ -1,9 +1,10 @@
 //! Synthesize a type from AST node
 
-use crate::erl_syntax::erl_ast::ErlAst;
-use crate::erl_syntax::erl_ast::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, ModuleStartAttr, Tuple, Var,
 };
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
@@ -11,7 +12,7 @@ use ::function_name::named;
 use libironclad_error::ic_error::IcResult;
 use std::sync::{Arc, RwLock};
 
-impl ErlAst {
+impl AstNodeImpl {
   /// From AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
   #[named]
@@ -55,8 +56,8 @@ impl ErlAst {
   /// Having a list `[...]` AST node, try synthesize its type as precise as possible
   fn synthesize_list_type(
     env: &RwLock<Scope>,
-    elements: &[Arc<ErlAst>],
-    tail: &Option<Arc<ErlAst>>,
+    elements: &[AstNode],
+    tail: &Option<AstNode>,
   ) -> IcResult<Arc<ErlType>> {
     let elements: IcResult<Vec<Arc<ErlType>>> =
       elements.iter().map(|el| el.synthesize(env)).collect();
@@ -74,10 +75,7 @@ impl ErlAst {
   }
 
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
-  fn synthesize_tuple_type(
-    env: &RwLock<Scope>,
-    elements: &[Arc<ErlAst>],
-  ) -> IcResult<Arc<ErlType>> {
+  fn synthesize_tuple_type(env: &RwLock<Scope>, elements: &[AstNode]) -> IcResult<Arc<ErlType>> {
     let elements: IcResult<Vec<Arc<ErlType>>> =
       elements.iter().map(|el| el.synthesize(env)).collect();
     Ok(ErlType::Tuple { elements: elements? }.into())

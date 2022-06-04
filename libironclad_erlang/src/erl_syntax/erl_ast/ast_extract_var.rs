@@ -1,7 +1,8 @@
 //! AST node-type checks
 
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use crate::typing::erl_type::ErlType;
@@ -9,12 +10,12 @@ use libironclad_error::ic_error::IcResult;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-impl ErlAst {
+impl AstNodeImpl {
   /// For a function header, `myfun(A, {B, C}, #{key => D})` extract variable names: A, B, C, D.
   /// and add them to the scope of this function. Some AST nodes are not acceptable in argument
   /// list, so they would cause an error.
   pub fn extract_variables(
-    node: &Arc<ErlAst>,
+    node: &AstNode,
     variables: &mut HashMap<String, Arc<ErlType>>,
   ) -> IcResult<()> {
     match &node.content {

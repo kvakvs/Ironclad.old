@@ -1,8 +1,10 @@
 //! Parses `case of` and clause branches
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{semicolon, ws_before};
-use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError};
+use crate::erl_syntax::parsers::ErlParser;
 use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;
@@ -32,14 +34,14 @@ impl ErlParser {
         ErlCaseClause::new(
           pattern,
           maybe_when,
-          ErlAst::new_comma_expr(&SourceLoc::from_input(input), body),
+          AstNodeImpl::new_comma_expr(&SourceLoc::from_input(input), body),
         )
       },
     )(input)
   }
 
   /// Parses `case EXPR of MATCH -> EXPR; ... end`
-  pub fn parse_case_statement(input: &str) -> AstParserResult {
+  pub fn parse_case_statement(input: &str) -> ParserResult<AstNode> {
     let (input, _) = ws_before(tag("case"))(input)?;
 
     context(
@@ -51,7 +53,7 @@ impl ErlParser {
           ws_before(tag("end")),
         )),
         |(expr, clauses, _end0)| {
-          ErlAst::new_case_statement(&SourceLoc::from_input(input), expr, clauses)
+          AstNodeImpl::new_case_statement(&SourceLoc::from_input(input), expr, clauses)
         },
       )),
     )(input)

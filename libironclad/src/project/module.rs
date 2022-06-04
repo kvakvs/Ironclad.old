@@ -1,4 +1,5 @@
 //! Defines an Erlang module ready to be compiled
+use libironclad_erlang::erl_syntax::erl_ast::AstNode;
 use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
@@ -8,11 +9,12 @@ use std::sync::{Arc, RwLock};
 
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::source_file::SourceFile;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_error::ErlError;
+use libironclad_erlang::erl_syntax::parsers::defs::ErlParserError;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
-use libironclad_erlang::erl_syntax::parsers::{ErlParser, ErlParserError};
+use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_erlang::typing::scope::Scope;
 use libironclad_error::ic_error::IcResult;
 
@@ -28,7 +30,7 @@ pub struct ErlModule {
   pub source_file: Arc<SourceFile>,
 
   /// AST tree of the module.
-  pub ast: Arc<ErlAst>,
+  pub ast: AstNode,
 
   // /// Collection of module functions and a lookup table
   // pub registry: RwLock<FuncRegistry>,
@@ -46,7 +48,7 @@ impl Default for ErlModule {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFile::default()),
-      ast: ErlAst::new_empty(),
+      ast: AstNodeImpl::new_empty(),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
@@ -72,7 +74,7 @@ impl ErlModule {
   /// Generic parse helper for any Nom entry point
   pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> IcResult<Self>
   where
-    T: Fn(&'a str) -> nom::IResult<&'a str, Arc<ErlAst>, ErlParserError>,
+    T: Fn(&'a str) -> nom::IResult<&'a str, AstNode, ErlParserError>,
   {
     println!("Parsing from {}", filename.to_string_lossy());
 

@@ -1,6 +1,6 @@
 //! Defines Application AST node for a function call
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::typing::erl_type::ErlType;
@@ -19,7 +19,7 @@ pub struct ErlApply {
   /// Target, to be called, a callable, for example can be a function or lambda type `fun((arg, arg,...) -> ret)`
   pub target: CallableTarget,
   /// Function application arguments, list of expressions
-  pub args: Vec<Arc<ErlAst>>,
+  pub args: Vec<AstNode>,
 }
 
 impl std::fmt::Display for ErlApply {
@@ -40,7 +40,7 @@ impl std::fmt::Debug for ErlApply {
 
 impl ErlApply {
   /// Creates a new function call (application) AST node
-  pub fn new(target: CallableTarget, args: Vec<Arc<ErlAst>>) -> Self {
+  pub fn new(target: CallableTarget, args: Vec<AstNode>) -> Self {
     ErlApply { target, args }
   }
 
@@ -123,9 +123,9 @@ impl ErlApply {
   }
 }
 
-impl AstNode for ErlApply {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
-    let mut r: Vec<Arc<ErlAst>> = match self.target.children() {
+impl TAstNode for ErlApply {
+  fn children(&self) -> Option<Vec<AstNode>> {
+    let mut r: Vec<AstNode> = match self.target.children() {
       Some(target_children) => target_children,
       None => Vec::default(),
     };

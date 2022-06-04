@@ -1,7 +1,7 @@
 //! Defines a callable target, to use in function applications
 
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use libironclad_error::ic_error::IcResult;
@@ -13,15 +13,15 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug, Clone)]
 pub enum CallableTarget {
   /// An expression which is expected to resolve to a `mod:fun/arity`
-  Expr(Arc<ErlAst>),
+  Expr(AstNode),
   /// A pointer to a function local or cross-module
   MFArity(MFArity),
   /// A `m:f/arity` or `f/arity` where module and function are not literal atoms, but some exprs
   MFAExpression {
     /// Possibly resolves to a module name
-    module: Option<Arc<ErlAst>>,
+    module: Option<AstNode>,
     /// Resolves to a function name
-    function: Arc<ErlAst>,
+    function: AstNode,
     /// Arity for `MFArity` creation
     arity: usize,
   },
@@ -46,7 +46,7 @@ impl std::fmt::Display for CallableTarget {
 
 impl CallableTarget {
   /// Creates a callable expression (without application or args) to use in `ErlApply`
-  pub fn new_expr(expr: Arc<ErlAst>) -> Self {
+  pub fn new_expr(expr: AstNode) -> Self {
     CallableTarget::Expr(expr)
   }
 
@@ -58,7 +58,7 @@ impl CallableTarget {
   /// Creates a callable mod:fun/arity where mod and fun can be any expressions. Will try to check
   /// if mod and fun are literal atoms to simplify the callable target to `MFArity(mfa)` instead of
   /// a more complex `MFAExpression`.
-  pub fn new_mfa_expr(m: Option<Arc<ErlAst>>, f: Arc<ErlAst>, a: usize) -> Self {
+  pub fn new_mfa_expr(m: Option<AstNode>, f: AstNode, a: usize) -> Self {
     if f.is_atom() {
       if m.is_none() {
         return Self::new_mfa(MFArity::new_local(f.as_atom(), a));
@@ -85,8 +85,8 @@ impl CallableTarget {
   }
 }
 
-impl AstNode for CallableTarget {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+impl TAstNode for CallableTarget {
+  fn children(&self) -> Option<Vec<AstNode>> {
     match self {
       CallableTarget::Expr(e) => e.children(),
       CallableTarget::MFArity(_) => None,

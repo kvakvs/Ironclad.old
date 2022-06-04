@@ -1,10 +1,9 @@
 //! Binary element is an item in a ironclad_exe expression or a ironclad_exe builder.
 //! This models the ironclad_exe syntax of Erlang: <<1, 2, 3:8/bits, Variable, (function()):16 ...>>
 
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::AstNode;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::pretty::Pretty;
-use std::sync::Arc;
 
 /// Added to `BinaryTypeSpecifier` after `:` to specify the bit width.
 /// Sometimes bit width is known at compile time and sometimes is not.
@@ -14,7 +13,7 @@ pub enum ValueWidth {
   /// Bit width is known at compile time, and is an integer literal (other literals not acceptable)
   Literal(usize),
   /// Expression should resolve to an integer and will define bit width
-  Expr(Arc<ErlAst>),
+  Expr(AstNode),
   /// Default is chosen by the libironclad automatically to fit the chosen value type
   Default,
 }
@@ -95,7 +94,7 @@ pub struct BinaryElement {
   /// Where in the code
   pub location: SourceLoc,
   /// The value part: an expression, or a literal, etc.
-  pub value: Arc<ErlAst>,
+  pub value: AstNode,
   /// Bit width for the value, if specified after `:`. Zero means "not specified".
   pub width: ValueWidth,
   /// Elements of type spec added after `/` like so: `X:4/little-signed-integer-unit:8`
@@ -106,7 +105,7 @@ impl BinaryElement {
   /// Creates a new freshly parsed element of a ironclad_exe expression
   pub fn new(
     location: SourceLoc,
-    value: Arc<ErlAst>,
+    value: AstNode,
     width: ValueWidth,
     type_specs: Vec<TypeSpecifier>,
   ) -> Self {

@@ -1,13 +1,15 @@
 //! Parse ironclad_exe expressions and ironclad_exe builders.
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
+use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   comma, par_close, par_open, parse_int, parse_varname, ws_before,
 };
-use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ParserResult};
+use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -22,16 +24,16 @@ pub struct BinaryParser {}
 
 impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
-  fn parse_value(input: &str) -> AstParserResult {
+  fn parse_value(input: ParserInput) -> ParserResult<AstNode> {
     alt((
-      map(parse_varname, |v| ErlAst::new_var(&SourceLoc::from_input(input), &v)),
+      map(parse_varname, |v| AstNodeImpl::new_var(&SourceLoc::from_input(input), &v)),
       ErlParser::parse_literal,
       delimited(par_open, ErlParser::parse_expr, par_close),
     ))(input)
   }
 
   /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
-  fn parse_width(input: &str) -> ParserResult<ValueWidth> {
+  fn parse_width(input: ParserInput) -> ParserResult<ValueWidth> {
     map(Self::parse_value, |v| {
       if let ErlAstType::Lit { value: lit_val, .. } = &v.content {
         if let Literal::Integer(i) = lit_val.deref() {
@@ -46,7 +48,7 @@ impl BinaryParser {
     })(input)
   }
 
-  fn parse_typespec_type(input: &str) -> ParserResult<TypeSpecifier> {
+  fn parse_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
       map(tag("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
       map(tag("float"), |_| TypeSpecifier::Type(ValueType::Float)),
@@ -62,14 +64,14 @@ impl BinaryParser {
     ))(input)
   }
 
-  fn parse_typespec_signedness(input: &str) -> ParserResult<TypeSpecifier> {
+  fn parse_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
       map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
       map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
     ))(input)
   }
 
-  fn parse_typespec_endianness(input: &str) -> ParserResult<TypeSpecifier> {
+  fn parse_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
       map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
       map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
@@ -77,13 +79,13 @@ impl BinaryParser {
     ))(input)
   }
 
-  fn parse_typespec_unit(input: &str) -> ParserResult<TypeSpecifier> {
+  fn parse_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {
     map(preceded(tag("unit:"), parse_int), |erl_int| {
       TypeSpecifier::Unit(erl_int.as_usize().unwrap_or_default())
     })(input)
   }
 
-  fn parse_a_type_spec(input: &str) -> ParserResult<TypeSpecifier> {
+  fn parse_a_type_spec(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
       Self::parse_typespec_type,
       Self::parse_typespec_signedness,
@@ -93,7 +95,7 @@ impl BinaryParser {
   }
 
   /// Parse a `-` separated list of typespecs
-  fn parse_type_specs(input: &str) -> ParserResult<Vec<TypeSpecifier>> {
+  fn parse_type_specs(input: ParserInput) -> ParserResult<Vec<TypeSpecifier>> {
     preceded(
       ws_before(char('/')), // TODO: Whitespace allowed before?
       separated_list1(
@@ -105,7 +107,7 @@ impl BinaryParser {
 
   /// Parse one comma-separated element of a ironclad_exe: number, variable, an expression,
   /// and followed by a `:bit-width` and `/type-specifier`
-  fn parse_bin_element(input: &str) -> ParserResult<BinaryElement> {
+  fn parse_bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
     map(
       tuple((
         Self::parse_value,
@@ -124,7 +126,7 @@ impl BinaryParser {
   }
 
   /// Parse a ironclad_exe or ironclad_exe builder expression
-  pub fn parse(input: &str) -> AstParserResult {
+  pub fn parse(input: ParserInput) -> ParserResult<AstNode> {
     let (input, _) = ws_before(tag("<<"))(input)?;
 
     context(
@@ -135,7 +137,7 @@ impl BinaryParser {
             comma,
             context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
           ),
-          |bin_exprs| ErlAst::new_binary_expr(&SourceLoc::from_input(input), bin_exprs),
+          |bin_exprs| AstNodeImpl::new_binary_expr(&SourceLoc::from_input(input), bin_exprs),
         ),
         ws_before(tag(">>")),
       )),

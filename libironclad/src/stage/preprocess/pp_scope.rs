@@ -1,7 +1,6 @@
 //! Preprocessor scope for the current file, currently available defines
 
 use crate::stage::preprocess::pp_define::{NameArity, PreprocessorDefine};
-use libironclad_erlang::erl_syntax::preprocessor::macro_string::MacroString;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -53,7 +52,7 @@ impl PreprocessorScope {
   }
 
   /// Clone self and insert a new macro definition
-  pub fn define(&self, name: &str, args: &[String], text: &MacroString) -> Arc<Self> {
+  pub fn define(&self, name: &str, args: &[String], text: &String) -> Arc<Self> {
     let mut defines = self.defines.clone();
     let pp_def = PreprocessorDefine::new(name.to_string(), args, text);
     defines.insert(pp_def.get_name_arity(), pp_def);

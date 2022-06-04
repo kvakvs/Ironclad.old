@@ -1,7 +1,8 @@
 //! Code to support variable scopes
 
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::node_impl::ErlAstType;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
@@ -20,7 +21,7 @@ pub struct Scope {
 
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
-  pub function_defs: HashMap<MFArity, Arc<ErlAst>>,
+  pub function_defs: HashMap<MFArity, AstNode>,
 
   /// Types defined in the global module scope. Using typename/arity as key in type hierarchy
   pub typedefs: HashMap<MFArity, Arc<ErlType>>,
@@ -134,7 +135,7 @@ impl Scope {
   }
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<Arc<ErlAst>> {
+  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<AstNode> {
     if let Ok(scope_read) = scope.read() {
       match scope_read.function_defs.get(mfa) {
         Some(val) => {
@@ -154,12 +155,12 @@ impl Scope {
   }
 
   /// Add a function by MFA and its type
-  pub fn add_fn(&mut self, mfa: &MFArity, ast: Arc<ErlAst>) {
+  pub fn add_fn(&mut self, mfa: &MFArity, ast: AstNode) {
     self.function_defs.insert(mfa.clone(), ast);
   }
 
   /// Recursive descend into AST saving FnDef nodes
-  fn do_update_from_ast(&mut self, ast: &Arc<ErlAst>) {
+  fn do_update_from_ast(&mut self, ast: &AstNode) {
     if let ErlAstType::FnDef(fndef) = &ast.content {
       self.add_fn(&fndef.funarity, ast.clone());
     }
@@ -172,7 +173,7 @@ impl Scope {
   }
 
   /// Scan AST and find FnDef nodes, update functions knowledge
-  pub fn update_from_ast(scope: &RwLock<Scope>, ast: &Arc<ErlAst>) {
+  pub fn update_from_ast(scope: &RwLock<Scope>, ast: &AstNode) {
     if let Ok(mut scope_w) = scope.write() {
       scope_w.do_update_from_ast(ast)
     }

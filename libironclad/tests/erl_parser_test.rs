@@ -7,9 +7,9 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstNode;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAstType;
-use libironclad_erlang::erl_syntax::erl_ast::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::TAstNode;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;

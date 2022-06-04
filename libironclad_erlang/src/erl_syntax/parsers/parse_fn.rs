@@ -1,14 +1,14 @@
 //! Parse function definitions with Nom
 
-use std::sync::Arc;
-
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   match_word, period, print_input, semicolon, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
-use crate::erl_syntax::parsers::{AstParserResult, ErlParser, ErlParserError};
+use crate::erl_syntax::parsers::ErlParser;
 use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::character::complete::char;
@@ -18,7 +18,7 @@ use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, error::context};
 
 impl ErlParser {
-  fn parse_when_expr_for_fn(input: &str) -> AstParserResult {
+  fn parse_when_expr_for_fn(input: ParserInput) -> ParserResult<AstNode> {
     map(
       tuple((ws_before(tag("when")), cut(Self::parse_expr))),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
@@ -29,7 +29,7 @@ impl ErlParser {
   /// Function will succeed if no atom found but also FN_NAME is false, will return None.
   /// Function will fail otherwise.
   fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
-    input: &str,
+    input: ParserInput,
   ) -> nom::IResult<&str, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
@@ -45,7 +45,7 @@ impl ErlParser {
   /// Parses a named clause for a top level function
   /// * FN_NAME: true if the parser must require function name
   fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
-    input: &str,
+    input: ParserInput,
   ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
     map(
       tuple((
@@ -71,7 +71,7 @@ impl ErlParser {
         ErlFnClause::new(
           maybe_name,
           args,
-          ErlAst::new_comma_expr(&SourceLoc::from_input(input), body),
+          AstNodeImpl::new_comma_expr(&SourceLoc::from_input(input), body),
           when_expr,
         )
       },
@@ -79,9 +79,10 @@ impl ErlParser {
   }
 
   /// Builds a function definition from multiple parsed clauses
-  fn _construct_fndef(location: &SourceLoc, fnclauses: Vec<ErlFnClause>) -> Arc<ErlAst> {
-    assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even..."); // unreachable
-                                                                                             // println!("Construct fdef: {:?}", fnclauses);
+  fn _construct_fndef(location: &SourceLoc, fnclauses: Vec<ErlFnClause>) -> AstNode {
+    // unreachable
+    assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even...");
+    // println!("Construct fdef: {:?}", fnclauses);
 
     let arity = fnclauses[0].args.len();
     let fn_name = match &fnclauses[0].name {
@@ -94,11 +95,11 @@ impl ErlParser {
       panic!("Not all clauses have same arity")
     }
 
-    ErlAst::new_fndef(location, funarity, fnclauses)
+    AstNodeImpl::new_fndef(location, funarity, fnclauses)
   }
 
   /// Parse function definition
-  pub fn parse_fndef(input: &str) -> AstParserResult {
+  pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
     print_input("parse_fndef", input);
     map(
       delimited(
@@ -116,7 +117,7 @@ impl ErlParser {
   }
 
   /// Lambda is an inline function definition
-  pub fn parse_lambda(input: &str) -> AstParserResult {
+  pub fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     map(
       preceded(

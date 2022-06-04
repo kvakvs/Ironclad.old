@@ -1,6 +1,6 @@
 //! Access to sub-values in ErlAst
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
@@ -9,7 +9,7 @@ use crate::typing::erl_type::ErlType;
 use std::ops::Deref;
 use std::sync::Arc;
 
-impl ErlAst {
+impl AstNodeImpl {
   /// Unwrap self as new function
   pub fn as_fn_def(&self) -> &ErlFnDef {
     match &self.content {

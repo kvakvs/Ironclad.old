@@ -1,6 +1,6 @@
 //! Helper functions for Nom parsing
 
-use crate::erl_syntax::parsers::{ParserResult, StrSliceParserResult, StringParserResult};
+use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, StrSliceParserResult};
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
@@ -65,7 +65,7 @@ where
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-pub fn parse_ident(input: &str) -> StringParserResult {
+pub fn parse_ident(input: ParserInput) -> ParserResult<String> {
   map(
     ws_before_mut(recognize(pair(
       verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
@@ -76,7 +76,7 @@ pub fn parse_ident(input: &str) -> StringParserResult {
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-pub fn parse_varname(input: &str) -> StringParserResult {
+pub fn parse_varname(input: ParserInput) -> ParserResult<String> {
   map(
     recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
@@ -87,17 +87,17 @@ pub fn parse_varname(input: &str) -> StringParserResult {
   )(input)
 }
 
-fn parse_int_unsigned_body(input: &str) -> StrSliceParserResult {
+fn parse_int_unsigned_body(input: ParserInput) -> StrSliceParserResult {
   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
 }
 
 /// Matches + or -
-fn parse_sign(input: &str) -> StrSliceParserResult {
+fn parse_sign(input: ParserInput) -> StrSliceParserResult {
   recognize(alt((char('-'), char('+'))))(input)
 }
 
 /// Parse a decimal integer
-fn parse_int_decimal(input: &str) -> ParserResult<ErlInteger> {
+fn parse_int_decimal(input: ParserInput) -> ParserResult<ErlInteger> {
   map(
     ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
     |num| {
@@ -108,13 +108,13 @@ fn parse_int_decimal(input: &str) -> ParserResult<ErlInteger> {
 
 /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
 /// From Nom examples
-pub fn parse_int(input: &str) -> ParserResult<ErlInteger> {
+pub fn parse_int(input: ParserInput) -> ParserResult<ErlInteger> {
   parse_int_decimal(input)
 }
 
 /// Parse a float with possibly scientific notation. Output is a string.
 /// From Nom examples
-pub fn parse_float(input: &str) -> StrSliceParserResult {
+pub fn parse_float(input: ParserInput) -> StrSliceParserResult {
   alt((
     // Case one: .42
     recognize(tuple((

@@ -1,10 +1,11 @@
 //! Groups type definitions shared by all preprocessor parse modules
+use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   comma, match_dash_tag, newline_or_eof, par_close, par_open, period, period_newline, ws_before,
   ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_str::StringParser;
-use crate::erl_syntax::parsers::{AstParserResult, ParserResult, StringParserResult};
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -22,7 +23,7 @@ use nom::sequence::{delimited, pair, tuple};
 // pub type PpParserResult<'a, Out> = nom::IResult<&'a str, Out, PpParserError<'a>>;
 //
 // /// Return value from a Nom parser which takes &str and returns `Arc<PpAst>`
-// pub type AstParserResult<'a> = PpParserResult<'a, Arc<PpAst>>;
+// pub type ParserResult<AstNode><'a> = PpParserResult<'a, Arc<PpAst>>;
 //
 // /// Return value from a Nom parser which takes &str and returns `Vec<Arc<PpAst>>`
 // pub type VecPpAstParserResult<'a> = PpParserResult<'a, Vec<Arc<PpAst>>>;
@@ -55,7 +56,7 @@ impl PreprocessorParser {
   }
 
   /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-  pub(crate) fn macro_ident(input: &str) -> StringParserResult {
+  pub(crate) fn macro_ident(input: &str) -> ParserResult<String> {
     map(
       recognize(pair(
         verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
@@ -66,7 +67,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-include(STRING)`
-  fn include_directive(input: &str) -> AstParserResult {
+  fn include_directive(input: &str) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("include"),
@@ -78,7 +79,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-include_lib(STRING)`
-  fn include_lib_directive(input: &str) -> AstParserResult {
+  fn include_lib_directive(input: &str) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("include_lib"),
@@ -90,7 +91,7 @@ impl PreprocessorParser {
   }
 
   /// Parse one of supported preprocessor directives
-  pub fn parse_preproc_directive(input: &str) -> AstParserResult {
+  pub fn parse_preproc_directive(input: &str) -> ParserResult<AstNode> {
     ws_before_mut(alt((
       // -define is special, it needs closing ).\n to consume the content
       context("'-define' directive", Self::define_directive),
@@ -110,7 +111,7 @@ impl PreprocessorParser {
   }
 
   // /// Parse full lines till a line which looks like a preprocessor directive is found
-  // fn consume_one_line_of_text(input: &str) -> AstParserResult {
+  // fn consume_one_line_of_text(input: &str) -> ParserResult<AstNode> {
   //   map(
   //     verify(
   //       ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
@@ -121,7 +122,7 @@ impl PreprocessorParser {
   // }
 
   // /// Parses either a preprocessor directive or block, or consumes one line of text
-  // pub(crate) fn parse_fragment(input: &str) -> AstParserResult {
+  // pub(crate) fn parse_fragment(input: &str) -> ParserResult<AstNode> {
   //   alt((
   //     Self::parse_preproc_directive,
   //     // Self::consume_one_line_of_text,
@@ -140,7 +141,7 @@ impl PreprocessorParser {
 
   // /// Parses file contents into mix of preprocessor directives and text fragments.
   // /// Comments are eliminated.
-  // pub fn module(input: &str) -> AstParserResult {
+  // pub fn module(input: &str) -> ParserResult<AstNode> {
   //   map(Self::parse_fragments_collection, |fragments| {
   //     PreprocessorNodeType::new_file(&SourceLoc::from_input(input), fragments)
   //   })(input)

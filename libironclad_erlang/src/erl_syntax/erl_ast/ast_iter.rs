@@ -1,28 +1,28 @@
 //! Contains iteration helpers for ErlAst
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::AstNode;
 use ::function_name::named;
 
-use crate::erl_syntax::erl_ast::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit, ModuleForms,
   ModuleStartAttr, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
-use std::sync::Arc;
 
 /// A trait for AST nodes which can contain nested nodes
-pub trait AstNode {
+pub trait TAstNode {
   /// Return nested AST nodes for this node
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>>;
+  fn children(&self) -> Option<Vec<AstNode>>;
 }
 
-impl AstNode for ErlAst {
+impl TAstNode for AstNodeImpl {
   /// Const iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
   #[named]
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+  fn children(&self) -> Option<Vec<AstNode>> {
     match &self.content {
       ModuleStartAttr { .. }
       | RecordDefinition { .. }
@@ -40,7 +40,7 @@ impl AstNode for ErlAst {
       Apply(app) => app.children(),
 
       CaseStatement { expr, clauses, .. } => {
-        let mut r: Vec<Arc<ErlAst>> = vec![expr.clone()];
+        let mut r: Vec<AstNode> = vec![expr.clone()];
 
         for cc in clauses {
           r.push(cc.pattern.clone());
@@ -80,7 +80,7 @@ impl AstNode for ErlAst {
 
       Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       TryCatch { body, of_branches, catch_clauses, .. } => {
-        let mut r: Vec<Arc<ErlAst>> = body.children().unwrap_or_default();
+        let mut r: Vec<AstNode> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch
         if let Some(ofb) = of_branches {
           for cc in ofb {

@@ -5,7 +5,7 @@ use crate::preprocessor_syntax::pp_ast::PpAstType::{
   _TemporaryElseIf, _TemporaryIf, _TemporaryIfdef, _TemporaryIfndef,
 };
 use crate::preprocessor_syntax::pp_ast::{PpAst, PpAstType};
-use crate::preprocessor_syntax::pp_macro_string::MacroString;
+use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
 use libironclad_error::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
@@ -39,7 +39,7 @@ impl PpAst {
     location: &SourceLoc,
     name: String,
     args: Vec<String>,
-    body: MacroString,
+    body: String,
   ) -> Arc<Self> {
     PpAst::construct_with_location(location, Define { name, args, body })
   }
@@ -48,11 +48,7 @@ impl PpAst {
   pub fn new_define_name_only(location: &SourceLoc, name: String) -> Arc<Self> {
     PpAst::construct_with_location(
       location,
-      Define {
-        name,
-        args: Vec::default(),
-        body: MacroString::new(""),
-      },
+      Define { name, args: Vec::default(), body: String::new("") },
     )
   }
 
@@ -61,14 +57,14 @@ impl PpAst {
     if text.trim().is_empty() {
       PpAst::construct_with_location(location, EmptyText)
     } else {
-      PpAst::construct_with_location(location, Text(MacroString::new(text)))
+      PpAst::construct_with_location(location, Text(String::new(text)))
     }
   }
 
   /// Creates a new preprocessor IF node
   pub fn new_if(
     location: &SourceLoc,
-    expr: Arc<ErlAst>,
+    expr: AstNode,
     cond_true: Vec<Arc<PpAst>>,
     cond_false: Vec<Arc<PpAst>>,
   ) -> Arc<Self> {
@@ -76,12 +72,12 @@ impl PpAst {
   }
 
   /// Create a new `-if()` temporary node.
-  pub fn new_if_temporary(location: &SourceLoc, expr: Arc<ErlAst>) -> Arc<Self> {
+  pub fn new_if_temporary(location: &SourceLoc, expr: AstNode) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryIf(expr))
   }
 
   /// Create a new `-elif()` temporary node.
-  pub fn new_elif_temporary(location: &SourceLoc, expr: Arc<ErlAst>) -> Arc<Self> {
+  pub fn new_elif_temporary(location: &SourceLoc, expr: AstNode) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryElseIf(expr))
   }
 

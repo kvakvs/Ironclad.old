@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::preprocessor_syntax::pp_macro_string::MacroString;
+use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
 use libironclad_error::source_loc::SourceLoc;
 
@@ -26,8 +26,8 @@ pub struct PpAst {
 pub enum PpAstType {
   /// Root of a preprocessed file
   File(Vec<Arc<PpAst>>),
-  /// Any text. `Cell` in `MacroString` will allow replacing string with substituted macro values
-  Text(MacroString),
+  /// Any text. `Cell` in `String` will allow replacing string with substituted macro values
+  Text(String),
   /// Text("") shortcut
   EmptyText,
   /// Specific directive: -include("path").
@@ -41,7 +41,7 @@ pub enum PpAstType {
     /// Args if specified, different arity macros do not conflict each with other
     args: Vec<String>,
     /// Body if specified, any tokens, but since we have no tokenizer - any text
-    body: MacroString,
+    body: String,
   },
   /// Specific directive: -undef(NAME). removes a named macro definition
   Undef(String),
@@ -58,7 +58,7 @@ pub enum PpAstType {
   /// error will be triggered.
   IfBlock {
     /// The condition to check
-    cond: Arc<ErlAst>,
+    cond: AstNode,
     /// The nested lines
     cond_true: Vec<Arc<PpAst>>,
     /// The nested lines for the else block (if it was present)
@@ -82,9 +82,9 @@ pub enum PpAstType {
   ///`-endif` node
   _TemporaryEndif,
   /// `-if(...).` node
-  _TemporaryIf(Arc<ErlAst>),
+  _TemporaryIf(AstNode),
   /// `-elif(...).` node
-  _TemporaryElseIf(Arc<ErlAst>),
+  _TemporaryElseIf(AstNode),
   /// -ifdef(...). is translated into `IfdefBlock`
   _TemporaryIfdef(String),
   /// -ifndef(...). is translated into `IfdefBlock`

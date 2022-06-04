@@ -1,6 +1,6 @@
 //! Checks whether a type matches synthesized type for AST
 
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
@@ -15,7 +15,11 @@ impl TypeCheck {
   /// Checks whether synthesized type for expression `ast` contains ErlType `ty`.
   /// This is used to check (for example) whether an incoming value would be accepted by a function.
   /// This is essentially an Erlang "match" check.
-  pub fn check(env: &Arc<RwLock<Scope>>, ast: &ErlAst, expected_ty: &ErlType) -> IcResult<bool> {
+  pub fn check(
+    env: &Arc<RwLock<Scope>>,
+    ast: &AstNodeImpl,
+    expected_ty: &ErlType,
+  ) -> IcResult<bool> {
     let synthesized_ty = ast.synthesize(env)?;
 
     println!(

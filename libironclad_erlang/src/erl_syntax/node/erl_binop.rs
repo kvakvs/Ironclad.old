@@ -1,5 +1,6 @@
 //! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
@@ -15,16 +16,16 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug)]
 pub struct ErlBinaryOperatorExpr {
   /// Left operand
-  pub left: Arc<ErlAst>,
+  pub left: AstNode,
   /// Right operand
-  pub right: Arc<ErlAst>,
+  pub right: AstNode,
   /// The operator
   pub operator: ErlBinaryOp,
 }
 
 impl ErlBinaryOperatorExpr {
   /// Create a ironclad_exe operator, caller is to wrap it with ErlAst::BinOp(location, _)
-  pub fn new(left: Arc<ErlAst>, op: ErlBinaryOp, right: Arc<ErlAst>) -> Self {
+  pub fn new(left: AstNode, op: ErlBinaryOp, right: AstNode) -> Self {
     Self { left, right, operator: op }
   }
 
@@ -32,9 +33,9 @@ impl ErlBinaryOperatorExpr {
   /// Try pair last and one before last, then take result and pair with previous one, ... and so on
   pub fn new_right_assoc(
     loc: &SourceLoc,
-    left: Arc<ErlAst>,
-    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
-  ) -> Arc<ErlAst> {
+    left: AstNode,
+    tail: &[(ErlBinaryOp, AstNode)],
+  ) -> AstNode {
     if tail.is_empty() {
       return left;
     }
@@ -47,16 +48,16 @@ impl ErlBinaryOperatorExpr {
     let bin_node = ErlAstType::BinaryOp {
       expr: Self::new(build_left_side, *op, right.clone()),
     };
-    ErlAst::construct_with_location(loc, bin_node)
+    AstNodeImpl::construct_with_location(loc, bin_node)
   }
 
   /// From left and multiple right components, build a left-associative tree of expressions.
   /// Try pair first and the first element in tail, then take result and pair with second, ... and so on
   pub fn new_left_assoc(
     loc: &SourceLoc,
-    left: Arc<ErlAst>,
-    tail: &[(ErlBinaryOp, Arc<ErlAst>)],
-  ) -> Arc<ErlAst> {
+    left: AstNode,
+    tail: &[(ErlBinaryOp, AstNode)],
+  ) -> AstNode {
     if tail.is_empty() {
       return left;
     }
@@ -67,7 +68,7 @@ impl ErlBinaryOperatorExpr {
     let build_right_side = Self::new_left_assoc(loc, first.clone(), &tail[1..tail.len()]);
 
     let bin_node = ErlAstType::BinaryOp { expr: Self::new(left, *op, build_right_side) };
-    ErlAst::construct_with_location(loc, bin_node)
+    AstNodeImpl::construct_with_location(loc, bin_node)
   }
 
   /// Gets the result type of a ironclad_exe operation

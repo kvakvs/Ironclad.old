@@ -5,24 +5,24 @@ use std::cell::RefCell;
 use std::fmt::Formatter;
 
 /// A string container which can have its string replaced entirely.
-pub struct MacroString {
+pub struct String {
   /// Hello
   pub text: RefCell<String>,
 }
 
-impl std::fmt::Debug for MacroString {
+impl std::fmt::Debug for String {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "\"{}\"", self.text.borrow())
   }
 }
 
-impl Clone for MacroString {
+impl Clone for String {
   fn clone(&self) -> Self {
-    return MacroString::new_string(self.text.borrow().clone());
+    return String::new_string(self.text.borrow().clone());
   }
 }
 
-impl MacroString {
+impl String {
   /// Create with no text
   pub fn new_empty() -> Self {
     Self { text: RefCell::new(String::default()) }

@@ -1,11 +1,11 @@
 //! Parse helpers for `-define`/`-undef` preprocessor
 
+use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   comma, match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
-use crate::erl_syntax::parsers::AstParserResult;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::macro_string::MacroString;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
 use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -17,7 +17,7 @@ use nom::sequence::{delimited, preceded, tuple};
 
 impl PreprocessorParser {
   /// Parses inner part of a `-define(IDENT)` variant
-  fn define_no_args_no_body(input: &str) -> AstParserResult {
+  fn define_no_args_no_body(input: &str) -> ParserResult<AstNode> {
     map(Self::macro_ident, |name| {
       PreprocessorNodeType::new_define_name_only(&SourceLoc::from_input(input), name)
     })(input)
@@ -25,7 +25,7 @@ impl PreprocessorParser {
 
   /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
   /// will consume end delimiter `").\n"`
-  fn define_with_args_body_and_terminator(input: &str) -> AstParserResult {
+  fn define_with_args_body_and_terminator(input: &str) -> ParserResult<AstNode> {
     map(
       tuple((
         // Macro name
@@ -41,14 +41,14 @@ impl PreprocessorParser {
           &SourceLoc::from_input(input),
           name,
           args.unwrap_or_default(),
-          MacroString::new_string(body.into_iter().collect::<String>()),
+          body.into_iter().collect::<String>(),
         )
       },
     )(input)
   }
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
-  pub fn define_directive(input: &str) -> AstParserResult {
+  pub fn define_directive(input: &str) -> ParserResult<AstNode> {
     preceded(
       match_dash_tag("define"),
       alt((
@@ -66,7 +66,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-undef(IDENT)`
-  pub fn undef_directive(input: &str) -> AstParserResult {
+  pub fn undef_directive(input: &str) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("undef"),

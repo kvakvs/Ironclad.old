@@ -1,9 +1,9 @@
 //! Checks for Preprocessor AST node types
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 
-impl ErlAst {
+impl AstNodeImpl {
   /// Check whether Preprocessor AST node is a temporary `-else` node
   pub fn is_else(&self) -> bool {
     matches!(&self.content, ErlAstType::Preprocessor(PreprocessorNodeType::_TemporaryElse))

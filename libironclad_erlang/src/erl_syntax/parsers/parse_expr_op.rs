@@ -2,7 +2,8 @@
 #![allow(missing_docs)]
 
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::erl_syntax::parsers::{ErlParser, ErlParserError};
+use crate::erl_syntax::parsers::defs::ErlParserError;
+use crate::erl_syntax::parsers::ErlParser;
 use nom::branch::alt;
 use nom::combinator::{map, not};
 use nom::{bytes::complete::tag, character::complete::char, Parser};

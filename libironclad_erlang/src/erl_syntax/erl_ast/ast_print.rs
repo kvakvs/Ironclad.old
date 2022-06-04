@@ -1,17 +1,17 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
-use crate::erl_syntax::erl_ast::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
   ExportTypeAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
   ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, ModuleStartAttr,
   Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
 };
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::literal::Literal;
 use libironclad_util::pretty::Pretty;
 
-impl std::fmt::Display for ErlAst {
+impl std::fmt::Display for AstNodeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match &self.content {
       Empty => writeln!(f, "% empty"),

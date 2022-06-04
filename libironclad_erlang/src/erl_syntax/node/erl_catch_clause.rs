@@ -1,10 +1,9 @@
 //! Catch clauses for try-catch block
 
-use crate::erl_syntax::erl_ast::ast_iter::AstNode;
-use crate::erl_syntax::erl_ast::ErlAst;
+use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// Catch clause for a try-catch block
 #[derive(Debug)]
@@ -12,18 +11,14 @@ pub struct CatchClause {
   /// Exception pattern in `catch Class:Exc:Stack -> ...`
   pub exc_pattern: ExceptionPattern,
   /// When guard: `when X == 0...`
-  pub when_guard: Option<Arc<ErlAst>>,
+  pub when_guard: Option<AstNode>,
   /// Body of the catch clause, actions if matches
-  pub body: Arc<ErlAst>,
+  pub body: AstNode,
 }
 
 impl CatchClause {
   /// Create a new catch clause
-  pub fn new(
-    exc_pattern: ExceptionPattern,
-    when_guard: Option<Arc<ErlAst>>,
-    body: Arc<ErlAst>,
-  ) -> Self {
+  pub fn new(exc_pattern: ExceptionPattern, when_guard: Option<AstNode>, body: AstNode) -> Self {
     Self { exc_pattern, when_guard, body }
   }
 }
@@ -42,8 +37,8 @@ impl std::fmt::Display for CatchClause {
   }
 }
 
-impl AstNode for CatchClause {
-  fn children(&self) -> Option<Vec<Arc<ErlAst>>> {
+impl TAstNode for CatchClause {
+  fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = Vec::default();
     if let Some(c) = self.exc_pattern.children() {
       r.extend(c.iter().cloned());

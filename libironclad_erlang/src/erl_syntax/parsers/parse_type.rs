@@ -1,13 +1,14 @@
 //! Contains parsers for function typespecs and type syntax.
 
-use crate::erl_syntax::erl_ast::{ErlAst, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, par_close,
   par_open, parse_int, parse_varname, period_newline, semicolon, square_close, square_open,
   ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
-use crate::erl_syntax::parsers::{AstParserResult, ErlParserError};
 use crate::literal::Literal;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
@@ -28,7 +29,7 @@ pub struct ErlTypeParser {}
 impl ErlTypeParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
-  pub fn fn_spec_attr(input: &str) -> AstParserResult {
+  pub fn fn_spec_attr(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // all between -spec and .
       delimited(
@@ -53,13 +54,15 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        ErlAst::new_fn_spec(&SourceLoc::from_input(input), funarity, fntypespec.into())
+        AstNodeImpl::new_fn_spec(&SourceLoc::from_input(input), funarity, fntypespec.into())
       },
     )(input)
   }
 
   /// Parses a function clause args specs, return spec and optional `when`
-  fn parse_fn_spec_fnclause(input: &str) -> nom::IResult<&str, FnClauseType, ErlParserError> {
+  fn parse_fn_spec_fnclause(
+    input: ParserInput,
+  ) -> nom::IResult<&str, FnClauseType, ErlParserError> {
     map(
       tuple((
         // Function clause name
@@ -93,7 +96,7 @@ impl ErlTypeParser {
   }
 
   /// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
-  fn parse_coloncolon_type(input: &str) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
+  fn parse_coloncolon_type(input: ParserInput) -> nom::IResult<&str, Arc<ErlType>, ErlParserError> {
     preceded(
       colon_colon,
       context("Type ascription or a type after ::", ws_before(Self::parse_type)),
@@ -102,19 +105,21 @@ impl ErlTypeParser {
 
   /// Parse a capitalized type variable name with an optional `:: type()` part:
   /// `A :: type()` or `A`
-  fn parse_typevar_with_opt_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
+  fn parse_typevar_with_opt_type(
+    input: ParserInput,
+  ) -> nom::IResult<&str, Typevar, ErlParserError> {
     map(
       pair(Self::parse_typevar_name, opt(Self::parse_coloncolon_type)),
       |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
     )(input)
   }
 
-  fn parse_type_as_typevar(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
+  fn parse_type_as_typevar(input: ParserInput) -> nom::IResult<&str, Typevar, ErlParserError> {
     map(Self::parse_type, |t| Typevar::from_erltype(&t))(input)
   }
 
   // /// Parses a list of comma separated typevars (function arg specs)
-  // fn parse_comma_sep_arg_specs(input: &str) -> nom::IResult<&str, Vec<Typevar>> {
+  // fn parse_comma_sep_arg_specs(input: ParserInput) -> nom::IResult<&str, Vec<Typevar>> {
   //   separated_list0(
   //     Self::ws(char(',')),
   //
@@ -128,7 +133,7 @@ impl ErlTypeParser {
 
   /// Parses a list of comma separated typevars enclosed in (parentheses)
   pub fn parse_parenthesized_arg_spec_list(
-    input: &str,
+    input: ParserInput,
   ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = par_open(input)?;
 
@@ -137,17 +142,19 @@ impl ErlTypeParser {
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
   /// `-spec fun(A) -> A when A :: atom().`
-  pub fn parse_when_expr_for_type(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
+  pub fn parse_when_expr_for_type(
+    input: ParserInput,
+  ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     let (input, _) = ws_before(tag("when"))(input)?;
     Self::parse_comma_sep_typeargs1(input)
   }
 
   /// Parse only capitalized type variable name
-  pub fn parse_typevar_name(input: &str) -> nom::IResult<&str, String, ErlParserError> {
+  pub fn parse_typevar_name(input: ParserInput) -> nom::IResult<&str, String, ErlParserError> {
     ws_before(parse_varname)(input)
   }
 
-  fn alt_typevar_or_type(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
+  fn alt_typevar_or_type(input: ParserInput) -> nom::IResult<&str, Typevar, ErlParserError> {
     alt((
       Self::parse_typevar_with_opt_type,
       map(Self::parse_type, |t| Typevar::from_erltype(&t)),
@@ -156,13 +163,13 @@ impl ErlTypeParser {
   }
 
   #[allow(dead_code)]
-  fn parse_typearg(input: &str) -> nom::IResult<&str, Typevar, ErlParserError> {
+  fn parse_typearg(input: ParserInput) -> nom::IResult<&str, Typevar, ErlParserError> {
     map(ws_before(Self::parse_type), |t| Typevar::from_erltype(&t))(input)
   }
 
   /// Parses a comma separated list of 0 or more type arguments.
   /// A parametrized type accepts other types or typevar names
-  fn comma_sep_typeargs0(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
+  fn comma_sep_typeargs0(input: ParserInput) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     separated_list0(comma, context("parsing items of a typeargs0_list", Self::alt_typevar_or_type))(
       input,
     )
@@ -170,14 +177,16 @@ impl ErlTypeParser {
 
   /// Parses a comma separated list of 1 or more type arguments.
   /// A parametrized type accepts other types or typevar names
-  fn parse_comma_sep_typeargs1(input: &str) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
+  fn parse_comma_sep_typeargs1(
+    input: ParserInput,
+  ) -> nom::IResult<&str, Vec<Typevar>, ErlParserError> {
     separated_list1(comma, context("parsing items of a typeargs1_list", Self::alt_typevar_or_type))(
       input,
     )
   }
 
   /// Optional `module:` before typename in `module:type()`.
-  fn parse_type_modulename_colon(input: &str) -> nom::IResult<&str, String, ErlParserError> {
+  fn parse_type_modulename_colon(input: ParserInput) -> nom::IResult<&str, String, ErlParserError> {
     terminated(AtomParser::atom, ws_before(char(':')))(input)
   }
 
@@ -307,9 +316,12 @@ impl ErlTypeParser {
   }
 
   /// Wraps parsed type into a type-AST-node
-  pub fn parse_type_node(input: &str) -> AstParserResult {
+  pub fn parse_type_node(input: &str) -> ParserResult<AstNode> {
     map(Self::parse_type, |t| {
-      ErlAst::construct_with_location(&SourceLoc::from_input(input), ErlAstType::Type { ty: t })
+      AstNodeImpl::construct_with_location(
+        &SourceLoc::from_input(input),
+        ErlAstType::Type { ty: t },
+      )
     })(input)
   }
 }

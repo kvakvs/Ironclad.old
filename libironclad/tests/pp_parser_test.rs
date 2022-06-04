@@ -2,7 +2,8 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstNode;
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::TAstNode;
+use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use libironclad_erlang::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
@@ -14,7 +15,7 @@ use std::path::{Path, PathBuf};
 /// Try parse a simple pp directive -if(Expr).
 fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
-  let filename = PathBuf::from(function_name!());
+  // let filename = PathBuf::from(function_name!());
   let input = "-if(true).";
   let (_tail, result) =
     panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
@@ -70,10 +71,10 @@ fn parse_if_block_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let input = "-if(%true)
 false).
-on_true\n
+-warning(on_true\n).
 -else.
 %%-endif.
-on_false
+-warning(on_false).
 -endif().";
   println!("In=«{}»", input);
 
@@ -81,15 +82,16 @@ on_false
     panicking_parser_error_reporter(input, PreprocessorParser::if_block(input).finish());
   println!("Out={:?}", ast);
 
-  if let PreprocessorNodeType::IfBlock { cond, cond_true, cond_false } = &ast.node_type {
+  let pp_node = ast.as_preprocessor();
+  if let PreprocessorNodeType::IfBlock { cond, cond_true, cond_false } = pp_node {
     assert!(cond.is_atom());
     assert_eq!(cond.as_atom(), "false");
 
     assert_eq!(cond_true.len(), 1, "true branch must have exact one item");
-    assert!(cond_true[0].is_text_of("on_true"));
+    assert!(cond_true[0].is_preprocessor_warning("on_true"));
 
     assert_eq!(cond_false.len(), 1, "false branch must have exact one item");
-    assert!(cond_false[0].is_text_of("on_false"));
+    assert!(cond_false[0].is_preprocessor_warning("on_false"));
   } else {
     panic!("Expected PpAst::IfBlock, but received {:?}", ast);
   }
@@ -159,13 +161,9 @@ fn parse_define_with_body_2_args() {
 fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let input = "-define(AAA, 1).\n-define(BBB, ?AAA).";
-
-  let (_tail, out) = panicking_parser_error_reporter(
-    input,
-    PreprocessorParser::parse_fragments_collection(input).finish(),
-  );
-
-  println!("Out={:?}", out);
+  let filename = PathBuf::from(function_name!());
+  let module = ErlModule::from_module_source(&filename, input).unwrap();
+  println!("Out={:?}", module.ast);
 }
 
 #[test]
@@ -214,7 +212,7 @@ fn parse_include_varied_spacing_3() {
 
 fn parse_define_varied_spacing_do(
   filename: &Path,
-  input: &str,
+  input: ParserInput,
   match_macro: &str,
   match_text: &str,
 ) {
@@ -223,7 +221,7 @@ fn parse_define_varied_spacing_do(
   if let PreprocessorNodeType::Define { name, args, body } = pp_node {
     assert_eq!(name, match_macro);
     assert!(args.is_empty());
-    assert_eq!(body.text.borrow().as_str(), match_text);
+    assert_eq!(body, match_text);
   } else {
     panic!(
       "Parsing define({}, {}). failed, expected Define, received {:?}",
