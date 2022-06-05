@@ -3,13 +3,14 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   match_word, period, print_input, semicolon, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::character::complete::char;
 use nom::combinator::{cut, map, not, opt, peek};
@@ -30,7 +31,7 @@ impl ErlParser {
   /// Function will fail otherwise.
   fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
     input: ParserInput,
-  ) -> nom::IResult<&str, Option<String>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
       return context("function clause name", cut(map(AtomParser::atom, Some)))(input);
@@ -46,7 +47,7 @@ impl ErlParser {
   /// * FN_NAME: true if the parser must require function name
   fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
     input: ParserInput,
-  ) -> nom::IResult<&str, ErlFnClause, ErlParserError> {
+  ) -> nom::IResult<ParserInput, ErlFnClause, ErlParserError> {
     map(
       tuple((
         // Function clause name

@@ -2,9 +2,9 @@
 
 use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
-use libironclad_error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Formatter;
 use std::sync::{Arc, RwLock};

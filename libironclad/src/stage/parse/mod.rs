@@ -3,7 +3,7 @@
 use crate::project::module::ErlModule;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
-use libironclad_error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IcResult;
 use std::sync::{Arc, RwLock};
 
 /// Handles parsing loaded Erlang files in the project

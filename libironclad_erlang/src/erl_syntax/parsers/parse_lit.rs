@@ -3,13 +3,14 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{parse_float, parse_int};
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::map;
 

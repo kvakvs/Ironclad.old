@@ -2,8 +2,8 @@
 //! in separately (as the module will need to know about other modules and their inferred types)
 
 use crate::project::compiler_opts::CompilerOpts;
-use crate::project::source_file::SourceFile;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
+use libironclad_erlang::source_file::SourceFileImpl;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -32,7 +32,7 @@ pub struct CompileModule {
 
 impl CompileModule {
   /// Creates new state for module compilation
-  pub fn new(in_file: &Arc<SourceFile>, options: Arc<CompilerOpts>) -> Self {
+  pub fn new(in_file: &SourceFile, options: Arc<CompilerOpts>) -> Self {
     Self {
       in_file: in_file.file_name.to_path_buf(),
       out_file: Default::default(), // will be set later

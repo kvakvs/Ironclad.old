@@ -5,8 +5,8 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
+use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
-use libironclad_error::ic_error::IcResult;
 use std::collections::HashMap;
 use std::sync::Arc;
 

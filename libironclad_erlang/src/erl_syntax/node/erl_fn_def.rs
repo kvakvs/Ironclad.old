@@ -2,12 +2,12 @@
 use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
+use crate::error::ic_error::IcResult;
+use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::scope::Scope;
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use std::sync::{Arc, RwLock};
 

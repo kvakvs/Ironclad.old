@@ -2,10 +2,10 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_error::ErlError;
+use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use libironclad_error::ic_error::IcResult;
 use std::sync::{Arc, RwLock};
 
 /// Contains type checking code

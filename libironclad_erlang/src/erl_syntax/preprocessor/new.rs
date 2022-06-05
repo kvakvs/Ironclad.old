@@ -7,7 +7,7 @@ use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
   Define, IfBlock, Include, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryIf,
   _TemporaryIfdef, _TemporaryIfndef,
 };
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
 
 impl PreprocessorNodeType {

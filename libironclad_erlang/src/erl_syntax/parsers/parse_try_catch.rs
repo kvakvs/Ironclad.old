@@ -4,10 +4,11 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{semicolon, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{preceded, terminated, tuple};
@@ -17,7 +18,7 @@ impl ErlParser {
   /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
   pub fn parse_exception_pattern(
     input: ParserInput,
-  ) -> nom::IResult<&str, ExceptionPattern, ErlParserError> {
+  ) -> nom::IResult<ParserInput, ExceptionPattern, ErlParserError> {
     map(
       tuple((
         Self::parse_matchexpr,
@@ -31,7 +32,9 @@ impl ErlParser {
   }
 
   /// Parses a repeated catch-clause part after `catch` keyword: `Expr when Expr -> Expr`
-  pub fn parse_catch_clause(input: ParserInput) -> nom::IResult<&str, CatchClause, ErlParserError> {
+  pub fn parse_catch_clause(
+    input: ParserInput,
+  ) -> nom::IResult<ParserInput, CatchClause, ErlParserError> {
     map(
       tuple((
         // Class:Error:Stacktrace

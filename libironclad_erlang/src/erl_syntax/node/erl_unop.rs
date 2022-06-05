@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::ErlAstType::UnaryOp;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_op::ErlUnaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 
 /// Unary operator is right-associative operation such as `not A` or `+A`
 #[derive(Debug)]

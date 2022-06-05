@@ -21,9 +21,9 @@ use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::literal::Literal;
+use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::ErlType;
-use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use std::sync::Arc;
 

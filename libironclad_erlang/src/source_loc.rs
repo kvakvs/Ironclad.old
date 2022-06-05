@@ -1,4 +1,5 @@
 //! Source file locations for printing and reporting to the user
+use crate::erl_syntax::parsers::defs::ParserInput;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
@@ -9,17 +10,8 @@ pub enum SourceLoc {
   None,
   /// Points to a file
   File(PathBuf),
-  /// Stores a &'static str location, use the original input to determine offset/line/col etc
-  InputPosition(*const u8),
-  // /// A byte offset in the input source
-  // InputSpan {
-  //   /// Where the span starts
-  //   start: usize,
-  //   /// Where the span ends
-  //   end: usize,
-  // },
-  // /// Weak pointer to a subtree of Erlang AST (for nice error reporting)
-  // Ast(Weak<ErlAst>),
+  /// Stores the chain of inputs, and the read position
+  Input { input: ParserInput },
 }
 
 impl SourceLoc {
@@ -30,8 +22,8 @@ impl SourceLoc {
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub fn from_input(pos: &str) -> Self {
-    Self::InputPosition(pos.as_ptr())
+  pub fn from_input(input: ParserInput) -> Self {
+    Self::Input { input }
   }
 }
 
@@ -45,7 +37,7 @@ impl std::fmt::Display for SourceLoc {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       SourceLoc::None => write!(f, "<No info>"),
-      SourceLoc::InputPosition(_) => write!(f, "<Input position>"),
+      SourceLoc::Input { input } => write!(f, "{}", input),
       // SourceLoc::InputSpan { start, end } => write!(f, "Source: bytes {}..{}", start, end),
       SourceLoc::File(p) => write!(f, "File: {}", p.to_string_lossy()),
     }

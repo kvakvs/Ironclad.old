@@ -1,10 +1,11 @@
 //! Erlang errors
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
+use crate::erl_syntax::parsers::defs::ErlParserError;
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::error::ic_error::IcResult;
+use crate::error::ic_error_category::IcErrorCategory;
+use crate::error::ic_error_trait::IcErrorT;
+use crate::source_loc::SourceLoc;
 use crate::typing::type_error::TypeError;
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::ic_error_category::IcErrorCategory;
-use libironclad_error::ic_error_trait::IcErrorT;
-use libironclad_error::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Debug;
 

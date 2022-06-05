@@ -5,7 +5,7 @@ use std::process::exit;
 
 use libironclad::project::conf::ProjectConf;
 use libironclad::project::ErlProject;
-use libironclad_error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IcResult;
 
 fn main_do() -> IcResult<()> {
   // Test default project from ""

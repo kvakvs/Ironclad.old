@@ -66,7 +66,7 @@ impl PpError {
   }
 
   /// Builds PpError with nice error details from input string and Nom's verbose error
-  pub fn from_nom_error<T>(input: &str, value: PpParserError) -> IcResult<T> {
+  pub fn from_nom_error<T>(input: ParserInput, value: PpParserError) -> IcResult<T> {
     let new_err = Self {
       ic_category: IcErrorCategory::PreprocessorParse,
       category: PpErrorCategory::Parser,

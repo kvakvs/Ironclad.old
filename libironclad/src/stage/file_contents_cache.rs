@@ -2,17 +2,17 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::project::source_file::SourceFile;
 use crate::stats::cache_stats::CacheStats;
 use crate::stats::io_stats::IOStats;
-use libironclad_error::ic_error::IroncladResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
+use libironclad_erlang::source_file::SourceFileImpl;
 use std::sync::Arc;
 
 /// Contains loaded files ready for parsing by the preprocessor.
 /// More files will be added in preprocess stage, as include directives are parsed
 pub struct FileContentsCache {
   /// File contents stored here
-  pub all_files: BTreeMap<PathBuf, Arc<SourceFile>>,
+  pub all_files: BTreeMap<PathBuf, Arc<SourceFileImpl>>,
 }
 
 impl Default for FileContentsCache {
@@ -28,14 +28,14 @@ impl<'a> FileContentsCache {
     &mut self,
     io_stats: &mut IOStats,
     file_name: &Path,
-  ) -> IroncladResult<Arc<SourceFile>> {
+  ) -> IroncladResult<Arc<SourceFileImpl>> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
     io_stats.files_read += 1;
     io_stats.bytes_read += contents.len();
 
-    let src_file = SourceFile::new(file_name, contents);
+    let src_file = SourceFileImpl::new(file_name, contents);
     self
       .all_files
       .insert(file_name.to_path_buf(), src_file.clone());
@@ -49,7 +49,7 @@ impl<'a> FileContentsCache {
     cache_stats: &mut CacheStats,
     io_stats: &mut IOStats,
     file_name: &Path,
-  ) -> IroncladResult<Arc<SourceFile>> {
+  ) -> IroncladResult<Arc<SourceFileImpl>> {
     let canon_path = file_name.canonicalize().unwrap();
 
     match self.all_files.get(&canon_path) {
@@ -69,7 +69,7 @@ impl<'a> FileContentsCache {
   /// As source file text is read only, we replace.
   /// The parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
-    let new_source_file = SourceFile::new(file_name, new_text);
+    let new_source_file = SourceFileImpl::new(file_name, new_text);
     self
       .all_files
       .insert(file_name.to_path_buf(), new_source_file);

@@ -5,13 +5,14 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
-use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   comma, par_close, par_open, parse_int, parse_varname, ws_before,
 };
 use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;

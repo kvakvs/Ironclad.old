@@ -1,6 +1,6 @@
 //! Larger categories for errors
 
-use crate::ic_error_trait::IcError;
+use crate::error::ic_error_trait::IcError;
 use std::path::PathBuf;
 
 /// General error type covering all system errors, parser errors, compiler errors, etc.

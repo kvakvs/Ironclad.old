@@ -6,7 +6,7 @@ use core::fmt::Debug;
 use core::option::Option;
 use core::result::Result;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
-use libironclad_error::ic_error::{IroncladError, IroncladResult};
+use libironclad_erlang::error::ic_error::{IroncladError, IroncladResult};
 use serde_derive::Deserialize;
 use std::convert::Into;
 use std::fs;

@@ -3,10 +3,11 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{semicolon, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::{pair, preceded, terminated};
@@ -30,7 +31,9 @@ impl ErlParser {
   }
 
   /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
-  pub fn parse_if_clause(input: ParserInput) -> nom::IResult<&str, ErlIfClause, ErlParserError> {
+  pub fn parse_if_clause(
+    input: ParserInput,
+  ) -> nom::IResult<ParserInput, ErlIfClause, ErlParserError> {
     map(
       pair(
         Self::parse_expr,

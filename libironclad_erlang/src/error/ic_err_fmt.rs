@@ -1,8 +1,7 @@
 //! Printing for `IroncladError`s
 
-use crate::ic_error::IroncladError;
-use crate::ic_error_category::IcErrorCategory;
-use crate::ic_error_trait::IcErrorT;
+use crate::error::ic_error::IroncladError;
+use crate::error::ic_error_category::IcErrorCategory;
 
 impl std::fmt::Debug for IroncladError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

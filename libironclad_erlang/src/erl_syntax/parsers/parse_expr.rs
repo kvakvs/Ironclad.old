@@ -10,16 +10,15 @@ use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::erl_syntax::parsers::defs::{
-  ErlParserError, ParserInput, ParserResult, VecAstParserResult,
-};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{
   comma, curly_close, curly_open, hash_symbol, par_close, par_open, parse_varname, square_close,
   square_open, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_binary::BinaryParser;
 use crate::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::combinator::{cut, map, opt};
@@ -60,7 +59,7 @@ impl ErlParser {
   /// Parses a list of comma separated expressions in (parentheses)
   pub fn parse_parenthesized_list_of_exprs<const STYLE: usize>(
     input: ParserInput,
-  ) -> nom::IResult<&str, Vec<AstNode>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     delimited(
       par_open,
       context("function application arguments", cut(Self::parse_comma_sep_exprs0::<STYLE>)),
@@ -155,7 +154,7 @@ impl ErlParser {
   /// Parses comma separated sequence of expressions
   pub fn parse_comma_sep_exprs0<const STYLE: usize>(
     input: ParserInput,
-  ) -> nom::IResult<&str, Vec<AstNode>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     separated_list0(
       comma,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
@@ -166,7 +165,7 @@ impl ErlParser {
   /// Parses comma separated sequence of expressions, at least one or more
   pub fn parse_comma_sep_exprs1<const STYLE: usize>(
     input: ParserInput,
-  ) -> nom::IResult<&str, Vec<AstNode>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     separated_list1(
       comma,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
@@ -223,7 +222,7 @@ impl ErlParser {
   // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
   // TODO: module:function notation and maybe tuple notation?
   /// Parse expr followed by a parentheses with 0 or more args, to become a function call
-  fn parse_expr_prec01<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     if STYLE == Self::EXPR_STYLE_MATCHEXPR {
       // Match expressions cannot contain module:function() style calls
       return Self::parse_expr_prec_primary::<STYLE>(input);
@@ -262,12 +261,12 @@ impl ErlParser {
   }
 
   // TODO: Precedence 2: # (record access operator)
-  fn parse_expr_prec02<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec02<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     Self::parse_expr_prec01::<STYLE>(input)
   }
 
   /// Precedence 3: Unary + - bnot not
-  fn parse_expr_prec03<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec03<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       pair(
         ws_before_mut(alt((
@@ -284,7 +283,7 @@ impl ErlParser {
   }
 
   /// Precedence 4: / * div rem band and, left associative
-  fn parse_expr_prec04<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec04<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
@@ -306,7 +305,7 @@ impl ErlParser {
   }
 
   /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
-  fn parse_expr_prec05<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec05<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       tuple((
@@ -330,7 +329,7 @@ impl ErlParser {
   }
 
   /// Precedence 6: ++ --, right associative
-  fn parse_expr_prec06<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec06<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
@@ -345,7 +344,7 @@ impl ErlParser {
   }
 
   /// Precedence 7: == /= =< < >= > =:= =/=
-  fn parse_expr_prec07<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec07<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more operators and higher prec exprs
       pair(
@@ -369,7 +368,7 @@ impl ErlParser {
   }
 
   /// Precedence 8: andalso
-  fn parse_expr_prec08<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec08<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
       pair(
@@ -384,7 +383,7 @@ impl ErlParser {
   }
 
   /// Precedence 9: orelse
-  fn parse_expr_prec09<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec09<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
       pair(
@@ -399,7 +398,7 @@ impl ErlParser {
   }
 
   /// Precedence 10: assignment/match = operator, and send operator "!", right associative
-  fn parse_expr_prec10<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
       pair(
@@ -415,7 +414,7 @@ impl ErlParser {
 
   /// Precedence 11: Catch operator, then continue to higher precedences
   /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
-  fn parse_expr_prec11<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     // Try parse (catch Expr) otherwise try next precedence level
     map(
       pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
@@ -428,7 +427,7 @@ impl ErlParser {
 
   // /// Public entry point to parse expression that cannot include comma or semicolon
   // #[inline]
-  // pub fn parse_expr_no_comma_no_semi(input: &str) -> ParserResult<AstNode> {
+  // pub fn parse_expr_no_comma_no_semi(input: ParserInput) -> ParserResult<AstNode> {
   //   Self::parse_expr_prec11(input)
   //   // println!("parse_expr_no_comma_no_semi: {}", input);
   //   // match Self::parse_prec11(input) {
@@ -443,7 +442,7 @@ impl ErlParser {
   /// Lowest precedence 13, where we handle comma and semicolon as ironclad_exe ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
   #[named]
-  fn parse_expr_prec13<const STYLE: usize>(input: &str) -> ParserResult<AstNode> {
+  fn parse_expr_prec13<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     match STYLE {
       Self::EXPR_STYLE_MATCHEXPR | Self::EXPR_STYLE_FULL =>
       // Skip comma and semicolon operator
@@ -472,17 +471,17 @@ impl ErlParser {
   }
 
   /// Parse an expression. Expression can also be a block which produces a value.
-  pub fn parse_expr(input: &str) -> ParserResult<AstNode> {
+  pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
     context("expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_FULL }>)(input)
   }
 
   /// Parse a guard expression.
-  pub fn parse_guardexpr(input: &str) -> ParserResult<AstNode> {
+  pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
     context("guard expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_GUARD }>)(input)
   }
 
   /// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.
-  pub fn parse_matchexpr(input: &str) -> ParserResult<AstNode> {
+  pub fn parse_matchexpr(input: ParserInput) -> ParserResult<AstNode> {
     context("match expression", Self::parse_expr_prec13::<{ Self::EXPR_STYLE_MATCHEXPR }>)(input)
   }
 }

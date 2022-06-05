@@ -2,7 +2,7 @@
 //! This models the ironclad_exe syntax of Erlang: <<1, 2, 3:8/bits, Variable, (function()):16 ...>>
 
 use crate::erl_syntax::erl_ast::AstNode;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use libironclad_util::pretty::Pretty;
 
 /// Added to `BinaryTypeSpecifier` after `:` to specify the bit width.

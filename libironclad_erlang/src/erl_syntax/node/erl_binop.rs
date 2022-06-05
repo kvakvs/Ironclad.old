@@ -4,11 +4,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
+use crate::error::ic_error::IcResult;
+use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::source_loc::SourceLoc;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 

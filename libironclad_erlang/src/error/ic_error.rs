@@ -1,6 +1,6 @@
 //! Contains all possible Erlang libironclad errors
-use crate::ic_error_category::IcErrorCategory;
-use crate::ic_error_trait::{IcError, IcErrorT};
+use crate::error::ic_error_category::IcErrorCategory;
+use crate::error::ic_error_trait::{IcError, IcErrorT};
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
 

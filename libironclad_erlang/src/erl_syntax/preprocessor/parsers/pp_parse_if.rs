@@ -2,7 +2,9 @@
 
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::{ParserResult, StrSliceParserResult, VecAstParserResult};
+use crate::erl_syntax::parsers::defs::{
+  ParserInput, ParserResult, StrSliceParserResult, VecAstParserResult,
+};
 use crate::erl_syntax::parsers::misc::{
   match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
@@ -10,7 +12,7 @@ use crate::erl_syntax::parsers::ErlParser;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{_TemporaryElse, _TemporaryEndif};
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;
@@ -18,19 +20,19 @@ use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 
 impl PreprocessorParser {
   /// Parses multiple lines of any directives except `-endif.` or `-else.`
-  fn parse_fragments_till_else(input: &str) -> VecAstParserResult {
+  fn parse_fragments_till_else(input: ParserInput) -> VecAstParserResult {
     many0(verify(ErlParser::module_form, |frag: &AstNode| {
       !frag.is_else() && !frag.is_elseif() && !frag.is_endif()
     }))(input)
   }
 
   /// Parses multiple lines of any directives except `-endif.`
-  fn parse_fragments_till_endif(input: &str) -> VecAstParserResult {
+  fn parse_fragments_till_endif(input: ParserInput) -> VecAstParserResult {
     many0(verify(ErlParser::module_form, |frag: &AstNode| !frag.is_endif()))(input)
   }
 
   /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
-  pub fn if_block(input: &str) -> ParserResult<AstNode> {
+  pub fn if_block(input: ParserInput) -> ParserResult<AstNode> {
     map(
       terminated(
         tuple((
@@ -65,7 +67,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-if(EXPR).\n` and return a temporary node
-  pub fn if_directive(input: &str) -> ParserResult<AstNode> {
+  pub fn if_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("if"),
@@ -78,7 +80,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-elif(EXPR)` into a temporary AST node
-  pub(crate) fn elif_temporary_directive(input: &str) -> ParserResult<AstNode> {
+  pub(crate) fn elif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("elif"),
@@ -90,7 +92,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-ifdef(MACRO_NAME)`
-  pub(crate) fn ifdef_temporary_directive(input: &str) -> ParserResult<AstNode> {
+  pub(crate) fn ifdef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("ifdef"),
@@ -102,7 +104,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-ifndef(MACRO_NAME)`
-  pub fn ifndef_temporary_directive(input: &str) -> ParserResult<AstNode> {
+  pub fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
         match_dash_tag("ifndef"),
@@ -114,7 +116,7 @@ impl PreprocessorParser {
   }
 
   /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
-  pub fn else_temporary_directive(input: &str) -> ParserResult<AstNode> {
+  pub fn else_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(match_dash_tag("else"), opt(pair(par_open, par_close)), period_newline),
       |_opt| {
@@ -123,12 +125,12 @@ impl PreprocessorParser {
     )(input)
   }
 
-  fn maybe_empty_parens(input: &str) -> StrSliceParserResult {
+  fn maybe_empty_parens(input: ParserInput) -> StrSliceParserResult {
     recognize(opt(pair(par_open, par_close)))(input)
   }
 
   /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
-  pub fn endif_temporary_directive(input: &str) -> ParserResult<AstNode> {
+  pub fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(match_dash_tag("endif"), Self::maybe_empty_parens, period_newline),
       |_opt| {

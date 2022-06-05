@@ -3,11 +3,11 @@ use std::fmt::Formatter;
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::scope::Scope;
 use crate::typing::typevar::Typevar;
-use libironclad_error::ic_error::IcResult;
 use libironclad_util::pretty::Pretty;
 use std::sync::{Arc, RwLock, Weak};
 

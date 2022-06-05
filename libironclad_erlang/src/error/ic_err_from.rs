@@ -1,6 +1,6 @@
 //! Creating ErlErrors from other types
-use crate::ic_error::IroncladError;
-use crate::ic_error_category::IcErrorCategory;
+use crate::error::ic_error::IroncladError;
+use crate::error::ic_error_category::IcErrorCategory;
 use crate::source_loc::SourceLoc;
 use std::num::ParseIntError;
 

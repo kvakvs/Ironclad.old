@@ -1,6 +1,6 @@
 [package]
 name = "ironclad"
-version = "2022.5.0"
+version = "2022.6.0"
 authors = ["Dmytro Lytovchenko <dmytro.lytovchenko@gmail.com>"]
 edition = "2021"
 

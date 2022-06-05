@@ -8,15 +8,15 @@ use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use crate::project::compiler_opts::CompilerOpts;
-use crate::project::source_file::SourceFile;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_error::ErlError;
 use libironclad_erlang::erl_syntax::parsers::defs::ErlParserError;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
+use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::typing::scope::Scope;
-use libironclad_error::ic_error::IcResult;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -27,7 +27,7 @@ pub struct ErlModule {
   /// Module name atom, as a string
   pub name: String,
   /// The file we're processing AND the file contents (owned by SourceFile)
-  pub source_file: Arc<SourceFile>,
+  pub source_file: SourceFile,
 
   /// AST tree of the module.
   pub ast: AstNode,
@@ -47,7 +47,7 @@ impl Default for ErlModule {
     Self {
       compiler_options: Default::default(),
       name: "".to_string(),
-      source_file: Arc::new(SourceFile::default()),
+      source_file: Arc::new(SourceFileImpl::default()),
       ast: AstNodeImpl::new_empty(),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
@@ -63,7 +63,7 @@ impl Debug for ErlModule {
 
 impl ErlModule {
   /// Create a new empty module
-  pub fn new(opt: Arc<CompilerOpts>, source_file: Arc<SourceFile>) -> Self {
+  pub fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> Self {
     Self {
       compiler_options: opt,
       source_file,
@@ -72,7 +72,7 @@ impl ErlModule {
   }
 
   /// Generic parse helper for any Nom entry point
-  pub fn parse_helper<'a, T>(filename: &Path, input: &'a str, parse_fn: T) -> IcResult<Self>
+  pub fn parse_helper<'a, T>(filename: &Path, input: ParserInput, parse_fn: T) -> IcResult<Self>
   where
     T: Fn(&'a str) -> nom::IResult<&'a str, AstNode, ErlParserError>,
   {
@@ -89,7 +89,7 @@ impl ErlModule {
       tail,
       forms
     );
-    module.source_file = SourceFile::new(filename, String::from(input));
+    module.source_file = SourceFileImpl::new(filename, String::from(input));
     module.ast = forms;
 
     // Scan AST and find FnDef nodes, update functions knowledge
@@ -100,27 +100,27 @@ impl ErlModule {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_module_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_expr_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_fun_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_fun_spec_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::fn_spec_attr)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_type_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::parse_type_node)
   }
 

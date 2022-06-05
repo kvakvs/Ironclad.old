@@ -2,7 +2,8 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, equals_sign, match_dash_tag, par_close, par_open,
   parse_int, period_newline, print_input, square_close, square_open, ws_before,
@@ -10,7 +11,7 @@ use crate::erl_syntax::parsers::misc::{
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
+use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
@@ -74,7 +75,7 @@ impl ErlAttrParser {
   }
 
   /// Parses a `fun/arity` atom with an integer.
-  pub fn parse_funarity(input: ParserInput) -> nom::IResult<&str, MFArity, ErlParserError> {
+  pub fn parse_funarity(input: ParserInput) -> nom::IResult<ParserInput, MFArity, ErlParserError> {
     map(tuple((AtomParser::atom, char('/'), parse_int)), |(name, _slash, erl_int)| {
       let arity = erl_int.as_usize().unwrap_or_default();
       MFArity::new_local_from_string(name, arity)
@@ -84,7 +85,7 @@ impl ErlAttrParser {
   /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
   fn parse_square_funarity_list1(
     input: ParserInput,
-  ) -> nom::IResult<&str, Vec<MFArity>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Vec<MFArity>, ErlParserError> {
     delimited(
       square_open,
       separated_list1(comma, ws_before(Self::parse_funarity)),
@@ -151,7 +152,7 @@ impl ErlAttrParser {
   /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
   pub fn parse_parenthesized_list_of_vars(
     input: ParserInput,
-  ) -> nom::IResult<&str, Vec<String>, ErlParserError> {
+  ) -> nom::IResult<ParserInput, Vec<String>, ErlParserError> {
     delimited(
       par_open,
       cut(separated_list0(comma, ErlTypeParser::parse_typevar_name)),

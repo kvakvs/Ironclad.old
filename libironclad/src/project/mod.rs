@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use glob::glob;
-use libironclad_error::ic_error::{IcResult, IroncladError, IroncladResult};
+use libironclad_erlang::error::ic_error::{IcResult, IroncladError, IroncladResult};
 
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::conf::ProjectConf;
@@ -21,7 +21,6 @@ pub mod compiler_opts;
 pub mod conf;
 pub mod input_opts;
 pub mod module;
-pub mod source_file;
 
 /// Groups inputs for the processing (filenames, compiler options etc)
 #[derive(Debug)]

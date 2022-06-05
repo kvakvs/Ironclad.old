@@ -2,7 +2,7 @@
 
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::stats::preload_stats::FilePreloadStats;
-use libironclad_error::ic_error::IroncladResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 

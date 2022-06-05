@@ -1,5 +1,6 @@
 //! Support integers small and large
 
+use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::typing::erl_integer::ErlInteger::{Big, Small};
 use num::{FromPrimitive, Signed, ToPrimitive};
 use num_bigint::BigInt;
@@ -17,7 +18,7 @@ pub enum ErlInteger {
 
 impl ErlInteger {
   /// Creates from string
-  pub fn new_from_string(input: &str) -> Option<Self> {
+  pub fn new_from_string(input: ParserInput) -> Option<Self> {
     match input.parse::<BigInt>() {
       Ok(parsed) => {
         if let Some(small) = &parsed.to_i64() {

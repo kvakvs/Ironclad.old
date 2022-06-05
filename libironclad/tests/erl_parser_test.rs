@@ -13,8 +13,8 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, Bina
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
+use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
-use libironclad_error::ic_error::IcResult;
 use nom::Finish;
 
 mod test_util;

@@ -1,7 +1,6 @@
 #![cfg(feature = "separate_preprocessor_lib")]
 //! Preprocessor state for one file
 
-use crate::project::source_file::SourceFile;
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
 use crate::stage::preprocess::pp_scope::PreprocessorScope;
@@ -10,9 +9,10 @@ use crate::stats::io_stats::IOStats;
 use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_erlang::erl_syntax::literal_bool::LiteralBool;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_error::ic_error::{IcResult, IroncladError};
-use libironclad_error::ic_error_trait::IcError;
-use libironclad_error::source_loc::SourceLoc;
+use libironclad_erlang::error::ic_error::{IcResult, IroncladError};
+use libironclad_erlang::error::ic_error_trait::IcError;
+use libironclad_erlang::source_file::SourceFileImpl;
+use libironclad_erlang::source_loc::SourceLoc;
 use nom::Finish;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -57,7 +57,7 @@ impl PreprocessFile {
   pub fn parse_file_helper<Parser>(
     &self,
     ast_cache_stats: &mut CacheStats,
-    input_file: &SourceFile,
+    input_file: &SourceFileImpl,
     parser: Parser,
   ) -> IcResult<Arc<PpAst>>
   where
@@ -91,7 +91,7 @@ impl PreprocessFile {
 
   /// Parse AST using provided parser function, check that input is consumed, print some info.
   /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
-  pub fn parse_helper<Parser>(&self, input: &str, parser: Parser) -> IcResult<Arc<PpAst>>
+  pub fn parse_helper<Parser>(&self, input: ParserInput, parser: Parser) -> IcResult<Arc<PpAst>>
   where
     Parser: Fn(&str) -> PpAstParserResult,
   {
@@ -149,7 +149,7 @@ impl PreprocessFile {
     file_cache_stats: &mut CacheStats,
     location: &SourceLoc,
     file: &Path,
-  ) -> IcResult<Arc<SourceFile>> {
+  ) -> IcResult<Arc<SourceFileImpl>> {
     // Check if already loaded in the File Cache?
     if let Ok(mut cache) = self.file_cache.write() {
       return cache
@@ -201,7 +201,7 @@ impl PreprocessFile {
     project: &ErlProject,
     stats: &mut PreprocessorStats,
     node: &Arc<PpAst>,
-    source_file: &Arc<SourceFile>,
+    source_file: &SourceFile,
     nodes_out: &mut Vec<Arc<PpAst>>,
     warnings_out: &mut Vec<IcError>,
     errors_out: &mut Vec<IcError>,
@@ -312,7 +312,7 @@ impl PreprocessFile {
     &mut self,
     project: &ErlProject,
     stats: &mut PreprocessorStats,
-    source_file: &Arc<SourceFile>,
+    source_file: &SourceFile,
     ast_tree: &Arc<PpAst>,
   ) -> IcResult<Arc<PpAst>> {
     let mut nodes_out: Vec<Arc<PpAst>> = Vec::default();

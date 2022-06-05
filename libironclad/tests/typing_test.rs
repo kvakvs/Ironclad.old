@@ -6,10 +6,10 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
+use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::typing::check::TypeCheck;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_erlang::typing::scope::Scope;
-use libironclad_error::ic_error::IcResult;
 use std::ops::Deref;
 use std::path::PathBuf;
 

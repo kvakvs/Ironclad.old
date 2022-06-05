@@ -6,10 +6,10 @@ use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
 };
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
+use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
 use crate::typing::scope::Scope;
 use ::function_name::named;
-use libironclad_error::ic_error::IcResult;
 use std::sync::{Arc, RwLock};
 
 impl AstNodeImpl {

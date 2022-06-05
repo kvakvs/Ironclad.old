@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IcResult;
 
 mod test_util;
 

@@ -124,7 +124,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "ironclad"
-version = "2022.5.0"
+version = "2022.6.0"
 dependencies = [
  "alphabet",
  "glob",
@@ -147,7 +147,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libironclad"
-version = "2022.5.0"
+version = "2022.6.0"
 dependencies = [
  "alphabet",
  "function_name",
@@ -164,21 +164,23 @@ dependencies = [
 
 [[package]]
 name = "libironclad_erlang"
-version = "2022.5.0"
+version = "2022.6.0"
 dependencies = [
  "derivative",
  "function_name",
+ "glob",
  "lazy_static",
  "libironclad_error",
  "libironclad_util",
  "nom",
  "num",
  "num-bigint",
+ "toml",
 ]
 
 [[package]]
 name = "libironclad_error"
-version = "2022.5.0"
+version = "2022.6.0"
 dependencies = [
  "glob",
  "libironclad_util",
