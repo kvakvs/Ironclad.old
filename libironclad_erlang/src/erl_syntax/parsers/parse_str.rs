@@ -114,6 +114,7 @@ impl StringParser {
 
   /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
   /// into a StringFragment.
+  #[allow(dead_code)]
   fn parse_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>> {
     alt((
       // The `map` combinator runs a parser, then applies a function to the output

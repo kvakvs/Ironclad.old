@@ -17,9 +17,10 @@ fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
   // let filename = PathBuf::from(function_name!());
   let input = "-if(true).";
+  let parser_input = ParserInput::from_str(input);
   let (_tail, result) = panicking_parser_error_reporter(
-    input,
-    PreprocessorParser::if_directive(ParserInput::from_str(input)).finish(),
+    parser_input.clone(),
+    PreprocessorParser::if_directive(parser_input).finish(),
   );
   let pp_node = result.as_preprocessor();
   assert!(matches!(pp_node, PreprocessorNodeType::_TemporaryIf(_ast)));
@@ -80,9 +81,10 @@ false).
 -endif().";
   println!("In=«{}»", input);
 
+  let parser_input = ParserInput::from_str(input);
   let (_tail, ast) = panicking_parser_error_reporter(
-    input,
-    PreprocessorParser::if_block(ParserInput::from_str(input)).finish(),
+    parser_input.clone(),
+    PreprocessorParser::if_block(parser_input).finish(),
   );
   println!("Out={:?}", ast);
 

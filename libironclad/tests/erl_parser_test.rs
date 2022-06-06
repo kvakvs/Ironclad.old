@@ -78,8 +78,9 @@ fn parse_import_attr() -> IcResult<()> {
 fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
-  let parse_result = ErlParser::module_forms_collection(ParserInput::from_str(input));
-  let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
+  let parser_input = ParserInput::from_str(input);
+  let parse_result = ErlParser::module_forms_collection(parser_input.clone());
+  let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
 }
@@ -93,8 +94,9 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     "Parse a string with 2 function defs in it as module forms collection",
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let parse_result = ErlParser::module_forms_collection(ParserInput::from_str(input));
-  let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
+  let parser_input = ParserInput::from_str(input);
+  let parse_result = ErlParser::module_forms_collection(parser_input.clone());
+  let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
 }

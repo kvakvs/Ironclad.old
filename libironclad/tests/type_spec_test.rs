@@ -26,9 +26,10 @@ fn union_type_parse() -> IcResult<()> {
 	       {'integer',integer()} |
 	       'nil' |
 	       {'float',float()}.";
+  let parser_input = ParserInput::from_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
-    input,
-    ErlAttrParser::type_definition_attr(ParserInput::from_str(input)).finish(),
+    parser_input.clone(),
+    ErlAttrParser::type_definition_attr(parser_input).finish(),
   );
   assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
   println!("Parsed: {}", result1);
@@ -40,9 +41,10 @@ fn union_type_parse() -> IcResult<()> {
 fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
+  let parser_input = ParserInput::from_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
-    input,
-    ErlAttrParser::parse_generic_attr(ParserInput::from_str(input)).finish(),
+    parser_input.clone(),
+    ErlAttrParser::parse_generic_attr(parser_input).finish(),
   );
   assert!(
     tail1.trim().is_empty(),
@@ -58,9 +60,10 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
 fn fn_generic_attr_parse2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
   let input = "- bbbggg (ababagalamaga()) .  ";
+  let parser_input = ParserInput::from_str(input);
   let (tail2, result2) = panicking_parser_error_reporter(
-    input,
-    ErlAttrParser::parse_generic_attr(ParserInput::from_str(input)).finish(),
+    parser_input.clone(),
+    ErlAttrParser::parse_generic_attr(parser_input).finish(),
   );
   assert!(
     tail2.trim().is_empty(),

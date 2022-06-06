@@ -21,7 +21,7 @@ pub struct ParserInputImpl<'a> {
 
 impl std::fmt::Display for ParserInputImpl<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "«{}»", self.as_str())
+    write!(f, "{}", self.as_str())
   }
 }
 
@@ -79,11 +79,14 @@ impl nom::Offset for ParserInputImpl<'_> {
       second.input.parent.as_ptr(),
       "nom::Offset for unrelated slices not implemented (but possible!)"
     );
+    let self_n = self.as_str().as_ptr() as usize;
+    let second_n = second.as_str().as_ptr() as usize;
+    // println!("Offset for {:x} vs {:x}", self_n, second_n);
     assert!(
-      second.as_str().as_ptr() > self.as_str().as_ptr(),
+      second_n >= self_n,
       "Second input pointer must be greater than the first, when calculating nom::Offset"
     );
-    (second.as_str().as_ptr() as usize) - (self.as_str().as_ptr() as usize)
+    second_n - self_n
   }
 }
 

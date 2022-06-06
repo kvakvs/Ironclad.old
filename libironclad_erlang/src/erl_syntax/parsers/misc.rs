@@ -247,10 +247,9 @@ pub fn parse_line_comment<'a>(input: ParserInput<'a>) -> ParserResult<ParserInpu
 
 /// Print detailed error with source pointers, and panic
 pub fn panicking_parser_error_reporter<'a, Out>(
-  input_s: &str,
+  input: ParserInput,
   res: Result<(ParserInput<'a>, Out), nom::error::VerboseError<ParserInput<'a>>>,
 ) -> (ParserInput<'a>, Out) {
-  let input = ParserInput::from_str(input_s);
   match res {
     Ok((tail, out)) => {
       let tail_trim_whitespace = tail.trim();

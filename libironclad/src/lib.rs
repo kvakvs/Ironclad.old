@@ -15,7 +15,6 @@ extern crate serde_derive;
 extern crate toml;
 // extern crate derivative;
 
-pub mod core_erlang;
 pub mod project;
 pub mod stage;
 pub mod stats;

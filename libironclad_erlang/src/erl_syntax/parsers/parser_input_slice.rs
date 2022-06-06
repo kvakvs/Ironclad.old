@@ -41,7 +41,7 @@ impl ParserInputSlice {
   pub fn clone_with_read_slice(&self, new_input: &str) -> Arc<Self> {
     let parent_str = self.parent.as_str();
     assert!(
-      is_part_of(new_input, parent_str),
+      is_part_of(parent_str, new_input),
       "Cloning input slice is only allowed with a slice in the same string"
     );
     let input_start = new_input.as_ptr() as usize - parent_str.as_ptr() as usize;

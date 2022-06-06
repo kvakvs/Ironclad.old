@@ -80,7 +80,8 @@ impl ErlModule {
 
     let input = ParserInput::from_str(input_s);
     let mut module = ErlModule::default();
-    let (tail, forms) = panicking_parser_error_reporter(input_s, parse_fn(input.clone()).finish());
+    let (tail, forms) =
+      panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());
 
     println!("Parse result AST: «{}»", &forms);
 
