@@ -14,7 +14,7 @@ mod test_util;
 #[named]
 #[test]
 fn parse_bin1() -> IcResult<()> {
-  test_util::start(function_name!(), "Parse a basic ironclad_exe");
+  test_util::start(function_name!(), "Parse a basic binary");
   let filename = PathBuf::from(function_name!());
 
   {
@@ -30,7 +30,7 @@ fn parse_bin1() -> IcResult<()> {
     assert!(module.ast.is_binary());
   }
   {
-    let src = "<<X/ironclad_exe-big-unit:33>>";
+    let src = "<<X/binary-big-unit:33>>";
     let module = ErlModule::from_expr_source(&filename, src)?;
     println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
     assert!(module.ast.is_binary());

@@ -17,7 +17,7 @@ pub enum Literal {
 
   /// Atom literal, also includes atoms 'true' and 'false'
   Atom(String),
-  // TODO: String/list lit, tuple lit, map lit, ironclad_exe lit, etc
+  // TODO: String/list lit, tuple lit, map lit, binary lit, etc
   /// A boolean value true or false atom, is-a(Atom)
   Bool(bool),
 

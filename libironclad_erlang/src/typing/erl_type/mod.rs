@@ -84,7 +84,7 @@ pub enum ErlType {
     members: Vec<MapMemberType>,
   },
 
-  /// Any ironclad_exe of any size
+  /// Any binary of any size
   AnyBinary,
   /// Binary of size and possibly with last byte incomplete
   Binary {

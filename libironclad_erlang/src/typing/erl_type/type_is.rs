@@ -111,7 +111,7 @@ impl ErlType {
     matches!(self, ErlType::Nil)
   }
 
-  /// Checks whether type is a ironclad_exe
+  /// Checks whether type is a binary
   pub fn is_binary(&self) -> bool {
     matches!(self, ErlType::AnyBinary | ErlType::Binary { .. })
   }

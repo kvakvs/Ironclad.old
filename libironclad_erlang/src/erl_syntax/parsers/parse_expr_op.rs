@@ -1,4 +1,4 @@
-//! Parse an operator for ironclad_exe or unary expressions
+//! Parse an operator for binary or unary expressions
 #![allow(missing_docs)]
 
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};

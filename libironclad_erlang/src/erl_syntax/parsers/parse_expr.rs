@@ -398,7 +398,7 @@ impl ErlParser {
   /// Precedence 10: assignment/match = operator, and send operator "!", right associative
   fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
+      // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
       pair(
         Self::parse_expr_prec09::<STYLE>,
         many0(pair(
@@ -435,7 +435,7 @@ impl ErlParser {
   //   // }
   // }
 
-  /// Lowest precedence 13, where we handle comma and semicolon as ironclad_exe ops.
+  /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
   /// Note that semicolon is not valid for regular code only allowed in guards.
   #[named]
   fn parse_expr_prec13<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
@@ -450,7 +450,7 @@ impl ErlParser {
       // Guard-style expressions allow both comma and semicolons
       {
         map(
-          // Higher precedence expr, followed by 0 or more ironclad_exe operators and higher prec exprs
+          // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
           pair(
             ws_before(Self::parse_expr_prec11::<STYLE>),
             many0(pair(

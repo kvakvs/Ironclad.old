@@ -67,7 +67,7 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, Apply(apply))
   }
 
-  /// Create an new ironclad_exe operation AST node with left and right operands AST
+  /// Create an new binary operation AST node with left and right operands AST
   pub fn new_binop(location: SourceLoc, left: AstNode, op: ErlBinaryOp, right: AstNode) -> AstNode {
     let binop_node = BinaryOp {
       expr: ErlBinaryOperatorExpr { left, right, operator: op },

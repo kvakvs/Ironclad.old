@@ -1,4 +1,4 @@
-//! Defines structs for AST nodes representing ironclad_exe operators (A + B)
+//! Defines structs for AST nodes representing binary operators (A + B)
 #![cfg(coreast)]
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};

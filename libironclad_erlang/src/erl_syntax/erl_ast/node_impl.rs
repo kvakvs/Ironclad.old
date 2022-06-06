@@ -151,7 +151,7 @@ pub enum ErlAstType {
 
   /// Binary operation with two arguments
   BinaryOp {
-    /// The contained ironclad_exe A&B expression
+    /// The contained binary A&B expression
     expr: ErlBinaryOperatorExpr,
   },
 
@@ -219,9 +219,9 @@ pub enum ErlAstType {
     clauses: Vec<ErlIfClause>,
   },
 
-  /// A list of ironclad_exe elements constructing a ironclad_exe value, or serving as a ironclad_exe match expression
+  /// A list of binary elements constructing a binary value, or serving as a binary match expression
   BinaryExpr {
-    /// Comma separated elements of a ironclad_exe, with `:bit-widths` and `/type-specs`
+    /// Comma separated elements of a binary, with `:bit-widths` and `/type-specs`
     elements: Vec<BinaryElement>,
   },
   /// A new record definition, created by `-record(name, {fields,...}).` attribute

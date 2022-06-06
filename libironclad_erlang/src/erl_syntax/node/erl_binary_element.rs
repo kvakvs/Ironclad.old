@@ -1,5 +1,5 @@
-//! Binary element is an item in a ironclad_exe expression or a ironclad_exe builder.
-//! This models the ironclad_exe syntax of Erlang: <<1, 2, 3:8/bits, Variable, (function()):16 ...>>
+//! Binary element is an item in a binary expression or a binary builder.
+//! This models the binary syntax of Erlang: <<1, 2, 3:8/bits, Variable, (function()):16 ...>>
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::source_loc::SourceLoc;
@@ -50,7 +50,7 @@ pub enum ValueEndianness {
   Native,
 }
 
-/// Type specifier, one element added to any ironclad_exe expression element after a `/`:
+/// Type specifier, one element added to any binary expression element after a `/`:
 /// like so `X:4/little-signed-integer-unit:8`
 #[allow(missing_docs)]
 #[derive(Debug)]
@@ -58,7 +58,7 @@ pub enum TypeSpecifier {
   Type(ValueType),
   Signedness(ValueSignedness),
   Endianness(ValueEndianness),
-  /// Default: byte=8, float=64, bytes or ironclad_exe=entire size
+  /// Default: byte=8, float=64, bytes or binary=entire size
   Unit(usize),
 }
 
@@ -88,7 +88,7 @@ impl std::fmt::Display for TypeSpecifier {
   }
 }
 
-/// An item in a ironclad_exe expression or a ironclad_exe builder
+/// An item in a binary expression or a binary builder
 #[derive(Debug)]
 pub struct BinaryElement {
   /// Where in the code
@@ -102,7 +102,7 @@ pub struct BinaryElement {
 }
 
 impl BinaryElement {
-  /// Creates a new freshly parsed element of a ironclad_exe expression
+  /// Creates a new freshly parsed element of a binary expression
   pub fn new(
     location: SourceLoc,
     value: AstNode,

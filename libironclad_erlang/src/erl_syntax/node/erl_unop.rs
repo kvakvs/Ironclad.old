@@ -1,4 +1,4 @@
-//! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
+//! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::UnaryOp;
 use crate::erl_syntax::erl_ast::AstNode;

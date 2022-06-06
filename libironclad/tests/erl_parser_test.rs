@@ -366,7 +366,7 @@ rename_instr({bs_put_utf32=I,F,Fl,Src}) ->
 rename_instr({bs_put_string,_,{string,String}}) ->
     %% Only happens when compiling from .S files. In old
     %% .S files, String is a list. In .S in OTP 22 and later,
-    %% String is a ironclad_exe.
+    %% String is a binary.
     {bs_put,{f,0},{bs_put_binary,8,{field_flags,[unsigned,big]}},
      [{atom,all},{literal,iolist_to_binary([String])}]};
 rename_instr({bs_add=I,F,[Src1,Src2,U],Dst}) when is_integer(U) ->

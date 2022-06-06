@@ -1,4 +1,4 @@
-//! Defines structs for AST nodes representing ironclad_exe operators (A + B) and unary (+A)
+//! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
@@ -24,7 +24,7 @@ pub struct ErlBinaryOperatorExpr {
 }
 
 impl ErlBinaryOperatorExpr {
-  /// Create a ironclad_exe operator, caller is to wrap it with ErlAst::BinOp(location, _)
+  /// Create a binary operator, caller is to wrap it with ErlAst::BinOp(location, _)
   pub fn new(left: AstNode, op: ErlBinaryOp, right: AstNode) -> Self {
     Self { left, right, operator: op }
   }
@@ -67,7 +67,7 @@ impl ErlBinaryOperatorExpr {
     AstNodeImpl::construct_with_location(loc, bin_node)
   }
 
-  /// Gets the result type of a ironclad_exe operation
+  /// Gets the result type of a binary operation
   pub fn synthesize_binop_type(
     &self,
     location: SourceLoc,
@@ -78,7 +78,7 @@ impl ErlBinaryOperatorExpr {
 
     match self.operator {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
-        // A ironclad_exe math operation can only produce a numeric type, integer if both args are integer
+        // A binary math operation can only produce a numeric type, integer if both args are integer
         if !left.is_supertype_of_number() || !right.is_supertype_of_number() {
           // Either left or right are not compatible with number
           Ok(ErlType::none())
@@ -113,7 +113,7 @@ impl ErlBinaryOperatorExpr {
 
       other => {
         unimplemented!(
-          "Don't know how to synthesize ironclad_exe operation type for operation {} on {:?}",
+          "Don't know how to synthesize binary operation type for operation {} on {:?}",
           other,
           self
         )

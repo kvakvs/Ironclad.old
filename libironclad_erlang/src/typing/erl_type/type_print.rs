@@ -41,8 +41,8 @@ impl std::fmt::Display for ErlType {
       ErlType::Nil => write!(f, "[]"),
       ErlType::AnyMap => write!(f, "map()"),
       ErlType::Map { .. } => unimplemented!("Display type for map"),
-      ErlType::AnyBinary => write!(f, "ironclad_exe()"),
-      ErlType::Binary { .. } => unimplemented!("Display type for ironclad_exe"),
+      ErlType::AnyBinary => write!(f, "binary()"),
+      ErlType::Binary { .. } => unimplemented!("Display type for binary"),
       ErlType::AnyFn => write!(f, "function()"),
       ErlType::Fn(fntype) => {
         write!(f, "fun ")?;

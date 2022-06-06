@@ -62,7 +62,7 @@ impl ErlType {
   pub fn any_tuple() -> Arc<ErlType> {
     PF_TYPE_ANY_TUPLE.clone()
   }
-  /// Return a cloned instance of ironclad_exe()-type
+  /// Return a cloned instance of binary()-type
   pub fn any_binary() -> Arc<ErlType> {
     PF_TYPE_ANY_BINARY.clone()
   }

@@ -1,4 +1,4 @@
-//! Parse ironclad_exe expressions and ironclad_exe builders.
+//! Parse binary expressions and binary builders.
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -20,7 +20,7 @@ use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
 
-/// Wraps functions for parsing binaries and ironclad_exe builders
+/// Wraps functions for parsing binaries and binary builders
 pub struct BinaryParser {}
 
 impl BinaryParser {
@@ -106,7 +106,7 @@ impl BinaryParser {
     )(input)
   }
 
-  /// Parse one comma-separated element of a ironclad_exe: number, variable, an expression,
+  /// Parse one comma-separated element of a binary: number, variable, an expression,
   /// and followed by a `:bit-width` and `/type-specifier`
   fn parse_bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
     map(
@@ -126,19 +126,19 @@ impl BinaryParser {
     )(input)
   }
 
-  /// Parse a ironclad_exe or ironclad_exe builder expression
+  /// Parse a binary or binary builder expression
   pub fn parse(input: ParserInput) -> ParserResult<AstNode> {
     // let (input, _) = ws_before(tag("<<".into()))(input)?;
 
     preceded(
       ws_before(tag("<<".into())),
       context(
-        "ironclad_exe expression",
+        "binary expression",
         cut(terminated(
           map(
             separated_list1(
               comma,
-              context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
+              context("binary expression element", cut(ws_before(Self::parse_bin_element))),
             ),
             |bin_exprs| AstNodeImpl::new_binary_expr(input.loc(), bin_exprs),
           ),

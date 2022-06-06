@@ -34,7 +34,7 @@ impl AstNodeImpl {
     }
   }
 
-  /// Unwrap self as ironclad_exe operation expr
+  /// Unwrap self as binary operation expr
   pub fn as_binop(&self) -> &ErlBinaryOperatorExpr {
     match &self.content {
       ErlAstType::BinaryOp { expr, .. } => expr,

@@ -57,9 +57,9 @@ pub enum CoreBinaryOp {
   BinaryOr,
   /// Binary xor
   BinaryXor,
-  /// Bsl ironclad_exe
+  /// Bsl binary
   BinaryShiftLeft,
-  /// Bsr ironclad_exe
+  /// Bsr binary
   BinaryShiftRight,
   /// Assignment/match = operator
   Match,

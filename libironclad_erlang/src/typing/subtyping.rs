@@ -57,7 +57,7 @@ impl SubtypeChecker {
       ErlType::AnyMap => matches!(sub_ty, ErlType::Map { .. }),
       // ErlType::Map { .. } => {}
       ErlType::AnyBinary => matches!(sub_ty, ErlType::Binary { .. }),
-      // An equal ironclad_exe type can be a subtype of ironclad_exe, no other matches it (checked at the top)
+      // An equal binary type can be a subtype of binary, no other matches it (checked at the top)
       ErlType::Binary { .. } => false,
 
       ErlType::AnyFn => {
