@@ -147,7 +147,7 @@ impl PreprocessFile {
     &mut self,
     io_stats: &mut IOStats,
     file_cache_stats: &mut CacheStats,
-    location: &SourceLoc,
+    location: SourceLoc,
     file: &Path,
   ) -> IcResult<Arc<SourceFileImpl>> {
     // Check if already loaded in the File Cache?
@@ -162,7 +162,7 @@ impl PreprocessFile {
   fn find_include(
     &mut self,
     project: &ErlProject,
-    location: &SourceLoc,
+    location: SourceLoc,
     path: &Path,
   ) -> IcResult<PathBuf> {
     for inc_path in &project.inputs.input_opts.include_paths {
@@ -186,7 +186,7 @@ impl PreprocessFile {
   fn find_include_lib(
     &mut self,
     _project: &ErlProject,
-    location: &SourceLoc,
+    location: SourceLoc,
     path: &Path,
   ) -> IcResult<PathBuf> {
     IroncladError::file_not_found(location, path, "searching for an -include_lib() path")

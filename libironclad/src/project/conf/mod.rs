@@ -37,7 +37,7 @@ impl ProjectConf {
   /// Creates project struct from a TOML config as a string
   pub fn from_string(input: ParserInput) -> Result<Self, IroncladError> {
     // Parse, and convert toml error into ErlError
-    toml::from_str(input).map_err(|e| e.into())
+    toml::from_str(input.as_str()).map_err(|e| e.into())
   }
 }
 

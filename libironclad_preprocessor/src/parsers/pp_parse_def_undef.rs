@@ -6,7 +6,6 @@ use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::parsers::misc::{
   comma, match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
-use libironclad_error::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, opt};
@@ -18,7 +17,7 @@ impl PreprocessorParser {
   /// Parses inner part of a `-define(IDENT)` variant
   fn define_no_args_no_body(input: ParserInput) -> PpAstParserResult {
     map(Self::macro_ident, |name| {
-      PpAst::new_define_name_only(&SourceLoc::from_input(input), name)
+      PpAst::new_define_name_only(SourceLoc::from_input(input), name)
     })(input)
   }
 
@@ -37,7 +36,7 @@ impl PreprocessorParser {
       )),
       |(name, args, _comma, (body, _terminator))| {
         PpAst::new_define(
-          &SourceLoc::from_input(input),
+          SourceLoc::from_input(input),
           name,
           args.unwrap_or_default(),
           String::new_string(body.into_iter().collect::<String>()),
@@ -72,7 +71,7 @@ impl PreprocessorParser {
         tuple((par_open, ws_before(Self::macro_ident), par_close)),
         period_newline,
       ),
-      |(_open, ident, _close)| PpAst::new_undef(&SourceLoc::from_input(input), ident),
+      |(_open, ident, _close)| PpAst::new_undef(SourceLoc::from_input(input), ident),
     )(input)
   }
 }

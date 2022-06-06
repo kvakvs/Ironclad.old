@@ -49,7 +49,7 @@ impl ErlApply {
   /// The return type of the callable will be the apply synthesis result.
   pub fn synthesize_application_type(
     &self,
-    location: &SourceLoc,
+    location: SourceLoc,
     scope: &RwLock<Scope>,
   ) -> IcResult<Arc<ErlType>> {
     // Synthesize target and check that it is a function type
@@ -87,7 +87,7 @@ impl ErlApply {
 
   fn synthesize_call_to_fn(
     &self,
-    location: &SourceLoc,
+    location: SourceLoc,
     fn_type: &FnType,
     arg_types: &[Arc<ErlType>],
   ) -> IcResult<Arc<ErlType>> {

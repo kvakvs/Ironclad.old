@@ -1,9 +1,5 @@
 //! Errors which can occur during preprocess stage
 use crate::parsers::pp_parse_types::PpParserError;
-use libironclad_error::ic_error::IcResult;
-use libironclad_error::ic_error_category::IcErrorCategory;
-use libironclad_error::ic_error_trait::{IcError, IcErrorT};
-use libironclad_error::source_loc::SourceLoc;
 use std::fmt::{Debug, Display, Formatter};
 
 /// Category for preprocessor errors
@@ -46,7 +42,7 @@ impl IcErrorT for PpError {
     &self.ic_category
   }
 
-  fn get_location(&self) -> &SourceLoc {
+  fn get_location(&self) -> SourceLoc {
     &self.loc
   }
 
@@ -77,7 +73,7 @@ impl PpError {
   }
 
   /// Builds PpError for #error directive
-  pub fn new_error_directive(location: &SourceLoc, msg: String) -> IcError {
+  pub fn new_error_directive(location: SourceLoc, msg: String) -> IcError {
     Box::new(PpError::new(
       IcErrorCategory::Preprocessor,
       PpErrorCategory::ErrorDirective,
@@ -87,7 +83,7 @@ impl PpError {
   }
 
   /// Builds PpError for an if-ifdef error situation
-  pub fn new_if_directive_error<T>(loc: &SourceLoc, msg: String) -> IcResult<T> {
+  pub fn new_if_directive_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
     Err(Box::new(PpError::new(
       IcErrorCategory::Preprocessor,
       PpErrorCategory::IfDirective,

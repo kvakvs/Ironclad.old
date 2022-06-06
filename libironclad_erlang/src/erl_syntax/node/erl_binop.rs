@@ -32,7 +32,7 @@ impl ErlBinaryOperatorExpr {
   /// From left and multiple right components, build a right-associative tree of expressions.
   /// Try pair last and one before last, then take result and pair with previous one, ... and so on
   pub fn new_right_assoc(
-    loc: &SourceLoc,
+    loc: SourceLoc,
     left: AstNode,
     tail: &[(ErlBinaryOp, AstNode)],
   ) -> AstNode {
@@ -43,7 +43,7 @@ impl ErlBinaryOperatorExpr {
     // Take rightmost element in the tail[] array, together with the operator
     // And build the recursive tree from the remaining on the left
     let (op, right) = &tail[tail.len() - 1];
-    let build_left_side = Self::new_right_assoc(loc, left, &tail[0..tail.len() - 1]);
+    let build_left_side = Self::new_right_assoc(loc.clone(), left, &tail[0..tail.len() - 1]);
 
     let bin_node = ErlAstType::BinaryOp {
       expr: Self::new(build_left_side, *op, right.clone()),
@@ -53,11 +53,7 @@ impl ErlBinaryOperatorExpr {
 
   /// From left and multiple right components, build a left-associative tree of expressions.
   /// Try pair first and the first element in tail, then take result and pair with second, ... and so on
-  pub fn new_left_assoc(
-    loc: &SourceLoc,
-    left: AstNode,
-    tail: &[(ErlBinaryOp, AstNode)],
-  ) -> AstNode {
+  pub fn new_left_assoc(loc: SourceLoc, left: AstNode, tail: &[(ErlBinaryOp, AstNode)]) -> AstNode {
     if tail.is_empty() {
       return left;
     }
@@ -65,7 +61,7 @@ impl ErlBinaryOperatorExpr {
     // Take leftmost element in the tail[] array, together with the operator
     // And build the recursive tree from the remaining on the left
     let (op, first) = &tail[0];
-    let build_right_side = Self::new_left_assoc(loc, first.clone(), &tail[1..tail.len()]);
+    let build_right_side = Self::new_left_assoc(loc.clone(), first.clone(), &tail[1..tail.len()]);
 
     let bin_node = ErlAstType::BinaryOp { expr: Self::new(left, *op, build_right_side) };
     AstNodeImpl::construct_with_location(loc, bin_node)
@@ -74,7 +70,7 @@ impl ErlBinaryOperatorExpr {
   /// Gets the result type of a ironclad_exe operation
   pub fn synthesize_binop_type(
     &self,
-    location: &SourceLoc,
+    location: SourceLoc,
     scope: &RwLock<Scope>,
   ) -> IcResult<Arc<ErlType>> {
     let left = self.left.synthesize(scope)?;
@@ -127,7 +123,7 @@ impl ErlBinaryOperatorExpr {
 
   /// For `any list() ++ any list()` operation
   fn synthesize_list_append_op(
-    location: &SourceLoc,
+    location: SourceLoc,
     scope: &RwLock<Scope>,
     left: &Arc<ErlType>,
     right: &Arc<ErlType>,
@@ -162,7 +158,7 @@ impl ErlBinaryOperatorExpr {
 
   /// For `list() ++ list(T1, T2...)` operation
   fn synthesize_stronglist_append(
-    location: &SourceLoc,
+    location: SourceLoc,
     _scope: &RwLock<Scope>,
     left: &Arc<ErlType>,
     left_elements: &[Arc<ErlType>],
@@ -204,7 +200,7 @@ impl ErlBinaryOperatorExpr {
 
   /// For `list(T) ++ any list` operation
   fn synthesize_list_of_t_append(
-    location: &SourceLoc,
+    location: SourceLoc,
     _scope: &RwLock<Scope>,
     _left: &Arc<ErlType>,
     right: &Arc<ErlType>,

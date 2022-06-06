@@ -2,9 +2,7 @@
 
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::{
-  ParserInput, ParserResult, StrSliceParserResult, VecAstParserResult,
-};
+use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{
   match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
@@ -12,7 +10,6 @@ use crate::erl_syntax::parsers::ErlParser;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{_TemporaryElse, _TemporaryEndif};
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
-use crate::source_loc::SourceLoc;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;
@@ -54,7 +51,7 @@ impl PreprocessorParser {
         {
           let branch_true1 = if branch_true.is_empty() { None } else { Some(branch_true) };
           PreprocessorNodeType::new_if(
-            &SourceLoc::from_input(input),
+            input.loc(),
             if_expr.clone(),
             branch_true1.unwrap_or_default(),
             branch_false.unwrap_or_default(),
@@ -63,82 +60,75 @@ impl PreprocessorParser {
           unreachable!("This code path should not execute")
         }
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parse a `-if(EXPR).\n` and return a temporary node
   pub fn if_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("if"),
+        match_dash_tag("if".into()),
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
         period_newline,
       ),
       // Builds a temporary If node with erl expression in it
-      |t| PreprocessorNodeType::new_if_temporary(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_if_temporary(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parse a `-elif(EXPR)` into a temporary AST node
   pub(crate) fn elif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("elif"),
+        match_dash_tag("elif".into()),
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
         period_newline,
       ),
-      |t| PreprocessorNodeType::new_elif_temporary(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_elif_temporary(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parse a `-ifdef(MACRO_NAME)`
   pub(crate) fn ifdef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("ifdef"),
+        match_dash_tag("ifdef".into()),
         delimited(par_open, ws_before(Self::macro_ident), par_close),
         period_newline,
       ),
-      |t| PreprocessorNodeType::new_ifdef_temporary(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_ifdef_temporary(input.loc(), t.to_string()),
+    )(input.clone())
   }
 
   /// Parse a `-ifndef(MACRO_NAME)`
   pub fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("ifndef"),
+        match_dash_tag("ifndef".into()),
         delimited(par_open, ws_before(Self::macro_ident), par_close),
         period_newline,
       ),
-      |t| PreprocessorNodeType::new_ifndef_temporary(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_ifndef_temporary(input.loc(), t.to_string()),
+    )(input.clone())
   }
 
   /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
   pub fn else_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      delimited(match_dash_tag("else"), opt(pair(par_open, par_close)), period_newline),
-      |_opt| {
-        PreprocessorNodeType::construct_with_location(&SourceLoc::from_input(input), _TemporaryElse)
-      },
-    )(input)
+      delimited(match_dash_tag("else".into()), opt(pair(par_open, par_close)), period_newline),
+      |_opt| PreprocessorNodeType::construct_with_location(input.loc(), _TemporaryElse),
+    )(input.clone())
   }
 
-  fn maybe_empty_parens(input: ParserInput) -> StrSliceParserResult {
+  fn maybe_empty_parens(input: ParserInput) -> ParserResult<ParserInput> {
     recognize(opt(pair(par_open, par_close)))(input)
   }
 
   /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
   pub fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      delimited(match_dash_tag("endif"), Self::maybe_empty_parens, period_newline),
-      |_opt| {
-        PreprocessorNodeType::construct_with_location(
-          &SourceLoc::from_input(input),
-          _TemporaryEndif,
-        )
-      },
-    )(input)
+      delimited(match_dash_tag("endif".into()), Self::maybe_empty_parens, period_newline),
+      |_opt| PreprocessorNodeType::construct_with_location(input.loc(), _TemporaryEndif),
+    )(input.clone())
   }
 }

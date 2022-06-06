@@ -2,37 +2,53 @@
 
 use crate::erl_syntax::parsers::misc::is_part_of;
 use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
+use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
 use std::ops::{Deref, RangeFrom, RangeTo};
 use std::str::{CharIndices, Chars};
 use std::sync::Arc;
 
-// pub type ParserInput = &'a str;
-
 /// Used as input to all parsers, and contains the chain of inputs (for nested parsing), and current
 /// position for the current parser.
 #[derive(Debug, Clone)]
-pub struct CustomParserInput {
+pub struct ParserInputImpl<'a> {
   /// Chain of inputs. Each input has an input string, an input range and a read pointer inside
   /// it. When an input is nested inside another input, a new input slice is added to the input
   /// chain using `prev_slice` field to bind them together.
   pub input: Arc<ParserInputSlice>,
+  _phantom: std::marker::PhantomData<&'a usize>,
 }
 
-impl std::fmt::Display for CustomParserInput {
+impl std::fmt::Display for ParserInputImpl<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "«{}»", self.as_str())
   }
 }
 
-impl CustomParserInput {
+impl<'a> ParserInputImpl<'a> {
+  /// Return a code location
+  pub fn loc(&self) -> SourceLoc {
+    SourceLoc::from_input(self.input.clone())
+  }
+
+  /// Create a parser input with a string slice
+  pub fn from_str(text: &str) -> Self {
+    Self {
+      input: ParserInputSlice::new(text).into(),
+      _phantom: Default::default(),
+    }
+  }
+
   /// Build a new custom parser input from a str slice. Assert that it belongs to the same input slice.
-  pub fn clone_with_read_slice(&self, slice: &'static str) -> Self {
+  pub fn clone_with_read_slice(&self, slice: &str) -> Self {
     assert!(
-      is_part_of(self.input.input_slice, slice),
-      "Input slice when cloning must belong to the last active input string"
+      is_part_of(self.input.parent.as_str(), slice),
+      "When cloning, new input slice must belong to the same parent string"
     );
-    Self { input: self.input.clone_with_read_slice(slice) }
+    Self {
+      input: self.input.clone_with_read_slice(slice),
+      _phantom: Default::default(),
+    }
   }
 
   /// Check whether there's any input remaining
@@ -42,25 +58,25 @@ impl CustomParserInput {
 
   /// Quick access to last input in chain as `&str`
   #[inline(always)]
-  pub fn as_str(&self) -> &str {
-    self.input.read_pointer
+  pub fn as_str(&self) -> &'a str {
+    self.input.as_str()
   }
 }
 
-// impl ToString for CustomParserInput {
-//   fn to_string(&self) -> String {
-//     self.as_str().to_string()
-//   }
-// }
+impl From<&str> for ParserInputImpl<'_> {
+  fn from(s: &str) -> Self {
+    ParserInputImpl::from_str(s)
+  }
+}
 
-impl nom::Offset for CustomParserInput {
+impl nom::Offset for ParserInputImpl<'_> {
   fn offset(&self, second: &Self) -> usize {
     // Compare that chain of slices matches in both `self` and `second` and compare that the input
     // string is the same input string in both.
     // TODO: It is possible to implement correct offset inside virtual chain of inputs
-    assert!(
-      self.input.prev_length == second.input.prev_length
-        && self.input.input_slice.as_ptr() == second.input.input_slice.as_ptr(),
+    assert_eq!(
+      self.input.parent.as_ptr(),
+      second.input.parent.as_ptr(),
       "nom::Offset for unrelated slices not implemented (but possible!)"
     );
     assert!(
@@ -71,7 +87,7 @@ impl nom::Offset for CustomParserInput {
   }
 }
 
-impl Deref for CustomParserInput {
+impl Deref for ParserInputImpl<'_> {
   type Target = str;
 
   fn deref(&self) -> &Self::Target {
@@ -79,38 +95,29 @@ impl Deref for CustomParserInput {
   }
 }
 
-impl nom::Slice<RangeFrom<usize>> for CustomParserInput {
-  fn slice(&self, range: RangeFrom<usize>) -> Self {
-    self.clone_with_read_slice(self.input.input_slice.slice(range))
+impl nom::Slice<RangeFrom<usize>> for ParserInputImpl<'_> {
+  fn slice(&self, mut range: RangeFrom<usize>) -> Self {
+    range.advance_by(self.input.input_start).unwrap();
+    let parent_s = self.input.parent.as_str();
+    self.clone_with_read_slice(parent_s.slice(range))
   }
 }
 
-impl nom::Slice<RangeTo<usize>> for CustomParserInput {
+impl nom::Slice<RangeTo<usize>> for ParserInputImpl<'_> {
   fn slice(&self, range: RangeTo<usize>) -> Self {
-    self.clone_with_read_slice(self.input.input_slice.slice(range))
-  }
-}
-
-impl ParserInputSlice {
-  /// Guarantees are on the programmer to create slice which belongs to the valid string
-  fn clone_with_read_slice(&self, new_read_pointer: &'static str) -> Arc<Self> {
-    Self {
-      parent_file: self.parent_file.clone(),
-      parent: self.parent.clone(),
-      input_slice: self.input_slice,
-      read_pointer: new_read_pointer,
-      prev_length: self.prev_length,
-      prev: self.prev.clone(),
-    }
-    .into()
+    let parent_s = self.input.parent.as_str();
+    let start = self.input.input_start;
+    let end = start + range.end;
+    assert!(parent_s.len() >= end);
+    self.clone_with_read_slice(&parent_s[start..end])
   }
 }
 
 // Copied from impl for `nom::InputIter` for `&'a str` and adapted to handle last input
-impl nom::InputIter for CustomParserInput {
+impl<'a> nom::InputIter for ParserInputImpl<'a> {
   type Item = char;
-  type Iter = CharIndices<'static>;
-  type IterElem = Chars<'static>;
+  type Iter = CharIndices<'a>;
+  type IterElem = Chars<'a>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -150,14 +157,14 @@ impl nom::InputIter for CustomParserInput {
 }
 
 // Copied from impl for `nom::InputIter` for `&'a str` and adapted to handle last input
-impl<'a> nom::InputLength for CustomParserInput {
+impl nom::InputLength for ParserInputImpl<'_> {
   #[inline]
   fn input_len(&self) -> usize {
     self.as_str().len()
   }
 }
 
-impl<'a> nom::InputTake for CustomParserInput {
+impl nom::InputTake for ParserInputImpl<'_> {
   #[inline]
   fn take(&self, count: usize) -> Self {
     self.clone_with_read_slice(&self.as_str()[..count])
@@ -171,7 +178,7 @@ impl<'a> nom::InputTake for CustomParserInput {
   }
 }
 
-impl<'a> nom::UnspecializedInput for CustomParserInput {}
+impl nom::UnspecializedInput for ParserInputImpl<'_> {}
 
 // impl<'a> nom::InputTakeAtPosition for CustomParserInput {
 //   type Item = char;
@@ -273,14 +280,14 @@ impl<'a> nom::UnspecializedInput for CustomParserInput {}
 //   }
 // }
 
-impl<'a> nom::Compare<CustomParserInput> for CustomParserInput {
+impl<'a> nom::Compare<ParserInputImpl<'a>> for ParserInputImpl<'a> {
   #[inline(always)]
-  fn compare(&self, t: CustomParserInput) -> CompareResult {
+  fn compare(&self, t: ParserInputImpl) -> CompareResult {
     self.as_str().compare(t.as_str())
   }
 
   #[inline(always)]
-  fn compare_no_case(&self, t: CustomParserInput) -> CompareResult {
+  fn compare_no_case(&self, t: ParserInputImpl) -> CompareResult {
     self.as_str().compare_no_case(t.as_str())
   }
 }

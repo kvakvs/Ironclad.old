@@ -7,7 +7,6 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
-use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, opt};
@@ -19,8 +18,8 @@ impl PreprocessorParser {
   /// Parses inner part of a `-define(IDENT)` variant
   fn define_no_args_no_body(input: ParserInput) -> ParserResult<AstNode> {
     map(Self::macro_ident, |name| {
-      PreprocessorNodeType::new_define_name_only(&SourceLoc::from_input(input), name)
-    })(input)
+      PreprocessorNodeType::new_define_name_only(input.loc(), name.to_string())
+    })(input.clone())
   }
 
   /// Parses inner part of a `-define(IDENT(ARGS), BODY).` or without args `-define(IDENT, BODY).`
@@ -38,19 +37,19 @@ impl PreprocessorParser {
       )),
       |(name, args, _comma, (body, _terminator))| {
         PreprocessorNodeType::new_define(
-          &SourceLoc::from_input(input),
-          name,
+          input.loc(),
+          name.to_string(),
           args.unwrap_or_default(),
           body.into_iter().collect::<String>(),
         )
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
   pub fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
     preceded(
-      match_dash_tag("define"),
+      match_dash_tag("define".into()),
       alt((
         context(
           "-define directive with no args and no body",
@@ -69,13 +68,11 @@ impl PreprocessorParser {
   pub fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("undef"),
+        match_dash_tag("undef".into()),
         tuple((par_open, ws_before(Self::macro_ident), par_close)),
         period_newline,
       ),
-      |(_open, ident, _close)| {
-        PreprocessorNodeType::new_undef(&SourceLoc::from_input(input), ident)
-      },
-    )(input)
+      |(_open, ident, _close)| PreprocessorNodeType::new_undef(input.loc(), ident.to_string()),
+    )(input.clone())
   }
 }

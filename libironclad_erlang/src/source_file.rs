@@ -12,6 +12,7 @@ pub struct SourceFileImpl {
   // line_numbers: Option<...>
 }
 
+/// Shareable readonly source file pointer
 pub type SourceFile = Arc<SourceFileImpl>;
 
 impl SourceFileImpl {

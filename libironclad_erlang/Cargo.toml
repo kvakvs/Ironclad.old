@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 libironclad_util = { path = "../libironclad_util" }
-libironclad_error = { path = "../libironclad_error" }
 
 function_name = "0.2.0"
 nom = "7"

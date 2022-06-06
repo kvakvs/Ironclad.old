@@ -5,9 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{
-  match_word, period, print_input, semicolon, ws_before, ws_before_mut,
-};
+use crate::erl_syntax::parsers::misc::{match_word, period, semicolon, ws_before, ws_before_mut};
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::source_loc::SourceLoc;
@@ -21,7 +19,7 @@ use nom::{bytes::complete::tag, error::context};
 impl ErlParser {
   fn parse_when_expr_for_fn(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      tuple((ws_before(tag("when")), cut(Self::parse_expr))),
+      tuple((ws_before(tag("when".into())), cut(Self::parse_expr))),
       |(_, g)| g, // ignore 'when' tag, keep guard expr
     )(input)
   }
@@ -60,7 +58,7 @@ impl ErlParser {
         // Optional: when <guard>
         context("`when` expression of a function clause", opt(Self::parse_when_expr_for_fn)),
         preceded(
-          ws_before(tag("->")),
+          ws_before(tag("->".into())),
           // Body as list of exprs
           context(
             "function clause body of a function definition",
@@ -72,15 +70,15 @@ impl ErlParser {
         ErlFnClause::new(
           maybe_name,
           args,
-          AstNodeImpl::new_comma_expr(&SourceLoc::from_input(input), body),
+          AstNodeImpl::new_comma_expr(input.loc(), body),
           when_expr,
         )
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Builds a function definition from multiple parsed clauses
-  fn _construct_fndef(location: &SourceLoc, fnclauses: Vec<ErlFnClause>) -> AstNode {
+  fn _construct_fndef(location: SourceLoc, fnclauses: Vec<ErlFnClause>) -> AstNode {
     // unreachable
     assert!(!fnclauses.is_empty(), "Function clauses list can't be empty, i don't even...");
     // println!("Construct fdef: {:?}", fnclauses);
@@ -101,7 +99,7 @@ impl ErlParser {
 
   /// Parse function definition
   pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
-    print_input("parse_fndef", input);
+    // print_input("parse_fndef", input);
     map(
       delimited(
         // does not begin with - (that would be a mis-parsed attribute)
@@ -113,8 +111,8 @@ impl ErlParser {
         ),
         period,
       ),
-      |t| Self::_construct_fndef(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| Self::_construct_fndef(input.loc(), t),
+    )(input.clone())
   }
 
   /// Lambda is an inline function definition
@@ -122,13 +120,13 @@ impl ErlParser {
     // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
     map(
       preceded(
-        match_word("fun"),
+        match_word("fun".into()),
         terminated(
           context("", separated_list1(semicolon, Self::parse_fnclause::<false>)),
-          match_word("end"),
+          match_word("end".into()),
         ),
       ),
-      |t| Self::_construct_fndef(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| Self::_construct_fndef(input.loc(), t),
+    )(input.clone())
   }
 }

@@ -5,13 +5,12 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, par_close,
-  par_open, parse_int, parse_varname, period_newline, semicolon, square_close, square_open,
-  ws_before,
+  colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, match_word,
+  par_close, par_open, parse_int, parse_varname, period_newline, semicolon, square_close,
+  square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::literal::Literal;
-use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -34,7 +33,7 @@ impl ErlTypeParser {
     map(
       // all between -spec and .
       delimited(
-        match_dash_tag("spec"),
+        match_dash_tag("spec".into()),
         tuple((
           context("Function name in a -spec() attribute", cut(AtomParser::atom)),
           separated_list1(
@@ -55,9 +54,9 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        AstNodeImpl::new_fn_spec(&SourceLoc::from_input(input), funarity, fntypespec.into())
+        AstNodeImpl::new_fn_spec(input.loc(), funarity, fntypespec.into())
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parses a function clause args specs, return spec and optional `when`
@@ -73,7 +72,7 @@ impl ErlTypeParser {
           "arguments list in a function clause spec",
           Self::parse_parenthesized_arg_spec_list,
         ),
-        ws_before(tag("->")),
+        ws_before(tag("->".into())),
         // Return type for fn clause
         context(
           "return type in function clause spec",
@@ -150,7 +149,7 @@ impl ErlTypeParser {
   pub fn parse_when_expr_for_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    let (input, _) = ws_before(tag("when"))(input)?;
+    let (input, _) = match_word("when".into())(input)?;
     Self::parse_comma_sep_typeargs1(input)
   }
 
@@ -258,7 +257,11 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, MapMemberType, ErlParserError> {
     map(
-      separated_pair(Self::alt_typevar_or_type, ws_before(tag("=>")), Self::alt_typevar_or_type),
+      separated_pair(
+        Self::alt_typevar_or_type,
+        ws_before(tag("=>".into())),
+        Self::alt_typevar_or_type,
+      ),
       |(key, value)| MapMemberType {
         key: ErlType::new_typevar(key),
         value: ErlType::new_typevar(value),
@@ -343,10 +346,7 @@ impl ErlTypeParser {
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: ParserInput) -> ParserResult<AstNode> {
     map(Self::parse_type, |t| {
-      AstNodeImpl::construct_with_location(
-        &SourceLoc::from_input(input),
-        ErlAstType::Type { ty: t },
-      )
-    })(input)
+      AstNodeImpl::construct_with_location(input.loc(), ErlAstType::Type { ty: t })
+    })(input.clone())
   }
 }

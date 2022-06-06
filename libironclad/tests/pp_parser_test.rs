@@ -17,8 +17,10 @@ fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
   // let filename = PathBuf::from(function_name!());
   let input = "-if(true).";
-  let (_tail, result) =
-    panicking_parser_error_reporter(input, PreprocessorParser::if_directive(input).finish());
+  let (_tail, result) = panicking_parser_error_reporter(
+    input,
+    PreprocessorParser::if_directive(ParserInput::from_str(input)).finish(),
+  );
   let pp_node = result.as_preprocessor();
   assert!(matches!(pp_node, PreprocessorNodeType::_TemporaryIf(_ast)));
   println!("Out={:?}", result);
@@ -78,8 +80,10 @@ false).
 -endif().";
   println!("In=«{}»", input);
 
-  let (_tail, ast) =
-    panicking_parser_error_reporter(input, PreprocessorParser::if_block(input).finish());
+  let (_tail, ast) = panicking_parser_error_reporter(
+    input,
+    PreprocessorParser::if_block(ParserInput::from_str(input)).finish(),
+  );
   println!("Out={:?}", ast);
 
   let pp_node = ast.as_preprocessor();
@@ -212,11 +216,13 @@ fn parse_include_varied_spacing_3() {
 
 fn parse_define_varied_spacing_do(
   filename: &Path,
-  input: ParserInput,
+  input_s: &str,
   match_macro: &str,
   match_text: &str,
 ) {
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
+  let input = ParserInput::from_str(input_s);
+  // TODO: Nest parser in previous parser and pass down to ErlModule ctor
+  let module = ErlModule::from_module_source(&filename, input.as_str()).unwrap();
   let pp_node = module.ast.as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body } = pp_node {
     assert_eq!(name, match_macro);

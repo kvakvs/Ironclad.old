@@ -130,7 +130,7 @@ dependencies = [
  "glob",
  "lazy_static",
  "libironclad",
- "libironclad_error",
+ "libironclad_erlang",
  "pest",
  "pest_derive",
  "serde",
@@ -154,7 +154,6 @@ dependencies = [
  "glob",
  "lazy_static",
  "libironclad_erlang",
- "libironclad_error",
  "libironclad_util",
  "nom",
  "serde",
@@ -170,20 +169,10 @@ dependencies = [
  "function_name",
  "glob",
  "lazy_static",
- "libironclad_error",
  "libironclad_util",
  "nom",
  "num",
  "num-bigint",
- "toml",
-]
-
-[[package]]
-name = "libironclad_error"
-version = "2022.6.0"
-dependencies = [
- "glob",
- "libironclad_util",
  "toml",
 ]
 

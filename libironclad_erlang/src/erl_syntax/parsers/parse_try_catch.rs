@@ -6,9 +6,8 @@ use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{semicolon, ws_before};
+use crate::erl_syntax::parsers::misc::{match_word, semicolon, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
-use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{preceded, terminated, tuple};
@@ -40,18 +39,17 @@ impl ErlParser {
         // Class:Error:Stacktrace
         Self::parse_exception_pattern,
         // when <Expression>
-        opt(preceded(ws_before(tag("when")), Self::parse_guardexpr)),
+        opt(preceded(ws_before(tag("when".into())), Self::parse_guardexpr)),
         // -> Expression
-        preceded(ws_before(tag("->")), Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>),
+        preceded(
+          ws_before(tag("->".into())),
+          Self::parse_comma_sep_exprs1::<{ Self::EXPR_STYLE_FULL }>,
+        ),
       )),
       |(exc_pattern, maybe_when, body)| {
-        CatchClause::new(
-          exc_pattern,
-          maybe_when,
-          AstNodeImpl::new_comma_expr(&SourceLoc::from_input(input), body),
-        )
+        CatchClause::new(exc_pattern, maybe_when, AstNodeImpl::new_comma_expr(input.loc(), body))
       },
-    )(input)
+    )(input.clone())
   }
 
   fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
@@ -63,12 +61,12 @@ impl ErlParser {
         ),
         // Optional OF followed by match clauses
         opt(preceded(
-          ws_before(tag("of")),
+          match_word("of".into()),
           context("try block: 'of' clauses", cut(many1(ws_before(Self::parse_case_clause)))),
         )),
         // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
         preceded(
-          ws_before(tag("catch")),
+          match_word("catch".into()),
           context(
             "try block: 'catch' clauses",
             cut(separated_list1(semicolon, Self::parse_catch_clause)),
@@ -76,24 +74,24 @@ impl ErlParser {
         ),
       )),
       |(body, of_branches, catch_clauses)| {
-        let loc = SourceLoc::from_input(input);
+        let loc = input.loc();
         AstNodeImpl::new_try_catch(
-          &loc,
-          AstNodeImpl::new_comma_expr(&loc, body),
+          loc.clone(),
+          AstNodeImpl::new_comma_expr(loc, body),
           of_branches,
           catch_clauses,
         )
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parses a `try-catch` or a `try-of-catch` block
   pub fn parse_try_catch(input: ParserInput) -> ParserResult<AstNode> {
-    let (input, _) = ws_before(tag("try"))(input)?;
+    let (input, _) = match_word("try".into())(input)?;
 
     context(
       "try-catch or try-of block",
-      cut(terminated(Self::parse_try_catch_inner, ws_before(tag("end")))),
+      cut(terminated(Self::parse_try_catch_inner, match_word("end".into()))),
     )(input)
   }
 }

@@ -1,7 +1,8 @@
 //! Source file locations for printing and reporting to the user
-use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
 use std::fmt::Formatter;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 /// Source code span with start and end
 #[derive(Clone, Debug)]
@@ -11,7 +12,10 @@ pub enum SourceLoc {
   /// Points to a file
   File(PathBuf),
   /// Stores the chain of inputs, and the read position
-  Input { input: ParserInput },
+  Input {
+    /// Location in the input chain of the parser
+    input: Arc<ParserInputSlice>,
+  },
 }
 
 impl SourceLoc {
@@ -22,8 +26,8 @@ impl SourceLoc {
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub fn from_input(input: ParserInput) -> Self {
-    Self::Input { input }
+  pub fn from_input(i: Arc<ParserInputSlice>) -> Self {
+    Self::Input { input: i }
   }
 }
 

@@ -6,12 +6,11 @@ use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, equals_sign, match_dash_tag, par_close, par_open,
-  parse_int, period_newline, print_input, square_close, square_open, ws_before,
+  parse_int, period_newline, square_close, square_open, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::ErlParser;
-use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
@@ -54,8 +53,8 @@ impl ErlAttrParser {
         ),
         period_newline,
       ),
-      |(tag, term)| AstNodeImpl::new_generic_attr(&SourceLoc::from_input(input), tag, term),
-    )(input)
+      |(tag, term)| AstNodeImpl::new_generic_attr(input.loc(), tag, term),
+    )(input.clone())
   }
 
   /// Parses a `-module(atom).` attribute.
@@ -63,15 +62,15 @@ impl ErlAttrParser {
   pub fn module_attr(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("module"),
+        match_dash_tag("module".into()),
         context(
           "the module name in a -module() attribute",
           cut(delimited(par_open, AtomParser::atom, par_close)),
         ),
         period_newline,
       ),
-      |t| AstNodeImpl::new_module_start_attr(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| AstNodeImpl::new_module_start_attr(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parses a `fun/arity` atom with an integer.
@@ -103,12 +102,12 @@ impl ErlAttrParser {
   pub fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("export"),
+        match_dash_tag("export".into()),
         context("list of exports in an -export() attribute", cut(Self::parse_export_mfa_list)),
         period_newline,
       ),
-      |t| AstNodeImpl::new_export_attr(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| AstNodeImpl::new_export_attr(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parses an `-export_type([type/arity, ...]).` attribute.
@@ -116,15 +115,15 @@ impl ErlAttrParser {
   pub fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("export_type"),
+        match_dash_tag("export_type".into()),
         context(
           "list of exports in an -export_type() attribute",
           cut(Self::parse_export_mfa_list),
         ),
         period_newline,
       ),
-      |t| AstNodeImpl::new_export_type_attr(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| AstNodeImpl::new_export_type_attr(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parses an `-import(module [fn/arity, ...]).` attribute.
@@ -132,7 +131,7 @@ impl ErlAttrParser {
   pub fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("import"),
+        match_dash_tag("import".into()),
         context(
           "list of imports in an -import() attribute",
           cut(delimited(
@@ -143,10 +142,8 @@ impl ErlAttrParser {
         ),
         period_newline,
       ),
-      |(mod_name, imports)| {
-        AstNodeImpl::new_import_attr(&SourceLoc::from_input(input), mod_name, imports)
-      },
-    )(input)
+      |(mod_name, imports)| AstNodeImpl::new_import_attr(input.loc(), mod_name, imports),
+    )(input.clone())
   }
 
   /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
@@ -163,10 +160,10 @@ impl ErlAttrParser {
   /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
   /// Dash `-` and trailing `.` are matched outside by the caller.
   pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
-    print_input("type_definition_attr", input);
+    // print_input("type_definition_attr", input);
     map(
       delimited(
-        match_dash_tag("type"),
+        match_dash_tag("type".into()),
         tuple((
           AtomParser::atom,
           context(
@@ -179,9 +176,9 @@ impl ErlAttrParser {
         period_newline,
       ),
       |(type_name, type_args, _coloncolon, new_type)| {
-        AstNodeImpl::new_type_attr(&SourceLoc::from_input(input), type_name, type_args, new_type)
+        AstNodeImpl::new_type_attr(input.loc(), type_name, type_args, new_type)
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parses one field from the field list of `-record(atom(), { <FIELDS> } ).`.
@@ -209,16 +206,14 @@ impl ErlAttrParser {
         comma,
         delimited(curly_open, separated_list0(comma, Self::record_definition_field), curly_close),
       ),
-      |(atom, fields)| {
-        AstNodeImpl::new_record_definition(&SourceLoc::from_input(input), atom, fields)
-      },
-    )(input)
+      |(atom, fields)| AstNodeImpl::new_record_definition(input.loc(), atom, fields),
+    )(input.clone())
   }
 
   /// Parses a `-record(atom(), {field :: type()... }).` attribute.
   pub fn record_definition(input: ParserInput) -> ParserResult<AstNode> {
     delimited(
-      match_dash_tag("record"),
+      match_dash_tag("record".into()),
       context(
         "record definition in a -record() attribute",
         cut(delimited(par_open, Self::record_definition_inner, par_close)),

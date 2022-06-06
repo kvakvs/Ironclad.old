@@ -25,19 +25,19 @@ impl AstNodeImpl {
       FnDef(fndef) => fndef.synthesize_function_type(scope),
       FnRef { mfa, .. } => match Scope::retrieve_fn_from(scope, mfa) {
         None => ErlError::local_function_not_found(
-          &self.location,
+          self.location.clone(),
           mfa.clone(),
           format!("Function reference points to a non-existent local function: {}", mfa),
         ),
         Some(fndef) => Ok(fndef.as_fn_def().synthesize_function_type(scope)?),
       },
-      Apply(apply) => apply.synthesize_application_type(&self.location, scope),
+      Apply(apply) => apply.synthesize_application_type(self.location.clone(), scope),
       Var(v) => {
         if let Ok(env_read) = scope.read() {
           match env_read.variables.get(&v.name) {
             None => {
               println!("Var not found; Scope={:?}", &env_read);
-              ErlError::variable_not_found(&self.location, v.name.clone())
+              ErlError::variable_not_found(self.location.clone(), v.name.clone())
             }
             Some(val) => Ok(val.clone()),
           }
@@ -46,7 +46,7 @@ impl AstNodeImpl {
         }
       }
       Lit { value, .. } => Ok(ErlType::new_singleton(value)),
-      BinaryOp { expr, .. } => expr.synthesize_binop_type(&self.location, scope),
+      BinaryOp { expr, .. } => expr.synthesize_binop_type(self.location.clone(), scope),
       List { elements, tail, .. } => Self::synthesize_list_type(scope, elements, tail),
       Tuple { elements, .. } => Self::synthesize_tuple_type(scope, elements),
       other => unimplemented!("Don't know how to synthesize type from {:?}", other),

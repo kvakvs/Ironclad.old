@@ -27,10 +27,10 @@ impl BinaryParser {
   /// Parse a literal value, variable, or an expression in parentheses.
   fn parse_value(input: ParserInput) -> ParserResult<AstNode> {
     alt((
-      map(parse_varname, |v| AstNodeImpl::new_var(&SourceLoc::from_input(input), &v)),
+      map(parse_varname, |v| AstNodeImpl::new_var(input.loc(), &v)),
       ErlParser::parse_literal,
       delimited(par_open, ErlParser::parse_expr, par_close),
-    ))(input)
+    ))(input.clone())
   }
 
   /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
@@ -51,37 +51,37 @@ impl BinaryParser {
 
   fn parse_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
-      map(tag("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
-      map(tag("float"), |_| TypeSpecifier::Type(ValueType::Float)),
-      map(alt((tag("bytes"), tag("ironclad_exe"))), |_| {
+      map(tag("integer".into()), |_| TypeSpecifier::Type(ValueType::Integer)),
+      map(tag("float".into()), |_| TypeSpecifier::Type(ValueType::Float)),
+      map(alt((tag("bytes".into()), tag("binary".into()))), |_| {
         TypeSpecifier::Type(ValueType::Bytes)
       }),
-      map(alt((tag("bitstring"), tag("bits"))), |_| {
+      map(alt((tag("bitstring".into()), tag("bits".into()))), |_| {
         TypeSpecifier::Type(ValueType::Bitstring)
       }),
-      map(tag("utf8"), |_| TypeSpecifier::Type(ValueType::Utf8)),
-      map(tag("utf16"), |_| TypeSpecifier::Type(ValueType::Utf16)),
-      map(tag("utf32"), |_| TypeSpecifier::Type(ValueType::Utf32)),
+      map(tag("utf8".into()), |_| TypeSpecifier::Type(ValueType::Utf8)),
+      map(tag("utf16".into()), |_| TypeSpecifier::Type(ValueType::Utf16)),
+      map(tag("utf32".into()), |_| TypeSpecifier::Type(ValueType::Utf32)),
     ))(input)
   }
 
   fn parse_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
-      map(tag("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
-      map(tag("unsigned"), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
+      map(tag("signed".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
+      map(tag("unsigned".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
     ))(input)
   }
 
   fn parse_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
     alt((
-      map(tag("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
-      map(tag("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
-      map(tag("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
+      map(tag("big".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
+      map(tag("little".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
+      map(tag("native".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
     ))(input)
   }
 
   fn parse_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {
-    map(preceded(tag("unit:"), parse_int), |erl_int| {
+    map(preceded(tag("unit:".into()), parse_int), |erl_int| {
       TypeSpecifier::Unit(erl_int.as_usize().unwrap_or_default())
     })(input)
   }
@@ -128,20 +128,23 @@ impl BinaryParser {
 
   /// Parse a ironclad_exe or ironclad_exe builder expression
   pub fn parse(input: ParserInput) -> ParserResult<AstNode> {
-    let (input, _) = ws_before(tag("<<"))(input)?;
+    // let (input, _) = ws_before(tag("<<".into()))(input)?;
 
-    context(
-      "ironclad_exe expression",
-      cut(terminated(
-        map(
-          separated_list1(
-            comma,
-            context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
+    preceded(
+      ws_before(tag("<<".into())),
+      context(
+        "ironclad_exe expression",
+        cut(terminated(
+          map(
+            separated_list1(
+              comma,
+              context("ironclad_exe expression element", cut(ws_before(Self::parse_bin_element))),
+            ),
+            |bin_exprs| AstNodeImpl::new_binary_expr(input.loc(), bin_exprs),
           ),
-          |bin_exprs| AstNodeImpl::new_binary_expr(&SourceLoc::from_input(input), bin_exprs),
-        ),
-        ws_before(tag(">>")),
-      )),
-    )(input)
+          ws_before(tag(">>".into())),
+        )),
+      ),
+    )(input.clone())
   }
 }

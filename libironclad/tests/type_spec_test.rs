@@ -6,6 +6,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
+use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
@@ -25,8 +26,10 @@ fn union_type_parse() -> IcResult<()> {
 	       {'integer',integer()} |
 	       'nil' |
 	       {'float',float()}.";
-  let (tail1, result1) =
-    panicking_parser_error_reporter(input, ErlAttrParser::type_definition_attr(input).finish());
+  let (tail1, result1) = panicking_parser_error_reporter(
+    input,
+    ErlAttrParser::type_definition_attr(ParserInput::from_str(input)).finish(),
+  );
   assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
   println!("Parsed: {}", result1);
   Ok(())
@@ -37,8 +40,10 @@ fn union_type_parse() -> IcResult<()> {
 fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
-  let (tail1, result1) =
-    panicking_parser_error_reporter(input, ErlAttrParser::parse_generic_attr(input).finish());
+  let (tail1, result1) = panicking_parser_error_reporter(
+    input,
+    ErlAttrParser::parse_generic_attr(ParserInput::from_str(input)).finish(),
+  );
   assert!(
     tail1.trim().is_empty(),
     "Not all input consumed from attr1_src, tail: «{}»",
@@ -53,8 +58,10 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
 fn fn_generic_attr_parse2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
   let input = "- bbbggg (ababagalamaga()) .  ";
-  let (tail2, result2) =
-    panicking_parser_error_reporter(input, ErlAttrParser::parse_generic_attr(input).finish());
+  let (tail2, result2) = panicking_parser_error_reporter(
+    input,
+    ErlAttrParser::parse_generic_attr(ParserInput::from_str(input)).finish(),
+  );
   assert!(
     tail2.trim().is_empty(),
     "Not all input consumed from attr2_src, tail: {}",

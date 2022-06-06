@@ -1,6 +1,5 @@
 extern crate function_name;
 extern crate libironclad_erlang;
-extern crate libironclad_error;
 extern crate libironclad_util;
 
 mod test_util;

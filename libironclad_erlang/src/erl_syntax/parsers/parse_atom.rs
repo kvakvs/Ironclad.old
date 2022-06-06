@@ -4,14 +4,12 @@
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{parse_ident, ws_before_mut};
+use crate::erl_syntax::parsers::parse_str::parse_u32;
 use nom::branch::alt;
-use nom::combinator::{map, map_opt, map_res, value, verify};
+use nom::combinator::{map, map_opt, value, verify};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
-use nom::{
-  bytes::streaming::{is_not, take_while_m_n},
-  character, error,
-};
+use nom::{bytes::streaming::is_not, character};
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single
@@ -30,34 +28,12 @@ pub struct AtomParser {}
 // first we write parsers for the smallest elements (escaped characters),
 // then combine them into larger parsers.
 
+// TODO: Eliminate empty struct impl and just use module member functions
 impl AtomParser {
   /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
   /// hexadecimal numerals. We will combine this later with parse_escaped_char
   /// to parse sequences like \u{00AC}.
-  fn parse_unicode<'a, E>(input: ParserInput) -> nom::IResult<ParserInput, char, E>
-  where
-    E: error::ParseError<ParserInput>
-      + error::FromExternalError<ParserInput, std::num::ParseIntError>,
-  {
-    // `take_while_m_n` parses between `m` and `n` bytes (inclusive) that match
-    // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
-    let parse_hex = take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit());
-
-    // `preceded` takes a prefix parser, and if it succeeds, returns the result
-    // of the body parser. In this case, it parses u{XXXX}.
-    let parse_delimited_hex = preceded(
-      character::streaming::char('u'),
-      // `delimited` is like `preceded`, but it parses both a prefix and a suffix.
-      // It returns the result of the middle parser. In this case, it parses
-      // {XXXX}, where XXXX is 1 to 6 hex numerals, and returns XXXX
-      delimited(character::streaming::char('{'), parse_hex, character::streaming::char('}')),
-    );
-
-    // `map_res` takes the result of a parser and applies a function that returns
-    // a Result. In this case we take the hex bytes from parse_hex and attempt to
-    // convert them to a u32.
-    let parse_u32 = map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
-
+  fn parse_unicode<'a>(input: ParserInput) -> ParserResult<char> {
     // map_opt is like map_res, but it takes an Option instead of a Result. If
     // the function returns None, map_opt returns an error. In this case, because
     // not all u32 values are valid unicode code points, we have to fallibly
@@ -66,11 +42,7 @@ impl AtomParser {
   }
 
   /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-  fn parse_escaped_char<'a, E>(input: ParserInput) -> nom::IResult<ParserInput, char, E>
-  where
-    E: error::ParseError<ParserInput>
-      + error::FromExternalError<ParserInput, std::num::ParseIntError>,
-  {
+  fn parse_escaped_char(input: ParserInput) -> ParserResult<char> {
     preceded(
       character::streaming::char('\\'),
       // `alt` tries each parser in sequence, returning the result of
@@ -95,49 +67,38 @@ impl AtomParser {
 
   /// Parse a backslash, followed by any amount of whitespace. This is used later
   /// to discard any escaped whitespace.
-  fn parse_escaped_whitespace<'a, E: error::ParseError<ParserInput>>(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, ParserInput, E> {
+  fn parse_escaped_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
     preceded(character::streaming::char('\\'), character::streaming::multispace1)(input)
   }
 
   /// Parse a non-empty block of text that doesn't include \ or "
-  fn parse_literal<'a, E: error::ParseError<ParserInput>>(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, ParserInput, E> {
+  fn parse_literal<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
     // `is_not` parses a string of 0 or more characters that aren't one of the
     // given characters.
-    let not_quote_slash = is_not("\'\\");
+    let not_quote_slash = |inp1: ParserInput<'a>| is_not("\'\\")(inp1);
 
     // `verify` runs a parser, then runs a verification function on the output of
     // the parser. The verification function accepts out output only if it
     // returns true. In this case, we want to ensure that the output of is_not
     // is non-empty.
-    verify(not_quote_slash, |s: &str| !s.is_empty())(input)
+    verify(not_quote_slash, |inp2: &ParserInput<'a>| !inp2.is_empty())(input)
   }
 
   /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
   /// into a StringFragment.
-  fn parse_fragment<'a, E>(input: ParserInput) -> nom::IResult<ParserInput, StringFragment<'a>, E>
-  where
-    E: error::ParseError<ParserInput>
-      + error::FromExternalError<ParserInput, std::num::ParseIntError>,
-  {
+  fn parse_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>> {
     alt((
       // The `map` combinator runs a parser, then applies a function to the output
       // of that parser.
-      map(Self::parse_literal, StringFragment::Literal),
+      map(Self::parse_literal, |inp1: ParserInput| StringFragment::Literal(inp1.as_str())),
       map(Self::parse_escaped_char, StringFragment::EscapedChar),
       value(StringFragment::EscapedWS, Self::parse_escaped_whitespace),
     ))(input)
   }
 
-  // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
-  // and for each output value, calls a folding function on each output value.
-  pub fn build_quoted_atom_body<'a, E>(input: ParserInput) -> nom::IResult<ParserInput, String, E>
-  where
-    E: error::ParseError<ParserInput>,
-  {
+  /// fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
+  /// and for each output value, calls a folding function on each output value.
+  pub fn build_quoted_atom_body(input: ParserInput) -> ParserResult<String> {
     fold_many0(
       // Our parser function– parses a single string fragment
       Self::parse_fragment,
@@ -158,11 +119,7 @@ impl AtomParser {
 
   /// Parse a string. Use a loop of parse_fragment and push all of the fragments
   /// into an output string.
-  fn parse_quoted_atom<'a, E>(input: ParserInput) -> nom::IResult<ParserInput, String, E>
-  where
-    E: error::ParseError<ParserInput>
-      + error::FromExternalError<ParserInput, std::num::ParseIntError>,
-  {
+  fn parse_quoted_atom<'a>(input: ParserInput) -> ParserResult<String> {
     // Finally, parse the string. Note that, if `build_string` could accept a raw
     // " character, the closing delimiter " would never match. When using
     // `delimited` with a looping parser (like fold_many0), be sure that the

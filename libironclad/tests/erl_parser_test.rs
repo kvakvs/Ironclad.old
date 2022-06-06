@@ -10,6 +10,7 @@ use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::TAstNode;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
+use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
@@ -38,7 +39,7 @@ fn parse_empty_module() -> IcResult<()> {
 fn parse_export_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
-  let (_tail, pfna) = ErlAttrParser::parse_funarity("name/123").unwrap();
+  let (_tail, pfna) = ErlAttrParser::parse_funarity(ParserInput::from_str("name/123")).unwrap();
   assert_eq!(pfna.name, "name");
   assert_eq!(pfna.arity, 123usize);
 
@@ -77,7 +78,7 @@ fn parse_import_attr() -> IcResult<()> {
 fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
-  let parse_result = ErlParser::module_forms_collection(input);
+  let parse_result = ErlParser::module_forms_collection(ParserInput::from_str(input));
   let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
@@ -92,7 +93,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     "Parse a string with 2 function defs in it as module forms collection",
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let parse_result = ErlParser::module_forms_collection(input);
+  let parse_result = ErlParser::module_forms_collection(ParserInput::from_str(input));
   let (_tail, forms) = panicking_parser_error_reporter(input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
@@ -267,7 +268,8 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
   {
-    let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error").unwrap();
+    let (exc_tail, exc) =
+      ErlParser::parse_exception_pattern(ParserInput::from_str("Class:Error")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -277,7 +279,8 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
     assert!(exc.stack.is_none());
   }
   {
-    let (exc_tail, exc) = ErlParser::parse_exception_pattern("Class:Error:Stack").unwrap();
+    let (exc_tail, exc) =
+      ErlParser::parse_exception_pattern(ParserInput::from_str("Class:Error:Stack")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -294,7 +297,8 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
-  let (tail, clause) = ErlParser::parse_catch_clause("A:B:C when true -> ok").unwrap();
+  let (tail, clause) =
+    ErlParser::parse_catch_clause(ParserInput::from_str("A:B:C when true -> ok")).unwrap();
   // TODO: Use panicking error reporter
   assert!(tail.is_empty(), "Could not parse exception pattern");
   assert!(clause.exc_pattern.class.is_var());

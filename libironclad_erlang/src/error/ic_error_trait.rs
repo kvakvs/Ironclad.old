@@ -10,7 +10,7 @@ pub trait IcErrorT: std::fmt::Display + std::fmt::Debug {
   fn get_category(&self) -> &IcErrorCategory;
 
   /// Where the error occured
-  fn get_location(&self) -> &SourceLoc;
+  fn get_location(&self) -> SourceLoc;
 
   /// Some errors might result in a non-0 exit code, return it here
   fn get_process_exit_code(&self) -> i32;

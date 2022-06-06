@@ -1,9 +1,9 @@
 //! Crate handling Erlang syntax and typing
+#![feature(iter_advance_by)]
 #![warn(missing_docs)]
 extern crate core;
 extern crate derivative;
 extern crate lazy_static;
-extern crate libironclad_error;
 extern crate libironclad_util;
 extern crate nom;
 extern crate num;

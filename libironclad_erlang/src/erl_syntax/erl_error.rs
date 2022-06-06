@@ -48,8 +48,8 @@ impl IcErrorT for ErlError {
     &self.ic_category
   }
 
-  fn get_location(&self) -> &SourceLoc {
-    &self.loc
+  fn get_location(&self) -> SourceLoc {
+    self.loc.clone()
   }
 
   fn get_process_exit_code(&self) -> i32 {
@@ -79,7 +79,7 @@ impl ErlError {
   }
 
   /// Creates an "Unacceptable" error
-  pub fn unacceptable<T>(loc: &SourceLoc, message: String) -> IcResult<T> {
+  pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::ErlangParse,
       ErlErrorCategory::Unacceptable,
@@ -90,7 +90,7 @@ impl ErlError {
   }
 
   /// Creates an "TypeError" error
-  pub fn type_error<T>(loc: &SourceLoc, type_err: TypeError) -> IcResult<T> {
+  pub fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::TypeError,
       ErlErrorCategory::TypeError,
@@ -101,7 +101,7 @@ impl ErlError {
   }
 
   /// Creates an "Local Function Not Found" error
-  pub fn local_function_not_found<T>(loc: &SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
+  pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::Erlang,
       ErlErrorCategory::LocalFnNotFound { mfa },
@@ -112,7 +112,7 @@ impl ErlError {
   }
 
   /// Creates a "Variable Not Found" error
-  pub fn variable_not_found<T>(loc: &SourceLoc, var: String) -> IcResult<T> {
+  pub fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::Erlang,
       ErlErrorCategory::VariableNotFound { var },

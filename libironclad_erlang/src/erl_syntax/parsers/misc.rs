@@ -1,7 +1,7 @@
 //! Helper functions for Nom parsing
 
-use crate::erl_syntax::parsers::defs::ParserInput;
-use crate::erl_syntax::parsers::defs::{ParserResult, StrSliceParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
@@ -15,52 +15,51 @@ use nom::{
 };
 
 /// Recognizes 0 or more whitespaces and line comments
-fn spaces_or_comments0<'a, ErrType: nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+fn spaces_or_comments0<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(many0(alt((character::complete::multispace1, parse_line_comment))))(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
-pub fn ws_before<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<ParserInput>>(
+pub fn ws_before<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
 where
-  InnerFn: Fn(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>,
+  InnerFn: Fn(ParserInput<'a>) -> ParserResult<Out>,
 {
-  preceded::<ParserInput, ParserInput, Out, ErrType, _, InnerFn>(spaces_or_comments0, inner)
+  preceded::<ParserInput<'a>, ParserInput<'a>, Out, ErlParserError, _, InnerFn>(
+    spaces_or_comments0,
+    inner,
+  )
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
-pub fn ws_before_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<ParserInput>>(
+pub fn ws_before_mut<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
 where
-  InnerFn: FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>,
+  InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
 {
   preceded(spaces_or_comments0, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
 /// trailing whitespace, returning the output of `inner`.
-pub fn ws<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<ParserInput>>(
-  inner: InnerFn,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>
+pub fn ws<'a, InnerFn: 'a, Out>(inner: InnerFn) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
 where
-  InnerFn: Fn(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>,
+  InnerFn: Fn(ParserInput<'a>) -> ParserResult<Out>,
 {
   delimited(spaces_or_comments0, inner, spaces_or_comments0)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
 /// trailing whitespace, returning the output of `inner`.
-pub fn ws_mut<'a, InnerFn: 'a, Out, ErrType: nom::error::ParseError<ParserInput>>(
+pub fn ws_mut<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
 where
-  InnerFn: FnMut(ParserInput) -> nom::IResult<ParserInput, Out, ErrType>,
+  InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
 {
   delimited(spaces_or_comments0, inner, character::complete::multispace0)
 }
@@ -70,7 +69,7 @@ pub fn parse_ident(input: ParserInput) -> ParserResult<String> {
   map(
     ws_before_mut(recognize(pair(
       verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
-      many0(alt((alphanumeric1, tag("_")))),
+      many0(alt((alphanumeric1, tag("_".into())))),
     ))),
     |result| result.to_string(),
   )(input)
@@ -82,18 +81,18 @@ pub fn parse_varname(input: ParserInput) -> ParserResult<String> {
     recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
       verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
-      many0(alt((alphanumeric1, tag("_")))),
+      many0(alt((alphanumeric1, tag("_".into())))),
     )),
     |result: ParserInput| result.to_string(),
   )(input)
 }
 
-fn parse_int_unsigned_body(input: ParserInput) -> StrSliceParserResult {
+fn parse_int_unsigned_body(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
 }
 
 /// Matches + or -
-fn parse_sign(input: ParserInput) -> StrSliceParserResult {
+fn parse_sign(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(alt((char('-'), char('+'))))(input)
 }
 
@@ -102,7 +101,8 @@ fn parse_int_decimal(input: ParserInput) -> ParserResult<ErlInteger> {
   map(
     ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
     |num| {
-      ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
+      ErlInteger::new_from_string(num.clone())
+        .unwrap_or_else(|| panic!("Can't parse {} as integer", num))
     },
   )(input)
 }
@@ -115,7 +115,7 @@ pub fn parse_int(input: ParserInput) -> ParserResult<ErlInteger> {
 
 /// Parse a float with possibly scientific notation. Output is a string.
 /// From Nom examples
-pub fn parse_float(input: ParserInput) -> StrSliceParserResult {
+pub fn parse_float<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   alt((
     // Case one: .42
     recognize(tuple((
@@ -149,139 +149,108 @@ pub fn parse_float(input: ParserInput) -> StrSliceParserResult {
 // }
 
 /// Recognizes newline or end of input
-pub fn newline_or_eof<'a, ErrType: nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn newline_or_eof<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(preceded(
     many0(alt((char(' '), char('\t')))),
-    alt((tag("\r\n"), tag("\r"), tag("\n"), eof)),
+    alt((tag("\r\n".into()), tag("\r".into()), tag("\n".into()), eof)),
   ))(input)
 }
 
 /// Matches an opening parenthesis "(" with 0+ whitespace before
 #[inline]
-pub fn par_open<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn par_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('(')))(input)
 }
 
 /// Matches a closing parenthesis ")" with 0+ whitespace before
 #[inline]
-pub fn par_close<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn par_close<'a>(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(ws_before(char(')')))(input)
 }
 
 /// Matches an opening curly bracket "{" with 0+ whitespace before
 #[inline]
-pub fn curly_open<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn curly_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('{')))(input)
 }
 
 /// Matches a closing curly bracket "}" with 0+ whitespace before
 #[inline]
-pub fn curly_close<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn curly_close<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('}')))(input)
 }
 
 /// Matches an opening square bracket "[" with 0+ whitespace before
 #[inline]
-pub fn square_open<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn square_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('[')))(input)
 }
 
 /// Matches a closing square bracket "]" with 0+ whitespace before
 #[inline]
-pub fn square_close<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn square_close<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(']')))(input)
 }
 
 /// Matches a comma "," with 0+ whitespace before
 #[inline]
-pub fn comma<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn comma<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(',')))(input)
 }
 
 /// Matches a hash symbol `"#"` with 0+ whitespace before
 #[inline]
-pub fn hash_symbol<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn hash_symbol<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('#')))(input)
 }
 
 /// Matches a period "." with 0+ whitespace before
 #[inline]
-pub fn period<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn period<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('.')))(input)
 }
 
 /// Recognizes end of a directive or module attribute in `-<attr> ... "." <newline>`
 #[inline]
-pub fn period_newline<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn period_newline<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(pair(period, newline_or_eof))(input)
 }
 
 /// Matches a semicolon ";" with 0+ whitespace before
 #[inline]
-pub fn semicolon<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn semicolon<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(';')))(input)
 }
 
 /// Matches a double colon "::" with 0+ whitespace before
 #[inline]
-pub fn colon_colon<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
-  recognize(ws_before(tag("::")))(input)
+pub fn colon_colon<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(ws_before(tag("::".into())))(input)
 }
 
 /// Matches a double dot (double period) ".." with 0+ whitespace before
 #[inline]
-pub fn dot_dot<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
-  recognize(ws_before(tag("..")))(input)
+pub fn dot_dot<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(ws_before(tag("..".into())))(input)
 }
 
 /// Matches an equals sign "=" with 0+ whitespace before
 #[inline]
-pub fn equals_sign<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn equals_sign<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('=')))(input)
 }
 
 /// Recognizes `% text <newline>` consuming text
-pub fn parse_line_comment<'a, ErrType: nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn parse_line_comment<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(pair(many1(char('%')), many_till(character::complete::anychar, newline_or_eof)))(input)
 }
 
 /// Print detailed error with source pointers, and panic
 pub fn panicking_parser_error_reporter<'a, Out>(
-  input: ParserInput,
-  res: Result<(ParserInput, Out), nom::error::VerboseError<ParserInput>>,
-) -> (ParserInput, Out) {
+  input_s: &str,
+  res: Result<(ParserInput<'a>, Out), nom::error::VerboseError<ParserInput<'a>>>,
+) -> (ParserInput<'a>, Out) {
+  let input = ParserInput::from_str(input_s);
   match res {
     Ok((tail, out)) => {
       let tail_trim_whitespace = tail.trim();
@@ -297,24 +266,22 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 
 /// Returns a new parser which recognizes a `<spaces> "-" <spaces> <tag>` and returns it as
 /// a `&str` slice (*recognizes*, i.e. returns with all whitespace included)
-pub fn match_dash_tag<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  tag_str: &'static str,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, ParserInput, ErrType> {
-  recognize(pair(ws_before(char('-')), match_word(tag_str)))
+pub fn match_dash_tag<'a>(
+  t: ParserInput<'a>,
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(pair(ws_before(char('-')), match_word(t)))
 }
 
 /// Matches a non-letter, use with `peek` to mark where word ends
-pub fn word_break<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ParserInput, ErrType> {
+pub fn word_break<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(not(alphanumeric1))(input)
 }
 
 /// Matches a tag which is followed by a non-letter (word break)
-pub fn match_word<'a, ErrType: 'a + nom::error::ParseError<ParserInput>>(
-  tag_str: &'static str,
-) -> impl FnMut(ParserInput) -> nom::IResult<ParserInput, ParserInput, ErrType> {
-  recognize(terminated(ws_before(tag(tag_str)), peek(word_break)))
+pub fn match_word<'a>(
+  t: ParserInput<'a>,
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(terminated(ws_before(tag(t)), peek(word_break)))
 }
 
 /// Print function location and trimmed input, for debugging

@@ -10,7 +10,6 @@ use libironclad_erlang::erl_syntax::parsers::misc::{
   match_dash_tag, par_close, par_open, period_newline, ws_before,
 };
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
-use libironclad_error::source_loc::SourceLoc;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;
@@ -51,7 +50,7 @@ impl PreprocessorParser {
         if let PpAstType::_TemporaryIf(if_expr) = &pp_if_expr.node_type {
           let branch_true1 = if branch_true.is_empty() { None } else { Some(branch_true) };
           PpAst::new_if(
-            &SourceLoc::from_input(input),
+            SourceLoc::from_input(input),
             if_expr.clone(),
             branch_true1.unwrap_or_default(),
             branch_false.unwrap_or_default(),
@@ -72,7 +71,7 @@ impl PreprocessorParser {
         period_newline,
       ),
       // Builds a temporary If node with erl expression in it
-      |t| PpAst::new_if_temporary(&SourceLoc::from_input(input), t),
+      |t| PpAst::new_if_temporary(SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -84,7 +83,7 @@ impl PreprocessorParser {
         delimited(par_open, ws_before(ErlParser::parse_expr), par_close),
         period_newline,
       ),
-      |t| PpAst::new_elif_temporary(&SourceLoc::from_input(input), t),
+      |t| PpAst::new_elif_temporary(SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -96,7 +95,7 @@ impl PreprocessorParser {
         delimited(par_open, ws_before(Self::macro_ident), par_close),
         period_newline,
       ),
-      |t| PpAst::new_ifdef_temporary(&SourceLoc::from_input(input), t),
+      |t| PpAst::new_ifdef_temporary(SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -108,7 +107,7 @@ impl PreprocessorParser {
         delimited(par_open, ws_before(Self::macro_ident), par_close),
         period_newline,
       ),
-      |t| PpAst::new_ifndef_temporary(&SourceLoc::from_input(input), t),
+      |t| PpAst::new_ifndef_temporary(SourceLoc::from_input(input), t),
     )(input)
   }
 
@@ -116,7 +115,7 @@ impl PreprocessorParser {
   pub fn else_temporary_directive(input: ParserInput) -> PpAstParserResult {
     map(
       delimited(match_dash_tag("else"), opt(pair(par_open, par_close)), period_newline),
-      |_opt| PpAst::construct_with_location(&SourceLoc::from_input(input), _TemporaryElse),
+      |_opt| PpAst::construct_with_location(SourceLoc::from_input(input), _TemporaryElse),
     )(input)
   }
 
@@ -128,7 +127,7 @@ impl PreprocessorParser {
   pub fn endif_temporary_directive(input: ParserInput) -> PpAstParserResult {
     map(
       delimited(match_dash_tag("endif"), Self::maybe_empty_parens, period_newline),
-      |_opt| PpAst::construct_with_location(&SourceLoc::from_input(input), _TemporaryEndif),
+      |_opt| PpAst::construct_with_location(SourceLoc::from_input(input), _TemporaryEndif),
     )(input)
   }
 }

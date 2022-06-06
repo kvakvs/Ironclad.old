@@ -6,7 +6,6 @@ use std::sync::Arc;
 
 use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
-use libironclad_error::source_loc::SourceLoc;
 
 /// While preprocessing source, the text is parsed into these segments
 /// We are only interested in attributes (macros, conditionals, etc), macro pastes via ?MACRO and

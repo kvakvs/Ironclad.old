@@ -131,7 +131,7 @@ impl AstNodeImpl {
       | ErlAstType::Apply(_)
       | ErlAstType::UnaryOp { .. }
       | ErlAstType::GenericAttr { .. } => ErlError::unacceptable(
-        &node.location,
+        node.location.clone(),
         format!("{}: is unacceptable as a function argument", node),
       ),
       ErlAstType::Preprocessor(_) => {

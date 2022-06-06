@@ -24,7 +24,7 @@ use nom::bytes::complete::tag;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
-use nom::{bytes, character::complete::char, error::context};
+use nom::{character::complete::char, error::context};
 
 impl ErlParser {
   /// Full expression including comma operator, for function bodies
@@ -47,9 +47,9 @@ impl ErlParser {
       )),
       |(expr, args)| {
         let target = CallableTarget::new_expr(expr);
-        AstNodeImpl::new_application(&SourceLoc::from_input(input), target, args)
+        AstNodeImpl::new_application(input.loc(), target, args)
       },
-    )(input)
+    )(input.clone())
   }
 
   fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
@@ -76,17 +76,17 @@ impl ErlParser {
         square_close,
       )),
       |(_open, elements, maybe_tail, _close)| {
-        AstNodeImpl::new_list(&SourceLoc::from_input(input), elements, maybe_tail)
+        AstNodeImpl::new_list(input.loc(), elements, maybe_tail)
       },
-    )(input)
+    )(input.clone())
   }
 
   /// Parses a `Expr <- Expr` generator
   pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      separated_pair(Self::parse_expr, ws_before(bytes::complete::tag("<-")), Self::parse_expr),
-      |(a, b)| AstNodeImpl::new_list_comprehension_generator(&SourceLoc::from_input(input), a, b),
-    )(input)
+      separated_pair(Self::parse_expr, ws_before(tag("<-".into())), Self::parse_expr),
+      |(a, b)| AstNodeImpl::new_list_comprehension_generator(input.loc(), a, b),
+    )(input.clone())
   }
 
   /// Parses mix of generators and conditions for a list comprehension
@@ -102,16 +102,14 @@ impl ErlParser {
     map(
       separated_pair(
         Self::parse_expr,
-        ws_before(bytes::complete::tag("||")),
+        ws_before(tag("||".into())),
         context(
           "list comprehension generators",
           cut(Self::parse_list_comprehension_exprs_and_generators),
         ),
       ),
-      |(expr, generators)| {
-        AstNodeImpl::new_list_comprehension(&SourceLoc::from_input(input), expr, generators)
-      },
-    )(input)
+      |(expr, generators)| AstNodeImpl::new_list_comprehension(input.loc(), expr, generators),
+    )(input.clone())
   }
 
   fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
@@ -122,8 +120,8 @@ impl ErlParser {
   fn parse_tuple_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(curly_open, Self::parse_comma_sep_exprs0::<STYLE>, curly_close),
-      |elements| AstNodeImpl::new_tuple(&SourceLoc::from_input(input), elements),
-    )(input)
+      |elements| AstNodeImpl::new_tuple(input.loc(), elements),
+    )(input.clone())
   }
 
   /// Parse one member of a map builder `keyExpr "=>" valueExpr`
@@ -131,7 +129,7 @@ impl ErlParser {
     map(
       separated_pair(
         Self::parse_expr_prec13::<STYLE>,
-        ws_before(tag("=>")),
+        ws_before(tag("=>".into())),
         Self::parse_expr_prec13::<STYLE>,
       ),
       |(key, value)| MapBuilderMember { key, value },
@@ -147,8 +145,8 @@ impl ErlParser {
         separated_list0(comma, Self::map_builder_member::<STYLE>),
         ws_before(curly_close),
       ),
-      |members| AstNodeImpl::new_map_builder(&SourceLoc::from_input(input), members),
-    )(input)
+      |members| AstNodeImpl::new_map_builder(input.loc(), members),
+    )(input.clone())
   }
 
   /// Parses comma separated sequence of expressions
@@ -246,18 +244,18 @@ impl ErlParser {
             Some(expr2) => {
               // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
               let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args.len());
-              AstNodeImpl::new_application(&SourceLoc::from_input(input), target, args)
+              AstNodeImpl::new_application(input.loc(), target, args)
             }
             None => {
               let target = CallableTarget::new_expr(expr1);
-              AstNodeImpl::new_application(&SourceLoc::from_input(input), target, args)
+              AstNodeImpl::new_application(input.loc(), target, args)
             }
           }
         } else {
           expr1 // no extra args after the expression
         }
       },
-    )(input)
+    )(input.clone())
   }
 
   // TODO: Precedence 2: # (record access operator)
@@ -277,9 +275,9 @@ impl ErlParser {
         ))),
         ws_before(Self::parse_expr_prec02::<STYLE>),
       ),
-      |(unop, expr)| ErlUnaryOperatorExpr::new_ast(&SourceLoc::from_input(input), unop, expr),
-    )(input)
-    .or_else(|_err| Self::parse_expr_prec02::<STYLE>(input))
+      |(unop, expr)| ErlUnaryOperatorExpr::new_ast(input.loc(), unop, expr),
+    )(input.clone())
+    .or_else(|_err| Self::parse_expr_prec02::<STYLE>(input.clone()))
   }
 
   /// Precedence 4: / * div rem band and, left associative
@@ -300,7 +298,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec03::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -324,7 +322,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec04::<STYLE>),
         )),
       )),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -339,7 +337,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec05::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -363,7 +361,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec06::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -378,7 +376,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec07::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -393,7 +391,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec08::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -408,7 +406,7 @@ impl ErlParser {
           ws_before(Self::parse_expr_prec09::<STYLE>),
         )),
       ),
-      |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(&SourceLoc::None, left, &tail),
+      |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(SourceLoc::None, left, &tail),
     )(input)
   }
 
@@ -418,11 +416,9 @@ impl ErlParser {
     // Try parse (catch Expr) otherwise try next precedence level
     map(
       pair(ws_before_mut(Self::unop_catch), ws_before(Self::parse_expr_prec10::<STYLE>)),
-      |(catch_op, expr)| {
-        ErlUnaryOperatorExpr::new_ast(&SourceLoc::from_input(input), catch_op, expr)
-      },
-    )(input)
-    .or_else(|_err| ws_before(Self::parse_expr_prec10::<STYLE>)(input))
+      |(catch_op, expr)| ErlUnaryOperatorExpr::new_ast(input.loc(), catch_op, expr),
+    )(input.clone())
+    .or_else(|_err| ws_before(Self::parse_expr_prec10::<STYLE>)(input.clone()))
   }
 
   // /// Public entry point to parse expression that cannot include comma or semicolon
@@ -462,7 +458,7 @@ impl ErlParser {
               ws_before(Self::parse_expr_prec11::<STYLE>),
             )),
           ),
-          |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(&SourceLoc::None, left, &tail),
+          |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
         )(input)
       }
 

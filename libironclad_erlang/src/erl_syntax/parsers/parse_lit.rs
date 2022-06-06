@@ -10,27 +10,20 @@ use crate::erl_syntax::parsers::parse_atom::AtomParser;
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
-use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::map;
 
 impl ErlParser {
   fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
     map(StringParser::parse_string, |s| {
-      AstNodeImpl::construct_with_location(
-        &SourceLoc::from_input(input),
-        Lit { value: Literal::String(s).into() },
-      )
-    })(input)
+      AstNodeImpl::construct_with_location(input.loc(), Lit { value: Literal::String(s).into() })
+    })(input.clone())
   }
 
   fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
     map(AtomParser::atom, |s| {
-      AstNodeImpl::construct_with_location(
-        &SourceLoc::from_input(input),
-        Lit { value: Literal::Atom(s).into() },
-      )
-    })(input)
+      AstNodeImpl::construct_with_location(input.loc(), Lit { value: Literal::Atom(s).into() })
+    })(input.clone())
   }
 
   fn parse_float_to_ast(input: ParserInput) -> ParserResult<AstNode> {
@@ -38,8 +31,8 @@ impl ErlParser {
       let lit_node = Lit {
         value: Literal::Float(s.parse::<f64>().unwrap()).into(),
       };
-      AstNodeImpl::construct_with_location(&SourceLoc::from_input(input), lit_node)
-    })(input)
+      AstNodeImpl::construct_with_location(input.loc(), lit_node)
+    })(input.clone())
   }
 
   fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
@@ -48,8 +41,8 @@ impl ErlParser {
         // TODO: Can parsed integer create a parse error?
         value: Literal::Integer(erl_int).into(),
       };
-      AstNodeImpl::construct_with_location(&SourceLoc::from_input(input), lit_node)
-    })(input)
+      AstNodeImpl::construct_with_location(input.loc(), lit_node)
+    })(input.clone())
   }
 
   /// Read a literal value from input string

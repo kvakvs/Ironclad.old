@@ -299,6 +299,9 @@ impl AstNodeImpl {
       }
       _ => {}
     }
-    ErlError::type_error(&this.location, TypeError::FunctionNotFound { mfa: funarity.clone() })
+    ErlError::type_error(
+      this.location.clone(),
+      TypeError::FunctionNotFound { mfa: funarity.clone() },
+    )
   }
 }

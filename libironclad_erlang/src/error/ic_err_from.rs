@@ -32,7 +32,7 @@ impl From<ParseIntError> for IroncladError {
   fn from(pie: ParseIntError) -> Self {
     IroncladError::new(
       IcErrorCategory::ErlangParse,
-      &SourceLoc::None,
+      SourceLoc::None,
       format!("Cannot parse integer: {}", pie),
     )
   }

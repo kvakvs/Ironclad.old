@@ -32,7 +32,7 @@ impl TypeCheck {
         expected_type: format!("{}", expected_ty),
         actual_type: format!("{}", synthesized_ty),
       };
-      ErlError::type_error(&ast.location, type_err)
+      ErlError::type_error(ast.location.clone(), type_err)
     } else {
       Ok(true)
     }

@@ -26,7 +26,7 @@ impl ErlParseStage {
           let compiler_opts = project.get_compiler_options_for(path);
 
           let mut parsed =
-            ErlModule::from_module_source(&source_file.file_name, &source_file.text)?;
+            ErlModule::from_module_source(&source_file.file_name, source_file.text.as_str())?;
           parsed.compiler_options = compiler_opts;
         }
       }

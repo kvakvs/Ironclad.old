@@ -7,7 +7,6 @@ use crate::preprocessor_syntax::pp_ast::PpAstType::{
 use crate::preprocessor_syntax::pp_ast::{PpAst, PpAstType};
 use crate::preprocessor_syntax::pp_macro_string::String;
 use libironclad_erlang::erl_syntax::erl_ast::ErlAst;
-use libironclad_error::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -20,23 +19,23 @@ impl PpAst {
 
   /// Generic constructor + location
   #[inline]
-  pub fn construct_with_location(loc: &SourceLoc, node_type: PpAstType) -> Arc<PpAst> {
+  pub fn construct_with_location(loc: SourceLoc, node_type: PpAstType) -> Arc<PpAst> {
     PpAst { location: loc.clone(), node_type }.into()
   }
 
   /// Create new file tree
-  pub fn new_file(location: &SourceLoc, fragments: Vec<Arc<PpAst>>) -> Arc<Self> {
+  pub fn new_file(location: SourceLoc, fragments: Vec<Arc<PpAst>>) -> Arc<Self> {
     PpAst::construct_with_location(location, File(fragments))
   }
 
   /// Create new nested included file AST node
-  pub fn new_included_file(location: &SourceLoc, file: &Path, ast: Arc<PpAst>) -> Arc<Self> {
+  pub fn new_included_file(location: SourceLoc, file: &Path, ast: Arc<PpAst>) -> Arc<Self> {
     PpAst::construct_with_location(location, IncludedFile { filename: PathBuf::from(file), ast })
   }
 
   /// Create new macro definition
   pub fn new_define(
-    location: &SourceLoc,
+    location: SourceLoc,
     name: String,
     args: Vec<String>,
     body: String,
@@ -45,7 +44,7 @@ impl PpAst {
   }
 
   /// Create new macro definition with name only
-  pub fn new_define_name_only(location: &SourceLoc, name: String) -> Arc<Self> {
+  pub fn new_define_name_only(location: SourceLoc, name: String) -> Arc<Self> {
     PpAst::construct_with_location(
       location,
       Define { name, args: Vec::default(), body: String::new("") },
@@ -53,7 +52,7 @@ impl PpAst {
   }
 
   /// Create new text fragment
-  pub fn new_text(location: &SourceLoc, text: &str) -> Arc<Self> {
+  pub fn new_text(location: SourceLoc, text: &str) -> Arc<Self> {
     if text.trim().is_empty() {
       PpAst::construct_with_location(location, EmptyText)
     } else {
@@ -63,7 +62,7 @@ impl PpAst {
 
   /// Creates a new preprocessor IF node
   pub fn new_if(
-    location: &SourceLoc,
+    location: SourceLoc,
     expr: AstNode,
     cond_true: Vec<Arc<PpAst>>,
     cond_false: Vec<Arc<PpAst>>,
@@ -72,37 +71,37 @@ impl PpAst {
   }
 
   /// Create a new `-if()` temporary node.
-  pub fn new_if_temporary(location: &SourceLoc, expr: AstNode) -> Arc<Self> {
+  pub fn new_if_temporary(location: SourceLoc, expr: AstNode) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryIf(expr))
   }
 
   /// Create a new `-elif()` temporary node.
-  pub fn new_elif_temporary(location: &SourceLoc, expr: AstNode) -> Arc<Self> {
+  pub fn new_elif_temporary(location: SourceLoc, expr: AstNode) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryElseIf(expr))
   }
 
   /// Create a new `-ifdef()` temporary node.
-  pub fn new_ifdef_temporary(location: &SourceLoc, ident: String) -> Arc<Self> {
+  pub fn new_ifdef_temporary(location: SourceLoc, ident: String) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryIfdef(ident))
   }
 
   /// Create a new `-ifndef()` temporary node.
-  pub fn new_ifndef_temporary(location: &SourceLoc, ident: String) -> Arc<Self> {
+  pub fn new_ifndef_temporary(location: SourceLoc, ident: String) -> Arc<Self> {
     PpAst::construct_with_location(location, _TemporaryIfndef(ident))
   }
 
   /// Create a new UNDEF node
-  pub fn new_undef(location: &SourceLoc, ident: String) -> Arc<Self> {
+  pub fn new_undef(location: SourceLoc, ident: String) -> Arc<Self> {
     PpAst::construct_with_location(location, Undef(ident))
   }
 
   /// Create a new INCLUDE node
-  pub fn new_include(location: &SourceLoc, p: String) -> Arc<Self> {
+  pub fn new_include(location: SourceLoc, p: String) -> Arc<Self> {
     PpAst::construct_with_location(location, Include(p))
   }
 
   /// Create a new INCLUDE_LIB node
-  pub fn new_include_lib(location: &SourceLoc, p: String) -> Arc<Self> {
+  pub fn new_include_lib(location: SourceLoc, p: String) -> Arc<Self> {
     PpAst::construct_with_location(location, IncludeLib(p))
   }
 }

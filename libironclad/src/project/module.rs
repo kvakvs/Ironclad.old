@@ -10,12 +10,12 @@ use std::sync::{Arc, RwLock};
 use crate::project::compiler_opts::CompilerOpts;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_error::ErlError;
-use libironclad_erlang::erl_syntax::parsers::defs::ErlParserError;
+use libironclad_erlang::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::source_file::SourceFileImpl;
+use libironclad_erlang::source_file::{SourceFile, SourceFileImpl};
 use libironclad_erlang::typing::scope::Scope;
 
 /// Erlang Module consists of
@@ -72,14 +72,15 @@ impl ErlModule {
   }
 
   /// Generic parse helper for any Nom entry point
-  pub fn parse_helper<'a, T>(filename: &Path, input: ParserInput, parse_fn: T) -> IcResult<Self>
+  pub fn parse_helper<'a, T>(filename: &Path, input_s: &str, parse_fn: T) -> IcResult<Self>
   where
-    T: Fn(&'a str) -> nom::IResult<&'a str, AstNode, ErlParserError>,
+    T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
   {
     println!("Parsing from {}", filename.to_string_lossy());
 
+    let input = ParserInput::from_str(input_s);
     let mut module = ErlModule::default();
-    let (tail, forms) = panicking_parser_error_reporter(input, parse_fn(input).finish());
+    let (tail, forms) = panicking_parser_error_reporter(input_s, parse_fn(input.clone()).finish());
 
     println!("Parse result AST: «{}»", &forms);
 
@@ -89,7 +90,8 @@ impl ErlModule {
       tail,
       forms
     );
-    module.source_file = SourceFileImpl::new(filename, String::from(input));
+    // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
+    module.source_file = SourceFileImpl::new(filename, input.to_string());
     module.ast = forms;
 
     // Scan AST and find FnDef nodes, update functions knowledge
@@ -100,27 +102,27 @@ impl ErlModule {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
+  pub fn from_module_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
+  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
+  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlParser::parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
+  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::fn_spec_attr)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &Path, input: ParserInput) -> IcResult<Self> {
+  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<Self> {
     Self::parse_helper(filename, input, ErlTypeParser::parse_type_node)
   }
 

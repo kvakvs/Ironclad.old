@@ -3,7 +3,7 @@
 
 use crate::project::compiler_opts::CompilerOpts;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
-use libironclad_erlang::source_file::SourceFileImpl;
+use libironclad_erlang::source_file::SourceFile;
 use std::path::PathBuf;
 use std::sync::Arc;
 

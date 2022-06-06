@@ -7,7 +7,6 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, anychar};
@@ -48,7 +47,9 @@ impl PreprocessorParser {
 
   /// Parse a `Macroident1, Macroident2, ...` into a list
   pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {
-    separated_list0(comma, Self::macro_ident)(input)
+    map(separated_list0(comma, Self::macro_ident), |idents| {
+      idents.into_iter().map(|i| i.to_string()).collect()
+    })(input)
   }
 
   pub(crate) fn parenthesis_dot_newline(input: ParserInput) -> ParserResult<ParserInput> {
@@ -56,38 +57,35 @@ impl PreprocessorParser {
   }
 
   /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-  pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<String> {
-    map(
-      recognize(pair(
-        verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
-        many0(alt((alphanumeric1, tag("_")))),
-      )),
-      |result: ParserInput| result.to_string(),
-    )(input)
+  pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<ParserInput> {
+    recognize(pair(
+      verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
+      many0(alt((alphanumeric1, tag("_".into())))),
+    ))(input)
   }
 
   /// Parse a `-include(STRING)`
   fn include_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("include"),
+        match_dash_tag("include".into()),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
         period_newline,
       ),
-      |t| PreprocessorNodeType::new_include(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_include(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parse a `-include_lib(STRING)`
   fn include_lib_directive(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        match_dash_tag("include_lib"),
+        match_dash_tag("include_lib".into()),
         delimited(par_open, ws_before(StringParser::parse_string), par_close),
         period_newline,
       ),
-      |t| PreprocessorNodeType::new_include_lib(&SourceLoc::from_input(input), t),
-    )(input)
+      |t| PreprocessorNodeType::new_include_lib(input.loc(), t),
+    )(input.clone())
   }
 
   /// Parse one of supported preprocessor directives
@@ -117,7 +115,7 @@ impl PreprocessorParser {
   //       ws(nom::bytes::complete::take_till(|c| c == '\n' || c == '\r')),
   //       |text: &str| !text.is_empty(), //&& !text.starts_with('-'),
   //     ),
-  //     |t| PreprocessorNodeType::new_text(&SourceLoc::from_input(input), t),
+  //     |t| PreprocessorNodeType::new_text(SourceLoc::from_input(input), t),
   //   )(input)
   // }
 
@@ -128,7 +126,7 @@ impl PreprocessorParser {
   //     // Self::consume_one_line_of_text,
   //     // A final comment in file is not visible to consume_text
   //     map(parse_line_comment, |_| {
-  //       PreprocessorNodeType::new_text(&SourceLoc::from_input(input), "")
+  //       PreprocessorNodeType::new_text(SourceLoc::from_input(input), "")
   //     }),
   //   ))(input)
   // }
@@ -143,7 +141,7 @@ impl PreprocessorParser {
   // /// Comments are eliminated.
   // pub fn module(input: ParserInput) -> ParserResult<AstNode> {
   //   map(Self::parse_fragments_collection, |fragments| {
-  //     PreprocessorNodeType::new_file(&SourceLoc::from_input(input), fragments)
+  //     PreprocessorNodeType::new_file(SourceLoc::from_input(input), fragments)
   //   })(input)
   // }
 }
