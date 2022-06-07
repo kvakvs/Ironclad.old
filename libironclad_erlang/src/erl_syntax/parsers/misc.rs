@@ -136,18 +136,6 @@ pub fn parse_float<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> 
   ))(input)
 }
 
-// /// Matches newline \n or \r\n
-// pub fn newline(input: ParserInput) -> nom::IResult<&str, (), ErlParserError> {
-//   map(
-//     alt((
-//       eof,
-//       Self::ws(tag("\r\n")),
-//       Self::ws(tag("\n"))
-//     )),
-//     |_| (),
-//   )(input)
-// }
-
 /// Recognizes newline or end of input
 pub fn newline_or_eof<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(preceded(
@@ -158,85 +146,85 @@ pub fn newline_or_eof<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a
 
 /// Matches an opening parenthesis "(" with 0+ whitespace before
 #[inline]
-pub fn par_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn par_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('(')))(input)
 }
 
 /// Matches a closing parenthesis ")" with 0+ whitespace before
 #[inline]
-pub fn par_close<'a>(input: ParserInput) -> ParserResult<ParserInput> {
+pub fn par_close_tag<'a>(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(ws_before(char(')')))(input)
 }
 
 /// Matches an opening curly bracket "{" with 0+ whitespace before
 #[inline]
-pub fn curly_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn curly_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('{')))(input)
 }
 
 /// Matches a closing curly bracket "}" with 0+ whitespace before
 #[inline]
-pub fn curly_close<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn curly_close_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('}')))(input)
 }
 
 /// Matches an opening square bracket "[" with 0+ whitespace before
 #[inline]
-pub fn square_open<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn square_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('[')))(input)
 }
 
 /// Matches a closing square bracket "]" with 0+ whitespace before
 #[inline]
-pub fn square_close<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn square_close_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(']')))(input)
 }
 
 /// Matches a comma "," with 0+ whitespace before
 #[inline]
-pub fn comma<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn comma_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(',')))(input)
 }
 
 /// Matches a hash symbol `"#"` with 0+ whitespace before
 #[inline]
-pub fn hash_symbol<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn hash_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('#')))(input)
 }
 
 /// Matches a period "." with 0+ whitespace before
 #[inline]
-pub fn period<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn period_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('.')))(input)
 }
 
 /// Recognizes end of a directive or module attribute in `-<attr> ... "." <newline>`
 #[inline]
-pub fn period_newline<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  recognize(pair(period, newline_or_eof))(input)
+pub fn period_newline_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(pair(period_tag, newline_or_eof))(input)
 }
 
 /// Matches a semicolon ";" with 0+ whitespace before
 #[inline]
-pub fn semicolon<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn semicolon_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char(';')))(input)
 }
 
 /// Matches a double colon "::" with 0+ whitespace before
 #[inline]
-pub fn colon_colon<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn colon_colon_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(tag("::".into())))(input)
 }
 
 /// Matches a double dot (double period) ".." with 0+ whitespace before
 #[inline]
-pub fn dot_dot<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn dot_dot_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(tag("..".into())))(input)
 }
 
 /// Matches an equals sign "=" with 0+ whitespace before
 #[inline]
-pub fn equals_sign<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub fn equals_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   recognize(ws_before(char('=')))(input)
 }
 

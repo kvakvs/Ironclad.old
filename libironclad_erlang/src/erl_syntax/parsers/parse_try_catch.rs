@@ -6,7 +6,7 @@ use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{match_word, semicolon, ws_before};
+use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many1, separated_list1};
@@ -69,7 +69,7 @@ impl ErlParser {
           match_word("catch".into()),
           context(
             "try block: 'catch' clauses",
-            cut(separated_list1(semicolon, Self::parse_catch_clause)),
+            cut(separated_list1(semicolon_tag, Self::parse_catch_clause)),
           ),
         ),
       )),

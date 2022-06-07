@@ -12,7 +12,8 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
+use libironclad_erlang::erl_syntax::parsers::parse_attr::parse_funarity;
+use libironclad_erlang::erl_syntax::parsers::parse_record::parse_record_def;
 use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
@@ -39,7 +40,7 @@ fn parse_empty_module() -> IcResult<()> {
 fn parse_export_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
-  let (_tail, pfna) = ErlAttrParser::parse_funarity(ParserInput::from_str("name/123")).unwrap();
+  let (_tail, pfna) = parse_funarity(ParserInput::from_str("name/123")).unwrap();
   assert_eq!(pfna.name, "name");
   assert_eq!(pfna.arity, 123usize);
 
@@ -540,7 +541,7 @@ fn parse_small_record_test() -> IcResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}";
-  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }
@@ -574,7 +575,7 @@ fn parse_record_test() -> IcResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let input = sample_record_input();
-  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }
@@ -606,7 +607,7 @@ fn parse_record_with_map() -> IcResult<()> {
   let input = "-record(t_tuple, {size=0 :: integer(),
     exact=false :: boolean(),
     elements=#{} :: tuple_elements()}).";
-  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }

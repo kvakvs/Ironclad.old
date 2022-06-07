@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::node_impl::ErlAstType::ModuleForms;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::ws_mut;
-use crate::erl_syntax::parsers::parse_attr::ErlAttrParser;
+use crate::erl_syntax::parsers::parse_attr::parse_module_attr;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
 use defs::ParserInput;
 use defs::VecAstParserResult;
@@ -24,6 +24,7 @@ pub mod parse_expr_op;
 pub mod parse_fn;
 pub mod parse_if_stmt;
 pub mod parse_lit;
+pub mod parse_record;
 pub mod parse_str;
 pub mod parse_try_catch;
 pub mod parse_type;
@@ -38,7 +39,7 @@ impl ErlParser {
   pub fn module_form(input: ParserInput) -> ParserResult<AstNode> {
     alt((
       PreprocessorParser::parse_preproc_directive,
-      ErlAttrParser::attr,
+      parse_module_attr,
       Self::parse_fndef,
     ))(input)
   }

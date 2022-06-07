@@ -8,7 +8,7 @@ use crate::erl_syntax::node::erl_binary_element::{
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  comma, par_close, par_open, parse_int, parse_varname, ws_before,
+  comma_tag, par_close_tag, par_open_tag, parse_int, parse_varname, ws_before,
 };
 use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
@@ -29,7 +29,7 @@ impl BinaryParser {
     alt((
       map(parse_varname, |v| AstNodeImpl::new_var(input.loc(), &v)),
       ErlParser::parse_literal,
-      delimited(par_open, ErlParser::parse_expr, par_close),
+      delimited(par_open_tag, ErlParser::parse_expr, par_close_tag),
     ))(input.clone())
   }
 
@@ -137,7 +137,7 @@ impl BinaryParser {
         cut(terminated(
           map(
             separated_list1(
-              comma,
+              comma_tag,
               context("binary expression element", cut(ws_before(Self::parse_bin_element))),
             ),
             |bin_exprs| AstNodeImpl::new_binary_expr(input.loc(), bin_exprs),

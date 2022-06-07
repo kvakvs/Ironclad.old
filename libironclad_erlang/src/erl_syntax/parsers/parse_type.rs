@@ -5,9 +5,9 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon, comma, curly_close, curly_open, dot_dot, hash_symbol, match_dash_tag, match_word,
-  par_close, par_open, parse_int, parse_varname, period_newline, semicolon, square_close,
-  square_open, ws_before,
+  colon_colon_tag, comma_tag, curly_close_tag, curly_open_tag, dot_dot_tag, hash_tag,
+  match_dash_tag, match_word, par_close_tag, par_open_tag, parse_int, parse_varname,
+  period_newline_tag, semicolon_tag, square_close_tag, square_open_tag, ws_before,
 };
 use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::literal::Literal;
@@ -37,14 +37,14 @@ impl ErlTypeParser {
         tuple((
           context("Function name in a -spec() attribute", cut(parse_atom)),
           separated_list1(
-            semicolon,
+            semicolon_tag,
             context(
               "Function clause in a -spec() attribute",
               cut(ws_before(Self::parse_fn_spec_fnclause)),
             ),
           ),
         )),
-        period_newline,
+        period_newline_tag,
       ),
       |(name, clauses)| {
         let arity = clauses[0].arity();
@@ -100,7 +100,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     preceded(
-      colon_colon,
+      colon_colon_tag,
       context("Type ascription or a type after ::", ws_before(Self::parse_type)),
     )(input)
   }
@@ -139,9 +139,9 @@ impl ErlTypeParser {
   pub fn parse_parenthesized_arg_spec_list(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    let (input, _) = par_open(input)?;
+    let (input, _) = par_open_tag(input)?;
 
-    terminated(Self::comma_sep_typeargs0, par_close)(input)
+    terminated(Self::comma_sep_typeargs0, par_close_tag)(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -178,9 +178,10 @@ impl ErlTypeParser {
   fn comma_sep_typeargs0(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    separated_list0(comma, context("parsing items of a typeargs0_list", Self::alt_typevar_or_type))(
-      input,
-    )
+    separated_list0(
+      comma_tag,
+      context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
+    )(input)
   }
 
   /// Parses a comma separated list of 1 or more type arguments.
@@ -188,9 +189,10 @@ impl ErlTypeParser {
   fn parse_comma_sep_typeargs1(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    separated_list1(comma, context("parsing items of a typeargs1_list", Self::alt_typevar_or_type))(
-      input,
-    )
+    separated_list1(
+      comma_tag,
+      context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
+    )(input)
   }
 
   /// Optional `module:` before typename in `module:type()`.
@@ -210,9 +212,9 @@ impl ErlTypeParser {
         opt(Self::parse_type_modulename_colon),
         parse_atom,
         delimited(
-          par_open,
+          par_open_tag,
           context("type arguments for a user-defined type", Self::comma_sep_typeargs0),
-          par_close,
+          par_close_tag,
         ),
       )),
       |(maybe_module, type_name, elements)| ErlType::from_name(maybe_module, type_name, &elements),
@@ -222,7 +224,7 @@ impl ErlTypeParser {
   /// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
   fn record_ref(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
-      preceded(hash_symbol, pair(parse_atom, pair(curly_open, curly_close))),
+      preceded(hash_tag, pair(parse_atom, pair(curly_open_tag, curly_close_tag))),
       |(tag, (_, _))| ErlType::new_record_ref(tag),
     )(input)
   }
@@ -231,9 +233,9 @@ impl ErlTypeParser {
   fn type_of_list(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        square_open,
+        square_open_tag,
         context("type arguments for a list() type", Self::comma_sep_typeargs0),
-        square_close,
+        square_close_tag,
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -245,7 +247,11 @@ impl ErlTypeParser {
   /// Parse a tuple of types, returns a temporary tuple-type
   fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
-      delimited(curly_open, context("a tuple() type", Self::comma_sep_typeargs0), curly_close),
+      delimited(
+        curly_open_tag,
+        context("a tuple() type", Self::comma_sep_typeargs0),
+        curly_close_tag,
+      ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
         ErlType::new_tuple_move(typevar_types)
@@ -273,7 +279,7 @@ impl ErlTypeParser {
   fn comma_sep_map_members0(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<MapMemberType>, ErlParserError> {
-    separated_list0(comma, context("parsing member types of a map type", Self::map_member_type))(
+    separated_list0(comma_tag, context("parsing member types of a map type", Self::map_member_type))(
       input,
     )
   }
@@ -282,9 +288,9 @@ impl ErlTypeParser {
   fn type_of_map(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        pair(hash_symbol, curly_open),
+        pair(hash_tag, curly_open_tag),
         context("a map() type", Self::comma_sep_map_members0),
-        curly_close,
+        curly_close_tag,
       ),
       ErlType::new_map,
     )(input)
@@ -305,7 +311,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     // print_input("int_range_type", input);
-    map(separated_pair(parse_int, dot_dot, parse_int), |(a, b)| {
+    map(separated_pair(parse_int, dot_dot_tag, parse_int), |(a, b)| {
       // TODO: Can a parsed integer parse with an error?
       ErlType::new_range(a, b)
     })(input)

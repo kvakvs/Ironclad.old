@@ -13,8 +13,8 @@ use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{
-  comma, curly_close, curly_open, hash_symbol, par_close, par_open, parse_varname, square_close,
-  square_open, ws_before, ws_before_mut,
+  comma_tag, curly_close_tag, curly_open_tag, hash_tag, par_close_tag, par_open_tag, parse_varname,
+  square_close_tag, square_open_tag, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_binary::BinaryParser;
 use crate::erl_syntax::parsers::ErlParser;
@@ -61,19 +61,19 @@ impl ErlParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     delimited(
-      par_open,
+      par_open_tag,
       context("function application arguments", cut(Self::parse_comma_sep_exprs0::<STYLE>)),
-      par_close,
+      par_close_tag,
     )(input)
   }
 
   fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       tuple((
-        square_open,
+        square_open_tag,
         Self::parse_comma_sep_exprs0::<STYLE>,
         opt(preceded(ws_before(char('|')), Self::parse_expr_prec13::<STYLE>)),
-        square_close,
+        square_close_tag,
       )),
       |(_open, elements, maybe_tail, _close)| {
         AstNodeImpl::new_list(input.loc(), elements, maybe_tail)
@@ -92,7 +92,7 @@ impl ErlParser {
   /// Parses mix of generators and conditions for a list comprehension
   pub fn parse_list_comprehension_exprs_and_generators(input: ParserInput) -> VecAstParserResult {
     separated_list0(
-      comma,
+      comma_tag,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       alt((Self::parse_expr, Self::parse_list_comprehension_generator)),
     )(input)
@@ -113,13 +113,13 @@ impl ErlParser {
   }
 
   fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
-    delimited(square_open, Self::parse_list_comprehension_1, square_close)(input)
+    delimited(square_open_tag, Self::parse_list_comprehension_1, square_close_tag)(input)
   }
 
   /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
   fn parse_tuple_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
-      delimited(curly_open, Self::parse_comma_sep_exprs0::<STYLE>, curly_close),
+      delimited(curly_open_tag, Self::parse_comma_sep_exprs0::<STYLE>, curly_close_tag),
       |elements| AstNodeImpl::new_tuple(input.loc(), elements),
     )(input.clone())
   }
@@ -141,9 +141,9 @@ impl ErlParser {
   fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
     map(
       delimited(
-        pair(hash_symbol, curly_open),
-        separated_list0(comma, Self::map_builder_member::<STYLE>),
-        ws_before(curly_close),
+        pair(hash_tag, curly_open_tag),
+        separated_list0(comma_tag, Self::map_builder_member::<STYLE>),
+        ws_before(curly_close_tag),
       ),
       |members| AstNodeImpl::new_map_builder(input.loc(), members),
     )(input.clone())
@@ -154,7 +154,7 @@ impl ErlParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     separated_list0(
-      comma,
+      comma_tag,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
@@ -165,14 +165,14 @@ impl ErlParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
     separated_list1(
-      comma,
+      comma_tag,
       // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
       Self::parse_expr_prec13::<STYLE>,
     )(input)
   }
 
   fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-    delimited(par_open, ws_before(Self::parse_expr_prec13::<STYLE>), par_close)(input)
+    delimited(par_open_tag, ws_before(Self::parse_expr_prec13::<STYLE>), par_close_tag)(input)
   }
 
   /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)

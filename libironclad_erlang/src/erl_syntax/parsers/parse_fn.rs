@@ -5,7 +5,9 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{match_word, period, semicolon, ws_before, ws_before_mut};
+use crate::erl_syntax::parsers::misc::{
+  match_word, period_tag, semicolon_tag, ws_before, ws_before_mut,
+};
 use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::source_loc::SourceLoc;
@@ -105,11 +107,11 @@ impl ErlParser {
         // does not begin with - (that would be a mis-parsed attribute)
         not(peek(ws_before(char('-')))),
         separated_list1(
-          semicolon,
+          semicolon_tag,
           // if parse fails under here, will show this context message in error
           context("function clause of a function definition", Self::parse_fnclause::<true>),
         ),
-        period,
+        period_tag,
       ),
       |t| Self::_construct_fndef(input.loc(), t),
     )(input.clone())
@@ -122,7 +124,7 @@ impl ErlParser {
       preceded(
         match_word("fun".into()),
         terminated(
-          context("", separated_list1(semicolon, Self::parse_fnclause::<false>)),
+          context("", separated_list1(semicolon_tag, Self::parse_fnclause::<false>)),
           match_word("end".into()),
         ),
       ),

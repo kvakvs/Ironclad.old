@@ -2,8 +2,8 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  comma, match_dash_tag, newline_or_eof, par_close, par_open, period, period_newline, ws_before,
-  ws_before_mut,
+  comma_tag, match_dash_tag, newline_or_eof, par_close_tag, par_open_tag, period_newline_tag,
+  period_tag, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
@@ -47,13 +47,13 @@ impl PreprocessorParser {
 
   /// Parse a `Macroident1, Macroident2, ...` into a list
   pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {
-    map(separated_list0(comma, Self::macro_ident), |idents| {
+    map(separated_list0(comma_tag, Self::macro_ident), |idents| {
       idents.into_iter().map(|i| i.to_string()).collect()
     })(input)
   }
 
   pub(crate) fn parenthesis_dot_newline(input: ParserInput) -> ParserResult<ParserInput> {
-    recognize(tuple((par_close, period, newline_or_eof)))(input)
+    recognize(tuple((par_close_tag, period_tag, newline_or_eof)))(input)
   }
 
   /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
@@ -69,8 +69,8 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("include".into()),
-        delimited(par_open, ws_before(StringParser::parse_string), par_close),
-        period_newline,
+        delimited(par_open_tag, ws_before(StringParser::parse_string), par_close_tag),
+        period_newline_tag,
       ),
       |t| PreprocessorNodeType::new_include(input.loc(), t),
     )(input.clone())
@@ -81,8 +81,8 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("include_lib".into()),
-        delimited(par_open, ws_before(StringParser::parse_string), par_close),
-        period_newline,
+        delimited(par_open_tag, ws_before(StringParser::parse_string), par_close_tag),
+        period_newline_tag,
       ),
       |t| PreprocessorNodeType::new_include_lib(input.loc(), t),
     )(input.clone())

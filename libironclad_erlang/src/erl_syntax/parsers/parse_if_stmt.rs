@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{match_word, semicolon, ws_before};
+use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
 use nom::combinator::map;
 use nom::multi::separated_list1;
@@ -21,7 +21,7 @@ impl ErlParser {
         "if block",
         cut(map(
           terminated(
-            separated_list1(semicolon, context("if block clause", cut(Self::parse_if_clause))),
+            separated_list1(semicolon_tag, context("if block clause", cut(Self::parse_if_clause))),
             ws_before(tag("end".into())),
           ),
           |clauses| AstNodeImpl::new_if_statement(input.loc(), clauses),

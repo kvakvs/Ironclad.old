@@ -3,7 +3,7 @@
 
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
-use crate::erl_syntax::parsers::misc::{comma, semicolon};
+use crate::erl_syntax::parsers::misc::{comma_tag, semicolon_tag};
 use crate::erl_syntax::parsers::ErlParser;
 use nom::branch::alt;
 use nom::combinator::{map, not};
@@ -148,10 +148,10 @@ impl ErlParser {
   }
 
   pub fn binop_comma(input: ParserInput) -> BinaryOpParserResult {
-    map(comma, |_| ErlBinaryOp::Comma)(input)
+    map(comma_tag, |_| ErlBinaryOp::Comma)(input)
   }
 
   pub fn binop_semicolon(input: ParserInput) -> BinaryOpParserResult {
-    map(semicolon, |_| ErlBinaryOp::Semicolon)(input)
+    map(semicolon_tag, |_| ErlBinaryOp::Semicolon)(input)
   }
 }

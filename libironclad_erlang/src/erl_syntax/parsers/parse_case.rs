@@ -3,7 +3,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
-use crate::erl_syntax::parsers::misc::{match_word, semicolon, ws_before};
+use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::ErlParser;
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;
@@ -48,7 +48,10 @@ impl ErlParser {
         cut(map(
           tuple((
             terminated(ErlParser::parse_expr, ws_before(tag("of".into()))),
-            separated_list1(semicolon, context("case block clause", cut(Self::parse_case_clause))),
+            separated_list1(
+              semicolon_tag,
+              context("case block clause", cut(Self::parse_case_clause)),
+            ),
             ws_before(tag("end".into())),
           )),
           |(expr, clauses, _end0)| AstNodeImpl::new_case_statement(input.loc(), expr, clauses),

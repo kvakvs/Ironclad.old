@@ -8,7 +8,9 @@ use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::parsers::parse_attr::ErlAttrParser;
+use libironclad_erlang::erl_syntax::parsers::parse_attr::{
+  parse_generic_attr, type_definition_attr,
+};
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::typing::erl_type::ErlType;
@@ -29,7 +31,7 @@ fn union_type_parse() -> IcResult<()> {
   let parser_input = ParserInput::from_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
     parser_input.clone(),
-    ErlAttrParser::type_definition_attr(parser_input).finish(),
+    type_definition_attr(parser_input).finish(),
   );
   assert!(tail1.is_empty(), "Not all input consumed, tail: «{}»", tail1);
   println!("Parsed: {}", result1);
@@ -44,7 +46,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   let parser_input = ParserInput::from_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
     parser_input.clone(),
-    ErlAttrParser::parse_generic_attr(parser_input).finish(),
+    parse_generic_attr(parser_input).finish(),
   );
   assert!(
     tail1.trim().is_empty(),
@@ -63,7 +65,7 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
   let parser_input = ParserInput::from_str(input);
   let (tail2, result2) = panicking_parser_error_reporter(
     parser_input.clone(),
-    ErlAttrParser::parse_generic_attr(parser_input).finish(),
+    parse_generic_attr(parser_input).finish(),
   );
   assert!(
     tail2.trim().is_empty(),
@@ -216,8 +218,7 @@ fn parse_int_range_test() {
 
   let filename = PathBuf::from(function_name!());
   let input = "-type reg_num() :: 0 .. 1023.";
-  let result =
-    ErlModule::parse_helper(&filename, &input, ErlAttrParser::type_definition_attr).unwrap();
+  let result = ErlModule::parse_helper(&filename, &input, type_definition_attr).unwrap();
   println!("Parsed typeattr: {:?}", result.ast);
   // let content = result.ast.children().unwrap();
   // assert!(matches!(content[0].content, ErlAstType::TypeAttr { .. }));
