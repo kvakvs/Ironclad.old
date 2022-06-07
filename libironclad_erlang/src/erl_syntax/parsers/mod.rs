@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::parse_module_attr;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
-use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
+use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::parse_preproc_directive;
 use defs::ParserInput;
 use defs::VecAstParserResult;
 use nom::branch::alt;
@@ -33,7 +33,7 @@ pub mod parser_input_slice;
 
 /// Parses an attribute or a function def
 pub fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
-  alt((PreprocessorParser::parse_preproc_directive, parse_module_attr, parse_fndef))(input)
+  alt((parse_preproc_directive, parse_module_attr, parse_fndef))(input)
 }
 
 /// Parses 0 or more module forms (attrs and function defs)
@@ -43,7 +43,6 @@ pub fn parse_module_forms(input: ParserInput) -> VecAstParserResult {
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_module_forms, |forms| {
-    AstNodeImpl::construct_without_location(ModuleForms(forms))
-  })(input)
+  let construct_fn = |forms| AstNodeImpl::construct_without_location(ModuleForms(forms));
+  map(parse_module_forms, construct_fn)(input)
 }
