@@ -8,7 +8,7 @@ use crate::erl_syntax::parsers::misc::{
   colon_colon, comma, curly_close, curly_open, equals_sign, match_dash_tag, par_close, par_open,
   parse_int, period_newline, square_close, square_open, ws_before,
 };
-use crate::erl_syntax::parsers::parse_atom::AtomParser;
+use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::ErlParser;
 use libironclad_util::mfarity::MFArity;
@@ -47,7 +47,7 @@ impl ErlAttrParser {
       delimited(
         ws_before(char('-')),
         pair(
-          AtomParser::atom,
+          parse_atom,
           // Expr in parentheses
           alt((Self::parse_generic_attr_expr, Self::parse_parentheses_no_expr)),
         ),
@@ -65,7 +65,7 @@ impl ErlAttrParser {
         match_dash_tag("module".into()),
         context(
           "the module name in a -module() attribute",
-          cut(delimited(par_open, AtomParser::atom, par_close)),
+          cut(delimited(par_open, parse_atom, par_close)),
         ),
         period_newline,
       ),
@@ -75,7 +75,7 @@ impl ErlAttrParser {
 
   /// Parses a `fun/arity` atom with an integer.
   pub fn parse_funarity(input: ParserInput) -> nom::IResult<ParserInput, MFArity, ErlParserError> {
-    map(tuple((AtomParser::atom, char('/'), parse_int)), |(name, _slash, erl_int)| {
+    map(tuple((parse_atom, char('/'), parse_int)), |(name, _slash, erl_int)| {
       let arity = erl_int.as_usize().unwrap_or_default();
       MFArity::new_local_from_string(name, arity)
     })(input)
@@ -136,7 +136,7 @@ impl ErlAttrParser {
           "list of imports in an -import() attribute",
           cut(delimited(
             par_open,
-            separated_pair(AtomParser::atom, comma, Self::parse_square_funarity_list1),
+            separated_pair(parse_atom, comma, Self::parse_square_funarity_list1),
             par_close,
           )),
         ),
@@ -165,7 +165,7 @@ impl ErlAttrParser {
       delimited(
         match_dash_tag("type".into()),
         tuple((
-          AtomParser::atom,
+          parse_atom,
           context(
             "type arguments in a -type() definition attribute",
             cut(Self::parse_parenthesized_list_of_vars),
@@ -186,7 +186,7 @@ impl ErlAttrParser {
   fn record_definition_field(input: ParserInput) -> ParserResult<RecordField> {
     map(
       tuple((
-        AtomParser::atom,
+        parse_atom,
         opt(preceded(equals_sign, ErlParser::parse_expr)),
         opt(preceded(colon_colon, ErlTypeParser::parse_type)),
       )),
@@ -202,7 +202,7 @@ impl ErlAttrParser {
   fn record_definition_inner(input: ParserInput) -> ParserResult<AstNode> {
     map(
       separated_pair(
-        AtomParser::atom,
+        parse_atom,
         comma,
         delimited(curly_open, separated_list0(comma, Self::record_definition_field), curly_close),
       ),

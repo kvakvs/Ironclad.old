@@ -2,21 +2,22 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use ::function_name::named;
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit, ModuleForms,
-  ModuleStartAttr, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
+  ModuleStartAttr, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
 };
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 
 /// A trait for AST nodes which can contain nested nodes
-pub trait TAstNode {
+// TODO: Do we need this?
+pub trait AstParentNodeT {
   /// Return nested AST nodes for this node
   fn children(&self) -> Option<Vec<AstNode>>;
 }
 
-impl TAstNode for AstNodeImpl {
+impl AstParentNodeT for AstNodeImpl {
   /// Const iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
@@ -33,7 +34,8 @@ impl TAstNode for AstNodeImpl {
       | Lit { .. }
       | MFA { .. }
       | Type { .. }
-      | Var { .. } => None,
+      | ErlAstType::Preprocessor { .. }
+      | ErlAstType::Var { .. } => None,
 
       ModuleForms(f) => Some(f.to_vec()),
       FnDef(fn_def) => fn_def.children(),

@@ -1,5 +1,5 @@
 //! Declares AST node for a clause in `case of` expression
-use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 
 /// AST node for a clause in a `case X of` expression.
@@ -29,7 +29,7 @@ impl std::fmt::Display for ErlCaseClause {
   }
 }
 
-impl TAstNode for ErlCaseClause {
+impl AstParentNodeT for ErlCaseClause {
   fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = self.pattern.children().unwrap_or_default();
     if let Some(g) = &self.guard {

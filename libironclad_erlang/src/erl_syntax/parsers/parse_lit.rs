@@ -6,7 +6,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{parse_float, parse_int};
-use crate::erl_syntax::parsers::parse_atom::AtomParser;
+use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_str::StringParser;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::literal::Literal;
@@ -21,7 +21,7 @@ impl ErlParser {
   }
 
   fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-    map(AtomParser::atom, |s| {
+    map(parse_atom, |s| {
       AstNodeImpl::construct_with_location(input.loc(), Lit { value: Literal::Atom(s).into() })
     })(input.clone())
   }

@@ -4,19 +4,19 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
+use nom::character::complete::{anychar, multispace0};
 use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
 use nom::error::convert_error;
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::{
   bytes::complete::tag,
-  character,
-  character::complete::{alphanumeric1, char, one_of},
+  character::complete::{alphanumeric1, char, multispace1, one_of},
 };
 
 /// Recognizes 0 or more whitespaces and line comments
 fn spaces_or_comments0<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  recognize(many0(alt((character::complete::multispace1, parse_line_comment))))(input)
+  recognize(many0(alt((multispace1, parse_line_comment))))(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -61,14 +61,14 @@ pub fn ws_mut<'a, InnerFn: 'a, Out>(
 where
   InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
 {
-  delimited(spaces_or_comments0, inner, character::complete::multispace0)
+  delimited(spaces_or_comments0, inner, multispace0)
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
 pub fn parse_ident(input: ParserInput) -> ParserResult<String> {
   map(
     ws_before_mut(recognize(pair(
-      verify(character::complete::anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
+      verify(anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
       many0(alt((alphanumeric1, tag("_".into())))),
     ))),
     |result| result.to_string(),
@@ -80,7 +80,7 @@ pub fn parse_varname(input: ParserInput) -> ParserResult<String> {
   map(
     recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
-      verify(character::complete::anychar, |c: &char| c.is_uppercase() || *c == '_'),
+      verify(anychar, |c: &char| c.is_uppercase() || *c == '_'),
       many0(alt((alphanumeric1, tag("_".into())))),
     )),
     |result: ParserInput| result.to_string(),
@@ -242,7 +242,7 @@ pub fn equals_sign<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> 
 
 /// Recognizes `% text <newline>` consuming text
 pub fn parse_line_comment<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  recognize(pair(many1(char('%')), many_till(character::complete::anychar, newline_or_eof)))(input)
+  recognize(pair(many1(char('%')), many_till(anychar, newline_or_eof)))(input)
 }
 
 /// Print detailed error with source pointers, and panic

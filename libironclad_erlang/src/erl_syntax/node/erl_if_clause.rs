@@ -1,6 +1,6 @@
 //! A branch of `if COND -> EXPR; ... end`
 
-use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 
 /// AST node for a clause in a `if COND -> EXPR; ... end` statement.
@@ -25,7 +25,7 @@ impl std::fmt::Display for ErlIfClause {
   }
 }
 
-impl TAstNode for ErlIfClause {
+impl AstParentNodeT for ErlIfClause {
   fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = self.cond.children().unwrap_or_default();
     if let Some(body_children) = self.body.children() {

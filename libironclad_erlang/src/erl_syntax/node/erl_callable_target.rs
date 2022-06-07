@@ -1,6 +1,6 @@
 //! Defines a callable target, to use in function applications
 
-use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::ErlType;
@@ -85,7 +85,7 @@ impl CallableTarget {
   }
 }
 
-impl TAstNode for CallableTarget {
+impl AstParentNodeT for CallableTarget {
   fn children(&self) -> Option<Vec<AstNode>> {
     match self {
       CallableTarget::Expr(e) => e.children(),

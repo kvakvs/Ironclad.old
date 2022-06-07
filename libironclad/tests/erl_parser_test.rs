@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::TAstNode;
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
@@ -532,6 +532,19 @@ fn parse_apply_3() -> IcResult<()> {
   Ok(())
 }
 
+/// Try parse a small `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_small_record_test() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition");
+
+  let filename = PathBuf::from(function_name!());
+  let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}";
+  let parsed = ErlModule::parse_helper(&filename, &input, ErlAttrParser::record_definition)?;
+  println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+  Ok(())
+}
+
 fn sample_record_input() -> &'static str {
   "%%\n
 %% Generic compiler options, passed from the erl_compile module.\n
@@ -556,7 +569,7 @@ fn sample_record_input() -> &'static str {
 /// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
-fn parse_record() -> IcResult<()> {
+fn parse_record_test() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition");
 
   let filename = PathBuf::from(function_name!());

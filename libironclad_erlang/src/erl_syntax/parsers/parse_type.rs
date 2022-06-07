@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::misc::{
   par_close, par_open, parse_int, parse_varname, period_newline, semicolon, square_close,
   square_open, ws_before,
 };
-use crate::erl_syntax::parsers::parse_atom::AtomParser;
+use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::literal::Literal;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
@@ -35,7 +35,7 @@ impl ErlTypeParser {
       delimited(
         match_dash_tag("spec".into()),
         tuple((
-          context("Function name in a -spec() attribute", cut(AtomParser::atom)),
+          context("Function name in a -spec() attribute", cut(parse_atom)),
           separated_list1(
             semicolon,
             context(
@@ -66,7 +66,7 @@ impl ErlTypeParser {
     map(
       tuple((
         // Function clause name
-        opt(AtomParser::atom),
+        opt(parse_atom),
         // Args list (list of type variables with some types possibly)
         context(
           "arguments list in a function clause spec",
@@ -197,7 +197,7 @@ impl ErlTypeParser {
   fn parse_type_modulename_colon(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, String, ErlParserError> {
-    terminated(AtomParser::atom, ws_before(char(':')))(input)
+    terminated(parse_atom, ws_before(char(':')))(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
@@ -208,7 +208,7 @@ impl ErlTypeParser {
     map(
       tuple((
         opt(Self::parse_type_modulename_colon),
-        AtomParser::atom,
+        parse_atom,
         delimited(
           par_open,
           context("type arguments for a user-defined type", Self::comma_sep_typeargs0),
@@ -222,7 +222,7 @@ impl ErlTypeParser {
   /// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
   fn record_ref(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
-      preceded(hash_symbol, pair(AtomParser::atom, pair(curly_open, curly_close))),
+      preceded(hash_symbol, pair(parse_atom, pair(curly_open, curly_close))),
       |(tag, (_, _))| ErlType::new_record_ref(tag),
     )(input)
   }
@@ -315,7 +315,7 @@ impl ErlTypeParser {
   pub fn atom_literal_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(AtomParser::atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
+    map(parse_atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.

@@ -1,14 +1,12 @@
 //! Parse double quoted strings
 
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
-use crate::erl_syntax::parsers::parse_atom::AtomParser;
+use crate::erl_syntax::parsers::parse_atom::build_quoted_atom_body;
 use nom::branch::alt;
+use nom::bytes::complete::{is_not, take_while_m_n};
+use nom::character::complete::{char, multispace1};
 use nom::combinator::{map, map_opt, map_res, value, verify};
 use nom::sequence::{delimited, preceded};
-use nom::{
-  bytes::streaming::{is_not, take_while_m_n},
-  character,
-};
 
 /// A string fragment contains a fragment of a string being parsed: either
 /// a non-empty Literal (a series of non-escaped characters), a single
@@ -33,11 +31,11 @@ fn parse_hex(inp0: ParserInput) -> ParserResult<ParserInput> {
 /// of the body parser. In this case, it parses u{XXXX}.
 fn parse_delimited_hex(input: ParserInput) -> ParserResult<ParserInput> {
   preceded(
-    character::streaming::char('u'),
+    char('u'),
     // `delimited` is like `preceded`, but it parses both a prefix and a suffix.
     // It returns the result of the middle parser. In this case, it parses
     // {XXXX}, where XXXX is 1 to 6 hex numerals, and returns XXXX
-    delimited(character::streaming::char('{'), parse_hex, character::streaming::char('}')),
+    delimited(char('{'), parse_hex, char('}')),
   )(input)
 }
 
@@ -69,7 +67,7 @@ impl StringParser {
   /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
   fn parse_escaped_char<'a>(input: ParserInput) -> ParserResult<char> {
     preceded(
-      character::streaming::char('\\'),
+      char('\\'),
       // `alt` tries each parser in sequence, returning the result of
       // the first successful match
       alt((
@@ -78,14 +76,14 @@ impl StringParser {
         // parser (the second argument) succeeds. In these cases, it looks for
         // the marker characters (n, r, t, etc) and returns the matching
         // character (\n, \r, \t, etc).
-        value('\n', character::streaming::char('n')),
-        value('\r', character::streaming::char('r')),
-        value('\t', character::streaming::char('t')),
-        value('\u{08}', character::streaming::char('b')),
-        value('\u{0C}', character::streaming::char('f')),
-        value('\\', character::streaming::char('\\')),
-        value('/', character::streaming::char('/')),
-        value('"', character::streaming::char('"')),
+        value('\n', char('n')),
+        value('\r', char('r')),
+        value('\t', char('t')),
+        value('\u{08}', char('b')),
+        value('\u{0C}', char('f')),
+        value('\\', char('\\')),
+        value('/', char('/')),
+        value('"', char('"')),
       )),
     )(input)
   }
@@ -93,7 +91,7 @@ impl StringParser {
   /// Parse a backslash, followed by any amount of whitespace. This is used later
   /// to discard any escaped whitespace.
   fn parse_escaped_whitespace<'a>(input: ParserInput) -> ParserResult<ParserInput> {
-    preceded(character::streaming::char('\\'), character::streaming::multispace1)(input)
+    preceded(char('\\'), multispace1)(input)
   }
 
   /// Parse a non-empty block of text that doesn't include \ or "
@@ -132,10 +130,6 @@ impl StringParser {
     // " character, the closing delimiter " would never match. When using
     // `delimited` with a looping parser (like fold_many0), be sure that the
     // loop won't accidentally match your closing delimiter!
-    delimited(
-      character::streaming::char('\"'),
-      AtomParser::build_quoted_atom_body,
-      character::streaming::char('\"'),
-    )(input)
+    delimited(char('\"'), build_quoted_atom_body, char('\"'))(input)
   }
 }

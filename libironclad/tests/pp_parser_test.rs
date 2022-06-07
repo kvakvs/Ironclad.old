@@ -2,7 +2,7 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::TAstNode;
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;

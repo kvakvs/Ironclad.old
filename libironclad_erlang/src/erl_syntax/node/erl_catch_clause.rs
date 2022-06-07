@@ -1,6 +1,6 @@
 //! Catch clauses for try-catch block
 
-use crate::erl_syntax::erl_ast::ast_iter::TAstNode;
+use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use std::fmt::Formatter;
@@ -37,7 +37,7 @@ impl std::fmt::Display for CatchClause {
   }
 }
 
-impl TAstNode for CatchClause {
+impl AstParentNodeT for CatchClause {
   fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = Vec::default();
     if let Some(c) = self.exc_pattern.children() {

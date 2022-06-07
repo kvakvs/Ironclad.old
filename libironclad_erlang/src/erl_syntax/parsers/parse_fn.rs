@@ -6,7 +6,7 @@ use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{match_word, period, semicolon, ws_before, ws_before_mut};
-use crate::erl_syntax::parsers::parse_atom::AtomParser;
+use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
@@ -32,12 +32,12 @@ impl ErlParser {
   ) -> nom::IResult<ParserInput, Option<String>, ErlParserError> {
     if REQUIRE_FN_NAME {
       // Succeed if FN_NAME=true and there is an atom
-      return context("function clause name", cut(map(AtomParser::atom, Some)))(input);
+      return context("function clause name", cut(map(parse_atom, Some)))(input);
     }
     // Succeed if FN_NAME=false and there is no atom
     context(
       "function clause without a name (must not begin with an atom)",
-      cut(map(peek(not(AtomParser::atom)), |_| None)),
+      cut(map(peek(not(parse_atom)), |_| None)),
     )(input)
   }
 
