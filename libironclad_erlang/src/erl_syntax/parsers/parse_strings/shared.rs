@@ -75,6 +75,7 @@ pub fn parse_escaped_char<'a>(input: ParserInput) -> ParserResult<Char> {
       value('\\', char('\\')),
       value('/', char('/')),
       value('"', char('"')),
+      value('\'', char('\'')),
     )),
   )(input)
 }
@@ -88,6 +89,6 @@ pub enum StringFragment<'a> {
   Literal(&'a str),
   /// Contains a `\\something`
   EscapedChar(char),
-  /// Contains a `\\whitespace`
+  /// Contains a whitespace which does not count for the string (linebreak tab stuff?)
   EscapedWS,
 }

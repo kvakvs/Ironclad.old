@@ -49,7 +49,7 @@ fn parse_escaped_char(input: ParserInput) -> ParserResult<char> {
 }
 
 /// Parse a non-empty block of text that doesn't include \ or "
-fn parse_literal<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+fn parse_singlequot_literal<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
   // given characters.
   let not_quote_slash = |inp1: ParserInput<'a>| is_not("\'\\")(inp1);
@@ -67,7 +67,9 @@ fn parse_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.
-    map(parse_literal, |inp1: ParserInput| StringFragment::Literal(inp1.as_str())),
+    map(parse_singlequot_literal, |inp1: ParserInput| {
+      StringFragment::Literal(inp1.as_str())
+    }),
     map(parse_escaped_char, StringFragment::EscapedChar),
     value(StringFragment::EscapedWS, shared::parse_escaped_whitespace),
   ))(input)

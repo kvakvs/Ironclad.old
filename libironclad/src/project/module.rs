@@ -79,6 +79,7 @@ impl ErlModule {
     T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
   {
     println!("Parsing from {}", filename.to_string_lossy());
+    println!("Input=«{}»", input_s);
 
     let input = ParserInput::from_str(input_s);
     let mut module = ErlModule::default();

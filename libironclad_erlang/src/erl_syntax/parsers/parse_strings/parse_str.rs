@@ -12,7 +12,7 @@ use nom::multi::fold_many0;
 use nom::sequence::delimited;
 
 /// Parse a non-empty block of text that doesn't include \ or "
-fn parse_literal<'a>(input: ParserInput<'a>) -> ParserResult<&'a str> {
+fn parse_doublequot_literal<'a>(input: ParserInput<'a>) -> ParserResult<&'a str> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
   // given characters.
   let not_quote_slash = is_not("\"\\");
@@ -32,7 +32,7 @@ fn parse_literal<'a>(input: ParserInput<'a>) -> ParserResult<&'a str> {
 fn parse_str_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>> {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output of that parser.
-    map(parse_literal, StringFragment::Literal),
+    map(parse_doublequot_literal, StringFragment::Literal),
     map(shared::parse_escaped_char, StringFragment::EscapedChar),
     value(StringFragment::EscapedWS, parse_escaped_whitespace),
   ))(input)

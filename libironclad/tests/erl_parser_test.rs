@@ -17,7 +17,7 @@ use libironclad_erlang::erl_syntax::parsers::parse_record::parse_record_def;
 use libironclad_erlang::erl_syntax::parsers::parse_try_catch::{
   parse_catch_clause, parse_exception_pattern,
 };
-use libironclad_erlang::erl_syntax::parsers::{module_forms_collection, parse_module};
+use libironclad_erlang::erl_syntax::parsers::{parse_module, parse_module_forms};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use nom::Finish;
@@ -83,7 +83,7 @@ fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
   let parser_input = ParserInput::from_str(input);
-  let parse_result = module_forms_collection(parser_input.clone());
+  let parse_result = parse_module_forms(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
@@ -99,7 +99,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
   let parser_input = ParserInput::from_str(input);
-  let parse_result = module_forms_collection(parser_input.clone());
+  let parse_result = parse_module_forms(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
@@ -120,6 +120,23 @@ fn parse_string_test() -> IcResult<()> {
     }
   }
   panic!("{} Expected: Literal(String) result, got {}", function_name!(), module.ast)
+}
+
+/// Try parse quoted atom
+#[named]
+#[test]
+fn parse_q_atom_test() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a quoted atom");
+  let filename = PathBuf::from(function_name!());
+  let module = ErlModule::from_expr_source(&filename, "'hello-atom'").unwrap();
+
+  if let Lit { value: lit, .. } = &module.ast.content {
+    if let Literal::Atom(value) = lit.deref() {
+      assert_eq!(value, "hello-atom");
+      return Ok(());
+    }
+  }
+  panic!("{} Expected: Literal(Atom) result, got {}", function_name!(), module.ast)
 }
 
 /// Try parse a 2+2 expression

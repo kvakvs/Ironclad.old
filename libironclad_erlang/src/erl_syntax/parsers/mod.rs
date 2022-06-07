@@ -32,18 +32,18 @@ pub mod parser_input;
 pub mod parser_input_slice;
 
 /// Parses an attribute or a function def
-pub fn parse_module_form(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
   alt((PreprocessorParser::parse_preproc_directive, parse_module_attr, parse_fndef))(input)
 }
 
 /// Parses 0 or more module forms (attrs and function defs)
-pub fn module_forms_collection(input: ParserInput) -> VecAstParserResult {
-  ws_mut(many0(complete(parse_module_form)))(input)
+pub fn parse_module_forms(input: ParserInput) -> VecAstParserResult {
+  ws_mut(many0(complete(parse_one_module_form)))(input)
 }
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
-  map(module_forms_collection, |forms| {
+  map(parse_module_forms, |forms| {
     AstNodeImpl::construct_without_location(ModuleForms(forms))
   })(input)
 }
