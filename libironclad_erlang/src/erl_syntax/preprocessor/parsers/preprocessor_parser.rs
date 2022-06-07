@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::{
   comma_tag, match_dash_tag, newline_or_eof, par_close_tag, par_open_tag, period_newline_tag,
   period_tag, ws_before, ws_before_mut,
 };
-use crate::erl_syntax::parsers::parse_str::StringParser;
+use crate::erl_syntax::parsers::parse_strings::parse_str::parse_doublequot_string;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -69,7 +69,7 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("include".into()),
-        delimited(par_open_tag, ws_before(StringParser::parse_string), par_close_tag),
+        delimited(par_open_tag, ws_before(parse_doublequot_string), par_close_tag),
         period_newline_tag,
       ),
       |t| PreprocessorNodeType::new_include(input.loc(), t),
@@ -81,7 +81,7 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("include_lib".into()),
-        delimited(par_open_tag, ws_before(StringParser::parse_string), par_close_tag),
+        delimited(par_open_tag, ws_before(parse_doublequot_string), par_close_tag),
         period_newline_tag,
       ),
       |t| PreprocessorNodeType::new_include_lib(input.loc(), t),

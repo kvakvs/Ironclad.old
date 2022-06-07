@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::misc::{
   match_dash_tag, match_word, par_close_tag, par_open_tag, parse_int, parse_varname,
   period_newline_tag, semicolon_tag, square_close_tag, square_open_tag, ws_before,
 };
-use crate::erl_syntax::parsers::parse_atom::parse_atom;
+use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
 use crate::literal::Literal;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;

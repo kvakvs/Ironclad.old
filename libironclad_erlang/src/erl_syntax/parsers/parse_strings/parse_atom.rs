@@ -4,30 +4,14 @@
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{parse_ident, ws_before_mut};
-use crate::erl_syntax::parsers::parse_str::parse_u32;
+use crate::erl_syntax::parsers::parse_strings::shared;
+use crate::erl_syntax::parsers::parse_strings::shared::{parse_u32, StringFragment};
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
-use nom::character::complete::{char, multispace1};
+use nom::character::complete::char;
 use nom::combinator::{map, map_opt, value, verify};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
-
-/// A string fragment contains a fragment of a string being parsed: either
-/// a non-empty Literal (a series of non-escaped characters), a single
-/// parsed escaped character, or a block of escaped whitespace.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum StringFragment<'a> {
-  Literal(&'a str),
-  EscapedChar(char),
-  EscapedWS,
-}
-
-/// Groups functions for parsing atoms and quoted atoms together
-pub struct AtomParser {}
-
-// parser combinators are constructed from the bottom up:
-// first we write parsers for the smallest elements (escaped characters),
-// then combine them into larger parsers.
 
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
@@ -64,12 +48,6 @@ fn parse_escaped_char(input: ParserInput) -> ParserResult<char> {
   )(input)
 }
 
-/// Parse a backslash, followed by any amount of whitespace. This is used later
-/// to discard any escaped whitespace.
-fn parse_escaped_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  preceded(char('\\'), multispace1)(input)
-}
-
 /// Parse a non-empty block of text that doesn't include \ or "
 fn parse_literal<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
@@ -91,7 +69,7 @@ fn parse_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>
     // of that parser.
     map(parse_literal, |inp1: ParserInput| StringFragment::Literal(inp1.as_str())),
     map(parse_escaped_char, StringFragment::EscapedChar),
-    value(StringFragment::EscapedWS, parse_escaped_whitespace),
+    value(StringFragment::EscapedWS, shared::parse_escaped_whitespace),
   ))(input)
 }
 

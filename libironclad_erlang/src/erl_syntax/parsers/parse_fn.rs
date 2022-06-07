@@ -8,7 +8,7 @@ use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   match_word, period_tag, semicolon_tag, ws_before, ws_before_mut,
 };
-use crate::erl_syntax::parsers::parse_atom::parse_atom;
+use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::ErlParser;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;

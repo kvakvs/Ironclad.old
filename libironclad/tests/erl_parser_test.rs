@@ -540,7 +540,7 @@ fn parse_small_record_test() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition");
 
   let filename = PathBuf::from(function_name!());
-  let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}";
+  let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}).";
   let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())

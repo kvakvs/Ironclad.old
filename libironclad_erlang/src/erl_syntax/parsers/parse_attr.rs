@@ -7,8 +7,8 @@ use crate::erl_syntax::parsers::misc::{
   colon_colon_tag, comma_tag, match_dash_tag, par_close_tag, par_open_tag, parse_int,
   period_newline_tag, square_close_tag, square_open_tag, ws_before,
 };
-use crate::erl_syntax::parsers::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_record::parse_record_def;
+use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::ErlParser;
 use libironclad_util::mfarity::MFArity;

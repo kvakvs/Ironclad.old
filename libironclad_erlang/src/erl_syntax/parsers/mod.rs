@@ -15,7 +15,6 @@ use nom::multi::many0;
 
 pub mod defs;
 pub mod misc;
-pub mod parse_atom;
 pub mod parse_attr;
 pub mod parse_binary;
 pub mod parse_case;
@@ -25,7 +24,7 @@ pub mod parse_fn;
 pub mod parse_if_stmt;
 pub mod parse_lit;
 pub mod parse_record;
-pub mod parse_str;
+pub mod parse_strings;
 pub mod parse_try_catch;
 pub mod parse_type;
 pub mod parser_input;

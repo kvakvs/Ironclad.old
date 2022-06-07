@@ -1,8 +1,8 @@
 //! Helper functions for Nom parsing
-
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
 use crate::typing::erl_integer::ErlInteger;
+use ::function_name::named;
 use nom::branch::alt;
 use nom::character::complete::{anychar, multispace0};
 use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
@@ -234,6 +234,7 @@ pub fn parse_line_comment<'a>(input: ParserInput<'a>) -> ParserResult<ParserInpu
 }
 
 /// Print detailed error with source pointers, and panic
+#[named]
 pub fn panicking_parser_error_reporter<'a, Out>(
   input: ParserInput,
   res: Result<(ParserInput<'a>, Out), nom::error::VerboseError<ParserInput<'a>>>,
@@ -247,7 +248,10 @@ pub fn panicking_parser_error_reporter<'a, Out>(
       }
       (tail, out)
     }
-    Err(e) => panic!("Nom parser error: {}", convert_error(input, e)),
+    Err(e) => {
+      println!("Parse error: {}", convert_error(input, e));
+      panic!("{}: Parse error", function_name!())
+    }
   }
 }
 
