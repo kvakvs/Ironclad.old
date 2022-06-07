@@ -7,10 +7,10 @@ use crate::erl_syntax::parsers::misc::{
   colon_colon_tag, comma_tag, match_dash_tag, par_close_tag, par_open_tag, parse_int,
   period_newline_tag, square_close_tag, square_open_tag, ws_before,
 };
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
-use crate::erl_syntax::parsers::ErlParser;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map};
@@ -28,7 +28,7 @@ fn parse_generic_attr_expr(input: ParserInput) -> ParserResult<Option<AstNode>> 
   map(
     delimited(
       par_open_tag,
-      context("an expression inside a custom -<name>() attribute", cut(ErlParser::parse_expr)),
+      context("an expression inside a custom -<name>() attribute", cut(parse_expr)),
       par_close_tag,
     ),
     Option::Some,

@@ -6,6 +6,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::parse_module_attr;
+use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
 use defs::ParserInput;
 use defs::VecAstParserResult;
@@ -30,28 +31,19 @@ pub mod parse_type;
 pub mod parser_input;
 pub mod parser_input_slice;
 
-/// Groups functions for parsing Erlang syntax together
-pub struct ErlParser {}
+/// Parses an attribute or a function def
+pub fn parse_module_form(input: ParserInput) -> ParserResult<AstNode> {
+  alt((PreprocessorParser::parse_preproc_directive, parse_module_attr, parse_fndef))(input)
+}
 
-impl ErlParser {
-  /// Parses an attribute or a function def
-  pub fn module_form(input: ParserInput) -> ParserResult<AstNode> {
-    alt((
-      PreprocessorParser::parse_preproc_directive,
-      parse_module_attr,
-      Self::parse_fndef,
-    ))(input)
-  }
+/// Parses 0 or more module forms (attrs and function defs)
+pub fn module_forms_collection(input: ParserInput) -> VecAstParserResult {
+  ws_mut(many0(complete(parse_module_form)))(input)
+}
 
-  /// Parses 0 or more module forms (attrs and function defs)
-  pub fn module_forms_collection(input: ParserInput) -> VecAstParserResult {
-    ws_mut(many0(complete(Self::module_form)))(input)
-  }
-
-  /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
-  pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
-    map(Self::module_forms_collection, |forms| {
-      AstNodeImpl::construct_without_location(ModuleForms(forms))
-    })(input)
-  }
+/// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
+pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
+  map(module_forms_collection, |forms| {
+    AstNodeImpl::construct_without_location(ModuleForms(forms))
+  })(input)
 }

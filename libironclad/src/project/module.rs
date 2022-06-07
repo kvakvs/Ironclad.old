@@ -12,8 +12,10 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_error::ErlError;
 use libironclad_erlang::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_expr;
+use libironclad_erlang::erl_syntax::parsers::parse_fn::parse_fndef;
+use libironclad_erlang::erl_syntax::parsers::parse_module;
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
-use libironclad_erlang::erl_syntax::parsers::ErlParser;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::source_file::{SourceFile, SourceFileImpl};
 use libironclad_erlang::typing::scope::Scope;
@@ -104,17 +106,17 @@ impl ErlModule {
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
   pub fn from_module_source(filename: &Path, input: &str) -> IcResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_module)
+    Self::parse_helper(filename, input, parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
   pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_expr)
+    Self::parse_helper(filename, input, parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
   pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<Self> {
-    Self::parse_helper(filename, input, ErlParser::parse_fndef)
+    Self::parse_helper(filename, input, parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`

@@ -6,7 +6,8 @@ use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, VecAstParserRe
 use crate::erl_syntax::parsers::misc::{
   match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before,
 };
-use crate::erl_syntax::parsers::ErlParser;
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
+use crate::erl_syntax::parsers::parse_module_form;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{_TemporaryElse, _TemporaryEndif};
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
@@ -18,14 +19,14 @@ use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 impl PreprocessorParser {
   /// Parses multiple lines of any directives except `-endif.` or `-else.`
   fn parse_fragments_till_else(input: ParserInput) -> VecAstParserResult {
-    many0(verify(ErlParser::module_form, |frag: &AstNode| {
+    many0(verify(parse_module_form, |frag: &AstNode| {
       !frag.is_else() && !frag.is_elseif() && !frag.is_endif()
     }))(input)
   }
 
   /// Parses multiple lines of any directives except `-endif.`
   fn parse_fragments_till_endif(input: ParserInput) -> VecAstParserResult {
-    many0(verify(ErlParser::module_form, |frag: &AstNode| !frag.is_endif()))(input)
+    many0(verify(parse_module_form, |frag: &AstNode| !frag.is_endif()))(input)
   }
 
   /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
@@ -68,7 +69,7 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("if".into()),
-        delimited(par_open_tag, ws_before(ErlParser::parse_expr), par_close_tag),
+        delimited(par_open_tag, ws_before(parse_expr), par_close_tag),
         period_newline_tag,
       ),
       // Builds a temporary If node with erl expression in it
@@ -81,7 +82,7 @@ impl PreprocessorParser {
     map(
       delimited(
         match_dash_tag("elif".into()),
-        delimited(par_open_tag, ws_before(ErlParser::parse_expr), par_close_tag),
+        delimited(par_open_tag, ws_before(parse_expr), par_close_tag),
         period_newline_tag,
       ),
       |t| PreprocessorNodeType::new_elif_temporary(input.loc(), t),

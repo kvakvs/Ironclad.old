@@ -8,9 +8,9 @@ use crate::erl_syntax::parsers::misc::{
   colon_colon_tag, comma_tag, curly_close_tag, curly_open_tag, equals_tag, match_dash_tag,
   par_close_tag, par_open_tag, period_newline_tag,
 };
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
-use crate::erl_syntax::parsers::ErlParser;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::separated_list0;
@@ -22,10 +22,7 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
   map(
     tuple((
       parse_atom,
-      opt(preceded(
-        equals_tag,
-        context("default value for a field", cut(ErlParser::parse_expr)),
-      )),
+      opt(preceded(equals_tag, context("default value for a field", cut(parse_expr)))),
       opt(preceded(
         colon_colon_tag,
         context("type ascription for a field", cut(ErlTypeParser::parse_type)),

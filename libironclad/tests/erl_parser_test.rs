@@ -14,7 +14,10 @@ use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::parse_funarity;
 use libironclad_erlang::erl_syntax::parsers::parse_record::parse_record_def;
-use libironclad_erlang::erl_syntax::parsers::ErlParser;
+use libironclad_erlang::erl_syntax::parsers::parse_try_catch::{
+  parse_catch_clause, parse_exception_pattern,
+};
+use libironclad_erlang::erl_syntax::parsers::{module_forms_collection, parse_module};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use nom::Finish;
@@ -29,7 +32,7 @@ fn parse_empty_module() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   let code = format!("-module({}).\n", function_name!());
   let parsed = ErlModule::from_module_source(&filename, &code)?;
-  // let parsed = Module::parse_helper(&filename, &code, ErlParser::parse_module_attr)?;
+  // let parsed = Module::parse_helper(&filename, &code, parse_module_attr)?;
   println!("Parsed empty module: «{}»\nAST: {}", code, &parsed.ast);
   Ok(())
 }
@@ -80,7 +83,7 @@ fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
   let parser_input = ParserInput::from_str(input);
-  let parse_result = ErlParser::module_forms_collection(parser_input.clone());
+  let parse_result = module_forms_collection(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
   Ok(())
@@ -96,7 +99,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
   let parser_input = ParserInput::from_str(input);
-  let parse_result = ErlParser::module_forms_collection(parser_input.clone());
+  let parse_result = module_forms_collection(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
   Ok(())
@@ -271,8 +274,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
   {
-    let (exc_tail, exc) =
-      ErlParser::parse_exception_pattern(ParserInput::from_str("Class:Error")).unwrap();
+    let (exc_tail, exc) = parse_exception_pattern(ParserInput::from_str("Class:Error")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -283,7 +285,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   }
   {
     let (exc_tail, exc) =
-      ErlParser::parse_exception_pattern(ParserInput::from_str("Class:Error:Stack")).unwrap();
+      parse_exception_pattern(ParserInput::from_str("Class:Error:Stack")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -300,8 +302,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
-  let (tail, clause) =
-    ErlParser::parse_catch_clause(ParserInput::from_str("A:B:C when true -> ok")).unwrap();
+  let (tail, clause) = parse_catch_clause(ParserInput::from_str("A:B:C when true -> ok")).unwrap();
   // TODO: Use panicking error reporter
   assert!(tail.is_empty(), "Could not parse exception pattern");
   assert!(clause.exc_pattern.class.is_var());
@@ -588,7 +589,7 @@ fn parse_record_with_module() -> IcResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
-  let parsed = ErlModule::parse_helper(&filename, &input, ErlParser::parse_module)?;
+  let parsed = ErlModule::parse_helper(&filename, &input, parse_module)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
 
   let contents = parsed.ast.children().unwrap();
