@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_record::parse_record_def;
-use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
+use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;

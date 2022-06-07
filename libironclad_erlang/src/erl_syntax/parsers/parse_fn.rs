@@ -12,7 +12,7 @@ use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_expr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
   EXPR_STYLE_MATCHEXPR,
 };
-use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
+use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::character::complete::char;

@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::misc::{
   par_close_tag, par_open_tag, period_newline_tag,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
-use crate::erl_syntax::parsers::parse_strings::parse_atom::parse_atom;
+use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;

@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::{
   comma_tag, match_dash_tag, newline_or_eof, par_close_tag, par_open_tag, period_newline_tag,
   period_tag, ws_before, ws_before_mut,
 };
-use crate::erl_syntax::parsers::parse_strings::parse_str::parse_doublequot_string;
+use crate::erl_syntax::parsers::parse_strings::str_literal::parse_doublequot_string;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::pp_parse_def_undef::{
   define_directive, undef_directive,
