@@ -118,12 +118,11 @@ impl AstNodeImpl {
       ErlAstType::FnSpec { .. }
       | ErlAstType::Type { .. }
       | ErlAstType::MFA { .. }
-      | ErlAstType::ModuleStartAttr { .. }
       | ErlAstType::ExportAttr { .. }
       | ErlAstType::ExportTypeAttr { .. }
       | ErlAstType::TypeAttr { .. }
       | ErlAstType::ImportAttr { .. }
-      | ErlAstType::ModuleForms(_)
+      | ErlAstType::ModuleForms { .. }
       | ErlAstType::FnRef { .. }
       | ErlAstType::FnDef(_)
       | ErlAstType::CClause(_, _)

@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
-  Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, ModuleStartAttr, Tuple, Var,
+  Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
@@ -19,9 +19,6 @@ impl AstNodeImpl {
   pub fn synthesize(&self, scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     match &self.content {
       Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
-      ModuleStartAttr { .. } => {
-        unreachable!("Should not be synthesizing type from module node")
-      }
       FnDef(fndef) => fndef.synthesize_function_type(scope),
       FnRef { mfa, .. } => match Scope::retrieve_fn_from(scope, mfa) {
         None => ErlError::local_function_not_found(

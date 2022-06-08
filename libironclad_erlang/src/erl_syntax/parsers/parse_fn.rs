@@ -36,12 +36,12 @@ fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
 ) -> nom::IResult<ParserInput, Option<String>, ErlParserError> {
   if REQUIRE_FN_NAME {
     // Succeed if FN_NAME=true and there is an atom
-    return context("function clause name", cut(map(parse_atom, Some)))(input);
+    return context("function clause name", map(parse_atom, Some))(input);
   }
   // Succeed if FN_NAME=false and there is no atom
   context(
     "function clause without a name (must not begin with an atom)",
-    cut(map(peek(not(parse_atom)), |_| None)),
+    map(peek(not(parse_atom)), |_| None),
   )(input)
 }
 

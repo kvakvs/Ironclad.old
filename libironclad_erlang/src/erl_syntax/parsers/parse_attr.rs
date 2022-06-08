@@ -55,17 +55,14 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Parses a `-module(atom).` attribute.
 /// Dash `-` and terminating `.` are matched outside by the caller.
-pub fn module_attr(input: ParserInput) -> ParserResult<AstNode> {
-  map(
-    delimited(
-      match_dash_tag("module".into()),
-      context(
-        "the module name in a -module() attribute",
-        cut(delimited(par_open_tag, parse_atom, par_close_tag)),
-      ),
-      period_newline_tag,
+pub fn module_start_attr(input: ParserInput) -> ParserResult<String> {
+  delimited(
+    match_dash_tag("module".into()),
+    context(
+      "the module name in a -module() attribute",
+      cut(delimited(par_open_tag, parse_atom, par_close_tag)),
     ),
-    |t| AstNodeImpl::new_module_start_attr(input.loc(), t),
+    period_newline_tag,
   )(input.clone())
 }
 
@@ -178,13 +175,12 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
 pub fn parse_module_attr(input: ParserInput) -> ParserResult<AstNode> {
   // print_input("attr", input);
   alt((
+    parse_record_def,
     export_type_attr,
     export_attr,
     import_attr,
     type_definition_attr,
-    module_attr,
     ErlTypeParser::fn_spec_attr,
-    parse_record_def,
     // Generic parser will try consume any `-IDENT(EXPR).`
     parse_generic_attr,
   ))(input)

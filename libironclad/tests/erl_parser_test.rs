@@ -605,13 +605,14 @@ fn parse_record_with_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition as a part of a module");
 
   let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
+  // let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
+  let input = format!("-module({}).\n-record(options, {{includes }}).\n", function_name!());
   let parsed = ErlModule::parse_helper(&filename, &input, parse_module)?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
 
   let contents = parsed.ast.children().unwrap();
-  assert_eq!(contents.len(), 2); // -module() and -record() nodes
-  assert!(matches!(contents[1].content, ErlAstType::RecordDefinition { .. }));
+  assert_eq!(contents.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
+  assert!(matches!(contents[0].content, ErlAstType::RecordDefinition { .. }));
   Ok(())
 }
 

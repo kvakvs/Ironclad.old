@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypeAttr, FnDef,
   FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleStartAttr, TryCatch, Tuple, TypeAttr, Var,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, TryCatch, Tuple, TypeAttr, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -160,8 +160,8 @@ impl AstNodeImpl {
   }
 
   /// Create a new `-module(m).` module attr.
-  pub fn new_module_start_attr(location: SourceLoc, name: String) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ModuleStartAttr { name })
+  pub fn new_module_forms(location: SourceLoc, name: String, forms: Vec<AstNode>) -> AstNode {
+    AstNodeImpl::construct_with_location(location, ModuleForms { name, forms })
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.

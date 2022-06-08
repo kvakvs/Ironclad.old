@@ -3,8 +3,8 @@
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
   ExportTypeAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
-  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, ModuleStartAttr,
-  Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
+  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, Token, TryCatch,
+  Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -16,13 +16,13 @@ impl std::fmt::Display for AstNodeImpl {
     match &self.content {
       Empty => writeln!(f, "% empty"),
       Token { token: t, .. } => writeln!(f, "% token {}", t),
-      ModuleForms(forms) => {
+      ModuleForms { forms, name } => {
+        writeln!(f, "-module({}),", name)?;
         for form in forms.iter() {
           write!(f, "{}", form)?;
         }
         Ok(())
       }
-      ModuleStartAttr { name, .. } => writeln!(f, "-module('{}').", name),
       ExportAttr { exports, .. } => {
         write!(f, "-export(")?;
         Pretty::display_square_list(exports, f)?;

@@ -1,8 +1,8 @@
 //! Complex support code to parse 'delimited' atom strings and atoms in general
 //! String parsing code from Nom examples.
 
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::defs::{Char, ParserInput};
 use crate::erl_syntax::parsers::misc::{parse_ident, ws_before_mut};
 use crate::erl_syntax::parsers::parse_strings::shared;
 use crate::erl_syntax::parsers::parse_strings::shared::{parse_u32, StringFragment};
@@ -16,7 +16,7 @@ use nom::sequence::{delimited, preceded};
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
 /// to parse sequences like \u{00AC}.
-fn parse_unicode<'a>(input: ParserInput) -> ParserResult<char> {
+fn parse_unicode<'a>(input: ParserInput) -> ParserResult<Char> {
   // map_opt is like map_res, but it takes an Option instead of a Result. If
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
@@ -25,7 +25,7 @@ fn parse_unicode<'a>(input: ParserInput) -> ParserResult<char> {
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-fn parse_escaped_char(input: ParserInput) -> ParserResult<char> {
+fn parse_escaped_char(input: ParserInput) -> ParserResult<Char> {
   preceded(
     char('\\'),
     // `alt` tries each parser in sequence, returning the result of

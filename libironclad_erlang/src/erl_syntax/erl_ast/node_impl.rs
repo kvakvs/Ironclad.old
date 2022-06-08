@@ -48,12 +48,11 @@ pub enum ErlAstType {
   },
 
   /// Forms list, root of a module
-  ModuleForms(Vec<AstNode>),
-
-  /// -module(name). attribute, defines module start
-  ModuleStartAttr {
-    /// Module name atom, stored as string
+  ModuleForms {
+    /// Name from `-module(name).` attribute
     name: String,
+    /// Vector of module forms
+    forms: Vec<AstNode>,
   },
 
   /// `-export([f/a, ......]).` attribute, defines exports
@@ -287,7 +286,7 @@ impl AstNodeImpl {
       FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
         return Ok(this.clone());
       }
-      ModuleForms(forms) => {
+      ModuleForms { forms, .. } => {
         // Find first in forms for which `find_function_def` returns something
         let find_result = forms
           .iter()
