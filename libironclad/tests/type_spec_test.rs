@@ -28,7 +28,7 @@ fn union_type_parse() -> IcResult<()> {
 	       {'integer',integer()} |
 	       'nil' |
 	       {'float',float()}.";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
     parser_input.clone(),
     type_definition_attr(parser_input).finish(),
@@ -43,7 +43,7 @@ fn union_type_parse() -> IcResult<()> {
 fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let (tail1, result1) = panicking_parser_error_reporter(
     parser_input.clone(),
     parse_generic_attr(parser_input).finish(),
@@ -62,7 +62,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
 fn fn_generic_attr_parse2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
   let input = "- bbbggg (ababagalamaga()) .  ";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let (tail2, result2) = panicking_parser_error_reporter(
     parser_input.clone(),
     parse_generic_attr(parser_input).finish(),

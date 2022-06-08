@@ -81,7 +81,7 @@ impl ErlModule {
     println!("Parsing from {}", filename.to_string_lossy());
     println!("Input=«{}»", input_s);
 
-    let input = ParserInput::from_str(input_s);
+    let input = ParserInput::new_str(input_s);
     let mut module = ErlModule::default();
     let (tail, forms) =
       panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());

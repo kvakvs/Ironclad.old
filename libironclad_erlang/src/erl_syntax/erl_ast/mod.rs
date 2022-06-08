@@ -13,15 +13,3 @@ pub mod node_impl;
 
 /// An atomic-refcounted readonly AST node, suitable for sharing and cloning
 pub type AstNode = Arc<AstNodeImpl>;
-
-// / A tree of Erlang nodes with attached file name, and root element removed
-// pub type ErlAstTree = AstTree<ErlAst>;
-
-// /// A cache of trees of Erlang nodes, keyed by filename or module name
-// pub type ErlAstCache = AstCache<ErlAst>;
-//
-// impl Default for ErlAst {
-//   fn default() -> Self {
-//     ErlAst::Empty
-//   }
-// }

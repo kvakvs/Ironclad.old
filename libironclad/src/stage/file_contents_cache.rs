@@ -22,7 +22,7 @@ impl Default for FileContentsCache {
   }
 }
 
-impl<'a> FileContentsCache {
+impl FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
   pub fn preload_file(
     &mut self,

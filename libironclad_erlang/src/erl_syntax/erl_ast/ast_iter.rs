@@ -140,7 +140,9 @@ impl AstParentNodeT for AstNodeImpl {
           Some(r)
         }
       }
-      _ => unreachable!("{}(): Can't process {}", function_name!(), self),
+      _ => {
+        unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
+      }
     }
   }
 }

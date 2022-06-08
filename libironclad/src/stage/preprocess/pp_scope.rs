@@ -52,7 +52,7 @@ impl PreprocessorScope {
   }
 
   /// Clone self and insert a new macro definition
-  pub fn define(&self, name: &str, args: &[String], text: &String) -> Arc<Self> {
+  pub fn define(&self, name: &str, args: &[String], text: &str) -> Arc<Self> {
     let mut defines = self.defines.clone();
     let pp_def = PreprocessorDefine::new(name.to_string(), args, text);
     defines.insert(pp_def.get_name_arity(), pp_def);

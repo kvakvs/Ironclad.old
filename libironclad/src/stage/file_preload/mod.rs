@@ -7,17 +7,13 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 /// Handles loading/caching text files in memory
+#[derive(Default)]
 pub struct FilePreloadStage {
   /// Counters and timers for performance profiling
   pub stats: FilePreloadStats,
 }
 
 impl FilePreloadStage {
-  /// Creates new state for file preload stage
-  pub fn new() -> Self {
-    Self { stats: FilePreloadStats::new() }
-  }
-
   /// Stage 0 - Preloading sources
   /// ----------------------------
   /// Preload stage will visit all input files and load them in memory.

@@ -6,9 +6,10 @@ use num::{FromPrimitive, Signed, ToPrimitive};
 use num_bigint::BigInt;
 use std::cmp::Ordering;
 use std::fmt::Formatter;
+use std::hash::Hasher;
 
 /// Wraps a large integer or bigint
-#[derive(Clone, Debug, Hash, Eq)]
+#[derive(Clone, Debug, Eq)]
 pub enum ErlInteger {
   /// Small which fits in 64 bits signed
   Small(i64),
@@ -85,6 +86,21 @@ impl PartialOrd<Self> for ErlInteger {
         Small(other_small) => big.partial_cmp(&BigInt::from_i64(*other_small).unwrap()),
         Big(other_big) => big.partial_cmp(other_big),
       },
+    }
+  }
+}
+
+impl std::hash::Hash for ErlInteger {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      Small(small) => {
+        'S'.hash(state);
+        small.hash(state);
+      }
+      Big(big) => {
+        'B'.hash(state);
+        big.hash(state);
+      }
     }
   }
 }

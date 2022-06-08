@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
-  Define, IfBlock, IfdefBlock, IncludedFile, Undef, Warning,
+  Define, IfBlock, IfdefBlock, IncludedFile,
 };
 use ::function_name::named;
 use libironclad_util::pretty::Pretty;
@@ -31,14 +31,25 @@ impl std::fmt::Display for PreprocessorNodeType {
         for c in cond_true {
           writeln!(f, "{}", c)?;
         }
+        if !cond_false.is_empty() {
+          writeln!(f, "-else.")?;
+        }
         for c in cond_false {
           writeln!(f, "{}", c)?;
         }
         writeln!(f, "-endif.")
       }
-      Undef(name) => write!(f, "-undef({}).", name),
-      PreprocessorNodeType::Error(t) => write!(f, "-error({}).", t),
-      Warning(t) => write!(f, "-warning({}).", t),
+      PreprocessorNodeType::Undef(name) => write!(f, "-undef({}).", name),
+      PreprocessorNodeType::Error(t) => {
+        write!(f, "-error(")?;
+        Pretty::doublequot_string(f, t)?;
+        write!(f, ").")
+      }
+      PreprocessorNodeType::Warning(t) => {
+        write!(f, "-warning(")?;
+        Pretty::doublequot_string(f, t)?;
+        write!(f, ").")
+      }
 
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }

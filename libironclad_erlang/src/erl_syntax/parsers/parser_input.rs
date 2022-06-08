@@ -32,7 +32,7 @@ impl<'a> ParserInputImpl<'a> {
   }
 
   /// Create a parser input with a string slice
-  pub fn from_str(text: &str) -> Self {
+  pub fn new_str(text: &str) -> Self {
     Self {
       input: ParserInputSlice::new(text).into(),
       _phantom: Default::default(),
@@ -65,7 +65,7 @@ impl<'a> ParserInputImpl<'a> {
 
 impl From<&str> for ParserInputImpl<'_> {
   fn from(s: &str) -> Self {
-    ParserInputImpl::from_str(s)
+    ParserInputImpl::new_str(s)
   }
 }
 

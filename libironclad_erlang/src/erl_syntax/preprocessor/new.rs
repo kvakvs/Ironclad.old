@@ -98,4 +98,14 @@ impl PreprocessorNodeType {
   pub fn new_include_lib(location: SourceLoc, p: String) -> AstNode {
     Self::construct_with_location(location, IncludeLib(p))
   }
+
+  /// Create a new ERROR node
+  pub fn new_error(location: SourceLoc, p: String) -> AstNode {
+    Self::construct_with_location(location, PreprocessorNodeType::Error(p))
+  }
+
+  /// Create a new WARNING node
+  pub fn new_warning(location: SourceLoc, p: String) -> AstNode {
+    Self::construct_with_location(location, PreprocessorNodeType::Warning(p))
+  }
 }

@@ -126,7 +126,7 @@ impl ErlProject {
     // READING (except includes)
     //----------------------------------
     // Load files and store contents in the hashmap
-    let mut preload_stage = FilePreloadStage::new();
+    let mut preload_stage = FilePreloadStage::default();
     let file_cache = match preload_stage.run(&self.inputs.inputs) {
       Ok(fc) => fc,
       Err(e) => return Err(Box::new(e)),
@@ -143,7 +143,7 @@ impl ErlProject {
     // PARSING ERLANG AST
     //-------------------------
     // Parse all ERL files and their included includes
-    let _erl_code_cache = ErlParseStage::run(self, file_cache).unwrap();
+    ErlParseStage::run(self, file_cache).unwrap();
 
     Ok(())
   }

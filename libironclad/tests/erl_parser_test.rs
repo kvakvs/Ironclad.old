@@ -43,7 +43,7 @@ fn parse_empty_module() -> IcResult<()> {
 fn parse_export_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
-  let (_tail, pfna) = parse_funarity(ParserInput::from_str("name/123")).unwrap();
+  let (_tail, pfna) = parse_funarity(ParserInput::new_str("name/123")).unwrap();
   assert_eq!(pfna.name, "name");
   assert_eq!(pfna.arity, 123usize);
 
@@ -82,7 +82,7 @@ fn parse_import_attr() -> IcResult<()> {
 fn parse_empty_module_forms_collection() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
   let input = "    \n   \r\n  ";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let parse_result = parse_module_forms(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
@@ -98,7 +98,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     "Parse a string with 2 function defs in it as module forms collection",
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let parse_result = parse_module_forms(parser_input.clone());
   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
   println!("{} parsed: tail=«{}»\nResult={:?}", function_name!(), input, forms);
@@ -291,7 +291,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
   {
-    let (exc_tail, exc) = parse_exception_pattern(ParserInput::from_str("Class:Error")).unwrap();
+    let (exc_tail, exc) = parse_exception_pattern(ParserInput::new_str("Class:Error")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -302,7 +302,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
   }
   {
     let (exc_tail, exc) =
-      parse_exception_pattern(ParserInput::from_str("Class:Error:Stack")).unwrap();
+      parse_exception_pattern(ParserInput::new_str("Class:Error:Stack")).unwrap();
     println!("Parsed ExceptionPattern: {:?}", &exc);
 
     // TODO: Use panicking error reporter
@@ -319,7 +319,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
-  let (tail, clause) = parse_catch_clause(ParserInput::from_str("A:B:C when true -> ok")).unwrap();
+  let (tail, clause) = parse_catch_clause(ParserInput::new_str("A:B:C when true -> ok")).unwrap();
   // TODO: Use panicking error reporter
   assert!(tail.is_empty(), "Could not parse exception pattern");
   assert!(clause.exc_pattern.class.is_var());

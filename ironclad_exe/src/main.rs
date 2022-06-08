@@ -10,7 +10,7 @@ use libironclad_erlang::error::ic_error::IcResult;
 
 fn main_do() -> IcResult<()> {
   // Test default project from ""
-  let default_project: ErlProject = match ProjectConf::from_string(ParserInputImpl::from_str("")) {
+  let default_project: ErlProject = match ProjectConf::from_string(ParserInputImpl::new_str("")) {
     Ok(dp) => dp.into(),
     Err(e) => return Err(Box::new(e)),
   };

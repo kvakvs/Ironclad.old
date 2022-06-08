@@ -19,7 +19,7 @@ fn test_fragment_if() {
   test_util::start(function_name!(), "Parse -if() directive");
   // let filename = PathBuf::from(function_name!());
   let input = "-if(true).";
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let (_tail, result) = panicking_parser_error_reporter(
     parser_input.clone(),
     parse_if_directive(parser_input).finish(),
@@ -37,13 +37,13 @@ fn parse_if_as_fragments() {
   let filename = PathBuf::from(function_name!());
   let input = format!(
     "-module({}).
--warning(before_if).
+-warning(\"before_if\").
 -if(true).
--warning(on_true).
+-warning(\"on_true\").
 -else.
--warning(on_false).
+-warning(\"on_false\").
 -endif.
--warning(after_if).",
+-warning(\"after_if\").",
     function_name!()
   );
   let module = ErlModule::from_module_source(&filename, &input).unwrap();
@@ -87,7 +87,7 @@ false).
 -endif().";
   println!("In=«{}»", input);
 
-  let parser_input = ParserInput::from_str(input);
+  let parser_input = ParserInput::new_str(input);
   let (_tail, ast) =
     panicking_parser_error_reporter(parser_input.clone(), parse_if_block(parser_input).finish());
   println!("Out={:?}", ast);

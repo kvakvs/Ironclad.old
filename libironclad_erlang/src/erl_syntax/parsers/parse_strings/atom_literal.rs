@@ -16,7 +16,7 @@ use nom::sequence::{delimited, preceded};
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
 /// to parse sequences like \u{00AC}.
-fn parse_unicode<'a>(input: ParserInput) -> ParserResult<Char> {
+fn parse_unicode(input: ParserInput) -> ParserResult<Char> {
   // map_opt is like map_res, but it takes an Option instead of a Result. If
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
@@ -98,7 +98,7 @@ pub fn build_quoted_atom_body(input: ParserInput) -> ParserResult<String> {
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-fn parse_quoted_atom<'a>(input: ParserInput) -> ParserResult<String> {
+fn parse_quoted_atom(input: ParserInput) -> ParserResult<String> {
   // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the

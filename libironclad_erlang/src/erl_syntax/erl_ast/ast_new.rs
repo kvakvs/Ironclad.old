@@ -166,7 +166,13 @@ impl AstNodeImpl {
 
   /// Create a new `-TAG(TERM).` generic module attribute.
   pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<AstNode>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, GenericAttr { tag, term })
+    match tag.as_str() {
+      "warning" | "error" => panic!(
+        "Trying to create -{}(). attribute as GenericAttr, there is a specific impl for that!",
+        tag
+      ),
+      _ => AstNodeImpl::construct_with_location(location, GenericAttr { tag, term }),
+    }
   }
 
   /// Create a new `-export([...]).` module attr.
@@ -225,7 +231,7 @@ impl AstNodeImpl {
 
   /// Create a new function AST node, or a lambda AST node.
   pub fn new_fndef(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> AstNode {
-    let fndef = ErlFnDef { location: location.clone(), funarity, clauses };
+    let fndef = ErlFnDef { location, funarity, clauses };
     AstNodeImpl::construct_without_location(FnDef(fndef))
   }
 

@@ -152,7 +152,7 @@ pub fn par_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>>
 
 /// Matches a closing parenthesis ")" with 0+ whitespace before
 #[inline]
-pub fn par_close_tag<'a>(input: ParserInput) -> ParserResult<ParserInput> {
+pub fn par_close_tag(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(ws_before(char(')')))(input)
 }
 

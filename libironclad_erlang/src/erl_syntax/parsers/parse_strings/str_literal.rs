@@ -60,7 +60,7 @@ pub fn build_quoted_str_body(input: ParserInput) -> ParserResult<String> {
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-pub fn parse_doublequot_string<'a>(input: ParserInput) -> ParserResult<String> {
+pub fn parse_doublequot_string(input: ParserInput) -> ParserResult<String> {
   // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the

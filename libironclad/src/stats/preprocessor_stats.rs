@@ -5,6 +5,7 @@ use crate::stats::io_stats::IOStats;
 use crate::stats::time_stats::TimeStats;
 
 /// Stores counters for preprocessor activity and start/end time
+#[derive(Default)]
 pub struct PreprocessorStats {
   /// Read write counters
   pub io: IOStats,
@@ -24,17 +25,5 @@ impl std::fmt::Display for PreprocessorStats {
     write!(f, "FILE {}", self.file_cache)?;
     write!(f, "PARSED AST {}", self.ast_cache)?;
     write!(f, "{}", self.time)
-  }
-}
-
-impl PreprocessorStats {
-  /// Create a new stats struct
-  pub fn new() -> Self {
-    Self {
-      io: IOStats::default(),
-      file_cache: CacheStats::default(),
-      ast_cache: CacheStats::default(),
-      time: TimeStats::default(),
-    }
   }
 }

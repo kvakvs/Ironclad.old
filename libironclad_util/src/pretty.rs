@@ -1,13 +1,15 @@
 //! Display helpers for printing stuff
 
-use std::fmt;
-
 /// Groups up the code for pretty printing containers and other stuff
 pub struct Pretty {}
 
 impl Pretty {
   /// Print <'sep' separated list of something>
-  pub fn display_separated<T>(elems: &[T], sep: &str, f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_separated<T>(
+    elems: &[T],
+    sep: &str,
+    f: &mut std::fmt::Formatter,
+  ) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
@@ -24,7 +26,7 @@ impl Pretty {
   }
 
   /// Print <comma, separated, list, of something>
-  pub fn display_comma_separated<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_comma_separated<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
@@ -32,7 +34,10 @@ impl Pretty {
   }
 
   /// Print <semicolon; separated; list; of something>
-  pub fn display_semicolon_separated<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_semicolon_separated<T>(
+    elems: &[T],
+    f: &mut std::fmt::Formatter,
+  ) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
@@ -40,7 +45,7 @@ impl Pretty {
   }
 
   /// Print \[ <comma separated something> \]
-  pub fn display_square_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_square_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
@@ -50,7 +55,7 @@ impl Pretty {
   }
 
   /// Print ( <comma separated something> )
-  pub fn display_paren_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_paren_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
@@ -60,12 +65,24 @@ impl Pretty {
   }
 
   /// Print { <comma separated something> }
-  pub fn display_curly_list<T>(elems: &[T], f: &mut fmt::Formatter) -> fmt::Result
+  pub fn display_curly_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
   where
     T: std::fmt::Display,
   {
     write!(f, "{{")?;
     Pretty::display_comma_separated(elems, f)?;
     write!(f, "}}")
+  }
+
+  /// Display a `\" {text} \"` with special characters quoted.
+  pub fn doublequot_string(f: &mut std::fmt::Formatter, s: &str) -> std::fmt::Result {
+    write!(f, "\"")?;
+    for (_i, ch) in s.chars().enumerate() {
+      match ch {
+        '\"' | '\\' => write!(f, "\\{}", ch)?,
+        _ => write!(f, "{}", ch)?,
+      }
+    }
+    write!(f, "\"")
   }
 }

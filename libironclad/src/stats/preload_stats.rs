@@ -5,6 +5,7 @@ use crate::stats::io_stats::IOStats;
 use crate::stats::time_stats::TimeStats;
 
 /// Statistics struct for file preload stage
+#[derive(Default)]
 pub struct FilePreloadStats {
   /// File IO counters
   pub io: IOStats,
@@ -21,16 +22,5 @@ impl std::fmt::Display for FilePreloadStats {
     write!(f, "{}", self.io)?;
     write!(f, "FILE {}", self.file_cache)?;
     write!(f, "{}", self.time)
-  }
-}
-
-impl FilePreloadStats {
-  /// Create new stats struct
-  pub fn new() -> Self {
-    Self {
-      io: IOStats::default(),
-      file_cache: Default::default(),
-      time: TimeStats::default(),
-    }
   }
 }
