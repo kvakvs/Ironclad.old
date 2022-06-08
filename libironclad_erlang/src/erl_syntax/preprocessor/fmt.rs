@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
-  Define, IfBlock, IfdefBlock, IncludedFile,
+  Define, IfBlock, IfdefBlock, Include, IncludeLib, IncludedFile,
 };
 use ::function_name::named;
 use libironclad_util::pretty::Pretty;
@@ -12,6 +12,8 @@ impl std::fmt::Display for PreprocessorNodeType {
   #[named]
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self {
+      Include(p) => writeln!(f, "-include(\"{}\").", p),
+      IncludeLib(p) => write!(f, "-include_lib(\"{}\").", p),
       IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
       Define { name, args, body } => {
         write!(f, "-define({}", name)?;

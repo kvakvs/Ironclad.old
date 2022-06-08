@@ -55,14 +55,18 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Parses a `-module(atom).` attribute.
 /// Dash `-` and terminating `.` are matched outside by the caller.
+/// Will create error if the attribute does not parse (essentially a required attribute).
 pub fn module_start_attr(input: ParserInput) -> ParserResult<String> {
-  delimited(
-    match_dash_tag("module".into()),
-    context(
-      "the module name in a -module() attribute",
-      cut(delimited(par_open_tag, parse_atom, par_close_tag)),
-    ),
-    period_newline_tag,
+  context(
+    "expected -module() attribute",
+    cut(delimited(
+      match_dash_tag("module".into()),
+      context(
+        "the module name in a -module() attribute",
+        cut(delimited(par_open_tag, parse_atom, par_close_tag)),
+      ),
+      period_newline_tag,
+    )),
   )(input.clone())
 }
 

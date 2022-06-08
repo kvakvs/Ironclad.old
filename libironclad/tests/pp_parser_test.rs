@@ -78,19 +78,20 @@ fn parse_if_as_fragments() {
 /// Try how splitting module into directives and text works; With comments
 fn parse_if_block_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
-  let input = "-if(%true)
+  let input = "  -if(%true)
 false).
--warning(on_true\n).
+-warning(\"on_true\"
+).
 -else.
 %%-endif.
--warning(on_false).
+-warning(\"on_false\").
 -endif().";
   println!("In=«{}»", input);
 
   let parser_input = ParserInput::new_str(input);
   let (_tail, ast) =
     panicking_parser_error_reporter(parser_input.clone(), parse_if_block(parser_input).finish());
-  println!("Out={:?}", ast);
+  println!("Parsed={}", ast);
 
   let pp_node = ast.as_preprocessor();
   if let PreprocessorNodeType::IfBlock { cond, cond_true, cond_false } = pp_node {
@@ -199,9 +200,11 @@ fn parse_include_varied_spacing_1() {
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let filename = PathBuf::from(function_name!());
-  let input = " - include(\"test\"\n).\n";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let input = format!("-module({}).\n - include(\"test\"\n).\n", function_name!());
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Include(t) = pp_node {
     assert_eq!(t, "test");
   } else {
@@ -216,7 +219,9 @@ fn parse_include_varied_spacing_3() {
   let filename = PathBuf::from(function_name!());
   let input = "-include\n(\"test\"\n).\n";
   let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Include(t) = pp_node {
     assert_eq!(t, "test");
   } else {

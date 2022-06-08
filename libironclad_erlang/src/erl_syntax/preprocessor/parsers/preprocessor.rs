@@ -44,7 +44,11 @@ fn include_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("include".into()),
-      delimited(par_open_tag, ws_before(parse_doublequot_string), par_close_tag),
+      delimited(
+        par_open_tag,
+        context("include path for -include() directive", cut(parse_doublequot_string)),
+        par_close_tag,
+      ),
       period_newline_tag,
     ),
     |t| PreprocessorNodeType::new_include(input.loc(), t),
@@ -108,9 +112,9 @@ pub fn parse_preproc_directive(input: ParserInput) -> ParserResult<AstNode> {
     context("'-ifdef()' directive", ifdef_temporary_directive),
     context("'-ifndef()' directive", ifndef_temporary_directive),
     context("'-if()' directive", parse_if_block), // if must go after longer words ifdef and ifndef
-    context("'-include_lib()' directive", include_lib_directive),
     context("'-warning()' directive", warning_directive),
     context("'-error()' directive", error_directive),
+    context("'-include_lib()' directive", include_lib_directive),
     context("'-include()' directive", include_directive),
   )))(input)
 }

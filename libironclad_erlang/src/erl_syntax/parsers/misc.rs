@@ -201,7 +201,7 @@ pub fn period_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
 /// Recognizes end of a directive or module attribute in `-<attr> ... "." <newline>`
 #[inline]
 pub fn period_newline_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  recognize(pair(period_tag, newline_or_eof))(input)
+  ws_before_mut(recognize(pair(period_tag, newline_or_eof)))(input)
 }
 
 /// Matches a semicolon ";" with 0+ whitespace before
