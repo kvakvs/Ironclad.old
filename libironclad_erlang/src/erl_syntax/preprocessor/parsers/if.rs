@@ -10,7 +10,7 @@ use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_one_module_form;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{_TemporaryElse, _TemporaryEndif};
-use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::macro_ident;
+use crate::erl_syntax::preprocessor::parsers::preprocessor::macro_ident;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;

@@ -7,10 +7,8 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_strings::str_literal::parse_doublequot_string;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::parsers::pp_parse_def_undef::{
-  define_directive, undef_directive,
-};
-use crate::erl_syntax::preprocessor::parsers::pp_parse_if::{
+use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
+use crate::erl_syntax::preprocessor::parsers::r#if::{
   elif_temporary_directive, else_temporary_directive, endif_temporary_directive,
   ifdef_temporary_directive, ifndef_temporary_directive, parse_if_block,
 };

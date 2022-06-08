@@ -6,7 +6,7 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::ws_mut;
 use crate::erl_syntax::parsers::parse_attr::{module_start_attr, parse_module_attr};
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
-use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::parse_preproc_directive;
+use crate::erl_syntax::preprocessor::parsers::preprocessor::parse_preproc_directive;
 use defs::ParserInput;
 use defs::VecAstParserResult;
 use nom::branch::alt;

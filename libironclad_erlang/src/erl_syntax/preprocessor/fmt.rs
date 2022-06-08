@@ -18,11 +18,11 @@ impl std::fmt::Display for PreprocessorNodeType {
 
         if !args.is_empty() {
           Pretty::display_paren_list(args, f)?;
-          if !body.is_empty() {
-            write!(f, ", ")?;
-          }
         }
-        writeln!(f, "{}).", body)
+        if !body.is_empty() {
+          write!(f, ", {}).", body)?;
+        }
+        Ok(())
       }
       IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),

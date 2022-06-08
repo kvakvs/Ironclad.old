@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::{
   ws_before_mut,
 };
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::{
+use crate::erl_syntax::preprocessor::parsers::preprocessor::{
   comma_sep_macro_idents, macro_ident, parenthesis_dot_newline,
 };
 use nom::branch::alt;

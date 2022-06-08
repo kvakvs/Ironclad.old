@@ -6,7 +6,7 @@ use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::pp_parse_if::{
+use libironclad_erlang::erl_syntax::preprocessor::parsers::r#if::{
   parse_if_block, parse_if_directive,
 };
 use nom::Finish;
