@@ -35,36 +35,40 @@ fn test_fragment_if() {
 fn parse_if_as_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
   let filename = PathBuf::from(function_name!());
-  let input = "-warning(before_if).
+  let input = format!(
+    "-module({}).
+-warning(before_if).
 -if(true).
 -warning(on_true).
 -else.
 -warning(on_false).
 -endif.
--warning(after_if).";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let out = module.ast.children().unwrap_or_default();
+-warning(after_if).",
+    function_name!()
+  );
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
 
   assert!(
-    out[0].is_preprocessor_warning("before_if"),
+    nodes[0].is_preprocessor_warning("before_if"),
     "Expected warning with a text 'before_if', but got {:?}",
-    out[0]
+    nodes[0]
   );
 
-  if let PreprocessorNodeType::IfBlock { cond_true, cond_false, .. } = out[1].as_preprocessor() {
+  if let PreprocessorNodeType::IfBlock { cond_true, cond_false, .. } = nodes[1].as_preprocessor() {
     assert_eq!(cond_true.len(), 1, "must have true branch");
     assert!(cond_true[0].is_preprocessor_warning("on_true"));
 
     assert_eq!(cond_false.len(), 1, "must have false branch");
     assert!(cond_false[0].is_preprocessor_warning("on_false"));
   } else {
-    panic!("If block is expected, but got {:?}", out[1]);
+    panic!("If block is expected, but got {:?}", nodes[1]);
   }
 
   assert!(
-    out[2].is_preprocessor_warning("after_if"),
+    nodes[2].is_preprocessor_warning("after_if"),
     "Expected text 'after_if', but got {:?}",
-    out[2]
+    nodes[2]
   );
   // TODO Add an elseif test
 }
@@ -125,9 +129,11 @@ fn parse_define_ident_only() {
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let filename = PathBuf::from(function_name!());
-  let input = "-define(BBB, [true)).";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let input = format!("-module({}).\n-define(BBB, [true)).", function_name!());
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
     assert_eq!(name, "BBB");
     assert_eq!(body, "[true)");
@@ -141,9 +147,11 @@ fn parse_define_with_body_no_args() {
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
   let filename = PathBuf::from(function_name!());
-  let input = "-define(CCC(X,y), 2args\nbody).";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let input = format!("-module({}).\n-define(CCC(X,y), 2args\nbody).", function_name!());
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
     assert_eq!(name, "CCC");
     assert!(!args.is_empty());
@@ -255,9 +263,11 @@ fn parse_define_varied_spacing() {
 #[named]
 fn test_define_with_dquotes() {
   let filename = PathBuf::from(function_name!());
-  let input = "-define(AAA(X,Y), \"aaa\").\n";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let input = format!("-module({}).\n-define(AAA(X,Y), \"aaa\").\n", function_name!());
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body } = pp_node {
     assert_eq!(name, "AAA");
     assert_eq!(*args, vec!["X", "Y"]);

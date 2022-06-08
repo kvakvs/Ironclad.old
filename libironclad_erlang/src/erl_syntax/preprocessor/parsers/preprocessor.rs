@@ -33,10 +33,10 @@ pub(crate) fn parenthesis_dot_newline(input: ParserInput) -> ParserResult<Parser
 
 /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
 pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(pair(
+  ws_before_mut(recognize(pair(
     verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
     many0(alt((alphanumeric1, tag("_".into())))),
-  ))(input)
+  )))(input)
 }
 
 /// Parse a `-include(STRING)`

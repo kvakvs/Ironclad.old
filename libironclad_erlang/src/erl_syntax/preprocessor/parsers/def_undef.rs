@@ -3,8 +3,7 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  comma_tag, match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before,
-  ws_before_mut,
+  comma_tag, match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before_mut,
 };
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::{
@@ -71,7 +70,7 @@ pub fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("undef".into()),
-      tuple((par_open_tag, ws_before(macro_ident), par_close_tag)),
+      tuple((par_open_tag, macro_ident, par_close_tag)),
       period_newline_tag,
     ),
     |(_open, ident, _close)| PreprocessorNodeType::new_undef(input.loc(), ident.to_string()),
