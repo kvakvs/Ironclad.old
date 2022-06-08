@@ -14,7 +14,10 @@ impl std::fmt::Display for PreprocessorNodeType {
     match &self {
       Include(p) => writeln!(f, "-include(\"{}\").", p),
       IncludeLib(p) => write!(f, "-include_lib(\"{}\").", p),
-      IncludedFile { ast: include_rc, .. } => write!(f, "{}", include_rc),
+      IncludedFile { ast: include_rc, filename } => {
+        writeln!(f, "%% included from: {}", filename.to_string_lossy())?;
+        write!(f, "{}", include_rc)
+      }
       Define { name, args, body } => {
         write!(f, "-define({}", name)?;
 

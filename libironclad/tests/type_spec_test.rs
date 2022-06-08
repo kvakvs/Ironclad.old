@@ -43,17 +43,9 @@ fn union_type_parse() -> IcResult<()> {
 fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
-  let parser_input = ParserInput::new_str(input);
-  let (tail1, result1) = panicking_parser_error_reporter(
-    parser_input.clone(),
-    parse_generic_attr(parser_input).finish(),
-  );
-  assert!(
-    tail1.trim().is_empty(),
-    "Not all input consumed from attr1_src, tail: «{}»",
-    tail1
-  );
-  println!("ErlAst for «{}»: {}", input, result1);
+  let nodes = test_util::parse_a_module(function_name!(), input);
+  assert_eq!(nodes.len(), 1);
+  assert!(matches!(nodes[0].content, ErlAstType::GenericAttr { .. }));
   Ok(())
 }
 

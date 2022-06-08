@@ -119,10 +119,10 @@ impl AstNodeImpl {
       | ErlAstType::Type { .. }
       | ErlAstType::MFA { .. }
       | ErlAstType::ExportAttr { .. }
-      | ErlAstType::ExportTypeAttr { .. }
+      | ErlAstType::ExportTypesAttr { .. }
       | ErlAstType::TypeAttr { .. }
       | ErlAstType::ImportAttr { .. }
-      | ErlAstType::ModuleForms { .. }
+      | ErlAstType::ModuleRoot { .. }
       | ErlAstType::FnRef { .. }
       | ErlAstType::FnDef(_)
       | ErlAstType::CClause(_, _)

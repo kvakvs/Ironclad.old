@@ -10,7 +10,7 @@ use libironclad_erlang::erl_syntax::preprocessor::parsers::r#if::{
   parse_if_block, parse_if_directive,
 };
 use nom::Finish;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[test]
 #[named]
@@ -34,20 +34,14 @@ fn test_fragment_if() {
 /// Try how splitting module into directives and text works
 fn parse_if_as_fragments() {
   test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
-  let filename = PathBuf::from(function_name!());
-  let input = format!(
-    "-module({}).
--warning(\"before_if\").
+  let input = "-warning(\"before_if\").
 -if(true).
 -warning(\"on_true\").
 -else.
 -warning(\"on_false\").
 -endif.
--warning(\"after_if\").",
-    function_name!()
-  );
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+-warning(\"after_if\").";
+  let nodes = test_util::parse_a_module(function_name!(), input);
 
   assert!(
     nodes[0].is_preprocessor_warning("before_if"),
@@ -112,16 +106,14 @@ false).
 #[named]
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
-  let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n-define(AAA).", function_name!());
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let input = "-define(AAA).";
+  let nodes = test_util::parse_a_module(function_name!(), input);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
     assert_eq!(name, "AAA");
     assert!(body.is_empty());
   } else {
-    panic!("Expected Preprocessor::Define, received {:?}", &module.ast);
+    panic!("Expected Preprocessor::Define, received {:?}", pp_node);
   }
 }
 
@@ -129,17 +121,15 @@ fn parse_define_ident_only() {
 #[named]
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
-  let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n-define(BBB, [true)).", function_name!());
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let input = "-define(BBB, [true)).";
+  let nodes = test_util::parse_a_module(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
     assert_eq!(name, "BBB");
     assert_eq!(body, "[true)");
   } else {
-    panic!("Expected Preprocessor::Define(BBB, [], '[true)'), received {:?}", module.ast);
+    panic!("Expected Preprocessor::Define(BBB, [], '[true)'), received {:?}", pp_node);
   }
 }
 
@@ -147,10 +137,8 @@ fn parse_define_with_body_no_args() {
 #[named]
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
-  let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n-define(CCC(X,y), 2args\nbody).", function_name!());
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let input = "-define(CCC(X,y), 2args\nbody).";
+  let nodes = test_util::parse_a_module(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
@@ -165,7 +153,7 @@ fn parse_define_with_body_2_args() {
   } else {
     panic!(
       "Expected Preprocessor::Define(CCC, [X, Y], '2args\\nbody'), received {:?}",
-      module
+      pp_node
     );
   }
 }
@@ -175,10 +163,11 @@ fn parse_define_with_body_2_args() {
 /// Try parse a define macro where value contains another macro
 fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let input = "-define(AAA, 1).\n-define(BBB, ?AAA).";
-  let filename = PathBuf::from(function_name!());
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  println!("Out={:?}", module.ast);
+  let nodes =
+    test_util::parse_a_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
+  assert_eq!(nodes.len(), 2);
+  let (_, _, body) = nodes[1].as_preprocessor_define();
+  assert_eq!(body, "bbb", "Macro ?AAA must expand to 'bbb'");
 }
 
 #[test]
@@ -186,103 +175,61 @@ fn test_macro_in_define() {
 #[ignore]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let filename = PathBuf::from(function_name!());
-  let input = "-include (\"testinclude\").\n";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
-  if let PreprocessorNodeType::Include(file) = pp_node {
-    assert_eq!(file, "testinclude");
-  }
+  let input = "-include (\n\"testinclude\").\n";
+  let nodes = test_util::parse_a_module(function_name!(), input);
+  let file = nodes[0].as_preprocessor_include();
+  assert_eq!(file, "testinclude");
 }
 
 #[test]
 #[named]
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n - include(\"test\"\n).\n", function_name!());
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let input = " - include(\"test\"\n).\n";
+  let nodes = test_util::parse_a_module(function_name!(), input);
   assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Include(t) = pp_node {
-    assert_eq!(t, "test");
-  } else {
-    panic!("Expected File([Include]), received {:?}", module.ast);
-  }
-}
-
-#[test]
-#[named]
-fn parse_include_varied_spacing_3() {
-  test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
-  let filename = PathBuf::from(function_name!());
-  let input = "-include\n(\"test\"\n).\n";
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
-  assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Include(t) = pp_node {
-    assert_eq!(t, "test");
-  } else {
-    panic!("Expected File([Include]), received {:?}", module.ast);
-  }
+  let path = nodes[0].as_preprocessor_include();
+  assert_eq!(path, "test");
 }
 
 fn parse_define_varied_spacing_do(
-  filename: &Path,
-  input0: &str,
+  function_name: &str,
+  input: &str,
   match_macro: &str,
   match_text: &str,
 ) {
-  let input = format!("-module(test).\n{}", input0);
-  // TODO: Nest parser in previous parser and pass down to ErlModule ctor
-  let module = ErlModule::from_module_source(&filename, input.as_str()).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let nodes = test_util::parse_a_module(function_name, input);
   assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Define { name, args, body } = pp_node {
-    assert_eq!(name, match_macro);
-    assert!(args.is_empty());
-    assert_eq!(body, match_text);
-  } else {
-    panic!(
-      "Parsing define({}, {}). failed, expected Define, received {:?}",
-      match_macro, match_text, module.ast
-    )
-  }
+  let (name, args, body) = nodes[0].as_preprocessor_define();
+  assert_eq!(name, match_macro);
+  assert!(args.is_empty());
+  assert_eq!(body, match_text);
 }
 
 #[test]
 #[named]
 fn parse_define_varied_spacing() {
   test_util::start(function_name!(), "Parse -define() directives with varied spacing");
-  let filename = PathBuf::from(function_name!());
-
-  parse_define_varied_spacing_do(&filename, "- define(AAA, \"aaa\").", "AAA", "\"aaa\"");
-  parse_define_varied_spacing_do(&filename, "- define\n(BBB,\n666).", "BBB", "666");
-  parse_define_varied_spacing_do(&filename, "   - define\n\n  (  CCC   ,  \nccc).", "CCC", "ccc");
+  parse_define_varied_spacing_do(function_name!(), "- define(AAA, \"aaa\").", "AAA", "\"aaa\"");
+  parse_define_varied_spacing_do(function_name!(), "- define\n(BBB,\n666).", "BBB", "666");
+  parse_define_varied_spacing_do(
+    function_name!(),
+    "   - define\n\n  (  CCC   ,  \nccc).",
+    "CCC",
+    "ccc",
+  );
 }
 
 #[test]
 #[named]
 fn test_define_with_dquotes() {
-  let filename = PathBuf::from(function_name!());
-  let input = format!("-module({}).\n-define(AAA(X,Y), \"aaa\").\n", function_name!());
-  let module = ErlModule::from_module_source(&filename, &input).unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let input = "-define(AAA(X,Y), \"aaa\").\n";
+  let nodes = test_util::parse_a_module(function_name!(), input);
   assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Define { name, args, body } = pp_node {
-    assert_eq!(name, "AAA");
-    assert_eq!(*args, vec!["X", "Y"]);
-    assert_eq!(body, "\"aaa\"");
-  } else {
-    panic!(
-      "Parsing -define() with args expecting Define([AAA, [X, Y], '\"aaa\"'), received {:?}",
-      module
-    )
-  }
+  let (name, args, body) = nodes[0].as_preprocessor_define();
+  assert_eq!(name, "AAA");
+  assert_eq!(*args, vec!["X", "Y"]);
+  assert_eq!(body, "\"aaa\"");
 }
 
 // #[test]

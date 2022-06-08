@@ -1,9 +1,9 @@
 //! Creation code for ErlAst
 
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
-  Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypeAttr, FnDef,
+  Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypesAttr, FnDef,
   FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleForms, TryCatch, Tuple, TypeAttr, Var,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, TypeAttr, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -161,13 +161,14 @@ impl AstNodeImpl {
 
   /// Create a new `-module(m).` module attr.
   pub fn new_module_forms(location: SourceLoc, name: String, forms: Vec<AstNode>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ModuleForms { name, forms })
+    AstNodeImpl::construct_with_location(location, ModuleRoot { name, forms })
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.
   pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<AstNode>) -> AstNode {
     match tag.as_str() {
-      "warning" | "error" => panic!(
+      "warning" | "error" | "include" | "include_lib" | "define" | "if" | "ifdef" | "ifndef"
+      | "else" | "endif" | "undef" => panic!(
         "Trying to create -{}(). attribute as GenericAttr, there is a specific impl for that!",
         tag
       ),
@@ -182,7 +183,7 @@ impl AstNodeImpl {
 
   /// Create a new `-export_type([...]).` module attr.
   pub fn new_export_type_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ExportTypeAttr { exports })
+    AstNodeImpl::construct_with_location(location, ExportTypesAttr { exports })
   }
 
   /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.

@@ -53,6 +53,13 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
+/// Parses a generic `-TAG.` attribute, no parentheses, no expr.
+pub fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
+  map(delimited(ws_before(char('-')), parse_atom, period_newline_tag), |tag| {
+    AstNodeImpl::new_generic_attr(input.loc(), tag, None)
+  })(input.clone())
+}
+
 /// Parses a `-module(atom).` attribute.
 /// Dash `-` and terminating `.` are matched outside by the caller.
 /// Will create error if the attribute does not parse (essentially a required attribute).
@@ -187,5 +194,6 @@ pub fn parse_module_attr(input: ParserInput) -> ParserResult<AstNode> {
     ErlTypeParser::fn_spec_attr,
     // Generic parser will try consume any `-IDENT(EXPR).`
     parse_generic_attr,
+    parse_generic_attr_no_parentheses,
   ))(input)
 }

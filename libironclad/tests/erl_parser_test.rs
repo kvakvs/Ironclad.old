@@ -29,11 +29,8 @@ mod test_util;
 #[test]
 fn parse_empty_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse an empty module with start attribute only");
-  let filename = PathBuf::from(function_name!());
-  let code = format!("-module({}).\n", function_name!());
-  let parsed = ErlModule::from_module_source(&filename, &code)?;
-  // let parsed = Module::parse_helper(&filename, &code, parse_module_attr)?;
-  println!("Parsed empty module: «{}»\nAST: {}", code, &parsed.ast);
+  let nodes = test_util::parse_a_module(function_name!(), "");
+  assert_eq!(nodes.len(), 0);
   Ok(())
 }
 
@@ -47,15 +44,13 @@ fn parse_export_attr() -> IcResult<()> {
   assert_eq!(pfna.name, "name");
   assert_eq!(pfna.arity, 123usize);
 
-  let filename = PathBuf::from(function_name!());
-  let code = format!(
-    "-module({}).
--export([module/2, format_error/1]).
-",
-    function_name!()
-  );
-  let parsed = ErlModule::from_module_source(&filename, &code)?;
-  println!("Parsed module with export attr: «{}»\nAST: {}", code, &parsed.ast);
+  let input = "-export([module/2, format_error/1]).";
+  let nodes = test_util::parse_a_module(function_name!(), &input);
+  assert_eq!(nodes.len(), 1);
+  let export_attr = nodes[0].as_export_attr();
+  assert_eq!(export_attr.len(), 2);
+  assert_eq!(export_attr[0].name, "module");
+  assert_eq!(export_attr[1].name, "format_error");
   Ok(())
 }
 
@@ -64,15 +59,17 @@ fn parse_export_attr() -> IcResult<()> {
 #[test]
 fn parse_import_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an import attr");
-
-  let filename = PathBuf::from(function_name!());
-  let code = format!(
-    "-module({}).\n
--import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n",
-    function_name!()
-  );
-  let parsed = ErlModule::from_module_source(&filename, &code)?;
-  println!("Parsed module with export attr: «{}»\nAST: {:?}", code, &parsed.ast);
+  let input = "-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n";
+  let nodes = test_util::parse_a_module(function_name!(), input);
+  assert_eq!(nodes.len(), 1);
+  let (import_mod, import_attr) = nodes[0].as_import_attr();
+  assert_eq!(import_mod, "lists");
+  assert_eq!(import_attr.len(), 5);
+  assert_eq!(import_attr[0].name, "map");
+  assert_eq!(import_attr[1].name, "member");
+  assert_eq!(import_attr[2].name, "keymember");
+  assert_eq!(import_attr[3].name, "duplicate");
+  assert_eq!(import_attr[4].name, "splitwith");
   Ok(())
 }
 

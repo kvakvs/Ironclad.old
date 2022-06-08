@@ -4,8 +4,8 @@ use ::function_name::named;
 
 use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
-  IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit, ModuleForms,
-  RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
+  GenericAttr, IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit,
+  ModuleRoot, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
@@ -30,13 +30,14 @@ impl AstParentNodeT for AstNodeImpl {
       | ImportAttr { .. }
       | FnSpec { .. }
       | TypeAttr { .. }
+      | GenericAttr { .. }
       | Lit { .. }
       | MFA { .. }
       | Type { .. }
       | ErlAstType::Preprocessor { .. }
       | ErlAstType::Var { .. } => None,
 
-      ModuleForms { forms: f, .. } => Some(f.to_vec()),
+      ModuleRoot { forms: f, .. } => Some(f.to_vec()),
       FnDef(fn_def) => fn_def.children(),
       Apply(app) => app.children(),
 
