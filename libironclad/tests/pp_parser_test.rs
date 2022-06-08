@@ -6,7 +6,9 @@ use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::preprocessor_parser::PreprocessorParser;
+use libironclad_erlang::erl_syntax::preprocessor::parsers::pp_parse_if::{
+  parse_if_block, parse_if_directive,
+};
 use nom::Finish;
 use std::path::{Path, PathBuf};
 
@@ -20,7 +22,7 @@ fn test_fragment_if() {
   let parser_input = ParserInput::from_str(input);
   let (_tail, result) = panicking_parser_error_reporter(
     parser_input.clone(),
-    PreprocessorParser::if_directive(parser_input).finish(),
+    parse_if_directive(parser_input).finish(),
   );
   let pp_node = result.as_preprocessor();
   assert!(matches!(pp_node, PreprocessorNodeType::_TemporaryIf(_ast)));
@@ -82,10 +84,8 @@ false).
   println!("In=«{}»", input);
 
   let parser_input = ParserInput::from_str(input);
-  let (_tail, ast) = panicking_parser_error_reporter(
-    parser_input.clone(),
-    PreprocessorParser::if_block(parser_input).finish(),
-  );
+  let (_tail, ast) =
+    panicking_parser_error_reporter(parser_input.clone(), parse_if_block(parser_input).finish());
   println!("Out={:?}", ast);
 
   let pp_node = ast.as_preprocessor();
@@ -108,10 +108,10 @@ false).
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
   let filename = PathBuf::from(function_name!());
-  let input = "-define(AAA).";
-
-  let module = ErlModule::from_module_source(&filename, input).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let input = format!("-module({}).\n-define(AAA).", function_name!());
+  let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
     assert_eq!(name, "AAA");
     assert!(body.is_empty());
@@ -218,14 +218,16 @@ fn parse_include_varied_spacing_3() {
 
 fn parse_define_varied_spacing_do(
   filename: &Path,
-  input_s: &str,
+  input0: &str,
   match_macro: &str,
   match_text: &str,
 ) {
-  let input = ParserInput::from_str(input_s);
+  let input = format!("-module(test).\n{}", input0);
   // TODO: Nest parser in previous parser and pass down to ErlModule ctor
   let module = ErlModule::from_module_source(&filename, input.as_str()).unwrap();
-  let pp_node = module.ast.as_preprocessor();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 1);
+  let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body } = pp_node {
     assert_eq!(name, match_macro);
     assert!(args.is_empty());

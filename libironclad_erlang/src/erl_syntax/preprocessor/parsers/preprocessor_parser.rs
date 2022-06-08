@@ -11,8 +11,8 @@ use crate::erl_syntax::preprocessor::parsers::pp_parse_def_undef::{
   define_directive, undef_directive,
 };
 use crate::erl_syntax::preprocessor::parsers::pp_parse_if::{
-  elif_temporary_directive, else_temporary_directive, endif_temporary_directive, if_block,
-  ifdef_temporary_directive, ifndef_temporary_directive,
+  elif_temporary_directive, else_temporary_directive, endif_temporary_directive,
+  ifdef_temporary_directive, ifndef_temporary_directive, parse_if_block,
 };
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -77,7 +77,7 @@ pub fn parse_preproc_directive(input: ParserInput) -> ParserResult<AstNode> {
     context("'-else' directive", else_temporary_directive),
     context("'-ifdef' directive", ifdef_temporary_directive),
     context("'-ifndef' directive", ifndef_temporary_directive),
-    context("'-if' directive", if_block), // if must go after longer words ifdef and ifndef
+    context("'-if' directive", parse_if_block), // if must go after longer words ifdef and ifndef
     // Self::parse_error,
     // Self::parse_warning,
     context("'-include_lib' directive", include_lib_directive),

@@ -29,11 +29,11 @@ fn parse_fragments_till_endif(input: ParserInput) -> VecAstParserResult {
 }
 
 /// Parse a `-if(EXPR).` `<LINES>` then optional `-else. <LINES> -endif.`
-pub fn if_block(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
   map(
     terminated(
       tuple((
-        if_directive,
+        parse_if_directive,
         // Consume lines and directives until an `-else` or `-endif`
         context("Condition true section of a preprocessor if", parse_fragments_till_else),
         // Optional -else. <LINES> block
@@ -64,7 +64,7 @@ pub fn if_block(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse a `-if(EXPR).\n` and return a temporary node
-pub fn if_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_if_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("if".into()),

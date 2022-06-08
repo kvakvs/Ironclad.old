@@ -4,6 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   comma_tag, match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before,
+  ws_before_mut,
 };
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::preprocessor_parser::{
@@ -34,7 +35,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
       opt(delimited(par_open_tag, comma_sep_macro_idents, par_close_tag)),
       comma_tag,
       // Followed by a body
-      many_till(anychar, parenthesis_dot_newline),
+      ws_before_mut(many_till(anychar, parenthesis_dot_newline)),
     )),
     |(name, args, _comma, (body, _terminator))| {
       PreprocessorNodeType::new_define(
