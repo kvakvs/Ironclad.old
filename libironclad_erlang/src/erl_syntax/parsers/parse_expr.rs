@@ -210,6 +210,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_tuple_of_exprs::<STYLE>,
         parse_var,
         parse_erl_literal,
+        parse_binary,
       ))),
     )(input),
     EXPR_STYLE_GUARD => context(

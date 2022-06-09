@@ -21,7 +21,10 @@ pub fn start(n: &str, descr: &str) {
 pub fn parse_a_module0(function_name: &str, input: &str) -> ErlModule {
   let input = format!("-module({}).\n{}", function_name, input);
   let filename = PathBuf::from(function_name);
+
+  println!("Input=«{}»", input);
   let module = ErlModule::from_module_source(&filename, &input).unwrap();
+  println!("Out=«{}»", module.ast);
 
   let (mod_name, _nodes) = module.ast.as_module();
   assert_eq!(mod_name, function_name);

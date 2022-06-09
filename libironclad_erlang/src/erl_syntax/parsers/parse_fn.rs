@@ -33,7 +33,7 @@ fn parse_when_expr_for_fn(input: ParserInput) -> ParserResult<AstNode> {
 /// Function will fail otherwise.
 fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
   input: ParserInput,
-) -> nom::IResult<ParserInput, Option<String>, ErlParserError> {
+) -> ParserResult<Option<String>> {
   if REQUIRE_FN_NAME {
     // Succeed if FN_NAME=true and there is an atom
     return context("function clause name", map(parse_atom, Some))(input);

@@ -22,9 +22,7 @@ use nom::sequence::{delimited, pair, tuple};
 
 /// Parse a `Macroident1, Macroident2, ...` into a list
 pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {
-  map(separated_list0(comma_tag, macro_ident), |idents| {
-    idents.into_iter().map(|i| i.to_string()).collect()
-  })(input)
+  separated_list0(comma_tag, macro_ident)(input)
 }
 
 pub(crate) fn parenthesis_dot_newline(input: ParserInput) -> ParserResult<ParserInput> {
@@ -32,11 +30,14 @@ pub(crate) fn parenthesis_dot_newline(input: ParserInput) -> ParserResult<Parser
 }
 
 /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<ParserInput> {
-  ws_before_mut(recognize(pair(
-    verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
-    many0(alt((alphanumeric1, tag("_".into())))),
-  )))(input)
+pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<String> {
+  map(
+    ws_before_mut(recognize(pair(
+      verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
+      many0(alt((alphanumeric1, tag("_".into())))),
+    ))),
+    |pi| pi.to_string(),
+  )(input)
 }
 
 /// Parse a `-include(STRING)`

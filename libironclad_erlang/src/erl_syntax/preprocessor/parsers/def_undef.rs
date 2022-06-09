@@ -18,8 +18,8 @@ use nom::sequence::{delimited, preceded, tuple};
 
 /// Parses inner part of a `-define(IDENT)` variant
 fn define_no_args_no_body(input: ParserInput) -> ParserResult<AstNode> {
-  map(macro_ident, |name| {
-    PreprocessorNodeType::new_define_name_only(input.loc(), name.to_string())
+  map(macro_ident, |name: String| {
+    PreprocessorNodeType::new_define_name_only(input.loc(), name)
   })(input.clone())
 }
 
@@ -39,7 +39,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
     |(name, args, _comma, (body, _terminator))| {
       PreprocessorNodeType::new_define(
         input.loc(),
-        name.to_string(),
+        name,
         args.unwrap_or_default(),
         body.into_iter().collect::<String>(),
       )
@@ -70,9 +70,9 @@ pub fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("undef".into()),
-      tuple((par_open_tag, macro_ident, par_close_tag)),
+      delimited(par_open_tag, macro_ident, par_close_tag),
       period_newline_tag,
     ),
-    |(_open, ident, _close)| PreprocessorNodeType::new_undef(input.loc(), ident.to_string()),
+    |ident: String| PreprocessorNodeType::new_undef(input.loc(), ident),
   )(input.clone())
 }

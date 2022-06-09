@@ -12,11 +12,12 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
+use crate::erl_syntax::preprocessor::parsers::parse_macro::parse_macro_invocation;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
-use nom::multi::separated_list1;
+use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
@@ -24,6 +25,7 @@ use std::ops::Deref;
 /// Parse a literal value, variable, or an expression in parentheses.
 fn parse_value(input: ParserInput) -> ParserResult<AstNode> {
   alt((
+    parse_macro_invocation,
     map(parse_varname, |v| AstNodeImpl::new_var(input.loc(), &v)),
     parse_erl_literal,
     delimited(par_open_tag, parse_expr, par_close_tag),
@@ -133,9 +135,9 @@ pub fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
       "binary expression",
       cut(terminated(
         map(
-          separated_list1(
+          separated_list0(
             comma_tag,
-            context("binary expression element", cut(ws_before(parse_bin_element))),
+            context("binary expression element", ws_before(parse_bin_element)),
           ),
           |bin_exprs| AstNodeImpl::new_binary_expr(input.loc(), bin_exprs),
         ),

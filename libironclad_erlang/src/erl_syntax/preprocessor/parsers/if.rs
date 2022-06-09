@@ -96,7 +96,7 @@ pub(crate) fn ifdef_temporary_directive(input: ParserInput) -> ParserResult<AstN
       delimited(par_open_tag, macro_ident, par_close_tag),
       period_newline_tag,
     ),
-    |t| PreprocessorNodeType::new_ifdef_temporary(input.loc(), t.to_string()),
+    |t: String| PreprocessorNodeType::new_ifdef_temporary(input.loc(), t),
   )(input.clone())
 }
 
@@ -108,7 +108,7 @@ pub fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
       delimited(par_open_tag, macro_ident, par_close_tag),
       period_newline_tag,
     ),
-    |t| PreprocessorNodeType::new_ifndef_temporary(input.loc(), t.to_string()),
+    |t: String| PreprocessorNodeType::new_ifndef_temporary(input.loc(), t),
   )(input.clone())
 }
 

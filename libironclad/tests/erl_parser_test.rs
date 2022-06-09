@@ -473,6 +473,37 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 
 #[named]
 #[test]
+fn parse_fun_with_binary_match() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse a function with a binary match in args");
+  let filename = PathBuf::from(function_name!());
+  let src = "finalize_fun_table_1(<<\"FunT\",Keep:8/binary,Table0/binary>>, MD5) ->
+    <<Uniq:27,_:101/bits>> = MD5,
+    Table = finalize_fun_table_2(Table0, Uniq, <<>>),
+    <<\"FunT\",Keep/binary,Table/binary>>;
+finalize_fun_table_1(Chunk, _) -> Chunk.";
+  let _mod1 = ErlModule::from_fun_source(&filename, src)?;
+  // TODO checks
+  Ok(())
+}
+
+#[named]
+#[test]
+fn parse_fun_guard() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse a function with a guard");
+  let filename = PathBuf::from(function_name!());
+  let src = "%% Build an IFF form.
+
+build_form(Id, Chunks0) when byte_size(Id) =:= 4, is_list(Chunks0) ->
+    Chunks = list_to_binary(Chunks0),
+    Size = byte_size(Chunks),
+    0 = Size rem 4,				% Assertion: correct padding?
+    <<\"FOR1\",(Size+4):32,Id/binary,Chunks/binary>>.";
+  let _mod1 = ErlModule::from_fun_source(&filename, src)?;
+  Ok(())
+}
+
+#[named]
+#[test]
 fn parse_apply_with_module_and_without() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let filename = PathBuf::from(function_name!());

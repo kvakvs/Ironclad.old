@@ -78,15 +78,15 @@ impl ErlModule {
   where
     T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
   {
-    println!("Parsing from {}", filename.to_string_lossy());
-    println!("Input=«{}»", input_s);
+    // println!("Parsing from {}", filename.to_string_lossy());
+    // println!("Input=«{}»", input_s);
 
     let input = ParserInput::new_str(input_s);
     let mut module = ErlModule::default();
     let (tail, forms) =
       panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());
 
-    println!("Parse result AST: «{}»", &forms);
+    // println!("Parse result AST: «{}»", &forms);
 
     assert!(
       tail.trim().is_empty(),

@@ -2,4 +2,5 @@
 
 pub mod def_undef;
 pub mod r#if;
+pub mod parse_macro;
 pub mod preprocessor;
