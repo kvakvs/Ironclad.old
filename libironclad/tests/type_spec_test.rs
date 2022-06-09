@@ -43,7 +43,7 @@ fn union_type_parse() -> IcResult<()> {
 fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   assert!(matches!(nodes[0].content, ErlAstType::GenericAttr { .. }));
   Ok(())

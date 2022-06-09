@@ -29,7 +29,7 @@ mod test_util;
 #[test]
 fn parse_empty_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse an empty module with start attribute only");
-  let nodes = test_util::parse_a_module(function_name!(), "");
+  let nodes = test_util::parse_module_unwrap(function_name!(), "");
   assert_eq!(nodes.len(), 0);
   Ok(())
 }
@@ -45,7 +45,7 @@ fn parse_export_attr() -> IcResult<()> {
   assert_eq!(pfna.arity, 123usize);
 
   let input = "-export([module/2, format_error/1]).";
-  let nodes = test_util::parse_a_module(function_name!(), &input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), &input);
   assert_eq!(nodes.len(), 1);
   let export_attr = nodes[0].as_export_attr();
   assert_eq!(export_attr.len(), 2);
@@ -60,7 +60,7 @@ fn parse_export_attr() -> IcResult<()> {
 fn parse_import_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an import attr");
   let input = "-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let (import_mod, import_attr) = nodes[0].as_import_attr();
   assert_eq!(import_mod, "lists");

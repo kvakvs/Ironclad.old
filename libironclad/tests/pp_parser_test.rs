@@ -1,7 +1,6 @@
 mod test_util;
 
 use ::function_name::named;
-use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
@@ -10,7 +9,6 @@ use libironclad_erlang::erl_syntax::preprocessor::parsers::r#if::{
   parse_if_block, parse_if_directive,
 };
 use nom::Finish;
-use std::path::PathBuf;
 
 #[test]
 #[named]
@@ -41,7 +39,7 @@ fn parse_if_as_fragments() {
 -warning(\"on_false\").
 -endif.
 -warning(\"after_if\").";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
 
   assert!(
     nodes[0].is_preprocessor_warning("before_if"),
@@ -107,7 +105,7 @@ false).
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
   let input = "-define(AAA).";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
     assert_eq!(name, "AAA");
@@ -122,7 +120,7 @@ fn parse_define_ident_only() {
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
@@ -138,7 +136,7 @@ fn parse_define_with_body_no_args() {
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
   let input = "-define(CCC(X,y), 2args\nbody).";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let pp_node = nodes[0].as_preprocessor();
   if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
@@ -163,8 +161,10 @@ fn parse_define_with_body_2_args() {
 /// Try parse a define macro where value contains another macro
 fn test_macro_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let nodes =
-    test_util::parse_a_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
+  let mut module =
+    test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
+  module.interpret_preprocessor_nodes().unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 2);
   let (_, _, body) = nodes[1].as_preprocessor_define();
   assert_eq!(body, "bbb", "Macro ?AAA must expand to 'bbb'");
@@ -172,11 +172,10 @@ fn test_macro_in_define() {
 
 #[test]
 #[named]
-#[ignore]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let input = "-include (\n\"testinclude\").\n";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   let file = nodes[0].as_preprocessor_include();
   assert_eq!(file, "testinclude");
 }
@@ -186,7 +185,7 @@ fn parse_include_varied_spacing_1() {
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let input = " - include(\"test\"\n).\n";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let path = nodes[0].as_preprocessor_include();
   assert_eq!(path, "test");
@@ -198,7 +197,7 @@ fn parse_define_varied_spacing_do(
   match_macro: &str,
   match_text: &str,
 ) {
-  let nodes = test_util::parse_a_module(function_name, input);
+  let nodes = test_util::parse_module_unwrap(function_name, input);
   assert_eq!(nodes.len(), 1);
   let (name, args, body) = nodes[0].as_preprocessor_define();
   assert_eq!(name, match_macro);
@@ -224,7 +223,7 @@ fn parse_define_varied_spacing() {
 #[named]
 fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
-  let nodes = test_util::parse_a_module(function_name!(), input);
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
   let (name, args, body) = nodes[0].as_preprocessor_define();
   assert_eq!(name, "AAA");

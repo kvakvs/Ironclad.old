@@ -136,4 +136,10 @@ impl ErlModule {
     self.errors.borrow_mut().push(err);
     self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }
+
+  /// Updates `self.ast` with preprocessor nodes interpreted, and removed. All `?MACRO` values are
+  /// interpreted and replaced with values.
+  pub fn interpret_preprocessor_nodes(&mut self) -> IcResult<()> {
+    Ok(())
+  }
 }
