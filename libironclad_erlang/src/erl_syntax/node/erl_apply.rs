@@ -1,5 +1,5 @@
 //! Defines Application AST node for a function call
-use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
+use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
@@ -123,7 +123,7 @@ impl ErlApply {
   }
 }
 
-impl AstParentNodeT for ErlApply {
+impl IterableAstNodeT for ErlApply {
   fn children(&self) -> Option<Vec<AstNode>> {
     let mut r: Vec<AstNode> = match self.target.children() {
       Some(target_children) => target_children,

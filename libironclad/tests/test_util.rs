@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
+use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
 use std::path::PathBuf;
 

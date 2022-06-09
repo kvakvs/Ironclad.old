@@ -1,6 +1,6 @@
 //! Exception pattern for `try-catch Class:Exception:Stack -> ...`
 
-use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
+use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 
 /// Represents an exception pattern in catch clause for `try-catch Class:Exception:Stack -> ...`
@@ -25,7 +25,7 @@ impl ExceptionPattern {
   }
 }
 
-impl AstParentNodeT for ExceptionPattern {
+impl IterableAstNodeT for ExceptionPattern {
   fn children(&self) -> Option<Vec<AstNode>> {
     let mut r = Vec::default();
     if let Some(c) = self.class.children() {

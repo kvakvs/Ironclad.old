@@ -11,13 +11,12 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 
 /// A trait for AST nodes which can contain nested nodes
-// TODO: Do we need this?
-pub trait AstParentNodeT {
+pub trait IterableAstNodeT {
   /// Return nested AST nodes for this node
   fn children(&self) -> Option<Vec<AstNode>>;
 }
 
-impl AstParentNodeT for AstNodeImpl {
+impl IterableAstNodeT for AstNodeImpl {
   /// Const iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.

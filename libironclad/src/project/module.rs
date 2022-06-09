@@ -140,6 +140,14 @@ impl ErlModule {
   /// Updates `self.ast` with preprocessor nodes interpreted, and removed. All `?MACRO` values are
   /// interpreted and replaced with values.
   pub fn interpret_preprocessor_nodes(&mut self) -> IcResult<()> {
+    // let (mod_name, forms) = self.ast.as_module();
+    // let mut processed_forms = Vec::<AstNode>::default();
+    // for f in forms {
+    //   // Preprocessor nodes can only occur on top level of a module,
+    //   // but nodes which need substitutions of `?MACRO`s can occur anywhere.
+    //   interpret_preprocessor_node(self, f)?;
+    // }
+    // self.ast = processed_ast;
     Ok(())
   }
 }

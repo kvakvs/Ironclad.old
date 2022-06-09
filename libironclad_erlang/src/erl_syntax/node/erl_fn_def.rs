@@ -1,5 +1,5 @@
 //! Define a ErlFnDef struct for a new function AST node
-use crate::erl_syntax::erl_ast::ast_iter::AstParentNodeT;
+use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::error::ic_error::IcResult;
@@ -59,7 +59,7 @@ impl ErlFnDef {
   }
 }
 
-impl AstParentNodeT for ErlFnDef {
+impl IterableAstNodeT for ErlFnDef {
   fn children(&self) -> Option<Vec<AstNode>> {
     let r: Vec<AstNode> = self
       .clauses
