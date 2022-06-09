@@ -158,20 +158,6 @@ fn parse_define_with_body_2_args() {
 
 #[test]
 #[named]
-/// Try parse a define macro where value contains another macro
-fn test_macro_in_define() {
-  test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let mut module =
-    test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
-  module.interpret_preprocessor_nodes().unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
-  assert_eq!(nodes.len(), 2);
-  let (_, _, body) = nodes[1].as_preprocessor_define();
-  assert_eq!(body, "bbb", "Macro ?AAA must expand to 'bbb'");
-}
-
-#[test]
-#[named]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let input = "-include (\n\"testinclude\").\n";
@@ -240,3 +226,47 @@ fn test_define_with_dquotes() {
 //     panic!("Parsing -if(10>20) failed, received {:?}", if0);
 //   }
 // }
+
+#[test]
+#[named]
+/// Try parse a define macro where value contains another macro
+fn test_macro_in_define() {
+  test_util::start(function_name!(), "Parse a -define macro with another macro in value");
+  let mut module =
+    test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
+  module.interpret_preprocessor_nodes().unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 2);
+  let (_, _, body) = nodes[1].as_preprocessor_define();
+  assert_eq!(body, "bbb", "Macro ?AAA must expand to 'bbb'");
+}
+
+#[test]
+#[named]
+/// Try substitute a macro with more AST nodes in it
+fn test_ast_macro() {
+  test_util::start(
+    function_name!(),
+    "(1) Substitute from macro completes the syntax and makes it parseable",
+  );
+  let input = "-define(M1, A:B:C ->).
+myfunction1() ->
+  try test
+  catch ?M1 ok
+  end.";
+  let _nodes = test_util::parse_module_unwrap(function_name!(), input);
+}
+
+#[test]
+#[named]
+/// Try substitute a macro with a keyword making the syntax parseable
+fn test_ast_macro_with_keyword() {
+  test_util::start(
+    function_name!(),
+    "(2) Substitute from macro completes the syntax and makes it parseable",
+  );
+  let input = "-define(M2, end.).
+myfunction2() ->
+  begin ok ?M2";
+  let _nodes = test_util::parse_module_unwrap(function_name!(), input);
+}
