@@ -32,7 +32,7 @@ pub struct CompileModule {
 
 impl CompileModule {
   /// Creates new state for module compilation
-  pub fn new(in_file: &SourceFile, options: Arc<CompilerOpts>) -> Self {
+  pub(crate) fn new(in_file: &SourceFile, options: Arc<CompilerOpts>) -> Self {
     Self {
       in_file: in_file.file_name.to_path_buf(),
       out_file: Default::default(), // will be set later
@@ -44,7 +44,7 @@ impl CompileModule {
 
   /// Given a parsed AST tree start work on the compilation
   // TODO: Also will need the environment with access to other modules and their inferred types
-  pub fn compile(&mut self, _ast: AstNode) {
+  pub(crate) fn compile(&mut self, _ast: AstNode) {
     unimplemented!("compile module")
   }
 }

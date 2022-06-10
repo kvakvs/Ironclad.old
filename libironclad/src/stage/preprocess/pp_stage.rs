@@ -19,7 +19,7 @@ pub struct PreprocessStage {
 impl PreprocessStage {
   /// Create a preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self { stats: PreprocessorStats::new() }
   }
 
@@ -31,7 +31,7 @@ impl PreprocessStage {
   ///
   /// Side effects: Updates file contents cache
   /// Returns preprocessed collection of module sources
-  pub fn run(
+  pub(crate) fn run(
     &mut self,
     project: &mut ErlProject,
     file_cache: Arc<RwLock<FileContentsCache>>,

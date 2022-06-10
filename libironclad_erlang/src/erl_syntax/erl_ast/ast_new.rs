@@ -30,13 +30,13 @@ use std::sync::Arc;
 impl AstNodeImpl {
   /// Generic constructor no location
   #[inline]
-  pub fn construct_without_location(node_type: AstNodeType) -> AstNode {
+  pub(crate) fn construct_without_location(node_type: AstNodeType) -> AstNode {
     AstNodeImpl { location: SourceLoc::None, content: node_type }.into()
   }
 
   /// Generic constructor + location
   #[inline]
-  pub fn construct_with_location(loc: SourceLoc, node_type: AstNodeType) -> AstNode {
+  pub(crate) fn construct_with_location(loc: SourceLoc, node_type: AstNodeType) -> AstNode {
     AstNodeImpl { location: loc, content: node_type }.into()
   }
 
@@ -47,12 +47,12 @@ impl AstNodeImpl {
   }
 
   /// Create a new variable AST node
-  pub fn new_var(location: SourceLoc, name: &str) -> AstNode {
+  pub(crate) fn new_var(location: SourceLoc, name: &str) -> AstNode {
     Self::construct_with_location(location, Var(ErlVar::new(name)))
   }
 
   /// Creates a new AST node to perform a function call (application of args to a func expression)
-  pub fn new_application(
+  pub(crate) fn new_application(
     location: SourceLoc,
     target: CallableTarget,
     args: Vec<AstNode>,
@@ -62,13 +62,20 @@ impl AstNodeImpl {
   }
 
   /// Creates a new AST node to perform a function call (application of 0 args to a func expression)
-  pub fn new_application0(location: SourceLoc, target: CallableTarget) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_application0(location: SourceLoc, target: CallableTarget) -> AstNode {
     let apply = ErlApply::new(target, Vec::default());
     AstNodeImpl::construct_with_location(location, Apply(apply))
   }
 
   /// Create an new binary operation AST node with left and right operands AST
-  pub fn new_binop(location: SourceLoc, left: AstNode, op: ErlBinaryOp, right: AstNode) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_binop(
+    location: SourceLoc,
+    left: AstNode,
+    op: ErlBinaryOp,
+    right: AstNode,
+  ) -> AstNode {
     let binop_node = BinaryOp {
       expr: ErlBinaryOperatorExpr { left, right, operator: op },
     };
@@ -76,19 +83,22 @@ impl AstNodeImpl {
   }
 
   /// Create a new literal AST node of an integer
-  pub fn new_lit_int(location: SourceLoc, val: ErlInteger) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_lit_int(location: SourceLoc, val: ErlInteger) -> AstNode {
     let lit_node = Lit { value: Literal::Integer(val).into() };
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 
   /// Create a new literal AST node of an atom
-  pub fn new_lit_atom(location: SourceLoc, val: &str) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_lit_atom(location: SourceLoc, val: &str) -> AstNode {
     let lit_node = Lit { value: Literal::Atom(String::from(val)).into() };
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 
   /// Create a new literal AST node of a floating point number
-  pub fn new_lit_float(location: SourceLoc, val: &str) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_lit_float(location: SourceLoc, val: &str) -> AstNode {
     match String::from(val).trim().parse() {
       Ok(flt) => {
         let lit_node = Lit { value: Literal::Float(flt).into() };
@@ -101,32 +111,37 @@ impl AstNodeImpl {
   }
 
   /// Create a new literal AST node of a "string"
-  pub fn new_lit_string(location: SourceLoc, val: &str) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn new_lit_string(location: SourceLoc, val: &str) -> AstNode {
     let lit_node = Lit { value: Literal::String(String::from(val)).into() };
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 
   /// Create a new AST node for a list of some expressions
-  pub fn new_list(location: SourceLoc, elements: Vec<AstNode>, tail: Option<AstNode>) -> AstNode {
+  pub(crate) fn new_list(
+    location: SourceLoc,
+    elements: Vec<AstNode>,
+    tail: Option<AstNode>,
+  ) -> AstNode {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
     // Use Self::walk_litexpr
     AstNodeImpl::construct_with_location(location, List { elements, tail })
   }
 
   /// Create a new AST node for a tuple of some expressions
-  pub fn new_tuple(location: SourceLoc, elements: Vec<AstNode>) -> AstNode {
+  pub(crate) fn new_tuple(location: SourceLoc, elements: Vec<AstNode>) -> AstNode {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
     // Use Self::walk_litexpr
     AstNodeImpl::construct_with_location(location, Tuple { elements })
   }
 
   /// Create a new AST node for a map builder
-  pub fn new_map_builder(location: SourceLoc, members: Vec<MapBuilderMember>) -> AstNode {
+  pub(crate) fn new_map_builder(location: SourceLoc, members: Vec<MapBuilderMember>) -> AstNode {
     AstNodeImpl::construct_with_location(location, MapBuilder { members })
   }
 
   /// Create a new AST node for a comma-expression
-  pub fn new_comma_expr(location: SourceLoc, elements: Vec<AstNode>) -> AstNode {
+  pub(crate) fn new_comma_expr(location: SourceLoc, elements: Vec<AstNode>) -> AstNode {
     match elements.len() {
       0 => panic!("Empty elements when creating a ErlAst::CommaExpr"),
       1 => elements[0].clone(),
@@ -135,7 +150,7 @@ impl AstNodeImpl {
   }
 
   /// Create a new AST node for a list comprehension
-  pub fn new_list_comprehension(
+  pub(crate) fn new_list_comprehension(
     location: SourceLoc,
     expr: AstNode,
     generators: Vec<AstNode>,
@@ -145,12 +160,12 @@ impl AstNodeImpl {
   }
 
   /// Create a new AST node for a function `-spec FN(ARG, ...) -> RETURN.`
-  pub fn new_fn_spec(location: SourceLoc, funarity: MFArity, spec: Arc<ErlType>) -> AstNode {
+  pub(crate) fn new_fn_spec(location: SourceLoc, funarity: MFArity, spec: Arc<ErlType>) -> AstNode {
     AstNodeImpl::construct_with_location(location, FnSpec { funarity, spec })
   }
 
   /// Create a new AST node for a list comprehension generator `Expr <- Expr`
-  pub fn new_list_comprehension_generator(
+  pub(crate) fn new_list_comprehension_generator(
     location: SourceLoc,
     left: AstNode,
     right: AstNode,
@@ -160,12 +175,20 @@ impl AstNodeImpl {
   }
 
   /// Create a new `-module(m).` module attr.
-  pub fn new_module_forms(location: SourceLoc, name: String, forms: Vec<AstNode>) -> AstNode {
+  pub(crate) fn new_module_forms(
+    location: SourceLoc,
+    name: String,
+    forms: Vec<AstNode>,
+  ) -> AstNode {
     AstNodeImpl::construct_with_location(location, ModuleRoot { name, forms })
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.
-  pub fn new_generic_attr(location: SourceLoc, tag: String, term: Option<AstNode>) -> AstNode {
+  pub(crate) fn new_generic_attr(
+    location: SourceLoc,
+    tag: String,
+    term: Option<AstNode>,
+  ) -> AstNode {
     match tag.as_str() {
       "warning" | "error" | "include" | "include_lib" | "define" | "if" | "ifdef" | "ifndef"
       | "else" | "endif" | "undef" => panic!(
@@ -177,17 +200,17 @@ impl AstNodeImpl {
   }
 
   /// Create a new `-export([...]).` module attr.
-  pub fn new_export_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
+  pub(crate) fn new_export_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
     AstNodeImpl::construct_with_location(location, ExportAttr { exports })
   }
 
   /// Create a new `-export_type([...]).` module attr.
-  pub fn new_export_type_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
+  pub(crate) fn new_export_type_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
     AstNodeImpl::construct_with_location(location, ExportTypesAttr { exports })
   }
 
   /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.
-  pub fn new_type_attr(
+  pub(crate) fn new_type_attr(
     location: SourceLoc,
     name: String,
     vars: Vec<String>,
@@ -197,7 +220,7 @@ impl AstNodeImpl {
   }
 
   /// Create a new `-import(modulename, [...]).` module attr.
-  pub fn new_import_attr(
+  pub(crate) fn new_import_attr(
     location: SourceLoc,
     import_from: String,
     imports: Vec<MFArity>,
@@ -206,7 +229,7 @@ impl AstNodeImpl {
   }
 
   /// Create a new try-catch AST node
-  pub fn new_try_catch(
+  pub(crate) fn new_try_catch(
     location: SourceLoc,
     body: AstNode,
     of_branches: Option<Vec<ErlCaseClause>>,
@@ -217,12 +240,12 @@ impl AstNodeImpl {
   }
 
   /// Create a new `if` AST Node for `if COND -> EXPR; ... end`
-  pub fn new_if_statement(location: SourceLoc, clauses: Vec<ErlIfClause>) -> AstNode {
+  pub(crate) fn new_if_statement(location: SourceLoc, clauses: Vec<ErlIfClause>) -> AstNode {
     AstNodeImpl::construct_with_location(location, IfStatement { clauses })
   }
 
   /// Create a new `case` AST Node for `case EXPR of MATCH -> EXPR; ... end`
-  pub fn new_case_statement(
+  pub(crate) fn new_case_statement(
     location: SourceLoc,
     expr: AstNode,
     clauses: Vec<ErlCaseClause>,
@@ -231,18 +254,22 @@ impl AstNodeImpl {
   }
 
   /// Create a new function AST node, or a lambda AST node.
-  pub fn new_fndef(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> AstNode {
+  pub(crate) fn new_fndef(
+    location: SourceLoc,
+    funarity: MFArity,
+    clauses: Vec<ErlFnClause>,
+  ) -> AstNode {
     let fndef = ErlFnDef { location, funarity, clauses };
     AstNodeImpl::construct_without_location(FnDef(fndef))
   }
 
   /// Create a new binary expression
-  pub fn new_binary_expr(location: SourceLoc, elements: Vec<BinaryElement>) -> AstNode {
+  pub(crate) fn new_binary_expr(location: SourceLoc, elements: Vec<BinaryElement>) -> AstNode {
     AstNodeImpl::construct_with_location(location, BinaryExpr { elements })
   }
 
   /// Create a new record definition from a `-record(name, {fields...}).` attribute
-  pub fn new_record_definition(
+  pub(crate) fn new_record_definition(
     location: SourceLoc,
     tag: String,
     fields: Vec<RecordField>,

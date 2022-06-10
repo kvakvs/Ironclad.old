@@ -40,7 +40,7 @@ fn parse_str_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment
 
 /// fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
 /// and for each output value, calls a folding function on each output value.
-pub fn build_quoted_str_body(input: ParserInput) -> ParserResult<String> {
+pub(crate) fn build_quoted_str_body(input: ParserInput) -> ParserResult<String> {
   fold_many0(
     // Our parser function– parses a single string fragment
     parse_str_fragment,
@@ -60,7 +60,7 @@ pub fn build_quoted_str_body(input: ParserInput) -> ParserResult<String> {
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-pub fn parse_doublequot_string(input: ParserInput) -> ParserResult<String> {
+pub(crate) fn parse_doublequot_string(input: ParserInput) -> ParserResult<String> {
   // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the

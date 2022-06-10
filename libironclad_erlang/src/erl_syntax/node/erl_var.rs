@@ -12,7 +12,7 @@ pub struct ErlVar {
 
 impl ErlVar {
   /// Creates a new variable node
-  pub fn new(name: &str) -> Self {
+  pub(crate) fn new(name: &str) -> Self {
     ErlVar { name: name.to_string() }
   }
 }

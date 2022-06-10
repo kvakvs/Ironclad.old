@@ -3,7 +3,7 @@
 // /// Process top level nodes in a module. At this level preprocessor nodes can occur and they need
 // /// to be interpreted.
 // #[named]
-// pub fn interpret_preprocessor_node(module: &mut ErlModule, node: &AstNode) -> IcResult<AstNode> {
+// pub(crate) fn interpret_preprocessor_node(module: &mut ErlModule, node: &AstNode) -> IcResult<AstNode> {
 //   match node.content {
 //     ErlAstType::Token { .. } | ErlAstType::Empty => {
 //       unreachable!(

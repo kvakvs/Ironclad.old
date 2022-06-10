@@ -40,14 +40,14 @@ impl std::fmt::Debug for ErlApply {
 
 impl ErlApply {
   /// Creates a new function call (application) AST node
-  pub fn new(target: CallableTarget, args: Vec<AstNode>) -> Self {
+  pub(crate) fn new(target: CallableTarget, args: Vec<AstNode>) -> Self {
     ErlApply { target, args }
   }
 
   /// Check the apply target it must be a callable.
   /// Check the apply arguments, they must match the arguments of the callable, or at least arity.
   /// The return type of the callable will be the apply synthesis result.
-  pub fn synthesize_application_type(
+  pub(crate) fn synthesize_application_type(
     &self,
     location: SourceLoc,
     scope: &RwLock<Scope>,

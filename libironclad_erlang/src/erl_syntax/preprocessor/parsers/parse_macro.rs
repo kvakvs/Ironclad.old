@@ -26,7 +26,7 @@ struct MacroLookupResult {
 }
 
 impl MacroLookupResult {
-  pub fn new(
+  pub(crate) fn new(
     name: String,
     arity: usize,
     lookup_result: Option<Arc<PreprocessorDefine>>,
@@ -51,7 +51,7 @@ fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
     ),
     |n2| {
       let lr = input.preprocessor_scope.get_value(&n2, 0);
-      MacroLookupResult::new(n2.clone(), 0, lr)
+      MacroLookupResult::new(n2, 0, lr)
     },
   )(input.clone())
 }
@@ -90,7 +90,7 @@ fn macro_invocation_n(input: ParserInput) -> ParserResult<MacroLookupResult> {
 /// Expect a macro invocation where the macro content will be parsed with the given parser function.
 /// Usually macro insertion points can tell precisely what type of AST they expect.
 /// And to simplify things we can forbid macroing incomplete/partial syntax structures.
-pub fn macro_invocation<'a, InnerFn: 'a, Out>(
+pub(crate) fn macro_invocation<'a, InnerFn: 'a, Out>(
   input: ParserInput<'a>,
   inner_fn: InnerFn,
 ) -> ParserResult<AstNode>
@@ -114,4 +114,10 @@ where
       }
     }
   })(input.clone())
+}
+
+/// Expect a macro invocation with 0 or more args, which will expand to an expression
+#[inline]
+pub(crate) fn macro_invocation_as_ast_node<'a>(inp: ParserInput<'a>) -> ParserResult<AstNode> {
+  macro_invocation::<'a, _, AstNode>(inp, parse_expr)
 }

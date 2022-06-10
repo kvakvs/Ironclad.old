@@ -46,19 +46,19 @@ impl std::fmt::Display for CallableTarget {
 
 impl CallableTarget {
   /// Creates a callable expression (without application or args) to use in `ErlApply`
-  pub fn new_expr(expr: AstNode) -> Self {
+  pub(crate) fn new_expr(expr: AstNode) -> Self {
     CallableTarget::Expr(expr)
   }
 
   /// Creates a callable mod:fun/arity (without application or args) to use in `ErlApply`
-  pub fn new_mfa(mfa: MFArity) -> Self {
+  pub(crate) fn new_mfa(mfa: MFArity) -> Self {
     CallableTarget::MFArity(mfa)
   }
 
   /// Creates a callable mod:fun/arity where mod and fun can be any expressions. Will try to check
   /// if mod and fun are literal atoms to simplify the callable target to `MFArity(mfa)` instead of
   /// a more complex `MFAExpression`.
-  pub fn new_mfa_expr(m: Option<AstNode>, f: AstNode, a: usize) -> Self {
+  pub(crate) fn new_mfa_expr(m: Option<AstNode>, f: AstNode, a: usize) -> Self {
     if f.is_atom() {
       if m.is_none() {
         return Self::new_mfa(MFArity::new_local(f.as_atom(), a));
@@ -74,7 +74,8 @@ impl CallableTarget {
   }
 
   /// Create a type for this callable target
-  pub fn synthesize(&self, scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn synthesize(&self, scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     match self {
       CallableTarget::Expr(e) => e.synthesize(scope),
       CallableTarget::MFArity(_) => todo!("synthesize for mfarity callable target"),

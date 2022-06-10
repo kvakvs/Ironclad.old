@@ -48,7 +48,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
 }
 
 /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
-pub fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
     match_dash_tag("define".into()),
     alt((
@@ -66,7 +66,7 @@ pub fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse a `-undef(IDENT)`
-pub fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("undef".into()),

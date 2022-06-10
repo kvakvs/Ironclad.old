@@ -19,7 +19,7 @@ pub type PreprocessorScope = Arc<PreprocessorScopeImpl>;
 
 impl PreprocessorScopeImpl {
   /// Parse defines in the configuration file, or from command line specified as -DNAME or -DNAME=XXX
-  pub fn new_from_config_lines(inputs: &[String]) -> PreprocessorScope {
+  pub(crate) fn new_from_config_lines(inputs: &[String]) -> PreprocessorScope {
     let parsed = inputs
       .iter()
       .map(|inp| {
@@ -49,7 +49,8 @@ impl PreprocessorScopeImpl {
   }
 
   /// Check if name of any arity exists in the scope
-  pub fn is_defined(&self, name: &str) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_defined(&self, name: &str) -> bool {
     self
       .defines
       .iter()
@@ -57,7 +58,7 @@ impl PreprocessorScopeImpl {
   }
 
   /// Check if name of arity exists in the scope
-  pub fn is_defined_with_arity(&self, name: &str, arity: usize) -> bool {
+  pub(crate) fn is_defined_with_arity(&self, name: &str, arity: usize) -> bool {
     self
       .defines
       .iter()
@@ -65,7 +66,8 @@ impl PreprocessorScopeImpl {
   }
 
   /// Clone self and insert a new macro definition
-  pub fn define(&self, name: &str, args: &[String], text: &str) -> PreprocessorScope {
+  #[allow(dead_code)]
+  pub(crate) fn define(&self, name: &str, args: &[String], text: &str) -> PreprocessorScope {
     let mut defines = self.defines.clone();
     let pp_def = PreprocessorDefine::new(name.to_string(), args, text);
     defines.insert(pp_def.get_name_arity(), pp_def);
@@ -73,7 +75,8 @@ impl PreprocessorScopeImpl {
   }
 
   /// Clone self and remove the name
-  pub fn undefine(&self, name: &str) -> PreprocessorScope {
+  #[allow(dead_code)]
+  pub(crate) fn undefine(&self, name: &str) -> PreprocessorScope {
     let mut defines: HashMap<NameArity, Arc<PreprocessorDefine>> = Default::default();
     for (na, ppdef) in self.defines.iter() {
       if na.name != name {
@@ -85,7 +88,7 @@ impl PreprocessorScopeImpl {
 
   /// For macro with 0 arguments, produce its substitute which goes into AST tree.
   /// Returns `Some(string)` if macro() is defined, else `None`.
-  pub fn get_value(&self, name: &str, arity: usize) -> Option<Arc<PreprocessorDefine>> {
+  pub(crate) fn get_value(&self, name: &str, arity: usize) -> Option<Arc<PreprocessorDefine>> {
     self.defines.get(&NameArity::new(name, arity)).cloned()
   }
 }

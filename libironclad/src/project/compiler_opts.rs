@@ -23,7 +23,7 @@ impl CompilerOpts {
   pub const MAX_ERRORS_PER_MODULE: usize = 20;
 
   /// Given self (read-only) and other opts (read-only) combine them into self+other
-  pub fn overlay(&self, other: &CompilerOpts) -> Self {
+  pub(crate) fn overlay(&self, other: &CompilerOpts) -> Self {
     let mut result: CompilerOpts = self.clone();
 
     // Overlay include paths

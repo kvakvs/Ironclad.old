@@ -9,8 +9,7 @@ use crate::erl_syntax::parsers::misc::{
   match_word, period_tag, semicolon_tag, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_expr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
-  EXPR_STYLE_MATCHEXPR,
+  parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, ExprStyle,
 };
 use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::source_loc::SourceLoc;
@@ -20,10 +19,6 @@ use nom::combinator::{cut, map, not, opt, peek};
 use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, error::context};
-
-fn parse_when_expr_for_fn(input: ParserInput) -> ParserResult<AstNode> {
-  preceded(ws_before(tag("when".into())), context("function's guard", cut(parse_expr)))(input)
-}
 
 /// Function will succeed if an atom is parsed and FN_NAME is true, will return Some<Value>.
 /// Function will succeed if no atom found but also FN_NAME is false, will return None.
@@ -54,16 +49,22 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       // Function arguments
       context(
         "function clause arguments of a function definition",
-        parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_MATCHEXPR }>,
+        parse_parenthesized_list_of_exprs::<{ ExprStyle::MatchExpr }>,
       ),
       // Optional: when <guard>
-      context("`when` expression of a function clause", opt(parse_when_expr_for_fn)),
+      context(
+        "`when` expression of a function clause",
+        opt(preceded(
+          match_word("when".into()),
+          context("function's guard", cut(parse_guardexpr)),
+        )),
+      ),
       preceded(
         ws_before(tag("->".into())),
         // Body as list of exprs
         context(
           "function clause body of a function definition",
-          cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
+          cut(parse_comma_sep_exprs1::<{ ExprStyle::Full }>),
         ),
       ),
     )),
@@ -112,7 +113,7 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Lambda is an inline function definition
-pub fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
   // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
   map(
     preceded(

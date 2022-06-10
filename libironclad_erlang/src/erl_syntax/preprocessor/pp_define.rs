@@ -17,24 +17,24 @@ pub struct PreprocessorDefine {
 
 impl PreprocessorDefine {
   /// Create a new empty preprocessor definition without body and args
-  pub fn new(name: String, args: &[String], text: &str) -> Arc<Self> {
+  pub(crate) fn new(name: String, args: &[String], text: &str) -> Arc<Self> {
     Self { name, args: args.into(), text: text.to_string() }.into()
   }
 
   /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition
   /// symbols table. This will be passed then to preprocessor parser.
-  pub fn new_from_command_line(key_value: &str) -> Arc<PreprocessorDefine> {
+  pub(crate) fn new_from_command_line(key_value: &str) -> Arc<PreprocessorDefine> {
     println!("TODO: new preproc-define from: {}", key_value);
     Self::new(key_value.to_string(), &Vec::default(), "")
   }
 
   /// Return the name/arity pair for this macro
-  pub fn get_arity(&self) -> usize {
+  pub(crate) fn get_arity(&self) -> usize {
     self.args.len()
   }
 
   /// Construct name/arity pair
-  pub fn get_name_arity(&self) -> NameArity {
+  pub(crate) fn get_name_arity(&self) -> NameArity {
     NameArity { name: self.name.clone(), arity: self.get_arity() }
   }
 }

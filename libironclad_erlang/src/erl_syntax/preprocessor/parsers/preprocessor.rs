@@ -101,7 +101,7 @@ fn warning_directive(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse one of supported preprocessor directives
-pub fn parse_preproc_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_preproc_directive(input: ParserInput) -> ParserResult<AstNode> {
   ws_before_mut(alt((
     // -define is special, it needs closing ).\n to consume the content
     context("'-define()' directive", define_directive),

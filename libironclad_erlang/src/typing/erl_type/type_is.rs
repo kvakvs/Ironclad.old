@@ -6,7 +6,6 @@ use std::ops::Deref;
 
 impl ErlType {
   /// Shortcut to the subtype checker
-  #[inline]
   pub fn is_subtype_of(&self, other: &ErlType) -> bool {
     SubtypeChecker::is_subtype(self, other)
   }
@@ -34,7 +33,8 @@ impl ErlType {
   }
 
   /// Checks whether type is a number
-  pub fn is_number(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_number(&self) -> bool {
     return match self {
       ErlType::Number | ErlType::Float | ErlType::Integer | ErlType::IntegerRange { .. } => true,
       ErlType::Singleton { val } => {
@@ -45,18 +45,21 @@ impl ErlType {
   }
 
   /// Checks whether `self` is an integer or belongs to a complex type where integer is present too
-  pub fn is_supertype_of_integer(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_supertype_of_integer(&self) -> bool {
     self.is_integer() || ErlType::Integer.is_subtype_of(self)
   }
 
   /// Checks whether `self` is a float or belongs to a complex type where float is present too
-  pub fn is_supertype_of_float(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_supertype_of_float(&self) -> bool {
     self.is_float() || ErlType::Float.is_subtype_of(self)
   }
 
   /// Checks whether `self` is an integer or a float, or belongs to a complex type where integer or
   /// float are present.
-  pub fn is_supertype_of_number(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_supertype_of_number(&self) -> bool {
     self.is_number() || ErlType::Number.is_subtype_of(self)
   }
 
@@ -83,7 +86,8 @@ impl ErlType {
   }
 
   /// Checks whether type is a tuple type
-  pub fn is_tuple(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_tuple(&self) -> bool {
     matches!(self, ErlType::AnyTuple | ErlType::Tuple { .. } | ErlType::IntegerRange { .. })
   }
 
@@ -112,17 +116,20 @@ impl ErlType {
   }
 
   /// Checks whether type is a binary
-  pub fn is_binary(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_binary(&self) -> bool {
     matches!(self, ErlType::AnyBinary | ErlType::Binary { .. })
   }
 
   /// Checks whether type is a map
-  pub fn is_map(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_map(&self) -> bool {
     matches!(self, ErlType::AnyMap | ErlType::Map { .. })
   }
 
   /// Checks whether a type is callable
-  pub fn is_function(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_function(&self) -> bool {
     matches!(
       self,
       ErlType::AnyFn | ErlType::Fn { .. } | ErlType::FnRef { .. } | ErlType::Lambda
@@ -130,12 +137,13 @@ impl ErlType {
   }
 
   /// True if type is any()
-  pub fn is_any(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_any(&self) -> bool {
     matches!(self, ErlType::Any)
   }
 
   /// True if type is none() or union of no types
-  pub fn is_none(&self) -> bool {
+  pub(crate) fn is_none(&self) -> bool {
     match self {
       ErlType::None => true,
       ErlType::Union(tu) if tu.is_empty() => true,

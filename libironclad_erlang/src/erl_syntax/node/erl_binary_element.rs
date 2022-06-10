@@ -103,7 +103,7 @@ pub struct BinaryElement {
 
 impl BinaryElement {
   /// Creates a new freshly parsed element of a binary expression
-  pub fn new(
+  pub(crate) fn new(
     location: SourceLoc,
     value: AstNode,
     width: ValueWidth,

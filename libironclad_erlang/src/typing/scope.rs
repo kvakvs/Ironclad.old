@@ -68,7 +68,8 @@ impl Scope {
   }
 
   /// Create a new empty scope
-  pub fn empty(name: String, parent_scope: Weak<RwLock<Scope>>) -> Self {
+  #[allow(dead_code)]
+  pub(crate) fn empty(name: String, parent_scope: Weak<RwLock<Scope>>) -> Self {
     Self {
       name,
       variables: Default::default(),
@@ -79,7 +80,7 @@ impl Scope {
   }
 
   /// Create a new scope from a variable hashmap
-  pub fn new(
+  pub(crate) fn new(
     name: String,
     parent_scope: Weak<RwLock<Scope>>,
     variables: HashMap<String, Arc<ErlType>>,
@@ -94,19 +95,22 @@ impl Scope {
   }
 
   /// Wrap self into `Arc<RwLock<>>`
-  pub fn into_arc_rwlock(self) -> Arc<RwLock<Self>> {
+  #[allow(dead_code)]
+  pub(crate) fn into_arc_rwlock(self) -> Arc<RwLock<Self>> {
     Arc::new(RwLock::new(self))
   }
 
   /// Return new copy of Scope with a new variable added
-  pub fn add(&self, var_name: &str) -> Scope {
+  #[allow(dead_code)]
+  pub(crate) fn add(&self, var_name: &str) -> Scope {
     let mut new_variables = self.variables.clone();
     new_variables.insert(var_name.to_string(), ErlType::any());
     Self::new(self.name.clone(), self.parent_scope.clone(), new_variables)
   }
 
   /// Insert a new var into scope
-  pub fn add_to(scope: &RwLock<Scope>, var_name: &str) {
+  #[allow(dead_code)]
+  pub(crate) fn add_to(scope: &RwLock<Scope>, var_name: &str) {
     if let Ok(mut scope_w) = scope.write() {
       scope_w
         .variables
@@ -115,12 +119,14 @@ impl Scope {
   }
 
   /// Retrieve variable type from scope
-  pub fn get(&self, var_name: &str) -> Option<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn get(&self, var_name: &str) -> Option<Arc<ErlType>> {
     self.variables.get(&var_name.to_string()).cloned()
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
-  pub fn retrieve_var_from(scope: &RwLock<Scope>, var: &ErlVar) -> Option<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn retrieve_var_from(scope: &RwLock<Scope>, var: &ErlVar) -> Option<Arc<ErlType>> {
     if let Ok(scope_read) = scope.read() {
       match scope_read.variables.get(&var.name) {
         Some(var_type) => Some(var_type.clone()),
@@ -135,7 +141,8 @@ impl Scope {
   }
 
   /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<AstNode> {
+  #[allow(dead_code)]
+  pub(crate) fn retrieve_fn_from(scope: &RwLock<Scope>, mfa: &MFArity) -> Option<AstNode> {
     if let Ok(scope_read) = scope.read() {
       match scope_read.function_defs.get(mfa) {
         Some(val) => {
@@ -155,7 +162,7 @@ impl Scope {
   }
 
   /// Add a function by MFA and its type
-  pub fn add_fn(&mut self, mfa: &MFArity, ast: AstNode) {
+  pub(crate) fn add_fn(&mut self, mfa: &MFArity, ast: AstNode) {
     self.function_defs.insert(mfa.clone(), ast);
   }
 

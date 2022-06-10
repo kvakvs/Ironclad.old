@@ -23,7 +23,7 @@ lazy_static! {
 
 impl ErlType {
   /// Return a cloned instance of None-type
-  pub fn none() -> Arc<ErlType> {
+  pub(crate) fn none() -> Arc<ErlType> {
     PF_TYPE_NONE.clone()
   }
 
@@ -46,16 +46,17 @@ impl ErlType {
   }
 
   /// Return a cloned instance of Atom-type
-  pub fn atom() -> Arc<ErlType> {
+  pub(crate) fn atom() -> Arc<ErlType> {
     PF_TYPE_ATOM.clone()
   }
   /// Return a cloned instance of Boolean-type
-  pub fn boolean() -> Arc<ErlType> {
+  pub(crate) fn boolean() -> Arc<ErlType> {
     PF_TYPE_BOOLEAN.clone()
   }
 
   /// Return a cloned instance of fun()-type
-  pub fn any_fun() -> Arc<ErlType> {
+  #[allow(dead_code)]
+  pub(crate) fn any_fun() -> Arc<ErlType> {
     PF_TYPE_ANY_FUN.clone()
   }
   /// Return a cloned instance of tuple()-type
@@ -63,12 +64,13 @@ impl ErlType {
     PF_TYPE_ANY_TUPLE.clone()
   }
   /// Return a cloned instance of binary()-type
-  pub fn any_binary() -> Arc<ErlType> {
+  #[allow(dead_code)]
+  pub(crate) fn any_binary() -> Arc<ErlType> {
     PF_TYPE_ANY_BINARY.clone()
   }
 
   /// Return a cloned instance of AnyList-type
-  pub fn any_list() -> Arc<ErlType> {
+  pub(crate) fn any_list() -> Arc<ErlType> {
     PF_TYPE_ANYLIST.clone()
   }
   /// Return a cloned instance of NIL-type
@@ -77,15 +79,15 @@ impl ErlType {
   }
 
   /// Return a cloned instance of Pid-type
-  pub fn pid() -> Arc<ErlType> {
+  pub(crate) fn pid() -> Arc<ErlType> {
     PF_TYPE_PID.clone()
   }
   /// Return a cloned instance of Port-type
-  pub fn port() -> Arc<ErlType> {
+  pub(crate) fn port() -> Arc<ErlType> {
     PF_TYPE_PORT.clone()
   }
   /// Return a cloned instance of Reference-type
-  pub fn reference() -> Arc<ErlType> {
+  pub(crate) fn reference() -> Arc<ErlType> {
     PF_TYPE_REFERENCE.clone()
   }
 }

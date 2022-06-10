@@ -148,7 +148,7 @@ impl ErlType {
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
   /// This ordering is used for BTree construction, not for comparisons
-  pub fn get_order(&self) -> usize {
+  pub(crate) fn get_order(&self) -> usize {
     match self {
       ErlType::None => 0,
       // ErlType::Union(_) => 1,

@@ -7,12 +7,13 @@ use crate::literal::Literal;
 
 impl AstNodeImpl {
   /// Checks whether an expression is a `ErlAst::Lit`
-  pub fn is_literal(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_literal(&self) -> bool {
     matches!(self.content, AstNodeType::Lit { .. })
   }
 
   /// Walk the literal expression and try to find whether it is true, false or neither
-  pub fn walk_boolean_litexpr(&self) -> LiteralBool {
+  pub(crate) fn walk_boolean_litexpr(&self) -> LiteralBool {
     match &self.content {
       // ErlAst::CaseStatement { .. } => {}
       AstNodeType::Lit { .. } => {
@@ -35,7 +36,8 @@ impl AstNodeImpl {
   }
 
   /// Walk a literal expression and return `Some()` if its calculatable in compile time.
-  pub fn walk_litexpr(&self) -> Option<Literal> {
+  #[allow(dead_code)]
+  pub(crate) fn walk_litexpr(&self) -> Option<Literal> {
     unimplemented!("Walk litexpr")
   }
 }

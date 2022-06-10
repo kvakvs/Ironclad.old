@@ -17,13 +17,14 @@ pub struct ErlUnaryOperatorExpr {
 
 impl ErlUnaryOperatorExpr {
   /// Create an unary operator and wrap it with ErlAst::UnaryOp
-  pub fn new_ast(loc: SourceLoc, operator: ErlUnaryOp, expr: AstNode) -> AstNode {
+  pub(crate) fn new_ast(loc: SourceLoc, operator: ErlUnaryOp, expr: AstNode) -> AstNode {
     let unop_node = UnaryOp { expr: ErlUnaryOperatorExpr { expr, operator } };
     AstNodeImpl::construct_with_location(loc, unop_node)
   }
 
   /// Walk the literal expression and try to find whether it is true, false or neither
-  pub fn walk_boolean_litexpr(&self) -> LiteralBool {
+  #[allow(dead_code)]
+  pub(crate) fn walk_boolean_litexpr(&self) -> LiteralBool {
     match self.operator {
       ErlUnaryOp::Not => self.expr.walk_boolean_litexpr().negate(),
       _ => LiteralBool::NotABoolean,

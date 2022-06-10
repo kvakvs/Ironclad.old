@@ -19,7 +19,7 @@ pub enum ErlInteger {
 
 impl ErlInteger {
   /// Creates from string
-  pub fn new_from_string(input: ParserInput) -> Option<Self> {
+  pub(crate) fn new_from_string(input: ParserInput) -> Option<Self> {
     match input.parse::<BigInt>() {
       Ok(parsed) => {
         if let Some(small) = &parsed.to_i64() {
@@ -35,7 +35,7 @@ impl ErlInteger {
   }
 
   /// True if zero or greater
-  pub fn is_non_negative(&self) -> bool {
+  pub(crate) fn is_non_negative(&self) -> bool {
     match self {
       Small(small) => *small >= 0,
       Big(big) => !big.is_negative(),
@@ -43,7 +43,7 @@ impl ErlInteger {
   }
 
   /// Convert to an usize
-  pub fn as_usize(&self) -> Option<usize> {
+  pub(crate) fn as_usize(&self) -> Option<usize> {
     match self {
       Small(small) => Some(*small as usize),
       Big(big) => big.to_usize(),

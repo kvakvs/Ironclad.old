@@ -5,12 +5,12 @@ use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 
 impl AstNodeImpl {
   /// Check whether Preprocessor AST node is a temporary `-else` node
-  pub fn is_else(&self) -> bool {
+  pub(crate) fn is_else(&self) -> bool {
     matches!(&self.content, AstNodeType::Preprocessor(PreprocessorNodeType::_TemporaryElse))
   }
 
   /// Check whether Preprocessor AST node is a temporary `-elseif` node
-  pub fn is_elseif(&self) -> bool {
+  pub(crate) fn is_elseif(&self) -> bool {
     matches!(
       &self.content,
       AstNodeType::Preprocessor(PreprocessorNodeType::_TemporaryElseIf(_))
@@ -18,7 +18,7 @@ impl AstNodeImpl {
   }
 
   /// Check whether Preprocessor AST node is a temporary `-endif` node
-  pub fn is_endif(&self) -> bool {
+  pub(crate) fn is_endif(&self) -> bool {
     matches!(&self.content, AstNodeType::Preprocessor(PreprocessorNodeType::_TemporaryEndif))
   }
 }

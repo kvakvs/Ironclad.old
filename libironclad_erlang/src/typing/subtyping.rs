@@ -11,7 +11,7 @@ pub struct SubtypeChecker {}
 
 impl SubtypeChecker {
   /// is_subtype check for `Option<Erltype>` which treats `None` as `[]`
-  pub fn is_subtype_for_list_tail(
+  pub(crate) fn is_subtype_for_list_tail(
     sub_ty: &Option<Arc<ErlType>>,
     sup_ty: &Option<Arc<ErlType>>,
   ) -> bool {
@@ -22,7 +22,7 @@ impl SubtypeChecker {
   }
 
   /// Checks whether sub_ty is a subtype of super_ty
-  pub fn is_subtype(sub_ty: &ErlType, super_ty: &ErlType) -> bool {
+  pub(crate) fn is_subtype(sub_ty: &ErlType, super_ty: &ErlType) -> bool {
     match super_ty.deref() {
       equal_supertype if equal_supertype.eq(sub_ty) => true, // equal types are mutual subtypes
       ErlType::Typevar(super_tv) => {

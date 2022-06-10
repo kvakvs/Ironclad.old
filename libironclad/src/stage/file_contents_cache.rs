@@ -24,7 +24,7 @@ impl Default for FileContentsCache {
 
 impl FileContentsCache {
   /// Load file contents, store entire contents in the hashmap
-  pub fn preload_file(
+  pub(crate) fn preload_file(
     &mut self,
     io_stats: &mut IOStats,
     file_name: &Path,
@@ -68,7 +68,7 @@ impl FileContentsCache {
 
   /// As source file text is read only, we replace.
   /// The parse trees referring the the old source file will retain their Arc<> to the old version
-  pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
+  pub(crate) fn update_source_text(&mut self, file_name: &Path, new_text: String) {
     let new_source_file = SourceFileImpl::new(file_name, new_text);
     self
       .all_files

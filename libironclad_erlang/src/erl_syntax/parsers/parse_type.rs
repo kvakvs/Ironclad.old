@@ -136,7 +136,7 @@ impl ErlTypeParser {
   // }
 
   /// Parses a list of comma separated typevars enclosed in (parentheses)
-  pub fn parse_parenthesized_arg_spec_list(
+  pub(crate) fn parse_parenthesized_arg_spec_list(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     let (input, _) = par_open_tag(input)?;
@@ -146,7 +146,7 @@ impl ErlTypeParser {
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
   /// `-spec fun(A) -> A when A :: atom().`
-  pub fn parse_when_expr_for_type(
+  pub(crate) fn parse_when_expr_for_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     let (input, _) = match_word("when".into())(input)?;
@@ -154,7 +154,7 @@ impl ErlTypeParser {
   }
 
   /// Parse only capitalized type variable name
-  pub fn parse_typevar_name(
+  pub(crate) fn parse_typevar_name(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, String, ErlParserError> {
     ws_before(parse_varname)(input)
@@ -297,7 +297,7 @@ impl ErlTypeParser {
   }
 
   /// Parse an integer and produce a literal integer type
-  pub fn int_literal_type(
+  pub(crate) fn int_literal_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(parse_int, |erl_int| {
@@ -307,7 +307,7 @@ impl ErlTypeParser {
   }
 
   /// Parse an integer range
-  pub fn int_range_type(
+  pub(crate) fn int_range_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     // print_input("int_range_type", input);
@@ -318,14 +318,14 @@ impl ErlTypeParser {
   }
 
   /// Parse an atom, and produce a literal atom type
-  pub fn atom_literal_type(
+  pub(crate) fn atom_literal_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(parse_atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
-  pub fn parse_nonunion_type(
+  pub(crate) fn parse_nonunion_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     alt((
@@ -342,7 +342,9 @@ impl ErlTypeParser {
 
   /// Parse any Erlang type, simple types like `atom()` with some `(args)` possibly, but could also be
   /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
-  pub fn parse_type(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
+  pub(crate) fn parse_type(
+    input: ParserInput,
+  ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
       |types| ErlType::new_union(&types),

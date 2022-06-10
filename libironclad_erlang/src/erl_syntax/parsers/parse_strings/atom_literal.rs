@@ -77,7 +77,7 @@ fn parse_fragment<'a>(input: ParserInput<'a>) -> ParserResult<StringFragment<'a>
 
 /// fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
 /// and for each output value, calls a folding function on each output value.
-pub fn build_quoted_atom_body(input: ParserInput) -> ParserResult<String> {
+pub(crate) fn build_quoted_atom_body(input: ParserInput) -> ParserResult<String> {
   fold_many0(
     // Our parser function– parses a single string fragment
     parse_fragment,
@@ -108,7 +108,7 @@ fn parse_quoted_atom(input: ParserInput) -> ParserResult<String> {
 
 /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
 /// delitmited string
-pub fn parse_atom(input: ParserInput) -> ParserResult<String> {
+pub(crate) fn parse_atom(input: ParserInput) -> ParserResult<String> {
   ws_before_mut(alt((verify(parse_ident, |s| !is_erl_keyword(s)), parse_quoted_atom)))(input)
 }
 

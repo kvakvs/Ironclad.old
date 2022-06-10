@@ -37,7 +37,8 @@ impl AstNodeImpl {
   }
 
   /// Unwrap self as binary operation expr
-  pub fn as_binop(&self) -> &ErlBinaryOperatorExpr {
+  #[allow(dead_code)]
+  pub(crate) fn as_binop(&self) -> &ErlBinaryOperatorExpr {
     match &self.content {
       AstNodeType::BinaryOp { expr, .. } => expr,
       _ => panic!("Expected BinOp AST node, but got {}", self),
@@ -72,7 +73,8 @@ impl AstNodeImpl {
   }
 
   /// Unwrap an `-export_types` attr and return contents
-  pub fn as_export_types_attr(&self) -> &Vec<MFArity> {
+  #[allow(dead_code)]
+  pub(crate) fn as_export_types_attr(&self) -> &Vec<MFArity> {
     match &self.content {
       AstNodeType::ExportTypesAttr { exports } => exports,
       _ => panic!("Expected ExportTypesAttr() AST node, but got {}", self),
@@ -105,6 +107,7 @@ impl AstNodeImpl {
 
   /// Unwrap a `ModuleRoot` node. Returns name and child nodes vector. Returns children first
   /// level only, for flat list of everything use `.children()` call.
+  #[allow(dead_code)]
   pub fn as_module(&self) -> (&str, &Vec<AstNode>) {
     match &self.content {
       AstNodeType::ModuleRoot { name, forms } => (name.as_str(), forms),

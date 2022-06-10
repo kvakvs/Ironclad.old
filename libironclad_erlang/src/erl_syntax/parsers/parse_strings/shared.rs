@@ -9,7 +9,9 @@ use nom::sequence::{delimited, preceded};
 
 /// Parse a backslash, followed by any amount of whitespace. This is used later
 /// to discard any escaped whitespace.
-pub fn parse_escaped_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+pub(crate) fn parse_escaped_whitespace<'a>(
+  input: ParserInput<'a>,
+) -> ParserResult<ParserInput<'a>> {
   preceded(char('\\'), multispace1)(input)
 }
 
@@ -35,7 +37,7 @@ fn parse_delimited_hex(input: ParserInput) -> ParserResult<ParserInput> {
 /// a Result. In this case we take the hex bytes from parse_hex and attempt to
 /// convert them to a u32.
 // TODO: Bignums!
-pub fn parse_u32(input: ParserInput) -> ParserResult<u32> {
+pub(crate) fn parse_u32(input: ParserInput) -> ParserResult<u32> {
   map_res(parse_delimited_hex, move |hex: ParserInput| {
     u32::from_str_radix(hex.as_str(), 16)
   })(input)
@@ -56,7 +58,7 @@ fn parse_unicode(input: ParserInput) -> ParserResult<Char> {
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-pub fn parse_escaped_char(input: ParserInput) -> ParserResult<Char> {
+pub(crate) fn parse_escaped_char(input: ParserInput) -> ParserResult<Char> {
   preceded(
     char('\\'),
     // `alt` tries each parser in sequence, returning the result of

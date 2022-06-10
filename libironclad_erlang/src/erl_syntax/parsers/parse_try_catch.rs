@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::parse_case::parse_case_clause;
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
+  parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr, ExprStyle,
 };
 use nom::combinator::{cut, map, opt};
 use nom::multi::{many1, separated_list1};
@@ -43,7 +43,7 @@ pub fn parse_catch_clause(
       // when <Expression>
       opt(preceded(ws_before(tag("when".into())), parse_guardexpr)),
       // -> Expression
-      preceded(ws_before(tag("->".into())), parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
+      preceded(ws_before(tag("->".into())), parse_comma_sep_exprs1::<{ ExprStyle::Full }>),
     )),
     |(exc_pattern, maybe_when, body)| {
       CatchClause::new(exc_pattern, maybe_when, AstNodeImpl::new_comma_expr(input.loc(), body))
@@ -56,7 +56,7 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
     tuple((
       context(
         "try-catch block trial expression",
-        cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
+        cut(parse_comma_sep_exprs1::<{ ExprStyle::Full }>),
       ),
       // Optional OF followed by match clauses
       opt(preceded(
@@ -85,7 +85,7 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a `try-catch` or a `try-of-catch` block
-pub fn parse_try_catch(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_try_catch(input: ParserInput) -> ParserResult<AstNode> {
   let (input, _) = match_word("try".into())(input)?;
 
   context(

@@ -13,7 +13,7 @@ use nom::sequence::{pair, preceded, terminated};
 use nom::{bytes::complete::tag, combinator::cut, error::context};
 
 /// Parses `if COND -> EXPR; ... end`
-pub fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
     match_word("if".into()),
     context(
@@ -30,7 +30,7 @@ pub fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
-pub fn parse_if_clause(
+pub(crate) fn parse_if_clause(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, ErlIfClause, ErlParserError> {
   map(

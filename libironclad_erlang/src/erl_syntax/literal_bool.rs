@@ -13,7 +13,7 @@ pub enum LiteralBool {
 
 impl LiteralBool {
   /// Negate a LiteralBool expression
-  pub fn negate(&self) -> LiteralBool {
+  pub(crate) fn negate(&self) -> LiteralBool {
     match self {
       LiteralBool::False => LiteralBool::True,
       LiteralBool::True => LiteralBool::False,
@@ -23,7 +23,7 @@ impl LiteralBool {
 
   /// Calculate a conjunction of a LiteralBool expression with another (AND operation)
   /// `False` with any value even a non-boolean will return `False`.
-  pub fn and(&self, other: &LiteralBool) -> LiteralBool {
+  pub(crate) fn and(&self, other: &LiteralBool) -> LiteralBool {
     match (self, other) {
       (_, LiteralBool::False) => LiteralBool::False,
       (LiteralBool::False, _) => LiteralBool::False,
@@ -34,7 +34,7 @@ impl LiteralBool {
 
   /// Calculate a disjunction of a LiteralBool expression with another (OR operation)
   /// `True` with any value even a non-boolean will return `True`.
-  pub fn or(&self, other: &LiteralBool) -> LiteralBool {
+  pub(crate) fn or(&self, other: &LiteralBool) -> LiteralBool {
     match (self, other) {
       (LiteralBool::True, _) => LiteralBool::True,
       (_, LiteralBool::True) => LiteralBool::True,
@@ -44,7 +44,7 @@ impl LiteralBool {
   }
 
   /// Calculate a XOR result of a LiteralBool expression with another
-  pub fn xor(&self, other: &LiteralBool) -> LiteralBool {
+  pub(crate) fn xor(&self, other: &LiteralBool) -> LiteralBool {
     match (self, other) {
       (LiteralBool::NotABoolean, _) => LiteralBool::NotABoolean,
       (_, LiteralBool::NotABoolean) => LiteralBool::NotABoolean,

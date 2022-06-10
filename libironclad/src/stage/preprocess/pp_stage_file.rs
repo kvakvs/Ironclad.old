@@ -31,7 +31,7 @@ pub struct PreprocessFile {
 impl PreprocessFile {
   /// Create a preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
-  pub fn new(
+  pub(crate) fn new(
     ast_cache: &Arc<RwLock<PpAstCache>>,
     file_cache: &Arc<RwLock<FileContentsCache>>,
     scope: Arc<PreprocessorScope>,
@@ -45,7 +45,7 @@ impl PreprocessFile {
 
   /// Create a self-contained preprocessor stage used for testing, does not take any inputs and
   /// builds everything for itself
-  pub fn new_self_contained() -> Self {
+  pub(crate) fn new_self_contained() -> Self {
     let ast_cache = Arc::new(RwLock::new(PpAstCache::default()));
     let file_cache = Arc::new(RwLock::new(FileContentsCache::default()));
     let scope = PreprocessorScope::default().into();
@@ -54,7 +54,7 @@ impl PreprocessFile {
 
   /// Check AST cache if the file is already parsed, and then return the cached ppAst
   /// Otherwise pass the control to the parser
-  pub fn parse_file_helper<Parser>(
+  pub(crate) fn parse_file_helper<Parser>(
     &self,
     ast_cache_stats: &mut CacheStats,
     input_file: &SourceFileImpl,
@@ -91,7 +91,11 @@ impl PreprocessFile {
 
   /// Parse AST using provided parser function, check that input is consumed, print some info.
   /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
-  pub fn parse_helper<Parser>(&self, input: ParserInput, parser: Parser) -> IcResult<Arc<PpAst>>
+  pub(crate) fn parse_helper<Parser>(
+    &self,
+    input: ParserInput,
+    parser: Parser,
+  ) -> IcResult<Arc<PpAst>>
   where
     Parser: Fn(&str) -> PpAstParserResult,
   {
@@ -107,7 +111,7 @@ impl PreprocessFile {
   }
 
   /// Returns: True if a file was preprocessed
-  pub fn preprocess_file(
+  pub(crate) fn preprocess_file(
     &mut self,
     stats: &mut PreprocessorStats,
     project: &ErlProject,

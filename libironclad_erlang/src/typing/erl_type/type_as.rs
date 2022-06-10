@@ -15,7 +15,7 @@ impl ErlType {
   }
 
   /// Access ErlType as an union
-  pub fn as_union(&self) -> &TypeUnion {
+  pub(crate) fn as_union(&self) -> &TypeUnion {
     match self {
       ErlType::Union(tu) => tu,
       _ => panic!("ErlType expected to be an union, but got {}", self),

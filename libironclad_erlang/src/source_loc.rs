@@ -20,13 +20,14 @@ pub enum SourceLoc {
 
 impl SourceLoc {
   /// Warns about using None but does not prevent it
-  pub fn unimplemented(file: &str, func: &str) -> Self {
+  #[allow(dead_code)]
+  pub(crate) fn unimplemented(file: &str, func: &str) -> Self {
     println!("Unimplemented sourceloc use {}() at {}", func, file);
     SourceLoc::None
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub fn from_input(i: Arc<ParserInputSlice>) -> Self {
+  pub(crate) fn from_input(i: Arc<ParserInputSlice>) -> Self {
     Self::Input { input: i }
   }
 }

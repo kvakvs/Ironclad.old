@@ -101,7 +101,7 @@ pub(crate) fn ifdef_temporary_directive(input: ParserInput) -> ParserResult<AstN
 }
 
 /// Parse a `-ifndef(MACRO_NAME)`
-pub fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("ifndef".into()),
@@ -113,7 +113,7 @@ pub fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
-pub fn else_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn else_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("else".into()),
@@ -129,7 +129,7 @@ fn maybe_empty_parens(input: ParserInput) -> ParserResult<ParserInput> {
 }
 
 /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
-pub fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(match_dash_tag("endif".into()), maybe_empty_parens, period_newline_tag),
     |_opt| PreprocessorNodeType::construct_with_location(input.loc(), _TemporaryEndif),

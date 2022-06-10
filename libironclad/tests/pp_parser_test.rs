@@ -230,15 +230,29 @@ fn test_define_with_dquotes() {
 #[test]
 #[named]
 /// Try parse a define macro where value contains another macro
-fn test_macro_in_define() {
+fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let mut module =
+  let module =
     test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
-  module.interpret_preprocessor_nodes().unwrap();
+  // module.interpret_preprocessor_nodes().unwrap();
   let nodes = module.ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 2);
   let (_, _, body) = nodes[1].as_preprocessor_define();
-  assert_eq!(body, "bbb", "Macro ?AAA must expand to 'bbb'");
+  assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
+}
+
+#[test]
+#[named]
+/// Try parse an expression with a macro
+fn test_macro_expansion_in_expr() {
+  test_util::start(function_name!(), "Parse an expression with macro substitution");
+  let module = test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
+  // module.interpret_preprocessor_nodes().unwrap();
+  let nodes = module.ast.children().unwrap_or_default();
+  assert_eq!(nodes.len(), 2);
+  let fndef = nodes[1].as_fn_def();
+  assert_eq!(fndef.clauses.len(), 1);
+  assert!(fndef.clauses[0].body.is_atom_of("bbb"));
 }
 
 #[test]

@@ -54,7 +54,7 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a generic `-TAG.` attribute, no parentheses, no expr.
-pub fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
   map(delimited(ws_before(char('-')), parse_atom, period_newline_tag), |tag| {
     AstNodeImpl::new_generic_attr(input.loc(), tag, None)
   })(input.clone())
@@ -63,7 +63,7 @@ pub fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<Ast
 /// Parses a `-module(atom).` attribute.
 /// Dash `-` and terminating `.` are matched outside by the caller.
 /// Will create error if the attribute does not parse (essentially a required attribute).
-pub fn module_start_attr(input: ParserInput) -> ParserResult<String> {
+pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<String> {
   context(
     "expected -module() attribute",
     cut(delimited(
@@ -103,7 +103,7 @@ fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
 
 /// Parses an `-export([fn/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("export".into()),
@@ -116,7 +116,7 @@ pub fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Parses an `-export_type([type/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("export_type".into()),
@@ -129,7 +129,7 @@ pub fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Parses an `-import(module [fn/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       match_dash_tag("import".into()),
@@ -148,7 +148,7 @@ pub fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
-pub fn parse_parenthesized_list_of_vars(
+pub(crate) fn parse_parenthesized_list_of_vars(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<String>, ErlParserError> {
   delimited(
@@ -183,7 +183,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Any module attribute goes here
-pub fn parse_module_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_module_attr(input: ParserInput) -> ParserResult<AstNode> {
   // print_input("attr", input);
   alt((
     parse_record_def,

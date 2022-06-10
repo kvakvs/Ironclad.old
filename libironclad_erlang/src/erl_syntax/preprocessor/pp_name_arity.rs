@@ -12,7 +12,7 @@ pub struct NameArity {
 
 impl NameArity {
   /// Create a new Name-arity pair
-  pub fn new(name: &str, arity: usize) -> NameArity {
+  pub(crate) fn new(name: &str, arity: usize) -> NameArity {
     NameArity { name: name.to_string(), arity }
   }
 }

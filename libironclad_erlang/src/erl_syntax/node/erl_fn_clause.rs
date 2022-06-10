@@ -29,7 +29,7 @@ pub struct ErlFnClause {
 
 impl ErlFnClause {
   /// Create a new function clause. Arguments can be any expressions.
-  pub fn new(
+  pub(crate) fn new(
     name: Option<String>,
     args: Vec<AstNode>,
     body: AstNode,
@@ -53,13 +53,15 @@ impl ErlFnClause {
   }
 
   /// Returns true if all args are variables, and not expressions, i.e. accepting any value of any type
-  pub fn is_all_variable_args(&self) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn is_all_variable_args(&self) -> bool {
     self.args.iter().all(|a| a.is_var())
   }
 
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
-  pub fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> IcResult<FnClauseType> {
+  #[allow(dead_code)]
+  pub(crate) fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> IcResult<FnClauseType> {
     // Synthesizing return type using the inner function scope, with added args
     // let args_types: Vec<Typevar> = self.args.iter()
     //     .map(|arg| arg.synthesize(scope))
@@ -80,7 +82,11 @@ impl ErlFnClause {
   }
 
   /// Return type from the body AST
-  pub fn synthesize_clause_return_type(&self, env: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn synthesize_clause_return_type(
+    &self,
+    env: &RwLock<Scope>,
+  ) -> IcResult<Arc<ErlType>> {
     self.body.synthesize(env)
   }
 }

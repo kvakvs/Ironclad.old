@@ -15,7 +15,7 @@ pub struct FnType {
 
 impl FnType {
   /// Create a new function type with clauses
-  pub fn new(arity: usize, clauses: &[FnClauseType]) -> Self {
+  pub(crate) fn new(arity: usize, clauses: &[FnClauseType]) -> Self {
     if cfg!(debug_assertions) {
       let in_arities: Vec<String> = clauses.iter().map(|fc| format!("{}", fc.arity())).collect();
       let arities_str = in_arities.join(", ");
@@ -32,7 +32,7 @@ impl FnType {
   }
 
   /// Retrieve arity
-  pub fn arity(&self) -> usize {
+  pub(crate) fn arity(&self) -> usize {
     self.arity
   }
 
@@ -47,7 +47,8 @@ impl FnType {
   }
 
   /// Check whether argument list can be passed to any of the clauses
-  pub fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<FnClauseType> {
+  #[allow(dead_code)]
+  pub(crate) fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<FnClauseType> {
     self
       .clauses
       .iter()

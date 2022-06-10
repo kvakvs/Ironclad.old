@@ -51,6 +51,7 @@ impl AstNodeImpl {
   }
 
   /// Having a list `[...]` AST node, try synthesize its type as precise as possible
+  #[allow(dead_code)]
   fn synthesize_list_type(
     env: &RwLock<Scope>,
     elements: &[AstNode],
@@ -72,6 +73,7 @@ impl AstNodeImpl {
   }
 
   /// Having a tuple `{...}` AST node, try synthesize its type as precise as possible
+  #[allow(dead_code)]
   fn synthesize_tuple_type(env: &RwLock<Scope>, elements: &[AstNode]) -> IcResult<Arc<ErlType>> {
     let elements: IcResult<Vec<Arc<ErlType>>> =
       elements.iter().map(|el| el.synthesize(env)).collect();

@@ -33,7 +33,7 @@ pub mod parser_input;
 pub mod parser_input_slice;
 
 /// Parses an attribute or a function def
-pub fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
   alt((
     parse_preproc_directive,
     parse_module_attr,

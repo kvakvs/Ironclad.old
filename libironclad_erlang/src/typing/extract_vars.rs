@@ -10,7 +10,8 @@ pub struct ExtractVar {}
 impl ExtractVar {
   /// For `CoreAst` return a vector of all new variables introduced from this AST
   #[named]
-  pub fn extract_vars(ast: &AstNodeImpl) -> Vec<ErlVar> {
+  #[allow(dead_code)]
+  pub(crate) fn extract_vars(ast: &AstNodeImpl) -> Vec<ErlVar> {
     match &ast.content {
       AstNodeType::Var(v) => vec![v.clone()],
       AstNodeType::Lit { .. } => vec![],

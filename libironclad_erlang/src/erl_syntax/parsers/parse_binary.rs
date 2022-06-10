@@ -12,7 +12,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
-use crate::erl_syntax::preprocessor::parsers::parse_macro::macro_invocation;
+use crate::erl_syntax::preprocessor::parsers::parse_macro::macro_invocation_as_ast_node;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -23,10 +23,10 @@ use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
 
 /// Parse a literal value, variable, or an expression in parentheses.
-fn parse_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
+fn bin_element_value(input: ParserInput) -> ParserResult<AstNode> {
   alt((
     // Expect an expression if a macro is expanded here
-    |inp: ParserInput<'a>| macro_invocation::<'a, _, AstNode>(inp, parse_expr),
+    macro_invocation_as_ast_node,
     map(parse_varname, |v| AstNodeImpl::new_var(input.loc(), &v)),
     parse_erl_literal,
     delimited(par_open_tag, parse_expr, par_close_tag),
@@ -34,8 +34,8 @@ fn parse_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
 }
 
 /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
-fn parse_width(input: ParserInput) -> ParserResult<ValueWidth> {
-  map(parse_value, |v| {
+fn bin_element_width(input: ParserInput) -> ParserResult<ValueWidth> {
+  map(bin_element_value, |v| {
     if let AstNodeType::Lit { value: lit_val, .. } = &v.content {
       if let Literal::Integer(i) = lit_val.deref() {
         assert!(i.is_non_negative());
@@ -49,7 +49,7 @@ fn parse_width(input: ParserInput) -> ParserResult<ValueWidth> {
   })(input)
 }
 
-fn parse_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
+fn bin_element_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
     map(tag("integer".into()), |_| TypeSpecifier::Type(ValueType::Integer)),
     map(tag("float".into()), |_| TypeSpecifier::Type(ValueType::Float)),
@@ -65,14 +65,14 @@ fn parse_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
   ))(input)
 }
 
-fn parse_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
+fn bin_element_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
     map(tag("signed".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
     map(tag("unsigned".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
   ))(input)
 }
 
-fn parse_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
+fn bin_element_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
     map(tag("big".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
     map(tag("little".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
@@ -80,40 +80,40 @@ fn parse_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> 
   ))(input)
 }
 
-fn parse_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {
+fn bin_element_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {
   map(preceded(tag("unit:".into()), parse_int), |erl_int| {
     TypeSpecifier::Unit(erl_int.as_usize().unwrap_or_default())
   })(input)
 }
 
-fn parse_a_type_spec(input: ParserInput) -> ParserResult<TypeSpecifier> {
+fn bin_element_type_spec(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
-    parse_typespec_type,
-    parse_typespec_signedness,
-    parse_typespec_endianness,
-    parse_typespec_unit,
+    bin_element_typespec_type,
+    bin_element_typespec_signedness,
+    bin_element_typespec_endianness,
+    bin_element_typespec_unit,
   ))(input)
 }
 
 /// Parse a `-` separated list of typespecs
-fn parse_type_specs(input: ParserInput) -> ParserResult<Vec<TypeSpecifier>> {
+fn bin_type_specs(input: ParserInput) -> ParserResult<Vec<TypeSpecifier>> {
   preceded(
     ws_before(char('/')), // TODO: Whitespace allowed before?
     separated_list1(
       ws_before(char('-')), // TODO: Whitespace allowed before?
-      parse_a_type_spec,
+      bin_element_type_spec,
     ),
   )(input)
 }
 
 /// Parse one comma-separated element of a binary: number, variable, an expression,
 /// and followed by a `:bit-width` and `/type-specifier`
-fn parse_bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
+fn bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
   map(
     tuple((
-      parse_value,
-      opt(preceded(ws_before(char(':')), parse_width)),
-      opt(parse_type_specs),
+      bin_element_value,
+      opt(preceded(ws_before(char(':')), bin_element_width)),
+      opt(bin_type_specs),
     )),
     |(value, bit_width, type_specs)| {
       BinaryElement::new(
@@ -127,19 +127,14 @@ fn parse_bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
 }
 
 /// Parse a binary or binary builder expression
-pub fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
-  // let (input, _) = ws_before(tag("<<".into()))(input)?;
-
+pub(crate) fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
     ws_before(tag("<<".into())),
     context(
       "binary expression",
       cut(terminated(
         map(
-          separated_list0(
-            comma_tag,
-            context("binary expression element", ws_before(parse_bin_element)),
-          ),
+          separated_list0(comma_tag, context("binary expression element", ws_before(bin_element))),
           |bin_exprs| AstNodeImpl::new_binary_expr(input.loc(), bin_exprs),
         ),
         ws_before(tag(">>".into())),

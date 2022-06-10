@@ -14,7 +14,7 @@ pub struct ErlIfClause {
 
 impl ErlIfClause {
   /// Create a new `if` clause branch
-  pub fn new(cond: AstNode, body: AstNode) -> Self {
+  pub(crate) fn new(cond: AstNode, body: AstNode) -> Self {
     Self { cond, body }
   }
 }

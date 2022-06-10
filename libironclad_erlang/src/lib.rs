@@ -1,5 +1,6 @@
 //! Crate handling Erlang syntax and typing
 #![feature(iter_advance_by)]
+#![feature(adt_const_params)]
 #![warn(missing_docs)]
 extern crate core;
 extern crate derivative;

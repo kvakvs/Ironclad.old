@@ -14,7 +14,7 @@ impl AstNodeImpl {
   /// For a function header, `myfun(A, {B, C}, #{key => D})` extract variable names: A, B, C, D.
   /// and add them to the scope of this function. Some AST nodes are not acceptable in argument
   /// list, so they would cause an error.
-  pub fn extract_variables(
+  pub(crate) fn extract_variables(
     node: &AstNode,
     variables: &mut HashMap<String, Arc<ErlType>>,
   ) -> IcResult<()> {

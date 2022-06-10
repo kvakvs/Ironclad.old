@@ -47,7 +47,7 @@ impl ErlProject {
   /// Create a starting preprocessor scope for the first line of a given file.
   /// Initial scope values are derived from the commandline and the project settings for the file,
   /// and the scope evolves as the preprocessor/parser goes through the file.
-  pub fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorScope {
+  pub(crate) fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorScope {
     let mut result_scope = self.inputs.compiler_opts.scope.clone();
 
     // Find opts (if exist) for current file, and apply them over project global opts
@@ -60,7 +60,7 @@ impl ErlProject {
 
   /// Get a clone of project libironclad options
   /// TODO: special override options if user specifies extras as a module attribute
-  pub fn get_compiler_options_for(&self, path: &Path) -> Arc<CompilerOpts> {
+  pub(crate) fn get_compiler_options_for(&self, path: &Path) -> Arc<CompilerOpts> {
     if let Some(per_file_opts) = self.inputs.compiler_opts_per_file.get(path) {
       // If found per-file settings, combine global with per-file
       self

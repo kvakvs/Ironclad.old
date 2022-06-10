@@ -31,7 +31,7 @@ impl std::fmt::Display for ParserInputImpl<'_> {
 
 impl<'a> ParserInputImpl<'a> {
   /// Return a code location
-  pub fn loc(&self) -> SourceLoc {
+  pub(crate) fn loc(&self) -> SourceLoc {
     SourceLoc::from_input(self.input.clone())
   }
 
@@ -45,7 +45,7 @@ impl<'a> ParserInputImpl<'a> {
   }
 
   /// Build a new custom parser input from a str slice. Assert that it belongs to the same input slice.
-  pub fn clone_with_read_slice(&self, slice: &str) -> Self {
+  pub(crate) fn clone_with_read_slice(&self, slice: &str) -> Self {
     assert!(
       is_part_of(self.input.parent.as_str(), slice),
       "When cloning, new input slice must belong to the same parent string"
@@ -58,7 +58,7 @@ impl<'a> ParserInputImpl<'a> {
   }
 
   /// Build a new custom parser and chain the old to it
-  pub fn clone_nested(&self, input: &str) -> Self {
+  pub(crate) fn clone_nested(&self, input: &str) -> Self {
     ParserInputImpl {
       preprocessor_scope: self.preprocessor_scope.clone(),
       input: ParserInputSlice::chain_into_new(&self.input, input),
@@ -67,7 +67,7 @@ impl<'a> ParserInputImpl<'a> {
   }
 
   /// Check whether there's any input remaining
-  pub fn is_empty(&self) -> bool {
+  pub(crate) fn is_empty(&self) -> bool {
     self.as_str().is_empty()
   }
 

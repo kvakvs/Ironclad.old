@@ -27,13 +27,15 @@ pub struct ErlFnDef {
 impl ErlFnDef {
   /// Create a new function definition AST node. Argument types vector is initialized with unions of
   /// all argument types.
-  pub fn new(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
+  #[allow(dead_code)]
+  pub(crate) fn new(location: SourceLoc, funarity: MFArity, clauses: Vec<ErlFnClause>) -> Self {
     assert!(!clauses.is_empty(), "Cannot construct a function definition without clauses");
     Self { location, funarity, clauses }
   }
 
   /// Produce `ErlType` for this function definition, with all clauses and their return types
-  pub fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     let clauses_r: IcResult<Vec<FnClauseType>> = self
       .clauses
       .iter()
@@ -47,7 +49,8 @@ impl ErlFnDef {
   }
 
   /// Produce a function return type, as union of all clauses returns
-  pub fn synthesize_return_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  #[allow(dead_code)]
+  pub(crate) fn synthesize_return_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     // TODO: Filter out incompatible clauses
     let clauses_ret: IcResult<Vec<Arc<ErlType>>> = self
       .clauses

@@ -16,7 +16,11 @@ pub struct ExceptionPattern {
 
 impl ExceptionPattern {
   /// Creates a new `ExceptionPattern`
-  pub fn new(class_pattern: AstNode, err_pattern: AstNode, stack_pattern: Option<AstNode>) -> Self {
+  pub(crate) fn new(
+    class_pattern: AstNode,
+    err_pattern: AstNode,
+    stack_pattern: Option<AstNode>,
+  ) -> Self {
     Self {
       class: class_pattern,
       error: err_pattern,

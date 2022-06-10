@@ -25,7 +25,7 @@ pub struct ParserInputSlice {
 
 impl ParserInputSlice {
   /// Create a new parser input slice. Use `ParserInput::from_str` instead
-  pub fn new(text: &str) -> Self {
+  pub(crate) fn new(text: &str) -> Self {
     let text_as_str = Arc::new(text.to_string());
     Self {
       parent_file: None,
@@ -38,7 +38,10 @@ impl ParserInputSlice {
   }
 
   /// Create and chain a new parser input slice.
-  pub fn chain_into_new(current: &Arc<ParserInputSlice>, text: &str) -> Arc<ParserInputSlice> {
+  pub(crate) fn chain_into_new(
+    current: &Arc<ParserInputSlice>,
+    text: &str,
+  ) -> Arc<ParserInputSlice> {
     let text_as_str = Arc::new(text.to_string());
     Self {
       parent_file: current.parent_file.clone(),
@@ -52,7 +55,7 @@ impl ParserInputSlice {
   }
 
   /// Guarantees are on the programmer to create slice which belongs to the valid string
-  pub fn clone_with_read_slice(&self, new_input: &str) -> Arc<Self> {
+  pub(crate) fn clone_with_read_slice(&self, new_input: &str) -> Arc<Self> {
     let parent_str = self.parent.as_str();
     assert!(
       is_part_of(parent_str, new_input),
@@ -72,7 +75,7 @@ impl ParserInputSlice {
 
   /// Quick access to content read window as `&str`
   #[inline(always)]
-  pub fn as_str<'s>(&self) -> &'s str {
+  pub(crate) fn as_str<'s>(&self) -> &'s str {
     unsafe {
       std::str::from_utf8_unchecked(std::slice::from_raw_parts(
         self.parent.as_ptr().add(self.read_pos),

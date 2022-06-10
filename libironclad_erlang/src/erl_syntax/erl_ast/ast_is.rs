@@ -22,10 +22,18 @@ impl AstNodeImpl {
     matches!(self.content, AstNodeType::Type { .. })
   }
 
-  /// Checks whether an ErlAst node is an Erlang Type
+  /// Checks whether an ErlAst node is an atom (any atom)
   pub fn is_atom(&self) -> bool {
     match &self.content {
       AstNodeType::Lit { value, .. } => matches!(value.deref(), Literal::Atom(_)),
+      _ => false,
+    }
+  }
+
+  /// Checks whether an ErlAst node is an atom and compare the atom string name
+  pub fn is_atom_of(&self, atom: &str) -> bool {
+    match &self.content {
+      AstNodeType::Lit { value, .. } => matches!(value.deref(), Literal::Atom(a) if a == atom),
       _ => false,
     }
   }

@@ -13,12 +13,12 @@ pub struct TypeUnion {
 
 impl TypeUnion {
   /// True if union contains no types and is equal to none() type
-  pub fn is_empty(&self) -> bool {
+  pub(crate) fn is_empty(&self) -> bool {
     self.types.is_empty()
   }
 
   /// Create a type union from a vec of types. Nested unions are unwrapped and joined
-  pub fn new(types: &[Arc<ErlType>]) -> Self {
+  pub(crate) fn new(types: &[Arc<ErlType>]) -> Self {
     // throw away none() types
     let types = types
       .iter()
@@ -54,7 +54,7 @@ impl TypeUnion {
 
   /// Filters through the types in the union and throws away those which are subtypes of other type
   /// in the same union
-  pub fn normalize(&mut self) {
+  pub(crate) fn normalize(&mut self) {
     // Merge int()|float() into number()
     if self.contains_strict(&ErlType::integer()) && self.contains_strict(&ErlType::float()) {
       self.types = self
@@ -83,7 +83,7 @@ impl TypeUnion {
   }
 
   /// Whether type t is found in any of the union contents (strict equality)
-  pub fn contains_strict(&self, t: &ErlType) -> bool {
+  pub(crate) fn contains_strict(&self, t: &ErlType) -> bool {
     self.types.iter().any(|member| t == member.deref())
   }
 }

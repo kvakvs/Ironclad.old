@@ -30,7 +30,7 @@ impl FnClauseType {
   }
 
   /// Create a new function clause from just args
-  pub fn new(args: Vec<Typevar>, ret_ty: Typevar) -> Self {
+  pub(crate) fn new(args: Vec<Typevar>, ret_ty: Typevar) -> Self {
     Self { args, ret_type: ret_ty }
   }
 
@@ -41,7 +41,7 @@ impl FnClauseType {
 
   /// Check whether calling any clause of `supertype` function type would be compatible with calling
   /// this clause with the same args.
-  pub fn is_any_clause_compatible(&self, supertype: &[FnClauseType]) -> bool {
+  pub(crate) fn is_any_clause_compatible(&self, supertype: &[FnClauseType]) -> bool {
     supertype.iter().any(|sup| self.is_clause_compatible(sup))
   }
 
@@ -57,7 +57,8 @@ impl FnClauseType {
   }
 
   /// Check whether argument list can be passed to this clause
-  pub fn can_accept_args(&self, args: &[Arc<ErlType>]) -> bool {
+  #[allow(dead_code)]
+  pub(crate) fn can_accept_args(&self, args: &[Arc<ErlType>]) -> bool {
     self
       .args
       .iter()

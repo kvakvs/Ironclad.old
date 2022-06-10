@@ -44,6 +44,6 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Read a literal value from input string
-pub fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
   alt((parse_float_to_ast, parse_int_to_ast, parse_atom_to_ast, parse_string_to_ast))(input)
 }

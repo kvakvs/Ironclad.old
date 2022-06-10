@@ -13,7 +13,7 @@ impl ErlParseStage {
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run(
+  pub(crate) fn run(
     project: &mut ErlProject,
     contents_cache: Arc<RwLock<FileContentsCache>>,
   ) -> IcResult<()> {

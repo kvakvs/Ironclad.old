@@ -25,13 +25,13 @@ pub struct ErlBinaryOperatorExpr {
 
 impl ErlBinaryOperatorExpr {
   /// Create a binary operator, caller is to wrap it with ErlAst::BinOp(location, _)
-  pub fn new(left: AstNode, op: ErlBinaryOp, right: AstNode) -> Self {
+  pub(crate) fn new(left: AstNode, op: ErlBinaryOp, right: AstNode) -> Self {
     Self { left, right, operator: op }
   }
 
   /// From left and multiple right components, build a right-associative tree of expressions.
   /// Try pair last and one before last, then take result and pair with previous one, ... and so on
-  pub fn new_right_assoc(
+  pub(crate) fn new_right_assoc(
     loc: SourceLoc,
     left: AstNode,
     tail: &[(ErlBinaryOp, AstNode)],
@@ -53,7 +53,11 @@ impl ErlBinaryOperatorExpr {
 
   /// From left and multiple right components, build a left-associative tree of expressions.
   /// Try pair first and the first element in tail, then take result and pair with second, ... and so on
-  pub fn new_left_assoc(loc: SourceLoc, left: AstNode, tail: &[(ErlBinaryOp, AstNode)]) -> AstNode {
+  pub(crate) fn new_left_assoc(
+    loc: SourceLoc,
+    left: AstNode,
+    tail: &[(ErlBinaryOp, AstNode)],
+  ) -> AstNode {
     if tail.is_empty() {
       return left;
     }
@@ -68,7 +72,8 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// Gets the result type of a binary operation
-  pub fn synthesize_binop_type(
+  #[allow(dead_code)]
+  pub(crate) fn synthesize_binop_type(
     &self,
     location: SourceLoc,
     scope: &RwLock<Scope>,
@@ -122,6 +127,7 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `any list() ++ any list()` operation
+  #[allow(dead_code)]
   fn synthesize_list_append_op(
     location: SourceLoc,
     scope: &RwLock<Scope>,
@@ -157,6 +163,7 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `list() ++ list(T1, T2...)` operation
+  #[allow(dead_code)]
   fn synthesize_stronglist_append(
     location: SourceLoc,
     _scope: &RwLock<Scope>,
@@ -199,6 +206,7 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// For `list(T) ++ any list` operation
+  #[allow(dead_code)]
   fn synthesize_list_of_t_append(
     location: SourceLoc,
     _scope: &RwLock<Scope>,
@@ -233,7 +241,8 @@ impl ErlBinaryOperatorExpr {
   }
 
   /// Try to figure out whether this binop resolves to a boolean
-  pub fn walk_boolean_litexpr(&self) -> LiteralBool {
+  #[allow(dead_code)]
+  pub(crate) fn walk_boolean_litexpr(&self) -> LiteralBool {
     let left_bool = self.left.walk_boolean_litexpr();
     let right_bool = self.right.walk_boolean_litexpr();
 

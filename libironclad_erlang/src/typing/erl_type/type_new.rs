@@ -18,7 +18,7 @@ use std::sync::Arc;
 //
 impl ErlType {
   /// Clones literal's refcounted pointer and returns a singleton type
-  pub fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
+  pub(crate) fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
     ErlType::Singleton { val: lit.clone() }.into()
   }
 
@@ -34,13 +34,13 @@ impl ErlType {
   }
 
   /// Creates a type for a proper list with a NIL tail.
-  pub fn list_of_types(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+  pub(crate) fn list_of_types(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
     let result = ErlType::StronglyTypedList { elements: types, tail: None };
     result.into()
   }
 
   /// Creates new function type with clauses
-  pub fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
+  pub(crate) fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
@@ -88,7 +88,8 @@ impl ErlType {
   }
 
   /// Create a new union but do not normalize
-  pub fn new_union_skip_normalize(types: &[Arc<ErlType>]) -> Arc<ErlType> {
+  #[allow(dead_code)]
+  pub(crate) fn new_union_skip_normalize(types: &[Arc<ErlType>]) -> Arc<ErlType> {
     match types.len() {
       0 => ErlType::none(),
       1 => types[0].clone(),
@@ -102,33 +103,33 @@ impl ErlType {
   }
 
   /// Construct a new map-type
-  pub fn new_map(members: Vec<MapMemberType>) -> Arc<ErlType> {
+  pub(crate) fn new_map(members: Vec<MapMemberType>) -> Arc<ErlType> {
     ErlType::Map { members }.into()
   }
 
   /// Consumes argument.
   /// Construct a new tuple-type
-  pub fn new_tuple_move(elements: Vec<Arc<ErlType>>) -> Arc<ErlType> {
+  pub(crate) fn new_tuple_move(elements: Vec<Arc<ErlType>>) -> Arc<ErlType> {
     ErlType::Tuple { elements }.into()
   }
 
   /// Construct a new type variable wrapper
-  pub fn new_typevar(tv: Typevar) -> Arc<ErlType> {
+  pub(crate) fn new_typevar(tv: Typevar) -> Arc<ErlType> {
     ErlType::Typevar(tv).into()
   }
 
   /// Construct a new record reference by tag name
-  pub fn new_record_ref(tag: String) -> Arc<ErlType> {
+  pub(crate) fn new_record_ref(tag: String) -> Arc<ErlType> {
     ErlType::RecordRef { tag }.into()
   }
 
   /// Construct a new integer range
-  pub fn new_range(a: ErlInteger, b: ErlInteger) -> Arc<ErlType> {
+  pub(crate) fn new_range(a: ErlInteger, b: ErlInteger) -> Arc<ErlType> {
     ErlType::IntegerRange { from: a, to: b }.into()
   }
 
   /// Try match type name and arity vs known basic types
-  pub fn from_name(
+  pub(crate) fn from_name(
     maybe_module: Option<String>,
     type_name: String,
     args: &[Typevar],

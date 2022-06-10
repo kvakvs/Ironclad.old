@@ -65,12 +65,18 @@ impl IcErrorT for ErlError {
 
 impl ErlError {
   /// Create ErlError from 3 components
-  pub fn new(ic_cat: IcErrorCategory, cat: ErlErrorCategory, loc: SourceLoc, msg: String) -> Self {
+  pub(crate) fn new(
+    ic_cat: IcErrorCategory,
+    cat: ErlErrorCategory,
+    loc: SourceLoc,
+    msg: String,
+  ) -> Self {
     Self { ic_category: ic_cat, category: cat, loc, msg }
   }
 
   /// Builds ErlError with nice error details from input string and Nom's verbose error
-  pub fn from_nom_error<T>(input: ParserInput, value: ErlParserError) -> IcResult<T> {
+  #[allow(dead_code)]
+  pub(crate) fn from_nom_error<T>(input: ParserInput, value: ErlParserError) -> IcResult<T> {
     let new_err = Self {
       ic_category: IcErrorCategory::ErlangParse,
       category: ErlErrorCategory::Parser,
@@ -81,14 +87,14 @@ impl ErlError {
   }
 
   /// Creates an "Unacceptable" error
-  pub fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
+  pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
     Err(Box::new(new_err))
   }
 
   /// Creates an "TypeError" error
-  pub fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
+  pub(crate) fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::TypeError,
       ErlErrorCategory::TypeError,
@@ -99,7 +105,11 @@ impl ErlError {
   }
 
   /// Creates an "Local Function Not Found" error
-  pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
+  pub(crate) fn local_function_not_found<T>(
+    loc: SourceLoc,
+    mfa: MFArity,
+    msg: String,
+  ) -> IcResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
     Err(Box::new(new_err))
@@ -107,14 +117,15 @@ impl ErlError {
 
   /// Creates an "preprocessor" error, even though there isn't preprocessor and we do preprocessor
   /// directives inline with the other bits of Erlang source.
-  pub fn preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+  #[allow(dead_code)]
+  pub(crate) fn preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::PreprocessorError, loc, msg);
     Err(Box::new(new_err))
   }
 
   /// Creates a "Variable Not Found" error
-  pub fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
+  pub(crate) fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::Erlang,
       ErlErrorCategory::VariableNotFound { var },

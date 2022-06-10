@@ -12,7 +12,7 @@ pub struct TimeStats {
 
 impl TimeStats {
   /// Mark end time for duration purposes
-  pub fn stage_finished(&mut self) {
+  pub(crate) fn stage_finished(&mut self) {
     self.finished = SystemTime::now();
   }
 }

@@ -5,7 +5,7 @@ use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_expr, parse_matchexpr, EXPR_STYLE_FULL,
+  parse_comma_sep_exprs1, parse_expr, parse_matchexpr, ExprStyle,
 };
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;
@@ -13,7 +13,7 @@ use nom::sequence::{preceded, terminated, tuple};
 use nom::{bytes::complete::tag, error::context};
 
 /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
-pub fn parse_case_clause(
+pub(crate) fn parse_case_clause(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, ErlCaseClause, ErlParserError> {
   map(
@@ -26,7 +26,7 @@ pub fn parse_case_clause(
       // The body after ->
       preceded(
         ws_before(tag("->".into())),
-        context("case clause body", cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>)),
+        context("case clause body", cut(parse_comma_sep_exprs1::<{ ExprStyle::Full }>)),
       ),
     )),
     |(pattern, maybe_when, body)| {
@@ -36,7 +36,7 @@ pub fn parse_case_clause(
 }
 
 /// Parses `case EXPR of MATCH -> EXPR; ... end`
-pub fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> {
   // let (input, _) = ws_before(tag("case".into()))(input)?;
 
   preceded(

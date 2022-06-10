@@ -89,7 +89,7 @@ impl Hash for Literal {
 
 impl Literal {
   /// Synthesizes a type of this literal
-  pub fn synthesize_type(&self) -> Arc<ErlType> {
+  pub(crate) fn synthesize_type(&self) -> Arc<ErlType> {
     match self {
       Literal::Integer(_) => ErlType::integer(),
       Literal::Float(_) => ErlType::float(),
@@ -111,7 +111,7 @@ impl Literal {
   }
 
   // /// Subtype check for literal against builtin types
-  // pub fn is_subtype_of(&self, super_ty: &ErlType) -> bool {
+  // pub(crate) fn is_subtype_of(&self, super_ty: &ErlType) -> bool {
   //   match self {
   //     Literal::BigInteger
   //     | Literal::Integer(_) => super_ty.is_integer(),
@@ -163,7 +163,7 @@ impl Ord for Literal {
 
 impl Literal {
   /// Compares two literals of same kind, otherwise general ordering applies
-  pub fn cmp_same_type(&self, other: &Literal) -> Ordering {
+  pub(crate) fn cmp_same_type(&self, other: &Literal) -> Ordering {
     match (self, other) {
       (Literal::Integer(a), Literal::Integer(b)) => a.partial_cmp(b).unwrap_or(Ordering::Equal),
       (Literal::Float(a), Literal::Float(b)) => {

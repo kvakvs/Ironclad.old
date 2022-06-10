@@ -3,7 +3,6 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{FnDef, ModuleRoot};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
-use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::node::erl_apply::ErlApply;
 use crate::erl_syntax::node::erl_binary_element::BinaryElement;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
@@ -243,7 +242,8 @@ impl AstNodeImpl {
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
   /// same function and not exposed to the rest of the program.
-  pub fn temporary_token(t: ErlToken) -> AstNode {
+  #[allow(dead_code)]
+  pub(crate) fn temporary_token(t: ErlToken) -> AstNode {
     AstNodeImpl {
       location: SourceLoc::None,
       content: AstNodeType::Token { token: t },
@@ -252,7 +252,8 @@ impl AstNodeImpl {
   }
 
   /// Retrieve Some(atom text) if AST node is atom
-  pub fn get_atom_text(&self) -> Option<String> {
+  #[allow(dead_code)]
+  pub(crate) fn get_atom_text(&self) -> Option<String> {
     match &self.content {
       AstNodeType::Lit { value: lit, .. } => {
         if let Literal::Atom(s) = lit.deref() {
@@ -265,19 +266,20 @@ impl AstNodeImpl {
     }
   }
 
-  #[deprecated = "Not used since CoreAST is gone"]
-  /// Given a comma operator, unroll the comma nested tree into a vector of AST, this is used for
-  /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
-  /// A non-comma AST-node becomes a single result element.
-  pub fn comma_to_vec(comma_ast: &AstNode, dst: &mut Vec<AstNode>) {
-    match &comma_ast.content {
-      AstNodeType::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
-        Self::comma_to_vec(&binexpr.left, dst);
-        Self::comma_to_vec(&binexpr.right, dst);
-      }
-      _ => dst.push(comma_ast.clone()),
-    }
-  }
+  // #[deprecated = "Not used since CoreAST is gone"]
+  // /// Given a comma operator, unroll the comma nested tree into a vector of AST, this is used for
+  // /// function calls, where args are parsed as a single Comma{} and must be converted to a vec.
+  // /// A non-comma AST-node becomes a single result element.
+  // #[allow(dead_code)]
+  // pub(crate) fn comma_to_vec(comma_ast: &AstNode, dst: &mut Vec<AstNode>) {
+  //   match &comma_ast.content {
+  //     AstNodeType::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
+  //       Self::comma_to_vec(&binexpr.left, dst);
+  //       Self::comma_to_vec(&binexpr.right, dst);
+  //     }
+  //     _ => dst.push(comma_ast.clone()),
+  //   }
+  // }
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
