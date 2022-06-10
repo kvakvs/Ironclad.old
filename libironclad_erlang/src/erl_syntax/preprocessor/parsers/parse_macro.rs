@@ -8,7 +8,8 @@ use crate::erl_syntax::preprocessor::parsers::preprocessor::macro_ident;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
 use nom::branch::alt;
 use nom::character::complete::char;
-use nom::combinator::{map, verify};
+use nom::combinator::{cut, map, verify};
+use nom::error::context;
 use nom::multi::separated_list0;
 use nom::sequence::{delimited, pair, preceded};
 use nom::Finish;
@@ -44,7 +45,9 @@ fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
   map(
     preceded(
       ws_before(char('?')),
-      verify(macro_ident, |n1| input.preprocessor_scope.is_defined_with_arity(n1, 0)),
+      verify(context("macro identifier for macro invocation", cut(macro_ident)), |n1| {
+        input.preprocessor_scope.is_defined_with_arity(n1, 0)
+      }),
     ),
     |n2| {
       let lr = input.preprocessor_scope.get_value(&n2, 0);
@@ -65,11 +68,17 @@ fn macro_invocation_n(input: ParserInput) -> ParserResult<MacroLookupResult> {
   map(
     preceded(
       ws_before(char('?')),
-      verify(pair(macro_ident, macro_args), |(n1, args1)| {
-        input
-          .preprocessor_scope
-          .is_defined_with_arity(n1, args1.len())
-      }),
+      verify(
+        pair(
+          context("macro identifier for macro invocation", cut(macro_ident)),
+          context("macro invocation arguments", macro_args),
+        ),
+        |(n1, args1)| {
+          input
+            .preprocessor_scope
+            .is_defined_with_arity(n1, args1.len())
+        },
+      ),
     ),
     |(n2, args2)| {
       let lr = input.preprocessor_scope.get_value(&n2, args2.len());
@@ -91,12 +100,16 @@ where
   map(alt((macro_invocation_0, macro_invocation_n)), |mlr| -> AstNode {
     match mlr.pdef {
       // TODO: Return name/arity from macro_invocation parsers or check inside them
-      None => panic!(
-        "Macro definition {}/{} is not found in the current preprocessor scope",
-        mlr.name, mlr.arity
-      ),
+      None => {
+        println!("Macro {}/{} was not defined in scope", mlr.name, mlr.arity);
+        panic!(
+          "Macro definition {}/{} is not found in the current preprocessor scope",
+          mlr.name, mlr.arity
+        )
+      }
       Some(pdef) => {
         let (_tail, result) = inner_fn(input.clone_nested(&pdef.text)).finish().unwrap();
+        println!("Macro {}/{} expanded to {}", pdef.name, pdef.args.len(), result);
         result
       }
     }
