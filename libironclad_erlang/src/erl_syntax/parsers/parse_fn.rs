@@ -9,7 +9,8 @@ use crate::erl_syntax::parsers::misc::{
   match_word, period_tag, semicolon_tag, ws_before, ws_before_mut,
 };
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, ExprStyle,
+  parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
+  EXPR_STYLE_MATCHEXPR,
 };
 use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::source_loc::SourceLoc;
@@ -49,7 +50,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       // Function arguments
       context(
         "function clause arguments of a function definition",
-        parse_parenthesized_list_of_exprs::<{ ExprStyle::MatchExpr }>,
+        parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_MATCHEXPR }>,
       ),
       // Optional: when <guard>
       context(
@@ -64,7 +65,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
         // Body as list of exprs
         context(
           "function clause body of a function definition",
-          cut(parse_comma_sep_exprs1::<{ ExprStyle::Full }>),
+          cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
         ),
       ),
     )),

@@ -5,7 +5,7 @@ use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{match_word, semicolon_tag, ws_before};
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_expr, parse_matchexpr, ExprStyle,
+  parse_comma_sep_exprs1, parse_expr, parse_matchexpr, EXPR_STYLE_FULL,
 };
 use nom::combinator::{cut, map, opt};
 use nom::multi::separated_list1;
@@ -26,7 +26,7 @@ pub(crate) fn parse_case_clause(
       // The body after ->
       preceded(
         ws_before(tag("->".into())),
-        context("case clause body", cut(parse_comma_sep_exprs1::<{ ExprStyle::Full }>)),
+        context("case clause body", cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>)),
       ),
     )),
     |(pattern, maybe_when, body)| {
