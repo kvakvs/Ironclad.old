@@ -93,6 +93,6 @@ impl std::fmt::Display for ParserInputSlice {
 
 impl std::fmt::Debug for ParserInputSlice {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "slice«{}»", self.as_str())
+    write!(f, "InputSlice[ «{}» ]", self.as_str())
   }
 }

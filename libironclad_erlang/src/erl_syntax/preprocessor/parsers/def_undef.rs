@@ -1,5 +1,6 @@
 //! Parse helpers for `-define`/`-undef` preprocessor
 
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
@@ -36,15 +37,35 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
       // Followed by a body
       ws_before_mut(many_till(anychar, parenthesis_dot_newline)),
     )),
-    |(name, args, _comma, (body, _terminator))| {
-      PreprocessorNodeType::new_define(
-        input.loc(),
-        name,
-        args.unwrap_or_default(),
-        body.into_iter().collect::<String>(),
-      )
+    |(ident, args, _comma, (body, _term))| {
+      let body_str = body.into_iter().collect::<String>();
+      input.preprocessor_define(&ident, &args.unwrap_or_default(), &body_str);
+      println!("New scope {:?}", &input);
+      AstNodeImpl::new_empty()
     },
   )(input.clone())
+  // let result = tuple((
+  //   // Macro name
+  //   macro_ident,
+  //   // Optional (ARG1, ARG2, ...) with trailing comma
+  //   opt(delimited(par_open_tag, comma_sep_macro_idents, par_close_tag)),
+  //   comma_tag,
+  //   // Followed by a body
+  //   ws_before_mut(many_till(anychar, parenthesis_dot_newline)),
+  // ))(input.clone());
+
+  // if result.is_ok() {
+  //   let (input_out, (name, args, _comma, (body, _terminator))) = result.unwrap();
+  //   let body_str = body.into_iter().collect::<String>();
+  //   input_out.preprocessor_define(&name, &args.unwrap_or_default(), &body_str);
+  //
+  //   println!("Updating scope: Define {} = {}", &name, &body_str);
+  //
+  //   println!("New scope {:?}", &input_out);
+  //   Ok((input_out, AstNodeImpl::new_empty()))
+  // } else {
+  //   Err(result.unwrap_err())
+  // }
 }
 
 /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`

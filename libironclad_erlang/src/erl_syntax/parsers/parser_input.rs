@@ -2,6 +2,7 @@
 
 use crate::erl_syntax::parsers::misc::is_part_of;
 use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
+use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
 use crate::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
 use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
@@ -11,7 +12,7 @@ use std::sync::Arc;
 
 /// Used as input to all parsers, and contains the chain of inputs (for nested parsing), and current
 /// position for the current parser.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ParserInputImpl<'a> {
   /// Scope of preprocessor symbols, is mutated as we descend into module AST and meet more
   /// `-define/undef` directives.
@@ -29,14 +30,54 @@ impl std::fmt::Display for ParserInputImpl<'_> {
   }
 }
 
+impl std::fmt::Debug for ParserInputImpl<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    if let Ok(r_scope) = self.preprocessor_scope.read() {
+      write!(f, "ParserInput[ scope={:?}, input={:?} ]", &r_scope, self.input)
+    } else {
+      panic!("Can't lock scope for printing")
+    }
+  }
+}
+
 impl<'a> ParserInputImpl<'a> {
   /// Return a code location
   pub(crate) fn loc(&self) -> SourceLoc {
     SourceLoc::from_input(self.input.clone())
   }
 
+  /// Proxy call to `self.preprocessor_scope`
+  pub(crate) fn preprocessor_define(&self, name: &str, args: &[String], text: &str) {
+    if let Ok(mut writable_scope) = self.preprocessor_scope.write() {
+      writable_scope.define(name, args, text)
+    }
+  }
+
+  /// Proxy call to `self.preprocessor_scope`
+  pub(crate) fn preprocessor_is_defined_with_arity(&self, name: &str, arity: usize) -> bool {
+    if let Ok(read_scope) = self.preprocessor_scope.read() {
+      read_scope.is_defined_with_arity(name, arity)
+    } else {
+      panic!("Can't lock preprocessor scope for reading (is_defined_with_arity)")
+    }
+  }
+
+  /// Proxy call to `self.preprocessor_scope`
+  pub(crate) fn preprocessor_get_value(
+    &self,
+    name: &str,
+    arity: usize,
+  ) -> Option<PreprocessorDefine> {
+    if let Ok(read_scope) = self.preprocessor_scope.read() {
+      read_scope.get_value(name, arity)
+    } else {
+      panic!("Can't lock preprocessor scope for reading (get_value)")
+    }
+  }
+
   /// Create a parser input with a string slice
   pub fn new_str(text: &str) -> Self {
+    // println!("Parser input new...");
     Self {
       preprocessor_scope: Default::default(),
       input: ParserInputSlice::new(text).into(),
@@ -46,12 +87,13 @@ impl<'a> ParserInputImpl<'a> {
 
   /// Build a new custom parser input from a str slice. Assert that it belongs to the same input slice.
   pub(crate) fn clone_with_read_slice(&self, slice: &str) -> Self {
+    // println!("Parser input clone with read slice...");
     assert!(
       is_part_of(self.input.parent.as_str(), slice),
       "When cloning, new input slice must belong to the same parent string"
     );
     Self {
-      preprocessor_scope: Default::default(),
+      preprocessor_scope: self.preprocessor_scope.clone(),
       input: self.input.clone_with_read_slice(slice),
       _phantom: Default::default(),
     }
@@ -59,6 +101,7 @@ impl<'a> ParserInputImpl<'a> {
 
   /// Build a new custom parser and chain the old to it
   pub(crate) fn clone_nested(&self, input: &str) -> Self {
+    // println!("Parser input clone nested...");
     ParserInputImpl {
       preprocessor_scope: self.preprocessor_scope.clone(),
       input: ParserInputSlice::chain_into_new(&self.input, input),

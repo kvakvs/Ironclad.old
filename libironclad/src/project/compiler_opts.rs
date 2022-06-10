@@ -34,9 +34,13 @@ impl CompilerOpts {
     }
 
     // Overlay preprocessor defines
-    let new_scope = result.scope.overlay(&other.scope);
+    let new_scope =
+      if let (Ok(r_result_scope), Ok(r_other_scope)) = (result.scope.read(), other.scope.read()) {
+        PreprocessorScopeImpl::overlay(&r_result_scope, &r_other_scope)
+      } else {
+        panic!("Can't lock scopes for merging")
+      };
     result.scope = new_scope;
-
     result
   }
 }

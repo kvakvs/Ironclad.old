@@ -5,6 +5,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInputImpl;
 
 // pub type ParserInput = &'a str;
 /// Used as input for all parsers. Carries a chain of parsed fragments before this moment
+// TODO: Is this good to become Arc<>?
 pub type ParserInput<'a> = ParserInputImpl<'a>;
 
 /// Gathers multiple errors and contexts together

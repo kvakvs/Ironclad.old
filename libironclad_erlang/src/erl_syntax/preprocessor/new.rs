@@ -34,6 +34,7 @@ impl PreprocessorNodeType {
   }
 
   /// Create new macro definition
+  #[allow(dead_code)]
   pub(crate) fn new_define(
     location: SourceLoc,
     name: String,

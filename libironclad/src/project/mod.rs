@@ -15,7 +15,9 @@ use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
 #[cfg(feature = "separate_preprocessor_lib")]
 use crate::stage::preprocess::pp_stage::PreprocessStage;
-use libironclad_erlang::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
+use libironclad_erlang::erl_syntax::preprocessor::pp_scope::{
+  PreprocessorScope, PreprocessorScopeImpl,
+};
 
 pub mod compiler_opts;
 pub mod conf;
@@ -52,7 +54,13 @@ impl ErlProject {
 
     // Find opts (if exist) for current file, and apply them over project global opts
     if let Some(per_file_opts) = self.inputs.compiler_opts_per_file.get(path) {
-      result_scope = result_scope.overlay(&per_file_opts.scope);
+      let new_scope =
+        if let (Ok(r_scope), Ok(pfo_scope)) = (result_scope.read(), per_file_opts.scope.read()) {
+          PreprocessorScopeImpl::overlay(&r_scope, &pfo_scope)
+        } else {
+          panic!("Can't lock scopes for merging")
+        };
+      result_scope = new_scope;
     }
 
     result_scope

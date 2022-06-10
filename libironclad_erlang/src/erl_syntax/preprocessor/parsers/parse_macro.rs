@@ -13,12 +13,11 @@ use nom::error::{context, ParseError};
 use nom::multi::separated_list0;
 use nom::sequence::{delimited, pair};
 use nom::Finish;
-use std::sync::Arc;
 
 /// Contains extra info for error reporting
 struct MacroLookupResult {
   /// If macro is found, this is the definition
-  pub pdef: Option<Arc<PreprocessorDefine>>,
+  pub pdef: Option<PreprocessorDefine>,
   /// If `pdef` was not defined, the `name` will contain the failed lookup name
   pub name: String,
   /// If `pdef` was not defined, the `arity` will contain the failed lookup arity
@@ -29,7 +28,7 @@ impl MacroLookupResult {
   pub(crate) fn new(
     name: String,
     arity: usize,
-    lookup_result: Option<Arc<PreprocessorDefine>>,
+    lookup_result: Option<PreprocessorDefine>,
   ) -> MacroLookupResult {
     match lookup_result {
       None => MacroLookupResult { pdef: None, name, arity },
@@ -41,16 +40,23 @@ impl MacroLookupResult {
 /// Parse a `? <IDENT>` for a macro without arguments
 /// Returns `Some(PreprocessorDefine)` to parse, or `None` (macro not defined).
 fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
+  println!("Before parse: input {:?}", &input);
+
   // This parser will only work if name/0 macro is defined in input's scope
-  map(
-    verify(context("macro identifier for macro invocation", cut(macro_ident)), |n1| {
-      input.preprocessor_scope.is_defined_with_arity(n1, 0)
-    }),
-    |n2| {
-      let lr = input.preprocessor_scope.get_value(&n2, 0);
-      MacroLookupResult::new(n2, 0, lr)
-    },
-  )(input.clone())
+  let result = verify(context("macro identifier for macro invocation", cut(macro_ident)), |n1| {
+    input.preprocessor_is_defined_with_arity(n1, 0)
+  })(input.clone());
+
+  if result.is_ok() {
+    let (input2, n2) = result.unwrap();
+    println!("After parse: input2 {:?}", &input2);
+
+    let lr = input.preprocessor_get_value(&n2, 0);
+    let out = MacroLookupResult::new(n2, 0, lr);
+    Ok((input2, out))
+  } else {
+    Err(result.unwrap_err())
+  }
 }
 
 /// Parse a parenthesized list of exprs `( EXPR1, ... )`
@@ -68,14 +74,10 @@ fn macro_invocation_with_args(input: ParserInput) -> ParserResult<MacroLookupRes
         context("macro identifier for macro invocation", cut(macro_ident)),
         context("macro invocation arguments", macro_args),
       ),
-      |(n1, args1)| {
-        input
-          .preprocessor_scope
-          .is_defined_with_arity(n1, args1.len())
-      },
+      |(n1, args1)| input.preprocessor_is_defined_with_arity(n1, args1.len()),
     ),
     |(n2, args2)| {
-      let lr = input.preprocessor_scope.get_value(&n2, args2.len());
+      let lr = input.preprocessor_get_value(&n2, args2.len());
       MacroLookupResult::new(n2, args2.len(), lr)
     },
   )(input.clone())
