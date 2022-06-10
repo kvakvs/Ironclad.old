@@ -19,6 +19,16 @@ pub enum PreprocessorNodeType {
     /// Body if specified, any tokens, but since we have no tokenizer - any text
     body: String,
   },
+  // MacroInvocation0 {
+  //   /// Macro identifier in `? IDENT`
+  //   name: String,
+  // },
+  // MacroInvocation {
+  //   /// Macro identifier in `? IDENT ( ARGS )`
+  //   name: String,
+  //   /// Args parsed to Erlang AST subtrees (parser does not support all possible AST nodes everywhere)
+  //   args: Vec<AstNode>,
+  // },
   /// Specific directive: -undef(NAME). removes a named macro definition
   Undef(String),
   /// Proceed interpreting AST nodes if the named macro is defined

@@ -5,7 +5,7 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::{
@@ -45,7 +45,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   let input = "- fgsfds.\n";
   let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1);
-  assert!(matches!(nodes[0].content, ErlAstType::GenericAttr { .. }));
+  assert!(matches!(nodes[0].content, AstNodeType::GenericAttr { .. }));
   Ok(())
 }
 
@@ -78,7 +78,7 @@ fn fn_typespec_parse_1() -> IcResult<()> {
   let input = format!("-spec {}(A :: integer()) -> any().", function_name!());
   let module = ErlModule::from_fun_spec_source(&filename, &input)?;
 
-  if let ErlAstType::FnSpec { funarity, spec, .. } = &module.ast.content {
+  if let AstNodeType::FnSpec { funarity, spec, .. } = &module.ast.content {
     assert_eq!(
       funarity,
       &MFArity::new_local(function_name!(), 1),
@@ -104,7 +104,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
     format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
   let module = ErlModule::from_fun_spec_source(&filename, &input)?;
 
-  if let ErlAstType::FnSpec { funarity, spec, .. } = &module.ast.content {
+  if let AstNodeType::FnSpec { funarity, spec, .. } = &module.ast.content {
     assert_eq!(
       funarity,
       &MFArity::new_local(function_name!(), 1),
@@ -200,7 +200,7 @@ fn parse_spec_test() {
   let input = "-spec module(beam_asm:module_code(), [compile:option()]) ->
                     {'ok',beam_utils:module_code()}.";
   let result = ErlModule::parse_helper(&filename, &input, ErlTypeParser::fn_spec_attr).unwrap();
-  assert!(matches!(result.ast.content, ErlAstType::FnSpec { .. }));
+  assert!(matches!(result.ast.content, AstNodeType::FnSpec { .. }));
 }
 
 #[named]

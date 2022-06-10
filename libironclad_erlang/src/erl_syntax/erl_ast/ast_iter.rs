@@ -2,12 +2,12 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use ::function_name::named;
 
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   GenericAttr, IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit,
   ModuleRoot, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
 };
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 
 /// A trait for AST nodes which can contain nested nodes
@@ -33,8 +33,8 @@ impl IterableAstNodeT for AstNodeImpl {
       | Lit { .. }
       | MFA { .. }
       | Type { .. }
-      | ErlAstType::Preprocessor { .. }
-      | ErlAstType::Var { .. } => None,
+      | AstNodeType::Preprocessor { .. }
+      | AstNodeType::Var { .. } => None,
 
       ModuleRoot { forms: f, .. } => Some(f.to_vec()),
       FnDef(fn_def) => fn_def.children(),

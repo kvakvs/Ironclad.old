@@ -5,7 +5,7 @@ use std::fmt::Debug;
 
 /// Contains source tree from the project file, or detected from the file system
 #[derive(Default, Deserialize, Debug)]
-pub struct InputOptsConf {
+pub struct SerializableInputOpts {
   /// If not specified, defaults to *.erl
   pub files: Option<Vec<String>>,
 
@@ -22,4 +22,4 @@ pub struct InputOptsConf {
   pub exclude_directories: Option<Vec<String>>,
 }
 
-impl InputOptsConf {}
+impl SerializableInputOpts {}

@@ -13,9 +13,9 @@ use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
 use crate::stage::file_preload::FilePreloadStage;
 use crate::stage::parse::ErlParseStage;
-use crate::stage::preprocess::pp_scope::PreprocessorScope;
 #[cfg(feature = "separate_preprocessor_lib")]
 use crate::stage::preprocess::pp_stage::PreprocessStage;
+use libironclad_erlang::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
 
 pub mod compiler_opts;
 pub mod conf;
@@ -47,7 +47,7 @@ impl ErlProject {
   /// Create a starting preprocessor scope for the first line of a given file.
   /// Initial scope values are derived from the commandline and the project settings for the file,
   /// and the scope evolves as the preprocessor/parser goes through the file.
-  pub fn get_preprocessor_scope(&self, path: &Path) -> Arc<PreprocessorScope> {
+  pub fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorScope {
     let mut result_scope = self.inputs.compiler_opts.scope.clone();
 
     // Find opts (if exist) for current file, and apply them over project global opts

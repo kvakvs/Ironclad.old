@@ -1,16 +1,7 @@
 //! Preprocessor definition, sometimes with args
 
+use crate::erl_syntax::preprocessor::pp_name_arity::NameArity;
 use std::sync::Arc;
-
-/// A key to preprocessor defines dictionary, as defines can coexist with same name but different
-/// number of args
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct NameArity {
-  /// Name for namearity pair
-  pub name: String,
-  /// The count of arguments, arity
-  pub arity: usize,
-}
 
 /// A preprocessor definition created by `-define(X...)` or from the project settings or
 /// the command line `-DNAME=xxx`

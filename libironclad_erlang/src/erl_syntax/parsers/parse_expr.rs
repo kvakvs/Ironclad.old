@@ -3,7 +3,7 @@
 use ::function_name::named;
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::Var;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;

@@ -1,6 +1,6 @@
 //! Parsing tools for `-if` family of directives
 
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{
@@ -46,7 +46,7 @@ pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
       endif_temporary_directive,
     ),
     |(pp_if_expr, branch_true, branch_false)| {
-      if let ErlAstType::Preprocessor(PreprocessorNodeType::_TemporaryIf(if_expr)) =
+      if let AstNodeType::Preprocessor(PreprocessorNodeType::_TemporaryIf(if_expr)) =
         &pp_if_expr.content
       {
         let branch_true1 = if branch_true.is_empty() { None } else { Some(branch_true) };

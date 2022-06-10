@@ -16,6 +16,8 @@ pub enum ErlErrorCategory {
   Parser,
   /// Error raised when unsupported AST node occured where it shouldn't
   Unacceptable,
+  /// Error is related to preprocessor directives or created by their interpretation
+  PreprocessorError,
   /// Type discrepancy found
   TypeError,
   /// Local function not found
@@ -100,6 +102,14 @@ impl ErlError {
   pub fn local_function_not_found<T>(loc: SourceLoc, mfa: MFArity, msg: String) -> IcResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
+    Err(Box::new(new_err))
+  }
+
+  /// Creates an "preprocessor" error, even though there isn't preprocessor and we do preprocessor
+  /// directives inline with the other bits of Erlang source.
+  pub fn preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+    let new_err =
+      ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::PreprocessorError, loc, msg);
     Err(Box::new(new_err))
   }
 

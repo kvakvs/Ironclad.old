@@ -1,6 +1,6 @@
 //! Contains code for AST node implementation
 
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{FnDef, ModuleRoot};
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{FnDef, ModuleRoot};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
@@ -32,12 +32,12 @@ pub struct AstNodeImpl {
   /// Source file pointer
   pub location: SourceLoc,
   /// Node type and optional content
-  pub content: ErlAstType,
+  pub content: AstNodeType,
 }
 
 /// Type for an Erlang AST node
 #[derive(Debug)]
-pub enum ErlAstType {
+pub enum AstNodeType {
   /// Default value for when AST tree is empty. Should create error, not a valid AST node.
   Empty,
 
@@ -238,7 +238,7 @@ pub enum ErlAstType {
 impl AstNodeImpl {
   /// Returns true for ErlAst::Var
   pub fn is_var(&self) -> bool {
-    matches!(&self.content, ErlAstType::Var(..))
+    matches!(&self.content, AstNodeType::Var(..))
   }
 
   /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
@@ -246,7 +246,7 @@ impl AstNodeImpl {
   pub fn temporary_token(t: ErlToken) -> AstNode {
     AstNodeImpl {
       location: SourceLoc::None,
-      content: ErlAstType::Token { token: t },
+      content: AstNodeType::Token { token: t },
     }
     .into()
   }
@@ -254,7 +254,7 @@ impl AstNodeImpl {
   /// Retrieve Some(atom text) if AST node is atom
   pub fn get_atom_text(&self) -> Option<String> {
     match &self.content {
-      ErlAstType::Lit { value: lit, .. } => {
+      AstNodeType::Lit { value: lit, .. } => {
         if let Literal::Atom(s) = lit.deref() {
           Some(s.clone())
         } else {
@@ -271,7 +271,7 @@ impl AstNodeImpl {
   /// A non-comma AST-node becomes a single result element.
   pub fn comma_to_vec(comma_ast: &AstNode, dst: &mut Vec<AstNode>) {
     match &comma_ast.content {
-      ErlAstType::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
+      AstNodeType::BinaryOp { expr: binexpr, .. } if binexpr.operator == ErlBinaryOp::Comma => {
         Self::comma_to_vec(&binexpr.left, dst);
         Self::comma_to_vec(&binexpr.right, dst);
       }

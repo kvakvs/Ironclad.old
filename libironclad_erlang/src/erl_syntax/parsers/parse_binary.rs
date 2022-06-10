@@ -1,6 +1,6 @@
 //! Parse binary expressions and binary builders.
 
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
@@ -12,7 +12,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
-use crate::erl_syntax::preprocessor::parsers::parse_macro::parse_macro_invocation;
+use crate::erl_syntax::preprocessor::parsers::parse_macro::macro_invocation;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -23,9 +23,10 @@ use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
 
 /// Parse a literal value, variable, or an expression in parentheses.
-fn parse_value(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
   alt((
-    parse_macro_invocation,
+    // Expect an expression if a macro is expanded here
+    |inp: ParserInput<'a>| macro_invocation::<'a, _, AstNode>(inp, parse_expr),
     map(parse_varname, |v| AstNodeImpl::new_var(input.loc(), &v)),
     parse_erl_literal,
     delimited(par_open_tag, parse_expr, par_close_tag),
@@ -35,7 +36,7 @@ fn parse_value(input: ParserInput) -> ParserResult<AstNode> {
 /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
 fn parse_width(input: ParserInput) -> ParserResult<ValueWidth> {
   map(parse_value, |v| {
-    if let ErlAstType::Lit { value: lit_val, .. } = &v.content {
+    if let AstNodeType::Lit { value: lit_val, .. } = &v.content {
       if let Literal::Integer(i) = lit_val.deref() {
         assert!(i.is_non_negative());
         ValueWidth::Literal(i.as_usize().unwrap()) // TODO: Error if value too big

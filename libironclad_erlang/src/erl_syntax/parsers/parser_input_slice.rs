@@ -37,6 +37,20 @@ impl ParserInputSlice {
     }
   }
 
+  /// Create and chain a new parser input slice.
+  pub fn chain_into_new(current: &Arc<ParserInputSlice>, text: &str) -> Arc<ParserInputSlice> {
+    let text_as_str = Arc::new(text.to_string());
+    Self {
+      parent_file: current.parent_file.clone(),
+      parent: text_as_str,
+      input_start: 0,
+      read_pos: 0,
+      input_len: text.len(),
+      prev: Some(current.clone()),
+    }
+    .into()
+  }
+
   /// Guarantees are on the programmer to create slice which belongs to the valid string
   pub fn clone_with_read_slice(&self, new_input: &str) -> Arc<Self> {
     let parent_str = self.parent.as_str();

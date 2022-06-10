@@ -1,7 +1,8 @@
 //! Defines libironclad options for a file
-use crate::project::conf::compiler_opts::CompilerOptsConf;
-use crate::stage::preprocess::pp_scope::PreprocessorScope;
-use std::sync::Arc;
+use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
+use libironclad_erlang::erl_syntax::preprocessor::pp_scope::{
+  PreprocessorScope, PreprocessorScopeImpl,
+};
 
 /// Compiler options for a file
 #[derive(Debug, Clone)]
@@ -11,7 +12,7 @@ pub struct CompilerOpts {
 
   // pub opts: Vec<CompilerOption> ...
   /// Preprocessor macro defines in form of "NAME" or "NAME=VALUE" or NAME(ARGS...)=VALUE
-  pub scope: Arc<PreprocessorScope>,
+  pub scope: PreprocessorScope,
 
   /// Tries to break the operations when this many errors found in 1 module
   pub max_errors_per_module: usize,
@@ -50,19 +51,19 @@ impl Default for CompilerOpts {
   }
 }
 
-impl From<CompilerOptsConf> for CompilerOpts {
-  fn from(opts: CompilerOptsConf) -> Self {
+impl From<SerializableCompilerOpts> for CompilerOpts {
+  fn from(opts: SerializableCompilerOpts) -> Self {
     let self_default = Self::default();
     Self {
       include_paths: opts.include_paths.unwrap_or(self_default.include_paths),
-      scope: PreprocessorScope::new_from_config(opts.defines, &self_default.scope),
+      scope: PreprocessorScopeImpl::new_from_config(opts.defines, &self_default.scope),
       max_errors_per_module: Self::MAX_ERRORS_PER_MODULE,
     }
   }
 }
 
-impl From<Option<CompilerOptsConf>> for CompilerOpts {
-  fn from(maybe_opts: Option<CompilerOptsConf>) -> Self {
+impl From<Option<SerializableCompilerOpts>> for CompilerOpts {
+  fn from(maybe_opts: Option<SerializableCompilerOpts>) -> Self {
     match maybe_opts {
       None => Self::default(),
       Some(conf_val) => Self::from(conf_val),

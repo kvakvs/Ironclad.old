@@ -1,11 +1,11 @@
 //! Creation code for ErlAst
 
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypesAttr, FnDef,
   FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
   ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, TypeAttr, Var,
 };
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::node::erl_apply::ErlApply;
@@ -30,13 +30,13 @@ use std::sync::Arc;
 impl AstNodeImpl {
   /// Generic constructor no location
   #[inline]
-  pub fn construct_without_location(node_type: ErlAstType) -> AstNode {
+  pub fn construct_without_location(node_type: AstNodeType) -> AstNode {
     AstNodeImpl { location: SourceLoc::None, content: node_type }.into()
   }
 
   /// Generic constructor + location
   #[inline]
-  pub fn construct_with_location(loc: SourceLoc, node_type: ErlAstType) -> AstNode {
+  pub fn construct_with_location(loc: SourceLoc, node_type: AstNodeType) -> AstNode {
     AstNodeImpl { location: loc, content: node_type }.into()
   }
 
@@ -247,6 +247,6 @@ impl AstNodeImpl {
     tag: String,
     fields: Vec<RecordField>,
   ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ErlAstType::RecordDefinition { tag, fields })
+    AstNodeImpl::construct_with_location(location, AstNodeType::RecordDefinition { tag, fields })
   }
 }

@@ -1,6 +1,6 @@
 //! Projcet configuration: inputs, etc
-use crate::project::conf::compiler_opts::CompilerOptsConf;
-use crate::project::conf::input_opts::InputOptsConf;
+use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
+use crate::project::conf::serializable_input_opts::SerializableInputOpts;
 use core::fmt;
 use core::fmt::Debug;
 use core::option::Option;
@@ -11,17 +11,17 @@ use serde_derive::Deserialize;
 use std::convert::Into;
 use std::fs;
 
-pub mod compiler_opts;
-pub mod input_opts;
+pub mod serializable_compiler_opts;
+pub mod serializable_input_opts;
 
 /// Defines configuration file as it is loaded by TOML and serde
 #[derive(Deserialize)]
 pub struct ProjectConf {
   /// Input search paths, output paths, flags, ... etc
-  pub compiler_opts: Option<CompilerOptsConf>,
+  pub compiler_opts: Option<SerializableCompilerOpts>,
 
   /// Input files and directories (wildcards are allowed)
-  pub inputs: Option<InputOptsConf>,
+  pub inputs: Option<SerializableInputOpts>,
 }
 
 impl ProjectConf {

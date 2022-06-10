@@ -1,6 +1,6 @@
 //! Construction routines for Preprocessor AST nodes
 
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
@@ -14,13 +14,13 @@ impl PreprocessorNodeType {
   /// Generic constructor no location
   #[inline]
   pub fn construct_without_location(node_type: PreprocessorNodeType) -> AstNode {
-    AstNodeImpl::construct_with_location(SourceLoc::None, ErlAstType::Preprocessor(node_type))
+    AstNodeImpl::construct_with_location(SourceLoc::None, AstNodeType::Preprocessor(node_type))
   }
 
   /// Generic constructor + location
   #[inline]
   pub fn construct_with_location(loc: SourceLoc, node_type: PreprocessorNodeType) -> AstNode {
-    AstNodeImpl::construct_with_location(loc, ErlAstType::Preprocessor(node_type))
+    AstNodeImpl::construct_with_location(loc, AstNodeType::Preprocessor(node_type))
   }
 
   /// Create new nested included file AST node

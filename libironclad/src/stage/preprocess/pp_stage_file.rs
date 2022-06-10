@@ -3,12 +3,12 @@
 
 use crate::project::ErlProject;
 use crate::stage::file_contents_cache::FileContentsCache;
-use crate::stage::preprocess::pp_scope::PreprocessorScope;
 use crate::stats::cache_stats::CacheStats;
 use crate::stats::io_stats::IOStats;
 use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_erlang::erl_syntax::literal_bool::LiteralBool;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
 use libironclad_erlang::error::ic_error::{IcResult, IroncladError};
 use libironclad_erlang::error::ic_error_trait::IcError;
 use libironclad_erlang::source_file::SourceFileImpl;

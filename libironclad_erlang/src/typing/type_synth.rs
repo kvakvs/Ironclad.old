@@ -1,7 +1,7 @@
 //! Synthesize a type from AST node
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::{
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::AstNode;

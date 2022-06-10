@@ -1,5 +1,5 @@
 //! Compile input options: All input directories, glob masks for file scanning, include/exclude etc
-use crate::project::conf::input_opts::InputOptsConf;
+use crate::project::conf::serializable_input_opts::SerializableInputOpts;
 use std::fmt::Debug;
 
 /// Same as InputOptsConf but no Option<> fields
@@ -36,8 +36,8 @@ impl Default for InputOpts {
   }
 }
 
-impl From<InputOptsConf> for InputOpts {
-  fn from(opts: InputOptsConf) -> Self {
+impl From<SerializableInputOpts> for InputOpts {
+  fn from(opts: SerializableInputOpts) -> Self {
     let self_default = Self::default();
     Self {
       files: opts.files.unwrap_or(self_default.files),
@@ -51,8 +51,8 @@ impl From<InputOptsConf> for InputOpts {
   }
 }
 
-impl From<Option<InputOptsConf>> for InputOpts {
-  fn from(maybe_opts: Option<InputOptsConf>) -> Self {
+impl From<Option<SerializableInputOpts>> for InputOpts {
+  fn from(maybe_opts: Option<SerializableInputOpts>) -> Self {
     match maybe_opts {
       None => Self::default(),
       Some(conf_val) => Self::from(conf_val),

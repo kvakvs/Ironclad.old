@@ -8,8 +8,10 @@ use std::path::PathBuf;
 use ::function_name::named;
 use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::ErlAstType::{Apply, BinaryOp, FnDef, Lit};
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
+  Apply, BinaryOp, FnDef, Lit,
+};
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_attr::parse_funarity;
@@ -640,7 +642,7 @@ fn parse_record_with_module() -> IcResult<()> {
 
   let contents = parsed.ast.children().unwrap();
   assert_eq!(contents.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
-  assert!(matches!(contents[0].content, ErlAstType::RecordDefinition { .. }));
+  assert!(matches!(contents[0].content, AstNodeType::RecordDefinition { .. }));
   Ok(())
 }
 

@@ -1,7 +1,7 @@
 //! Code to support variable scopes
 
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::typing::erl_type::ErlType;
@@ -161,7 +161,7 @@ impl Scope {
 
   /// Recursive descend into AST saving FnDef nodes
   fn do_update_from_ast(&mut self, ast: &AstNode) {
-    if let ErlAstType::FnDef(fndef) = &ast.content {
+    if let AstNodeType::FnDef(fndef) = &ast.content {
       self.add_fn(&fndef.funarity, ast.clone());
     }
 

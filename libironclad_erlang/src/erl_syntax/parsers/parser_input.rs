@@ -2,6 +2,7 @@
 
 use crate::erl_syntax::parsers::misc::is_part_of;
 use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
+use crate::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
 use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
 use std::ops::{Deref, RangeFrom, RangeTo};
@@ -12,6 +13,9 @@ use std::sync::Arc;
 /// position for the current parser.
 #[derive(Debug, Clone)]
 pub struct ParserInputImpl<'a> {
+  /// Scope of preprocessor symbols, is mutated as we descend into module AST and meet more
+  /// `-define/undef` directives.
+  pub preprocessor_scope: PreprocessorScope,
   /// Chain of inputs. Each input has an input string, an input range and a read pointer inside
   /// it. When an input is nested inside another input, a new input slice is added to the input
   /// chain using `prev_slice` field to bind them together.
@@ -34,6 +38,7 @@ impl<'a> ParserInputImpl<'a> {
   /// Create a parser input with a string slice
   pub fn new_str(text: &str) -> Self {
     Self {
+      preprocessor_scope: Default::default(),
       input: ParserInputSlice::new(text).into(),
       _phantom: Default::default(),
     }
@@ -46,7 +51,17 @@ impl<'a> ParserInputImpl<'a> {
       "When cloning, new input slice must belong to the same parent string"
     );
     Self {
+      preprocessor_scope: Default::default(),
       input: self.input.clone_with_read_slice(slice),
+      _phantom: Default::default(),
+    }
+  }
+
+  /// Build a new custom parser and chain the old to it
+  pub fn clone_nested(&self, input: &str) -> Self {
+    ParserInputImpl {
+      preprocessor_scope: self.preprocessor_scope.clone(),
+      input: ParserInputSlice::chain_into_new(&self.input, input),
       _phantom: Default::default(),
     }
   }

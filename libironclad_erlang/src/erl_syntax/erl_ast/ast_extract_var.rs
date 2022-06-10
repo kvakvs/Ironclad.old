@@ -1,7 +1,7 @@
 //! AST node-type checks
 
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
@@ -19,11 +19,11 @@ impl AstNodeImpl {
     variables: &mut HashMap<String, Arc<ErlType>>,
   ) -> IcResult<()> {
     match &node.content {
-      ErlAstType::Var(v) => {
+      AstNodeType::Var(v) => {
         variables.insert(v.name.clone(), ErlType::any());
         Ok(())
       }
-      ErlAstType::BinaryExpr { elements, .. } => {
+      AstNodeType::BinaryExpr { elements, .. } => {
         for e in elements {
           Self::extract_variables(&e.value, variables)?;
           if let ValueWidth::Expr(expr_width) = &e.width {
@@ -32,24 +32,24 @@ impl AstNodeImpl {
         }
         Ok(())
       }
-      ErlAstType::CommaExpr { elements, .. } => {
+      AstNodeType::CommaExpr { elements, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
         Ok(())
       }
-      ErlAstType::ListComprehension { expr, generators, .. } => {
+      AstNodeType::ListComprehension { expr, generators, .. } => {
         Self::extract_variables(expr, variables)?;
         for g in generators {
           Self::extract_variables(g, variables)?;
         }
         Ok(())
       }
-      ErlAstType::ListComprehensionGenerator { left, right, .. } => {
+      AstNodeType::ListComprehensionGenerator { left, right, .. } => {
         Self::extract_variables(left, variables)?;
         Self::extract_variables(right, variables)
       }
-      ErlAstType::IfStatement { clauses, .. } => {
+      AstNodeType::IfStatement { clauses, .. } => {
         for clause in clauses {
           if let Some(children) = clause.children() {
             for child in children {
@@ -59,7 +59,7 @@ impl AstNodeImpl {
         }
         Ok(())
       }
-      ErlAstType::TryCatch { body, of_branches, catch_clauses, .. } => {
+      AstNodeType::TryCatch { body, of_branches, catch_clauses, .. } => {
         Self::extract_variables(body, variables)?;
         if let Some(ofb) = of_branches {
           for b in ofb {
@@ -83,7 +83,7 @@ impl AstNodeImpl {
         }
         Ok(())
       }
-      ErlAstType::List { elements, tail, .. } => {
+      AstNodeType::List { elements, tail, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
@@ -92,13 +92,13 @@ impl AstNodeImpl {
         }
         Ok(())
       }
-      ErlAstType::Tuple { elements, .. } => {
+      AstNodeType::Tuple { elements, .. } => {
         for e in elements {
           Self::extract_variables(e, variables)?;
         }
         Ok(())
       }
-      ErlAstType::MapBuilder { members, .. } => {
+      AstNodeType::MapBuilder { members, .. } => {
         // Cannot bind variable to a map key in arguments list
         for v in members {
           Self::extract_variables(&v.key, variables)?;
@@ -107,33 +107,33 @@ impl AstNodeImpl {
         Ok(())
       }
 
-      ErlAstType::RecordDefinition { .. }
-      | ErlAstType::Empty
-      | ErlAstType::BinaryOp { .. }
-      | ErlAstType::Lit { .. }
-      | ErlAstType::Token { .. } => {
+      AstNodeType::RecordDefinition { .. }
+      | AstNodeType::Empty
+      | AstNodeType::BinaryOp { .. }
+      | AstNodeType::Lit { .. }
+      | AstNodeType::Token { .. } => {
         Ok(()) // do nothing
       }
 
-      ErlAstType::FnSpec { .. }
-      | ErlAstType::Type { .. }
-      | ErlAstType::MFA { .. }
-      | ErlAstType::ExportAttr { .. }
-      | ErlAstType::ExportTypesAttr { .. }
-      | ErlAstType::TypeAttr { .. }
-      | ErlAstType::ImportAttr { .. }
-      | ErlAstType::ModuleRoot { .. }
-      | ErlAstType::FnRef { .. }
-      | ErlAstType::FnDef(_)
-      | ErlAstType::CClause(_, _)
-      | ErlAstType::CaseStatement { .. }
-      | ErlAstType::Apply(_)
-      | ErlAstType::UnaryOp { .. }
-      | ErlAstType::GenericAttr { .. } => ErlError::unacceptable(
+      AstNodeType::FnSpec { .. }
+      | AstNodeType::Type { .. }
+      | AstNodeType::MFA { .. }
+      | AstNodeType::ExportAttr { .. }
+      | AstNodeType::ExportTypesAttr { .. }
+      | AstNodeType::TypeAttr { .. }
+      | AstNodeType::ImportAttr { .. }
+      | AstNodeType::ModuleRoot { .. }
+      | AstNodeType::FnRef { .. }
+      | AstNodeType::FnDef(_)
+      | AstNodeType::CClause(_, _)
+      | AstNodeType::CaseStatement { .. }
+      | AstNodeType::Apply(_)
+      | AstNodeType::UnaryOp { .. }
+      | AstNodeType::GenericAttr { .. } => ErlError::unacceptable(
         node.location.clone(),
         format!("{}: is unacceptable as a function argument", node),
       ),
-      ErlAstType::Preprocessor(_) => {
+      AstNodeType::Preprocessor(_) => {
         panic!("Preprocessor nodes should be eliminated by the time you're extracting variables")
       }
     }

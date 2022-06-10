@@ -8,7 +8,7 @@ use std::fmt::Debug;
 /// This version of struct is parsed from TOML and all optional fields are Option<>
 /// The real config is in the module above this.
 #[derive(Default, Deserialize, Debug)]
-pub struct CompilerOptsConf {
+pub struct SerializableCompilerOpts {
   /// If not specified, defaults to empty
   pub include_paths: Option<Vec<String>>,
   /// Defaults to empty list. Preprocessor defs in form of "NAME" or "NAME=VALUE"

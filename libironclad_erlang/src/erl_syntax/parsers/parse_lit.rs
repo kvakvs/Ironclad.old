@@ -1,7 +1,7 @@
 //! Parse literal values as the occur in source code
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use crate::erl_syntax::erl_ast::node_impl::ErlAstType::Lit;
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;

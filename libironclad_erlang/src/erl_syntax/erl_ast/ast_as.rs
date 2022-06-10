@@ -1,6 +1,6 @@
 //! Access to sub-values in ErlAst
 
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
@@ -15,7 +15,7 @@ impl AstNodeImpl {
   /// Unwrap self as new function
   pub fn as_fn_def(&self) -> &ErlFnDef {
     match &self.content {
-      ErlAstType::FnDef(func_def) => func_def,
+      AstNodeType::FnDef(func_def) => func_def,
       _ => panic!("Expected FnDef AST node, but got {}", self),
     }
   }
@@ -23,7 +23,7 @@ impl AstNodeImpl {
   /// Unwrap self as function spec
   pub fn as_fn_spec(&self) -> Arc<ErlType> {
     match &self.content {
-      ErlAstType::FnSpec { spec, .. } => spec.clone(),
+      AstNodeType::FnSpec { spec, .. } => spec.clone(),
       _ => panic!("Expected FnSpec AST node, but got {}", self),
     }
   }
@@ -31,7 +31,7 @@ impl AstNodeImpl {
   /// Unwrap self as erltype
   pub fn as_type(&self) -> Arc<ErlType> {
     match &self.content {
-      ErlAstType::Type { ty, .. } => ty.clone(),
+      AstNodeType::Type { ty, .. } => ty.clone(),
       _ => panic!("Expected Type AST node, but got {}", self),
     }
   }
@@ -39,7 +39,7 @@ impl AstNodeImpl {
   /// Unwrap self as binary operation expr
   pub fn as_binop(&self) -> &ErlBinaryOperatorExpr {
     match &self.content {
-      ErlAstType::BinaryOp { expr, .. } => expr,
+      AstNodeType::BinaryOp { expr, .. } => expr,
       _ => panic!("Expected BinOp AST node, but got {}", self),
     }
   }
@@ -47,7 +47,7 @@ impl AstNodeImpl {
   /// Unwrap self as an atom (return string slice or `panic`)
   pub fn as_atom(&self) -> &str {
     match &self.content {
-      ErlAstType::Lit { value, .. } => match value.deref() {
+      AstNodeType::Lit { value, .. } => match value.deref() {
         Literal::Atom(s) => s,
         _ => panic!("Expected Lit(Atom()) AST node, but got {}", self),
       },
@@ -58,7 +58,7 @@ impl AstNodeImpl {
   /// Unwrap a preprocessor node
   pub fn as_preprocessor(&self) -> &PreprocessorNodeType {
     match &self.content {
-      ErlAstType::Preprocessor(pp) => pp,
+      AstNodeType::Preprocessor(pp) => pp,
       _ => panic!("Expected Preprocessor() AST node, but got {}", self),
     }
   }
@@ -66,7 +66,7 @@ impl AstNodeImpl {
   /// Unwrap an `-export` attr and return contents
   pub fn as_export_attr(&self) -> &Vec<MFArity> {
     match &self.content {
-      ErlAstType::ExportAttr { exports } => exports,
+      AstNodeType::ExportAttr { exports } => exports,
       _ => panic!("Expected ExportAttr() AST node, but got {}", self),
     }
   }
@@ -74,7 +74,7 @@ impl AstNodeImpl {
   /// Unwrap an `-export_types` attr and return contents
   pub fn as_export_types_attr(&self) -> &Vec<MFArity> {
     match &self.content {
-      ErlAstType::ExportTypesAttr { exports } => exports,
+      AstNodeType::ExportTypesAttr { exports } => exports,
       _ => panic!("Expected ExportTypesAttr() AST node, but got {}", self),
     }
   }
@@ -98,7 +98,7 @@ impl AstNodeImpl {
   /// Unwrap an `-import` attr and return (import_name, imported_mfas)
   pub fn as_import_attr(&self) -> (&str, &Vec<MFArity>) {
     match &self.content {
-      ErlAstType::ImportAttr { import_from, imports } => (import_from.as_str(), imports),
+      AstNodeType::ImportAttr { import_from, imports } => (import_from.as_str(), imports),
       _ => panic!("Expected Import() AST node, but got {}", self),
     }
   }
@@ -107,7 +107,7 @@ impl AstNodeImpl {
   /// level only, for flat list of everything use `.children()` call.
   pub fn as_module(&self) -> (&str, &Vec<AstNode>) {
     match &self.content {
-      ErlAstType::ModuleRoot { name, forms } => (name.as_str(), forms),
+      AstNodeType::ModuleRoot { name, forms } => (name.as_str(), forms),
       _ => panic!("Expected ModuleRoot() AST node, but got {}", self),
     }
   }

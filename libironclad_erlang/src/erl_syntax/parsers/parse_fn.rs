@@ -22,10 +22,7 @@ use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{bytes::complete::tag, error::context};
 
 fn parse_when_expr_for_fn(input: ParserInput) -> ParserResult<AstNode> {
-  map(
-    tuple((ws_before(tag("when".into())), cut(parse_expr))),
-    |(_, g)| g, // ignore 'when' tag, keep guard expr
-  )(input)
+  preceded(ws_before(tag("when".into())), context("function's guard", cut(parse_expr)))(input)
 }
 
 /// Function will succeed if an atom is parsed and FN_NAME is true, will return Some<Value>.

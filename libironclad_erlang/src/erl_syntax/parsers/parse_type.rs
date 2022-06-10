@@ -1,6 +1,6 @@
 //! Contains parsers for function typespecs and type syntax.
 
-use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, ErlAstType};
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
@@ -352,7 +352,7 @@ impl ErlTypeParser {
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: ParserInput) -> ParserResult<AstNode> {
     map(Self::parse_type, |t| {
-      AstNodeImpl::construct_with_location(input.loc(), ErlAstType::Type { ty: t })
+      AstNodeImpl::construct_with_location(input.loc(), AstNodeType::Type { ty: t })
     })(input.clone())
   }
 }
