@@ -1,5 +1,5 @@
 //! Defines an Erlang module ready to be compiled
-use libironclad_erlang::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::erl_ast::AstNode;
 use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
@@ -7,18 +7,18 @@ use std::fmt::Debug;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_error::ErlError;
+use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
+use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
+use crate::erl_syntax::parsers::parse_fn::parse_fndef;
+use crate::erl_syntax::parsers::parse_module;
+use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
+use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use libironclad_erlang::erl_syntax::erl_error::ErlError;
-use libironclad_erlang::erl_syntax::parsers::defs::{ParserInput, ParserResult};
-use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_expr;
-use libironclad_erlang::erl_syntax::parsers::parse_fn::parse_fndef;
-use libironclad_erlang::erl_syntax::parsers::parse_module;
-use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
-use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::source_file::{SourceFile, SourceFileImpl};
-use libironclad_erlang::typing::scope::Scope;
+use crate::source_file::{SourceFile, SourceFileImpl};
+use crate::typing::scope::Scope;
 
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
@@ -65,7 +65,7 @@ impl Debug for ErlModule {
 
 impl ErlModule {
   /// Create a new empty module
-  pub(crate) fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> Self {
+  pub fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> Self {
     Self {
       compiler_options: opt,
       source_file,
@@ -132,7 +132,7 @@ impl ErlModule {
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
-  pub(crate) fn add_error(&self, err: ErlError) -> bool {
+  pub fn add_error(&self, err: ErlError) -> bool {
     self.errors.borrow_mut().push(err);
     self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }

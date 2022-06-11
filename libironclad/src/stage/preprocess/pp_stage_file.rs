@@ -2,17 +2,17 @@
 //! Preprocessor state for one file
 
 use crate::project::ErlProject;
-use crate::stage::file_contents_cache::FileContentsCache;
-use crate::stats::cache_stats::CacheStats;
-use crate::stats::io_stats::IOStats;
-use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_erlang::erl_syntax::literal_bool::LiteralBool;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::preprocessor::pp_scope::PreprocessorScope;
+use libironclad_erlang::erl_syntax::parsers::parser_scope::ParserScope;
 use libironclad_erlang::error::ic_error::{IcResult, IroncladError};
 use libironclad_erlang::error::ic_error_trait::IcError;
+use libironclad_erlang::file_cache::FileCache;
 use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::source_loc::SourceLoc;
+use libironclad_erlang::stats::cache_stats::CacheStats;
+use libironclad_erlang::stats::io_stats::IOStats;
+use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
 use nom::Finish;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -22,10 +22,10 @@ pub struct PreprocessFile {
   /// For headers included more than once, parse them and cache here for reinterpretation as needed
   ast_cache: Arc<RwLock<PpAstCache>>,
 
-  file_cache: Arc<RwLock<FileContentsCache>>,
+  file_cache: FileCache,
   /// Contains preprocessor definitions from config, from command line or from the file. Evolves as
   /// the parser progresses through the file and encounters new preprocessor directives.
-  scope: Arc<PreprocessorScope>,
+  scope: Arc<ParserScope>,
 }
 
 impl PreprocessFile {
@@ -33,8 +33,8 @@ impl PreprocessFile {
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub(crate) fn new(
     ast_cache: &Arc<RwLock<PpAstCache>>,
-    file_cache: &Arc<RwLock<FileContentsCache>>,
-    scope: Arc<PreprocessorScope>,
+    file_cache: &FileCache,
+    scope: Arc<ParserScope>,
   ) -> Self {
     Self {
       ast_cache: ast_cache.clone(),
@@ -47,8 +47,8 @@ impl PreprocessFile {
   /// builds everything for itself
   pub(crate) fn new_self_contained() -> Self {
     let ast_cache = Arc::new(RwLock::new(PpAstCache::default()));
-    let file_cache = Arc::new(RwLock::new(FileContentsCache::default()));
-    let scope = PreprocessorScope::default().into();
+    let file_cache = Arc::new(RwLock::new(FileCache::default()));
+    let scope = ParserScope::default().into();
     Self::new(&ast_cache, &file_cache, scope)
   }
 
@@ -153,7 +153,7 @@ impl PreprocessFile {
     file_cache_stats: &mut CacheStats,
     location: SourceLoc,
     file: &Path,
-  ) -> IcResult<Arc<SourceFileImpl>> {
+  ) -> IcResult<SourceFile> {
     // Check if already loaded in the File Cache?
     if let Ok(mut cache) = self.file_cache.write() {
       return cache

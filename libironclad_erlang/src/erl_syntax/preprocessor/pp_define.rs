@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 /// A preprocessor definition created by `-define(X...)` or from the project settings or
 /// the command line `-DNAME=xxx`
+#[derive(Clone)]
 pub struct PreprocessorDefineImpl {
   /// The name of the macro in `-define(NAME, ...)` or in command line `-DNAME` etc
   pub name: String,

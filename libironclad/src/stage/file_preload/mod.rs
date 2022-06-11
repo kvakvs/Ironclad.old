@@ -1,10 +1,9 @@
 //! Scans the project directory structure and preloads all ERL and HRL source files into memory
 
-use crate::stage::file_contents_cache::FileContentsCache;
-use crate::stats::preload_stats::FilePreloadStats;
 use libironclad_erlang::error::ic_error::IroncladResult;
+use libironclad_erlang::file_cache::FileCache;
+use libironclad_erlang::stats::preload_stats::FilePreloadStats;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
 
 /// Handles loading/caching text files in memory
 #[derive(Default)]
@@ -18,20 +17,29 @@ impl FilePreloadStage {
   /// ----------------------------
   /// Preload stage will visit all input files and load them in memory.
   /// Future improvement: Lazy loading as required, timestamp checks
-  pub(crate) fn run(
-    &mut self,
-    inputs: &[PathBuf],
-  ) -> IroncladResult<Arc<RwLock<FileContentsCache>>> {
-    let mut f_cache = FileContentsCache::default();
+  pub fn run(&mut self, inputs: &[PathBuf]) -> IroncladResult<FileCache> {
+    let f_cache = FileCache::default();
 
     for filename in inputs {
-      f_cache.preload_file(&mut self.stats.io, filename)?;
+      if let Ok(mut w_f_cache) = f_cache.write() {
+        w_f_cache.preload_file(filename)?;
+      } else {
+        panic!("Can't lock file cache for updating")
+      }
     }
 
     // Print runtime and counters
-    self.stats.time.stage_finished(); // mark ending time
-    print!("{}", self.stats);
+    if let Ok(r_stats) = self.stats.read() {
+      if let Ok(mut w_time) = r_stats.time.write() {
+        w_time.stage_finished(); // mark ending time
+      } else {
+        panic!("Can't lock time stats for updating")
+      }
+      print!("{}", r_stats);
+    } else {
+      panic!("Can't lock self.stats for read")
+    }
 
-    Ok(RwLock::new(f_cache).into())
+    Ok(f_cache)
   }
 }

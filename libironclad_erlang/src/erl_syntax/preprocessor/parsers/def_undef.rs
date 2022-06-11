@@ -20,7 +20,8 @@ use nom::sequence::{delimited, preceded, tuple};
 /// Parses inner part of a `-define(IDENT)` variant
 fn define_no_args_no_body(input: ParserInput) -> ParserResult<AstNode> {
   map(macro_ident, |name: String| {
-    PreprocessorNodeType::new_define_name_only(input.loc(), name)
+    input.parser_scope.define(&name, &[], "");
+    AstNodeImpl::new_empty()
   })(input.clone())
 }
 
@@ -39,7 +40,9 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
     )),
     |(ident, args, _comma, (body, _term))| {
       let body_str = body.into_iter().collect::<String>();
-      input.preprocessor_define(&ident, &args.unwrap_or_default(), &body_str);
+      input
+        .parser_scope
+        .define(&ident, &args.unwrap_or_default(), &body_str);
       println!("New scope {:?}", &input);
       AstNodeImpl::new_empty()
     },

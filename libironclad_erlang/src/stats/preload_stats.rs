@@ -3,10 +3,11 @@
 use crate::stats::cache_stats::CacheStats;
 use crate::stats::io_stats::IOStats;
 use crate::stats::time_stats::TimeStats;
+use std::sync::{Arc, RwLock};
 
 /// Statistics struct for file preload stage
 #[derive(Default)]
-pub struct FilePreloadStats {
+pub struct FilePreloadStatsImpl {
   /// File IO counters
   pub io: IOStats,
   /// File cache statistics
@@ -15,12 +16,15 @@ pub struct FilePreloadStats {
   pub time: TimeStats,
 }
 
-impl std::fmt::Display for FilePreloadStats {
+/// Wrapper for shared access
+pub type FilePreloadStats = Arc<RwLock<FilePreloadStatsImpl>>;
+
+impl std::fmt::Display for FilePreloadStatsImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     writeln!(f, "========================")?;
     writeln!(f, "Preload stage stats")?;
-    write!(f, "{}", self.io)?;
-    write!(f, "FILE {}", self.file_cache)?;
-    write!(f, "{}", self.time)
+    write!(f, "{}", self.io.read().unwrap())?;
+    write!(f, "FILE {}", self.file_cache.read().unwrap())?;
+    write!(f, "{}", self.time.read().unwrap())
   }
 }

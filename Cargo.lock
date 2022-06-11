@@ -133,10 +133,7 @@ dependencies = [
  "libironclad_erlang",
  "pest",
  "pest_derive",
- "serde",
- "serde_derive",
  "thiserror",
- "toml",
 ]
 
 [[package]]
@@ -156,9 +153,6 @@ dependencies = [
  "libironclad_erlang",
  "libironclad_util",
  "nom",
- "serde",
- "serde_derive",
- "toml",
 ]
 
 [[package]]
@@ -173,6 +167,8 @@ dependencies = [
  "nom",
  "num",
  "num-bigint",
+ "serde",
+ "serde_derive",
  "toml",
 ]
 

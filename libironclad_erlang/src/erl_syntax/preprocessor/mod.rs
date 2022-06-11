@@ -7,4 +7,3 @@ pub mod new;
 pub mod parsers;
 pub mod pp_define;
 pub mod pp_name_arity;
-pub mod pp_scope;

@@ -2,10 +2,10 @@
 //! Preprocessor stage shared state for all files
 
 use crate::project::ErlProject;
-use crate::stage::file_contents_cache::FileContentsCache;
 use crate::stage::preprocess::pp_stage_file::PreprocessFile;
-use crate::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::file_cache::FileCache;
+use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstCache;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
@@ -34,7 +34,7 @@ impl PreprocessStage {
   pub(crate) fn run(
     &mut self,
     project: &mut ErlProject,
-    file_cache: Arc<RwLock<FileContentsCache>>,
+    file_cache: FileCache,
   ) -> IcResult<Arc<RwLock<PpAstCache>>> {
     let ast_cache = RwLock::new(PpAstCache::default()).into();
 

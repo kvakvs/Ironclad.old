@@ -6,8 +6,8 @@ extern crate libironclad_erlang;
 use std::path::PathBuf;
 
 use ::function_name::named;
-use libironclad::project::module::ErlModule;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::project::module::ErlModule;
 
 mod test_util;
 

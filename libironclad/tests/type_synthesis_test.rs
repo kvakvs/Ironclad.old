@@ -5,11 +5,11 @@ extern crate libironclad_util;
 mod test_util;
 
 use ::function_name::named;
-use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::project::module::ErlModule;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;

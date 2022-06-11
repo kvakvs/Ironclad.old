@@ -5,6 +5,7 @@ use crate::erl_syntax::parsers::misc::{
   comma_tag, match_dash_tag, newline_or_eof, par_close_tag, par_open_tag, period_newline_tag,
   period_tag, ws_before, ws_before_mut,
 };
+use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_strings::str_literal::parse_doublequot_string;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
@@ -19,6 +20,7 @@ use nom::combinator::{cut, map, recognize, verify};
 use nom::error::context;
 use nom::multi::{many0, separated_list0};
 use nom::sequence::{delimited, pair, tuple};
+use std::path::PathBuf;
 
 /// Parse a `Macroident1, Macroident2, ...` into a list
 pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {
@@ -42,18 +44,26 @@ pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<String> {
 
 /// Parse a `-include(STRING)`
 fn include_directive(input: ParserInput) -> ParserResult<AstNode> {
-  map(
+  let result = delimited(
+    match_dash_tag("include".into()),
     delimited(
-      match_dash_tag("include".into()),
-      delimited(
-        par_open_tag,
-        context("include path for -include() directive", cut(parse_doublequot_string)),
-        par_close_tag,
-      ),
-      period_newline_tag,
+      par_open_tag,
+      context("include path for -include() directive", cut(parse_doublequot_string)),
+      par_close_tag,
     ),
-    |t| PreprocessorNodeType::new_include(input.loc(), t),
-  )(input.clone())
+    period_newline_tag,
+  )(input.clone());
+
+  if let Ok((input2, path)) = result {
+    let included_file = input
+      .parser_scope
+      .load_include(input.loc(), &PathBuf::from(path))
+      .unwrap();
+    let input3 = input2.new_with_source_file(included_file);
+    parse_module(input3)
+  } else {
+    Err(result.unwrap_err())
+  }
 }
 
 /// Parse a `-include_lib(STRING)`

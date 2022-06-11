@@ -6,7 +6,6 @@ use std::ops::Deref;
 use std::path::PathBuf;
 
 use ::function_name::named;
-use libironclad::project::module::ErlModule;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
@@ -22,6 +21,7 @@ use libironclad_erlang::erl_syntax::parsers::parse_try_catch::{
 use libironclad_erlang::erl_syntax::parsers::{parse_module, parse_module_forms};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
+use libironclad_erlang::project::module::ErlModule;
 use nom::Finish;
 
 mod test_util;

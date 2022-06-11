@@ -40,19 +40,14 @@ impl MacroLookupResult {
 /// Parse a `? <IDENT>` for a macro without arguments
 /// Returns `Some(PreprocessorDefine)` to parse, or `None` (macro not defined).
 fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
-  println!("Before parse: input {:?}", &input);
-
   // This parser will only work if name/0 macro is defined in input's scope
   let result = verify(context("macro identifier for macro invocation", cut(macro_ident)), |n1| {
-    input.preprocessor_is_defined_with_arity(n1, 0)
+    input.parser_scope.is_defined_with_arity(n1, 0)
   })(input.clone());
 
-  if result.is_ok() {
-    let (input2, n2) = result.unwrap();
-    println!("After parse: input2 {:?}", &input2);
-
-    let lr = input.preprocessor_get_value(&n2, 0);
-    let out = MacroLookupResult::new(n2, 0, lr);
+  if let Ok((input2, n2)) = result {
+    let lookup_result = input.parser_scope.get_value(&n2, 0);
+    let out = MacroLookupResult::new(n2, 0, lookup_result);
     Ok((input2, out))
   } else {
     Err(result.unwrap_err())
@@ -74,10 +69,10 @@ fn macro_invocation_with_args(input: ParserInput) -> ParserResult<MacroLookupRes
         context("macro identifier for macro invocation", cut(macro_ident)),
         context("macro invocation arguments", macro_args),
       ),
-      |(n1, args1)| input.preprocessor_is_defined_with_arity(n1, args1.len()),
+      |(n1, args1)| input.parser_scope.is_defined_with_arity(n1, args1.len()),
     ),
     |(n2, args2)| {
-      let lr = input.preprocessor_get_value(&n2, args2.len());
+      let lr = input.parser_scope.get_value(&n2, args2.len());
       MacroLookupResult::new(n2, args2.len(), lr)
     },
   )(input.clone())
@@ -113,13 +108,12 @@ where
 }
 
 /// Expect a macro invocation with 0 or more args, which will expand to an expression
-pub(crate) fn macro_invocation_as_ast_node<'a>(input0: ParserInput<'a>) -> ParserResult<AstNode> {
+pub(crate) fn macro_invocation_as_ast_node(input0: ParserInput) -> ParserResult<AstNode> {
   let maybe_question_mark: nom::IResult<ParserInput, _> = char('?')(input0.clone());
 
-  if maybe_question_mark.is_ok() {
-    let (input1, _) = maybe_question_mark.unwrap();
+  if let Ok((input1, _)) = maybe_question_mark {
     context("macro invocation expecting to get an expression", |inp| {
-      macro_invocation::<'a, _, AstNode>(inp, parse_expr)
+      macro_invocation::<_, AstNode>(inp, parse_expr)
     })(input1)
   } else {
     Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(

@@ -31,6 +31,7 @@ pub mod parse_try_catch;
 pub mod parse_type;
 pub mod parser_input;
 pub mod parser_input_slice;
+pub mod parser_scope;
 
 /// Parses an attribute or a function def
 pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {

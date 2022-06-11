@@ -1,12 +1,12 @@
 //! Projcet configuration: inputs, etc
+use crate::erl_syntax::parsers::defs::ParserInput;
+use crate::error::ic_error::{IroncladError, IroncladResult};
 use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
 use crate::project::conf::serializable_input_opts::SerializableInputOpts;
 use core::fmt;
 use core::fmt::Debug;
 use core::option::Option;
 use core::result::Result;
-use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
-use libironclad_erlang::error::ic_error::{IroncladError, IroncladResult};
 use serde_derive::Deserialize;
 use std::convert::Into;
 use std::fs;

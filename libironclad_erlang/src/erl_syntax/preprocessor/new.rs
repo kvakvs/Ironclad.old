@@ -4,8 +4,8 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
-  Define, IfBlock, Include, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryIf,
-  _TemporaryIfdef, _TemporaryIfndef,
+  IfBlock, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryIf, _TemporaryIfdef,
+  _TemporaryIfndef,
 };
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
@@ -33,28 +33,28 @@ impl PreprocessorNodeType {
     Self::construct_with_location(location, IncludedFile { filename: PathBuf::from(file), ast })
   }
 
-  /// Create new macro definition
-  #[allow(dead_code)]
-  pub(crate) fn new_define(
-    location: SourceLoc,
-    name: String,
-    args: Vec<String>,
-    body: String,
-  ) -> AstNode {
-    Self::construct_with_location(location, Define { name, args, body })
-  }
+  // /// Create new macro definition
+  // #[allow(dead_code)]
+  // pub(crate) fn new_define(
+  //   location: SourceLoc,
+  //   name: String,
+  //   args: Vec<String>,
+  //   body: String,
+  // ) -> AstNode {
+  //   Self::construct_with_location(location, Define { name, args, body })
+  // }
 
-  /// Create new macro definition with name only
-  pub(crate) fn new_define_name_only(location: SourceLoc, name: String) -> AstNode {
-    Self::construct_with_location(
-      location,
-      Define {
-        name,
-        args: Vec::default(),
-        body: String::default(),
-      },
-    )
-  }
+  // /// Create new macro definition with name only
+  // pub(crate) fn new_define_name_only(location: SourceLoc, name: String) -> AstNode {
+  //   Self::construct_with_location(
+  //     location,
+  //     Define {
+  //       name,
+  //       args: Vec::default(),
+  //       body: String::default(),
+  //     },
+  //   )
+  // }
 
   // /// Create new text fragment
   // pub(crate) fn new_text(location: SourceLoc, text: &str) -> AstNode {
@@ -100,10 +100,10 @@ impl PreprocessorNodeType {
     Self::construct_with_location(location, Undef(ident))
   }
 
-  /// Create a new INCLUDE node
-  pub(crate) fn new_include(location: SourceLoc, p: String) -> AstNode {
-    Self::construct_with_location(location, Include(p))
-  }
+  // /// Create a new INCLUDE node
+  // pub(crate) fn new_include(location: SourceLoc, p: String) -> AstNode {
+  //   Self::construct_with_location(location, Include(p))
+  // }
 
   /// Create a new INCLUDE_LIB node
   pub(crate) fn new_include_lib(location: SourceLoc, p: String) -> AstNode {

@@ -4,7 +4,6 @@
 
 pub mod code_cache;
 pub mod compile_module;
-pub mod file_contents_cache;
 
 pub mod file_preload;
 pub mod parse;

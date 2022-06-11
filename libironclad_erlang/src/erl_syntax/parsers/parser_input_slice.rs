@@ -73,6 +73,19 @@ impl ParserInputSlice {
     .into()
   }
 
+  /// Nested parsing of a new file
+  pub(crate) fn new_with_source_file(&self, file: SourceFile) -> Arc<Self> {
+    Self {
+      parent_file: Some(file.clone()),
+      parent: file.text.clone(),
+      input_start: 0,
+      read_pos: 0,
+      input_len: file.text.len(),
+      prev: None, // no previous?
+    }
+    .into()
+  }
+
   /// Quick access to content read window as `&str`
   #[inline(always)]
   pub(crate) fn as_str<'s>(&self) -> &'s str {
