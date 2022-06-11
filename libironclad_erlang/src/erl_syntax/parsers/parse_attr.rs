@@ -45,7 +45,7 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
       pair(
         parse_atom,
         // Expr in parentheses
-        alt((parse_generic_attr_expr, parse_parentheses_no_expr)),
+        alt((parse_parentheses_no_expr, parse_generic_attr_expr)),
       ),
       period_newline_tag,
     ),

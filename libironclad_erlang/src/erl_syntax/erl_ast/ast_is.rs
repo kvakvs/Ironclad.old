@@ -43,6 +43,14 @@ impl AstNodeImpl {
     }
   }
 
+  /// Checks whether an ErlAst node is a generic `-<IDENT>.` attribute and check the `IDENT`.
+  pub fn is_generic_attr(&self, check_tag: &str) -> bool {
+    match &self.content {
+      AstNodeType::GenericAttr { tag, .. } => tag == check_tag,
+      _ => false,
+    }
+  }
+
   /// Checks whether an ErlAst node is a Binary Op of given kind
   pub fn is_binop(&self, op: ErlBinaryOp) -> bool {
     matches!(&self.content, AstNodeType::BinaryOp {expr, ..} if expr.operator == op)

@@ -7,63 +7,57 @@ use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use libironclad_erlang::erl_syntax::preprocessor::parsers::if_ifdef::{
-  parse_if_block, parse_if_directive,
+  if_condition, parse_if_block,
 };
 use nom::Finish;
 
 #[test]
 #[named]
-/// Try parse a simple pp directive -if(Expr).
-fn test_fragment_if() {
-  test_util::start(function_name!(), "Parse -if() directive");
-  // let filename = PathBuf::from(function_name!());
+/// Try parse a simple pp directive -if(true).
+fn test_fragment_if_true() {
+  test_util::start(function_name!(), "Parse -if(true) directive");
+
   let input = "-if(true).";
   let parser_input = ParserInput::new_str(input);
-  let (_tail, result) = panicking_parser_error_reporter(
-    parser_input.clone(),
-    parse_if_directive(parser_input).finish(),
-  );
-  let pp_node = result.as_preprocessor();
-  assert!(matches!(pp_node, PreprocessorNodeType::_TemporaryIf(_ast)));
-  println!("Out={:?}", result);
+  let (_tail, result) =
+    panicking_parser_error_reporter(parser_input.clone(), if_condition(parser_input).finish());
+  assert!(result, "Parsing -if(true). must produce a 'true'");
+}
+
+#[test]
+#[named]
+#[should_panic]
+/// Try parse a simple pp directive -if(3). and expect a panic
+fn test_fragment_if_3() {
+  test_util::start(function_name!(), "Parse -if(3) directive for a panic");
+  let input = "-if(3).";
+  let parser_input = ParserInput::new_str(input);
+  let (_tail, result) =
+    panicking_parser_error_reporter(parser_input.clone(), if_condition(parser_input).finish());
+  assert!(result, "Parsing -if(3). must produce a panic");
 }
 
 #[test]
 #[named]
 /// Try how splitting module into directives and text works
-fn parse_if_as_fragments() {
-  test_util::start(function_name!(), "Parse a module example into fragments of text and pp");
-  let input = "-warning(\"before_if\").
+fn parse_if_branches() {
+  test_util::start(function_name!(), "Parse a module example with if(true)");
+  let input = "-before_if.
 -if(true).
--warning(\"on_true\").
+-test_success.
 -else.
--warning(\"on_false\").
+-test_fail.
 -endif.
--warning(\"after_if\").";
+-after_if().";
   let nodes = test_util::parse_module_unwrap(function_name!(), input);
-
-  assert!(
-    nodes[0].is_preprocessor_warning("before_if"),
-    "Expected warning with a text 'before_if', but got {:?}",
-    nodes[0]
+  assert_eq!(
+    nodes.len(),
+    3,
+    "Expected to have 3 nodes: -before_if, -test_success, and -after_if"
   );
-
-  if let PreprocessorNodeType::IfBlock { cond_true, cond_false, .. } = nodes[1].as_preprocessor() {
-    assert_eq!(cond_true.len(), 1, "must have true branch");
-    assert!(cond_true[0].is_preprocessor_warning("on_true"));
-
-    assert_eq!(cond_false.len(), 1, "must have false branch");
-    assert!(cond_false[0].is_preprocessor_warning("on_false"));
-  } else {
-    panic!("If block is expected, but got {:?}", nodes[1]);
-  }
-
-  assert!(
-    nodes[2].is_preprocessor_warning("after_if"),
-    "Expected text 'after_if', but got {:?}",
-    nodes[2]
-  );
-  // TODO Add an elseif test
+  assert!(nodes[0].is_generic_attr("before_if"));
+  assert!(nodes[1].is_generic_attr("test_success"));
+  assert!(nodes[2].is_generic_attr("after_if"));
 }
 
 #[test]
@@ -124,15 +118,14 @@ fn parse_define_ident_only() {
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
-  let nodes = test_util::parse_module_unwrap(function_name!(), input);
+  let module = test_util::parse_module0(function_name!(), input);
+  let nodes = module.ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
-    assert_eq!(name, "BBB");
-    assert_eq!(body, "[true)");
-  } else {
-    panic!("Expected Preprocessor::Define(BBB, [], '[true)'), received {:?}", pp_node);
-  }
+  assert!(nodes[0].is_empty_ast_node(), "expecting an empty node transformed from -define");
+
+  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
+  assert_eq!(pdef.name, "BBB");
+  assert_eq!(pdef.text, "[true)");
 }
 
 #[test]

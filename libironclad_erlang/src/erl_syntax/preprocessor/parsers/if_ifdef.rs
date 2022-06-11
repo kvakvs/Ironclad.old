@@ -1,7 +1,8 @@
 //! Parsing tools for `-if` family of directives
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{
   match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before,
@@ -33,7 +34,7 @@ pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
   map(
     terminated(
       tuple((
-        parse_if_directive,
+        if_condition,
         // Consume lines and directives until an `-else` or `-endif`
         context("condition true section of a -if()", parse_fragments_till_else),
         // Optional -else. <LINES> block
@@ -45,26 +46,18 @@ pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
       // Ending with an endif
       endif_temporary_directive,
     ),
-    |(pp_if_expr, branch_true, branch_false)| {
-      if let AstNodeType::Preprocessor(PreprocessorNodeType::_TemporaryIf(if_expr)) =
-        &pp_if_expr.content
-      {
-        let branch_true1 = if branch_true.is_empty() { None } else { Some(branch_true) };
-        PreprocessorNodeType::new_if(
-          input.loc(),
-          if_expr.clone(),
-          branch_true1.unwrap_or_default(),
-          branch_false.unwrap_or_default(),
-        )
+    |(if_cond, branch_true, branch_false)| {
+      if if_cond {
+        PreprocessorNodeType::new_group_node_temporary(branch_true)
       } else {
-        unreachable!("This code path should not execute")
+        PreprocessorNodeType::new_group_node_temporary(branch_false.unwrap_or_default())
       }
     },
   )(input.clone())
 }
 
 /// Parse a `-if(EXPR).\n` and return a temporary node
-pub fn parse_if_directive(input: ParserInput) -> ParserResult<AstNode> {
+pub fn if_condition(input: ParserInput) -> ParserResult<bool> {
   map(
     delimited(
       match_dash_tag("if".into()),
@@ -72,7 +65,11 @@ pub fn parse_if_directive(input: ParserInput) -> ParserResult<AstNode> {
       period_newline_tag,
     ),
     // Builds a temporary If node with erl expression in it
-    |t| PreprocessorNodeType::new_if_temporary(input.loc(), t),
+    |expr| match expr.walk_boolean_litexpr() {
+      LiteralBool::False => false,
+      LiteralBool::True => true,
+      LiteralBool::NotABoolean => panic!("Bool expression is expected here"),
+    },
   )(input.clone())
 }
 

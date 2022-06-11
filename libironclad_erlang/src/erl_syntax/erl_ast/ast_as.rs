@@ -57,6 +57,7 @@ impl AstNodeImpl {
   }
 
   /// Unwrap a preprocessor node
+  #[deprecated = "preprocessor nodes should not appear in final AST"]
   pub fn as_preprocessor(&self) -> &PreprocessorNodeType {
     match &self.content {
       AstNodeType::Preprocessor(pp) => pp,
