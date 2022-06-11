@@ -82,6 +82,8 @@ pub enum PreprocessorNodeType {
   _TemporaryIfdef(String),
   /// -ifndef(...). is translated into `IfdefBlock`
   _TemporaryIfndef(String),
-  /// Holds true branches of -if/-ifdef directives, and must be unfolded after parsing
-  _TemporaryGroup(Vec<AstNode>),
+  /// Holds true branches of -if/-ifdef directives, and must be unfolded after parsing. Can only
+  /// occur on top level with other module forms, and is flattened automatically on creating the
+  /// module root node.
+  Group(Vec<AstNode>),
 }

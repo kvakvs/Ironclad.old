@@ -174,13 +174,29 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, lc_node)
   }
 
+  /// Takes preprocessor group nodes and unfolds them into flat list
+  fn flatten_forms(forms: Vec<AstNode>) -> Vec<AstNode> {
+    let mut result = Vec::new();
+    forms.into_iter().for_each(|n| {
+      if let AstNodeType::Preprocessor(p) = &n.content {
+        result.extend(n.as_preprocessor_group().iter().cloned())
+      } else {
+        result.push(n)
+      }
+    });
+    result
+  }
+
   /// Create a new `-module(m).` module attr.
   pub(crate) fn new_module_forms(
     location: SourceLoc,
     name: String,
     forms: Vec<AstNode>,
   ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ModuleRoot { name, forms })
+    AstNodeImpl::construct_with_location(
+      location,
+      ModuleRoot { name, forms: Self::flatten_forms(forms) },
+    )
   }
 
   /// Create a new `-TAG(TERM).` generic module attribute.

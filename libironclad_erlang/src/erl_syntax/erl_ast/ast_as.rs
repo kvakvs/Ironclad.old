@@ -105,6 +105,14 @@ impl AstNodeImpl {
     }
   }
 
+  /// Unwrap an preprocessor-grouped nodes (produced by parsing -if/ifdefs)
+  pub fn as_preprocessor_group(&self) -> &[AstNode] {
+    match self.as_preprocessor() {
+      PreprocessorNodeType::Group(nodes) => &nodes,
+      _ => panic!("Expected Preprocessor::Group() AST node, but got {}", self),
+    }
+  }
+
   /// Unwrap an `-import` attr and return (import_name, imported_mfas)
   pub fn as_import_attr(&self) -> (&str, &Vec<MFArity>) {
     match &self.content {
