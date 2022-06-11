@@ -64,6 +64,14 @@ impl AstNodeImpl {
     }
   }
 
+  /// Unwrap an `-<IDENT>( maybe TERM).` attr and return ident and term
+  pub fn as_generic_attr(&self) -> (String, Option<AstNode>) {
+    match &self.content {
+      AstNodeType::GenericAttr { tag, term } => (tag.clone(), term.clone()),
+      _ => panic!("Expected GenericAttr() AST node, but got {}", self),
+    }
+  }
+
   /// Unwrap an `-export` attr and return contents
   pub fn as_export_attr(&self) -> &Vec<MFArity> {
     match &self.content {

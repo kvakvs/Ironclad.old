@@ -7,10 +7,13 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub enum PreprocessorNodeType {
   /// Specific directive: -include("path").
+  #[deprecated = "includes are executed while parsing"]
   Include(String),
   /// Specific directive: -include_lib("path").
+  #[deprecated = "includes are executed while parsing"]
   IncludeLib(String),
   /// Define directive: `-define(NAME)` or `-define(NAME, TEXT)` or `-define(NAME(ARGS), TEXT)`.
+  #[deprecated = "defines are executed while parsing"]
   Define {
     /// Macro name
     name: String,
@@ -30,8 +33,10 @@ pub enum PreprocessorNodeType {
   //   args: Vec<AstNode>,
   // },
   /// Specific directive: -undef(NAME). removes a named macro definition
+  #[deprecated = "undefs are executed while parsing"]
   Undef(String),
   /// Proceed interpreting AST nodes if the named macro is defined
+  #[deprecated = "conditions are executed while parsing"]
   IfdefBlock {
     /// The condition to check
     macro_name: String,
@@ -42,6 +47,7 @@ pub enum PreprocessorNodeType {
   },
   /// If(expression) stores an expression which must resolve to a constant value otherwise compile
   /// error will be triggered.
+  #[deprecated = "conditions are executed while parsing"]
   IfBlock {
     /// The condition to check
     cond: AstNode,
@@ -55,6 +61,7 @@ pub enum PreprocessorNodeType {
   /// Produce a libironclad warning
   Warning(String),
   /// Nested included file
+  #[deprecated = "files are included while parsing"]
   IncludedFile {
     /// Filename for this included file
     filename: PathBuf,
@@ -71,8 +78,10 @@ pub enum PreprocessorNodeType {
   _TemporaryIf(AstNode),
   /// `-elif(...).` node
   _TemporaryElseIf(AstNode),
-  /// -ifdef(...). is translated into `IfdefBlock`
+  /// -ifdef(...). is pushed on conditions stack in `ParserScope` during parsing
   _TemporaryIfdef(String),
   /// -ifndef(...). is translated into `IfdefBlock`
   _TemporaryIfndef(String),
+  /// Holds true branches of -if/-ifdef directives, and must be unfolded after parsing
+  _TemporaryGroup(Vec<AstNode>),
 }

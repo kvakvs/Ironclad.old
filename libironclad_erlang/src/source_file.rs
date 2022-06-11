@@ -17,10 +17,20 @@ pub type SourceFile = Arc<SourceFileImpl>;
 
 impl SourceFileImpl {
   /// Creates a new source file struct
-  pub fn new(file_name: &Path, text: String) -> Arc<Self> {
-    Arc::new(SourceFileImpl {
+  pub fn new(file_name: &Path, text: String) -> SourceFile {
+    SourceFileImpl {
       file_name: file_name.to_path_buf(),
       text: text.into(),
-    })
+    }
+    .into()
+  }
+
+  /// Create source file with text only
+  pub fn no_file(text: &str) -> SourceFile {
+    SourceFileImpl {
+      file_name: PathBuf::new(),
+      text: text.to_string().into(),
+    }
+    .into()
   }
 }

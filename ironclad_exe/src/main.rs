@@ -32,7 +32,7 @@ fn main_do() -> IcResult<()> {
   let all_inputs = if let Ok(r_inputs) = project.inputs.read() {
     r_inputs.inputs.clone()
   } else {
-    panic!("Can't lock project inputs to preload the files")
+    panic!("Can't lock project inputs to retrieve names of the preload files")
   };
   let file_cache = match preload_stage.run(&all_inputs) {
     Ok(fc) => fc,
@@ -40,7 +40,7 @@ fn main_do() -> IcResult<()> {
   };
 
   // Parse all ERL files and their included includes
-  ErlParseStage::run(&project, file_cache).unwrap();
+  ErlParseStage::run(project, file_cache).unwrap();
   Ok(())
 }
 

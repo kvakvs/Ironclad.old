@@ -1,9 +1,9 @@
 //! Synthesize a type from AST node
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryOp, Empty, FnDef, FnRef, List, Lit, Tuple, Var,
+  Apply, BinaryOp, FnDef, FnRef, List, Lit, Tuple, Var,
 };
+use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IcResult;
@@ -18,7 +18,9 @@ impl AstNodeImpl {
   #[named]
   pub fn synthesize(&self, scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
     match &self.content {
-      Empty => unreachable!("Should not be synthesizing type from empty AST nodes"),
+      AstNodeType::Empty { comment } => {
+        unreachable!("Should not be synthesizing type from AST node: Empty({})", comment)
+      }
       FnDef(fndef) => fndef.synthesize_function_type(scope),
       FnRef { mfa, .. } => match Scope::retrieve_fn_from(scope, mfa) {
         None => ErlError::local_function_not_found(

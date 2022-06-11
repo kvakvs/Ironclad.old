@@ -108,7 +108,7 @@ impl AstNodeImpl {
       }
 
       AstNodeType::RecordDefinition { .. }
-      | AstNodeType::Empty
+      | AstNodeType::Empty { .. }
       | AstNodeType::BinaryOp { .. }
       | AstNodeType::Lit { .. }
       | AstNodeType::Token { .. } => {

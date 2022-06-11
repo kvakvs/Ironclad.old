@@ -25,7 +25,7 @@ impl IterableAstNodeT for AstNodeImpl {
   fn children(&self) -> Option<Vec<AstNode>> {
     match &self.content {
       RecordDefinition { .. }
-      | AstNodeType::Empty
+      | AstNodeType::Empty { .. }
       | ExportAttr { .. }
       | ImportAttr { .. }
       | FnSpec { .. }

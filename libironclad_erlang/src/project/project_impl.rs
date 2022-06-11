@@ -1,11 +1,12 @@
 //! Erlang project (with inputs defined in the config file)
 
 use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefinesMap};
-use crate::error::ic_error::{IroncladError, IroncladResult};
+use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
 use crate::project::project_inputs::ErlProjectInputs;
+use crate::source_loc::SourceLoc;
 use std::collections::HashSet;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -111,29 +112,48 @@ impl ErlProjectImpl {
     Ok(())
   }
 
-  // /// Preprocesses and attempts to parse AST in all input files
-  // pub fn setup(&mut self, inputs: Vec<PathBuf>) -> IcResult<()> {
-  //   self.inputs.inputs = inputs;
-  //
-  //   // //----------------------------------
-  //   // // READING (except includes)
-  //   // //----------------------------------
-  //   // // Load files and store contents in the hashmap
-  //   // let mut preload_stage = FilePreloadStage::default();
-  //   // let file_cache = match preload_stage.run(&self.inputs.inputs) {
-  //   //   Ok(fc) => fc,
-  //   //   Err(e) => return Err(Box::new(e)),
-  //   // };
-  //
-  //   // //-------------------------
-  //   // // PREPROCESSING
-  //   // //-------------------------
-  //   // // Preprocess erl files, and store preprocessed PpAst in a new hashmap
-  //   // let mut pp_stage = PreprocessStage::new();
-  //   // let _pp_ast_cache = pp_stage.run(self, file_cache.clone()).unwrap();
-  //
-  //   Ok(())
-  // }
+  fn find_include_in(sample: &Path, try_dirs: &[String]) -> Option<PathBuf> {
+    for dir in try_dirs {
+      let try_path = Path::new(&dir).join(sample);
+      println!("Trying path: {}", try_path.to_string_lossy());
+      if try_path.exists() {
+        return Some(try_path);
+      }
+    }
+    None
+  }
+
+  /// Check include paths to find the file.
+  pub(crate) fn find_include(
+    &self,
+    location: SourceLoc,
+    find_file: &Path,
+    from_file: Option<PathBuf>,
+  ) -> IcResult<PathBuf> {
+    if let Ok(r_inputs) = self.inputs.read() {
+      println!("inp {:?}", r_inputs);
+
+      // Try find in local search paths for file
+      if let Some(from_file1) = &from_file {
+        if let Some(opts_per_file) = r_inputs.compiler_opts_per_file.get(from_file1) {
+          if let Some(try_loc) = Self::find_include_in(find_file, &opts_per_file.include_paths) {
+            return Ok(try_loc);
+          }
+        }
+      }
+
+      // Try find in global search paths
+      if let Some(try_glob) =
+        Self::find_include_in(find_file, &r_inputs.compiler_opts.include_paths)
+      {
+        Ok(try_glob)
+      } else {
+        IroncladError::file_not_found(location, find_file, "searching for an -include() path")
+      }
+    } else {
+      panic!("Can't lock project inputs to resolve include path")
+    }
+  }
 }
 
 impl From<ProjectConf> for ErlProjectImpl {

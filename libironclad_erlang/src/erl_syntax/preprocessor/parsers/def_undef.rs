@@ -21,7 +21,7 @@ use nom::sequence::{delimited, preceded, tuple};
 fn define_no_args_no_body(input: ParserInput) -> ParserResult<AstNode> {
   map(macro_ident, |name: String| {
     input.parser_scope.define(&name, &[], "");
-    AstNodeImpl::new_empty()
+    AstNodeImpl::new_empty(format!("-define({}).", &name))
   })(input.clone())
 }
 
@@ -40,11 +40,10 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
     )),
     |(ident, args, _comma, (body, _term))| {
       let body_str = body.into_iter().collect::<String>();
-      input
-        .parser_scope
-        .define(&ident, &args.unwrap_or_default(), &body_str);
+      let args1 = args.unwrap_or_default();
+      input.parser_scope.define(&ident, &args1, &body_str);
       println!("New scope {:?}", &input);
-      AstNodeImpl::new_empty()
+      AstNodeImpl::new_empty(format!("-define({}/{}, ...)", &ident, args1.len()))
     },
   )(input.clone())
   // let result = tuple((

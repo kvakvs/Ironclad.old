@@ -22,6 +22,8 @@ use libironclad_erlang::erl_syntax::parsers::{parse_module, parse_module_forms};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::ErlProject;
+use libironclad_erlang::source_file::SourceFileImpl;
 use nom::Finish;
 
 mod test_util;
@@ -589,7 +591,11 @@ fn parse_small_record_test() -> IcResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}).";
-  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
+  let parsed = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input.to_string()),
+    parse_record_def,
+  )?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }
@@ -623,7 +629,11 @@ fn parse_record_test() -> IcResult<()> {
 
   let filename = PathBuf::from(function_name!());
   let input = sample_record_input();
-  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
+  let parsed = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input.to_string()),
+    parse_record_def,
+  )?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }
@@ -637,8 +647,12 @@ fn parse_record_with_module() -> IcResult<()> {
   let filename = PathBuf::from(function_name!());
   // let input = format!("-module({}).\n{}\n", function_name!(), sample_record_input());
   let input = format!("-module({}).\n-record(options, {{includes }}).\n", function_name!());
-  let parsed = ErlModule::parse_helper(&filename, &input, parse_module)?;
-  println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
+  let parsed = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input),
+    parse_module,
+  )?;
+  // println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
 
   let contents = parsed.ast.children().unwrap();
   assert_eq!(contents.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
@@ -656,7 +670,11 @@ fn parse_record_with_map() -> IcResult<()> {
   let input = "-record(t_tuple, {size=0 :: integer(),
     exact=false :: boolean(),
     elements=#{} :: tuple_elements()}).";
-  let parsed = ErlModule::parse_helper(&filename, &input, parse_record_def)?;
+  let parsed = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input.to_string()),
+    parse_record_def,
+  )?;
   println!("Parsed: «{}»\nAST: {}", input, &parsed.ast);
   Ok(())
 }

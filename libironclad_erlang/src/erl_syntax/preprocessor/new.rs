@@ -4,8 +4,8 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
-  IfBlock, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryIf, _TemporaryIfdef,
-  _TemporaryIfndef,
+  IfBlock, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryGroup, _TemporaryIf,
+  _TemporaryIfdef, _TemporaryIfndef,
 };
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
@@ -73,6 +73,11 @@ impl PreprocessorNodeType {
     cond_false: Vec<AstNode>,
   ) -> AstNode {
     Self::construct_with_location(location, IfBlock { cond: expr, cond_true, cond_false })
+  }
+
+  /// Create a new `-if()` temporary node.
+  pub(crate) fn new_group_node_temporary(nodes: Vec<AstNode>) -> AstNode {
+    Self::construct_without_location(_TemporaryGroup(nodes))
   }
 
   /// Create a new `-if()` temporary node.

@@ -7,6 +7,7 @@ use crate::source_file::SourceFile;
 use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
 use std::ops::{Deref, RangeFrom, RangeTo};
+use std::path::PathBuf;
 use std::str::{CharIndices, Chars};
 use std::sync::Arc;
 
@@ -88,7 +89,20 @@ impl<'a> ParserInputImpl<'a> {
     }
   }
 
-  /// Build a new custom parser input from a str slice. Assert that it belongs to the same input slice.
+  pub(crate) fn file_name(&self) -> Option<PathBuf> {
+    self
+      .input
+      .parent_file
+      .clone()
+      .map(|pf| pf.file_name.to_path_buf())
+    // if let Some(pf) = &self.input.parent_file {
+    //   Some(pf.file_name.to_path_buf())
+    // } else {
+    //   None
+    // }
+  }
+
+  /// Clone into a new custom parser input from a str slice. Assert that it belongs to the same input slice.
   pub(crate) fn clone_with_read_slice(&self, slice: &str) -> Self {
     // println!("Parser input clone with read slice...");
     assert!(
@@ -103,10 +117,19 @@ impl<'a> ParserInputImpl<'a> {
   }
 
   /// Build a new custom parser input from a loaded source file
-  pub(crate) fn new_with_source_file(&self, file: SourceFile) -> Self {
+  pub(crate) fn new_with_source_file(scope: ParserScope, file: SourceFile) -> Self {
+    Self {
+      parser_scope: scope,
+      input: ParserInputSlice::new_with_source_file(file),
+      _phantom: Default::default(),
+    }
+  }
+
+  /// Build a new custom parser input from a loaded source file
+  pub(crate) fn clone_with_source_file(&self, file: SourceFile) -> Self {
     Self {
       parser_scope: self.parser_scope.clone(),
-      input: self.input.new_with_source_file(file),
+      input: ParserInputSlice::new_with_source_file(file),
       _phantom: Default::default(),
     }
   }

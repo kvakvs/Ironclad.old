@@ -1,10 +1,10 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, Empty, ExportAttr,
-  ExportTypesAttr, FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List,
-  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, Token, TryCatch,
-  Tuple, Type, TypeAttr, UnaryOp, Var, MFA,
+  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, ExportTypesAttr,
+  FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, Token, TryCatch, Tuple, Type, TypeAttr,
+  UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -14,7 +14,7 @@ use libironclad_util::pretty::Pretty;
 impl std::fmt::Display for AstNodeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match &self.content {
-      Empty => writeln!(f, "% empty"),
+      AstNodeType::Empty { comment } => writeln!(f, "%% {}", comment),
       Token { token: t, .. } => writeln!(f, "% token {}", t),
       ModuleRoot { forms, name } => {
         writeln!(f, "-module({}),", name)?;

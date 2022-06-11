@@ -74,7 +74,7 @@ impl ParserInputSlice {
   }
 
   /// Nested parsing of a new file
-  pub(crate) fn new_with_source_file(&self, file: SourceFile) -> Arc<Self> {
+  pub(crate) fn new_with_source_file(file: SourceFile) -> Arc<Self> {
     Self {
       parent_file: Some(file.clone()),
       parent: file.text.clone(),

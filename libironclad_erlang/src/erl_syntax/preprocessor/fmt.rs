@@ -55,7 +55,13 @@ impl std::fmt::Display for PreprocessorNodeType {
         Pretty::doublequot_string(f, t)?;
         write!(f, ").")
       }
-
+      PreprocessorNodeType::_TemporaryGroup(group) => {
+        writeln!(f, "% temporary group")?;
+        for form in group {
+          write!(f, "{}", form)?;
+        }
+        writeln!(f, "% end temporary group")
+      }
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }

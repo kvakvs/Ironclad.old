@@ -2,10 +2,11 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::r#if::{
+use libironclad_erlang::erl_syntax::preprocessor::parsers::if_ifdef::{
   parse_if_block, parse_if_directive,
 };
 use nom::Finish;
@@ -104,15 +105,18 @@ false).
 #[named]
 fn parse_define_ident_only() {
   test_util::start(function_name!(), "Parse a basic -define macro with only ident");
-  let input = "-define(AAA).";
+  let input = "-define(AAA).
+-ifdef(AAA).
+-testattr.
+-endif.";
   let nodes = test_util::parse_module_unwrap(function_name!(), input);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Define { name, body, .. } = pp_node {
-    assert_eq!(name, "AAA");
-    assert!(body.is_empty());
-  } else {
-    panic!("Expected Preprocessor::Define, received {:?}", pp_node);
-  }
+  assert!(
+    matches!(nodes[0].content, AstNodeType::Empty { .. }),
+    "-define must expand into empty node"
+  );
+  let (attr_tag, attr_val) = nodes[1].as_generic_attr();
+  assert_eq!(attr_tag, "testattr");
+  assert!(attr_val.is_none());
 }
 
 #[test]

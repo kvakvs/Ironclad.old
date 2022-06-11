@@ -59,6 +59,16 @@ impl ParserScopeImpl {
     }
   }
 
+  /// Create new parser scope from a project
+  pub fn new_from_project(project: ErlProject, path: &Path) -> ParserScope {
+    Self {
+      defines: project.get_preprocessor_scope(path).into(),
+      file_cache: FileCache::default(), // TODO get the cache?
+      project,
+    }
+    .into()
+  }
+
   /// Parse defines in the configuration file, or from command line specified as -DNAME or -DNAME=XXX
   pub(crate) fn new_from_config_lines(inputs: &[String]) -> PreprocessorDefinesMap {
     inputs
@@ -128,18 +138,6 @@ impl ParserScopeImpl {
     }
   }
 
-  // /// Clone self and remove the name
-  // #[allow(dead_code)]
-  // pub(crate) fn undefine(&self, name: &str) -> PreprocessorScope {
-  //   let mut defines: HashMap<NameArity, PreprocessorDefine> = Default::default();
-  //   for (na, ppdef) in self.defines.iter() {
-  //     if na.name != name {
-  //       defines.insert(na.clone(), ppdef.clone());
-  //     }
-  //   }
-  //   PreprocessorScopeImpl { defines }.into()
-  // }
-
   /// For macro with 0 arguments, produce its substitute which goes into AST tree.
   /// Returns `Some(string)` if macro() is defined, else `None`.
   pub(crate) fn get_value(&self, name: &str, arity: usize) -> Option<PreprocessorDefine> {
@@ -153,28 +151,19 @@ impl ParserScopeImpl {
   pub(crate) fn load_include(
     &self,
     location: SourceLoc,
-    path: &Path,
+    find_file: &Path,
+    from_file: Option<PathBuf>,
   ) -> IcResult<Arc<SourceFileImpl>> {
+    let resolved_path = self
+      .project
+      .find_include(location.clone(), find_file, from_file)?;
+
     // Check if already loaded in the File Cache?
     if let Ok(mut cache) = self.file_cache.write() {
-      return cache.get_or_load(path).map_err(IcError::from);
-    }
-    IroncladError::file_not_found(location, path, "loading an include file")
-  }
-
-  #[allow(dead_code)]
-  fn find_include(&self, location: SourceLoc, path: &Path) -> IcResult<PathBuf> {
-    if let Ok(r_inputs) = self.project.inputs.read() {
-      for inc_path in &r_inputs.input_opts.include_paths {
-        let try_path = Path::new(&inc_path).join(path);
-        if try_path.exists() {
-          return Ok(try_path);
-        }
-      }
+      cache.get_or_load(&resolved_path).map_err(IcError::from)
     } else {
-      panic!("Can't lock project inputs for read")
+      IroncladError::file_not_found(location, find_file, "loading an include file")
     }
-    IroncladError::file_not_found(location, path, "searching for an -include() path")
   }
 
   /// `include_lib` is similar to `include`, but should not point out an absolute file. Instead,

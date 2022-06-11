@@ -9,9 +9,9 @@ use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_strings::str_literal::parse_doublequot_string;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
-use crate::erl_syntax::preprocessor::parsers::r#if::{
-  elif_temporary_directive, else_temporary_directive, endif_temporary_directive,
-  ifdef_temporary_directive, ifndef_temporary_directive, parse_if_block,
+use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
+  elif_temporary_directive, else_temporary_directive, endif_temporary_directive, ifdef_directive,
+  ifndef_temporary_directive, parse_if_block,
 };
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -57,9 +57,9 @@ fn include_directive(input: ParserInput) -> ParserResult<AstNode> {
   if let Ok((input2, path)) = result {
     let included_file = input
       .parser_scope
-      .load_include(input.loc(), &PathBuf::from(path))
+      .load_include(input.loc(), &PathBuf::from(path), input.file_name())
       .unwrap();
-    let input3 = input2.new_with_source_file(included_file);
+    let input3 = input2.clone_with_source_file(included_file);
     parse_module(input3)
   } else {
     Err(result.unwrap_err())
@@ -120,7 +120,7 @@ pub(crate) fn parse_preproc_directive(input: ParserInput) -> ParserResult<AstNod
     context("'-endif()' directive", endif_temporary_directive),
     context("'-elif()' directive", elif_temporary_directive),
     context("'-else()' directive", else_temporary_directive),
-    context("'-ifdef()' directive", ifdef_temporary_directive),
+    context("'-ifdef()' directive", ifdef_directive),
     context("'-ifndef()' directive", ifndef_temporary_directive),
     context("'-if()' directive", parse_if_block), // if must go after longer words ifdef and ifndef
     context("'-warning()' directive", warning_directive),

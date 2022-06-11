@@ -13,6 +13,8 @@ use libironclad_erlang::erl_syntax::parsers::parse_attr::{
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::ErlProject;
+use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
@@ -199,7 +201,12 @@ fn parse_spec_test() {
   let filename = PathBuf::from(function_name!());
   let input = "-spec module(beam_asm:module_code(), [compile:option()]) ->
                     {'ok',beam_utils:module_code()}.";
-  let result = ErlModule::parse_helper(&filename, &input, ErlTypeParser::fn_spec_attr).unwrap();
+  let result = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input.to_string()),
+    ErlTypeParser::fn_spec_attr,
+  )
+  .unwrap();
   assert!(matches!(result.ast.content, AstNodeType::FnSpec { .. }));
 }
 
@@ -210,7 +217,12 @@ fn parse_int_range_test() {
 
   let filename = PathBuf::from(function_name!());
   let input = "-type reg_num() :: 0 .. 1023.";
-  let result = ErlModule::parse_helper(&filename, &input, type_definition_attr).unwrap();
+  let result = ErlModule::parse_helper(
+    ErlProject::default(),
+    SourceFileImpl::new(&filename, input.to_string()),
+    type_definition_attr,
+  )
+  .unwrap();
   println!("Parsed typeattr: {:?}", result.ast);
   // let content = result.ast.children().unwrap();
   // assert!(matches!(content[0].content, ErlAstType::TypeAttr { .. }));

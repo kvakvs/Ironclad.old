@@ -3,7 +3,7 @@
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::file_cache::FileCache;
 use libironclad_erlang::project::module::ErlModule;
-use libironclad_erlang::project::project_impl::ErlProjectImpl;
+use libironclad_erlang::project::ErlProject;
 
 /// Handles parsing loaded Erlang files in the project
 pub struct ErlParseStage {}
@@ -12,7 +12,7 @@ impl ErlParseStage {
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run(project: &ErlProjectImpl, contents_cache: FileCache) -> IcResult<()> {
+  pub fn run(project: ErlProject, contents_cache: FileCache) -> IcResult<()> {
     if let Ok(contents_cache_r) = contents_cache.read() {
       for (path, source_file) in &contents_cache_r.all_files {
         let path_s = path.to_string_lossy();

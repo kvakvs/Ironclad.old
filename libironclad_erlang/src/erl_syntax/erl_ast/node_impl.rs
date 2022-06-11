@@ -38,7 +38,10 @@ pub struct AstNodeImpl {
 #[derive(Debug)]
 pub enum AstNodeType {
   /// Default value for when AST tree is empty. Should create error, not a valid AST node.
-  Empty,
+  Empty {
+    /// How this `Empty` was created.
+    comment: String,
+  },
 
   /// A token to be consumed by AST builder, temporary, must not exist in final AST
   Token {

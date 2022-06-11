@@ -35,10 +35,10 @@ pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
       tuple((
         parse_if_directive,
         // Consume lines and directives until an `-else` or `-endif`
-        context("Condition true section of a preprocessor if", parse_fragments_till_else),
+        context("condition true section of a -if()", parse_fragments_till_else),
         // Optional -else. <LINES> block
         context(
-          "Condition false section of a preprocessor if",
+          "condition false section of a -if()",
           opt(preceded(else_temporary_directive, parse_fragments_till_endif)),
         ),
       )),
@@ -88,15 +88,38 @@ pub(crate) fn elif_temporary_directive(input: ParserInput) -> ParserResult<AstNo
   )(input.clone())
 }
 
-/// Parse a `-ifdef(MACRO_NAME)`
-pub(crate) fn ifdef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
+fn ifdef_condition(input: ParserInput) -> ParserResult<bool> {
   map(
     delimited(
       match_dash_tag("ifdef".into()),
       delimited(par_open_tag, macro_ident, par_close_tag),
       period_newline_tag,
     ),
-    |t: String| PreprocessorNodeType::new_ifdef_temporary(input.loc(), t),
+    |tag: String| input.parser_scope.is_defined(&tag),
+  )(input.clone())
+}
+
+/// Parse a `-ifdef(MACRO_NAME)`
+pub(crate) fn ifdef_directive(input: ParserInput) -> ParserResult<AstNode> {
+  map(
+    terminated(
+      tuple((
+        ifdef_condition,
+        context("condition true section of an -ifdef()", parse_fragments_till_else),
+        context(
+          "condition false section of an -ifdef()",
+          opt(preceded(else_temporary_directive, parse_fragments_till_endif)),
+        ),
+      )),
+      endif_temporary_directive,
+    ),
+    |(cond_true, branch_true, branch_false)| {
+      PreprocessorNodeType::new_group_node_temporary(if cond_true {
+        branch_true
+      } else {
+        branch_false.unwrap_or_default()
+      })
+    },
   )(input.clone())
 }
 

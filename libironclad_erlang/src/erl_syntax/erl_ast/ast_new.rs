@@ -42,8 +42,8 @@ impl AstNodeImpl {
 
   /// Construct an `Empty` node
   #[inline]
-  pub fn new_empty() -> AstNode {
-    Self::construct_without_location(Empty)
+  pub fn new_empty(comment: String) -> AstNode {
+    Self::construct_without_location(Empty { comment })
   }
 
   /// Create a new variable AST node

@@ -55,6 +55,7 @@ impl FileCacheImpl {
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
   pub fn get_or_load(&mut self, file_name: &Path) -> IroncladResult<SourceFile> {
+    println!("FileCache: get or load {}", file_name.to_string_lossy());
     let canon_path = file_name.canonicalize().unwrap();
 
     match self.all_files.get(&canon_path) {
