@@ -52,63 +52,63 @@ impl PreprocessFile {
     Self::new(&ast_cache, &file_cache, scope)
   }
 
-  /// Check AST cache if the file is already parsed, and then return the cached ppAst
-  /// Otherwise pass the control to the parser
-  pub(crate) fn parse_file_helper<Parser>(
-    &self,
-    ast_cache_stats: &mut CacheStats,
-    input_file: &SourceFileImpl,
-    parser: Parser,
-  ) -> IcResult<Arc<PpAst>>
-  where
-    Parser: Fn(&str) -> PpAstParserResult,
-  {
-    // Check if already parsed in AST cache
-    if let Ok(ast_cache) = self.ast_cache.read() {
-      let maybe_cache_hit = ast_cache.items.get(&input_file.file_name);
-      if let Some(maybe_cache_hit1) = maybe_cache_hit {
-        // Found already parsed
-        ast_cache_stats.hits += 1;
-        return Ok(maybe_cache_hit1.clone());
-      } else {
-        ast_cache_stats.misses += 1;
-      }
-    }
+  // /// Check AST cache if the file is already parsed, and then return the cached ppAst
+  // /// Otherwise pass the control to the parser
+  // pub(crate) fn parse_file_helper<Parser>(
+  //   &self,
+  //   ast_cache_stats: &mut CacheStats,
+  //   input_file: &SourceFileImpl,
+  //   parser: Parser,
+  // ) -> IcResult<Arc<PpAst>>
+  // where
+  //   Parser: Fn(&str) -> PpAstParserResult,
+  // {
+  //   // Check if already parsed in AST cache
+  //   if let Ok(ast_cache) = self.ast_cache.read() {
+  //     let maybe_cache_hit = ast_cache.items.get(&input_file.file_name);
+  //     if let Some(maybe_cache_hit1) = maybe_cache_hit {
+  //       // Found already parsed
+  //       ast_cache_stats.hits += 1;
+  //       return Ok(maybe_cache_hit1.clone());
+  //     } else {
+  //       ast_cache_stats.misses += 1;
+  //     }
+  //   }
+  //
+  //   let result = self.parse_helper(&input_file.text, parser);
+  //
+  //   if let Ok(result_ok) = &result {
+  //     if let Ok(mut ast_cache) = self.ast_cache.write() {
+  //       // Save to preprocessor AST cache
+  //       ast_cache
+  //         .items
+  //         .insert(input_file.file_name.clone(), result_ok.clone());
+  //     }
+  //   }
+  //
+  //   result
+  // }
 
-    let result = self.parse_helper(&input_file.text, parser);
-
-    if let Ok(result_ok) = &result {
-      if let Ok(mut ast_cache) = self.ast_cache.write() {
-        // Save to preprocessor AST cache
-        ast_cache
-          .items
-          .insert(input_file.file_name.clone(), result_ok.clone());
-      }
-    }
-
-    result
-  }
-
-  /// Parse AST using provided parser function, check that input is consumed, print some info.
-  /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
-  pub(crate) fn parse_helper<Parser>(
-    &self,
-    input: ParserInput,
-    parser: Parser,
-  ) -> IcResult<Arc<PpAst>>
-  where
-    Parser: Fn(&str) -> PpAstParserResult,
-  {
-    let (tail, ast) = panicking_parser_error_reporter(input, parser(input).finish());
-    assert!(
-      tail.trim().is_empty(),
-      "Preprocessor: Not all input was consumed by parse.\n\tTail: «{}»\n\tAst: {}",
-      tail,
-      ast
-    );
-    Ok(ast)
-    //   Err(err) => PpError::from_nom_error(input, err),
-  }
+  // /// Parse AST using provided parser function, check that input is consumed, print some info.
+  // /// The parser function must take `&str` and return `Arc<PpAst>` wrapped in a `ParserResult`
+  // pub(crate) fn parse_helper<Parser>(
+  //   &self,
+  //   input: ParserInput,
+  //   parser: Parser,
+  // ) -> IcResult<Arc<PpAst>>
+  // where
+  //   Parser: Fn(&str) -> PpAstParserResult,
+  // {
+  //   let (tail, ast) = panicking_parser_error_reporter(input, parser(input).finish());
+  //   assert!(
+  //     tail.trim().is_empty(),
+  //     "Preprocessor: Not all input was consumed by parse.\n\tTail: «{}»\n\tAst: {}",
+  //     tail,
+  //     ast
+  //   );
+  //   Ok(ast)
+  //   //   Err(err) => PpError::from_nom_error(input, err),
+  // }
 
   /// Returns: True if a file was preprocessed
   pub(crate) fn preprocess_file(

@@ -15,7 +15,7 @@ use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
-use crate::erl_syntax::parsers::parser_scope::ParserScopeImpl;
+use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::ErlProject;
@@ -32,15 +32,12 @@ pub struct ErlModule {
   pub name: String,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: SourceFile,
-
+  /// Stores state of preprocessor defines during parse, and then final state after parse (useful for testing)
+  pub parser_scope: ParserScope,
   /// AST tree of the module.
   pub ast: AstNode,
-
-  // /// Collection of module functions and a lookup table
-  // pub registry: RwLock<FuncRegistry>,
   /// Module level scope, containing functions
   pub scope: Arc<RwLock<Scope>>,
-
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
   pub errors: RefCell<Vec<ErlError>>,
@@ -52,6 +49,7 @@ impl Default for ErlModule {
       compiler_options: Default::default(),
       name: "".to_string(),
       source_file: Arc::new(SourceFileImpl::default()),
+      parser_scope: ParserScopeImpl::new_empty().into(),
       ast: AstNodeImpl::new_empty("dummy node for module root".to_string()),
       scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
@@ -85,7 +83,7 @@ impl ErlModule {
     T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
   {
     let parser_scope = ParserScopeImpl::new_from_project(project, &PathBuf::new());
-    let input = ParserInput::new_with_source_file(parser_scope, src_file.clone());
+    let input = ParserInput::new_with_source_file(parser_scope.clone(), src_file.clone());
     let mut module = ErlModule::default();
     let (tail, forms) =
       panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());
@@ -97,6 +95,7 @@ impl ErlModule {
       forms
     );
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
+    module.parser_scope = parser_scope;
     module.source_file = src_file;
     module.ast = forms;
 
@@ -108,10 +107,13 @@ impl ErlModule {
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
-  pub fn from_module_source(filename: &Path, input: &str) -> IcResult<Self> {
-    let project = ErlProject::default();
+  pub fn from_module_source(
+    filename: &Path,
+    input: &str,
+    project: Option<ErlProject>,
+  ) -> IcResult<Self> {
     let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project, src_file, parse_module)
+    Self::parse_helper(project.unwrap_or_default(), src_file, parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression

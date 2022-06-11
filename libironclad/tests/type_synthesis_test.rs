@@ -144,7 +144,7 @@ fn synth_fun_call() -> IcResult<()> {
     main(A) -> add(A, 4).\n",
     function_name!()
   );
-  let module = ErlModule::from_module_source(&filename, &code)?;
+  let module = ErlModule::from_module_source(&filename, &code, None)?;
   // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
@@ -188,7 +188,7 @@ fn synth_multiple_clause_test() -> IcResult<()> {
     function_name!()
   );
   let filename = PathBuf::from(function_name!());
-  let parsed = ErlModule::from_module_source(&filename, &source)?;
+  let parsed = ErlModule::from_module_source(&filename, &source, None)?;
 
   let main_fn_ast =
     AstNodeImpl::find_function_def(&parsed.ast, &MFArity::new_local("main", 1)).unwrap();

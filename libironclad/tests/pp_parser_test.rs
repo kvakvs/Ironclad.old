@@ -139,25 +139,37 @@ fn parse_define_with_body_no_args() {
 #[named]
 fn parse_define_with_body_2_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and 2 args");
-  let input = "-define(CCC(X,y), 2args\nbody).";
-  let nodes = test_util::parse_module_unwrap(function_name!(), input);
-  assert_eq!(nodes.len(), 1);
-  let pp_node = nodes[0].as_preprocessor();
-  if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
-    assert_eq!(name, "CCC");
-    assert!(!args.is_empty());
+  let input = "-define(CCC(X,y), 2args\nbody).
+-ifdef(CCC).
+-testsuccess.
+-endif().";
+  let module = test_util::parse_module0(function_name!(), input);
+  let nodes = module.ast.children().unwrap_or_default();
 
-    assert_eq!(args.len(), 2);
-    assert_eq!(args[0], "X");
-    assert_eq!(args[1], "y");
+  assert_eq!(nodes.len(), 2, "1 line for -define and 1 line for -testsuccess");
+  assert!(nodes[0].is_empty_ast_node(), "define node must be transformed into Empty");
 
-    assert_eq!(body, "2args\nbody");
-  } else {
-    panic!(
-      "Expected Preprocessor::Define(CCC, [X, Y], '2args\\nbody'), received {:?}",
-      pp_node
-    );
-  }
+  let (tag, _) = nodes[1].as_generic_attr();
+  assert_eq!(tag, "testsuccess", "Expected a -testsuccess attribute for the test to pass");
+
+  assert!(module.parser_scope.is_defined("CCC"));
+
+  // let pp_node = nodes[0].as_preprocessor();
+  // if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
+  //   assert_eq!(name, "CCC");
+  //   assert!(!args.is_empty());
+  //
+  //   assert_eq!(args.len(), 2);
+  //   assert_eq!(args[0], "X");
+  //   assert_eq!(args[1], "y");
+  //
+  //   assert_eq!(body, "2args\nbody");
+  // } else {
+  //   panic!(
+  //     "Expected Preprocessor::Define(CCC, [X, Y], '2args\\nbody'), received {:?}",
+  //     pp_node
+  //   );
+  // }
 }
 
 #[test]
@@ -181,32 +193,29 @@ fn parse_include_varied_spacing_2() {
   assert_eq!(path, "test");
 }
 
-fn parse_define_varied_spacing_do(
-  function_name: &str,
-  input: &str,
-  match_macro: &str,
-  match_text: &str,
-) {
-  let nodes = test_util::parse_module_unwrap(function_name, input);
-  assert_eq!(nodes.len(), 1);
-  let (name, args, body) = nodes[0].as_preprocessor_define();
-  assert_eq!(name, match_macro);
-  assert!(args.is_empty());
-  assert_eq!(body, match_text);
+fn parse_define_varied_spacing_do(function_name: &str, input: &str) {
+  let input2 = format!("{}\n-ifdef(TEST).\n-testsuccess.\n-endif.", input);
+  let nodes = test_util::parse_module_unwrap(function_name, &input2);
+
+  assert_eq!(nodes.len(), 2);
+  assert!(nodes[0].is_empty_ast_node()); // define node transformed into empty
+
+  let (g_tag, g_val) = nodes[1].as_generic_attr();
+  assert_eq!(g_tag, "testsuccess");
+  assert!(g_val.is_none());
+  // let (name, args, body) = nodes[0].as_preprocessor_define();
+  // assert_eq!(name, match_macro);
+  // assert!(args.is_empty());
+  // assert_eq!(body, match_text);
 }
 
 #[test]
 #[named]
 fn parse_define_varied_spacing() {
   test_util::start(function_name!(), "Parse -define() directives with varied spacing");
-  parse_define_varied_spacing_do(function_name!(), "- define(AAA, \"aaa\").", "AAA", "\"aaa\"");
-  parse_define_varied_spacing_do(function_name!(), "- define\n(BBB,\n666).", "BBB", "666");
-  parse_define_varied_spacing_do(
-    function_name!(),
-    "   - define\n\n  (  CCC   ,  \nccc).",
-    "CCC",
-    "ccc",
-  );
+  parse_define_varied_spacing_do(function_name!(), "- define(TEST, true).");
+  parse_define_varied_spacing_do(function_name!(), "- define\n(TEST,\ntrue).");
+  parse_define_varied_spacing_do(function_name!(), "   - define\n\n  (  TEST   ,  \ntrue).");
 }
 
 #[test]
@@ -237,12 +246,22 @@ fn test_define_with_dquotes() {
 fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let module =
-    test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
+    test_util::parse_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
   // module.interpret_preprocessor_nodes().unwrap();
   let nodes = module.ast.children().unwrap_or_default();
-  assert_eq!(nodes.len(), 2);
-  let (_, _, body) = nodes[1].as_preprocessor_define();
-  assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
+  assert_eq!(
+    nodes.len(),
+    2,
+    "Must parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
+  );
+  assert!(nodes[0].is_empty_ast_node());
+  assert!(nodes[1].is_empty_ast_node());
+  // let (_, _, body) = nodes[1].as_preprocessor_define();
+  // assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
+
+  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
+  assert_eq!(pdef.name, "BBB");
+  assert_eq!(pdef.text, "bbb");
 }
 
 #[test]
@@ -250,7 +269,7 @@ fn test_macro_expansion_in_define() {
 /// Try parse an expression with a macro
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
-  let module = test_util::parse_a_module0(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
+  let module = test_util::parse_module0(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
   // module.interpret_preprocessor_nodes().unwrap();
   let nodes = module.ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 2);

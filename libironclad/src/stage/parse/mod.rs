@@ -21,8 +21,11 @@ impl ErlParseStage {
         if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
           let compiler_opts = project.get_compiler_options_for(path);
 
-          let mut parsed =
-            ErlModule::from_module_source(&source_file.file_name, source_file.text.as_str())?;
+          let mut parsed = ErlModule::from_module_source(
+            &source_file.file_name,
+            source_file.text.as_str(),
+            Some(project.clone()),
+          )?;
           parsed.compiler_options = compiler_opts;
         }
       }

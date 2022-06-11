@@ -17,11 +17,11 @@ impl std::fmt::Display for AstNodeImpl {
       AstNodeType::Empty { comment } => writeln!(f, "%% {}", comment),
       Token { token: t, .. } => writeln!(f, "% token {}", t),
       ModuleRoot { forms, name } => {
-        writeln!(f, "-module({}),", name)?;
+        writeln!(f, "-module({}).", name)?;
         for form in forms.iter() {
           write!(f, "{}", form)?;
         }
-        Ok(())
+        writeln!(f, "%%% end module",)
       }
       ExportAttr { exports, .. } => {
         write!(f, "-export(")?;

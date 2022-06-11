@@ -45,7 +45,7 @@ impl Clone for ParserScopeImpl {
 
 impl std::fmt::Debug for ParserScopeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "Scope[ defines={:?} ]", &self.defines)
+    write!(f, "Scope[ defines={:?} ]", &self.defines.read().unwrap())
   }
 }
 
@@ -107,8 +107,7 @@ impl ParserScopeImpl {
   }
 
   /// Check if name of any arity exists in the scope
-  #[allow(dead_code)]
-  pub(crate) fn is_defined(&self, name: &str) -> bool {
+  pub fn is_defined(&self, name: &str) -> bool {
     if let Ok(r_defines) = self.defines.read() {
       r_defines
         .iter()
@@ -140,7 +139,7 @@ impl ParserScopeImpl {
 
   /// For macro with 0 arguments, produce its substitute which goes into AST tree.
   /// Returns `Some(string)` if macro() is defined, else `None`.
-  pub(crate) fn get_value(&self, name: &str, arity: usize) -> Option<PreprocessorDefine> {
+  pub fn get_value(&self, name: &str, arity: usize) -> Option<PreprocessorDefine> {
     if let Ok(r_defines) = self.defines.read() {
       r_defines.get(&NameArity::new(name, arity)).cloned()
     } else {

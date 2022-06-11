@@ -98,6 +98,7 @@ impl AstNodeImpl {
   }
 
   /// Unwrap an `-define` attr and return path
+  #[deprecated = "can't access preprocessor define after parse is finished"]
   pub fn as_preprocessor_define(&self) -> (&str, &[String], &str) {
     match self.as_preprocessor() {
       PreprocessorNodeType::Define { name, args, body } => (name.as_str(), args, body.as_str()),
