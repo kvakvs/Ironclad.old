@@ -1,6 +1,7 @@
 //! Input is broken into tokens
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::typing::erl_integer::ErlInteger;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
@@ -61,6 +62,9 @@ pub enum Token {
   BarBar,
   /// A parsed string token_stream between `" TEXT "`
   Str(String),
+  Comment(String),
+  /// A `$`-prefixed any character
+  Character(Char),
   /// A parsed atom token_stream either lowercase `atom` or quoted between `' TEXT '`
   Atom(String),
   Variable(String),
@@ -113,6 +117,8 @@ impl std::fmt::Display for Token {
       Token::Str(s) => Pretty::doublequot_string(f, s),
       Token::Variable(v) => write!(f, "{}", v),
       Token::MacroInvocation(m) => write!(f, "?{}", m),
+      Token::Character(c) => write!(f, "${}", *c),
+      Token::Comment(c) => write!(f, "% {}", c),
     }
   }
 }

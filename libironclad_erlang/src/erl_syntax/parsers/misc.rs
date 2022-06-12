@@ -248,7 +248,7 @@ pub fn panicking_parser_error_reporter<'a, Out>(
       let tail_trim_whitespace = tail.trim();
 
       if !tail_trim_whitespace.is_empty() {
-        panic!("Not all input was consumed: tail=«{}»", tail_trim_whitespace)
+        panic!("Parser: Not all input was consumed: tail=«{}»", tail_trim_whitespace)
       }
       (tail, out)
     }
@@ -264,15 +264,15 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 pub fn panicking_tokenizer_error_reporter<'a, Out>(
   input: TokInput,
   res: Result<(TokInput<'a>, Out), nom::error::VerboseError<TokInput<'a>>>,
-) -> (TokInput<'a>, Out) {
+) -> Out {
   match res {
     Ok((tail, out)) => {
       let tail_trim_whitespace = tail.trim();
 
       if !tail_trim_whitespace.is_empty() {
-        panic!("Not all input was consumed: tail=«{}»", tail_trim_whitespace)
+        panic!("Tokenizer: Not all input was consumed: tail=«{}»", tail_trim_whitespace)
       }
-      (tail, out)
+      out
     }
     Err(e) => {
       println!("Parse error: {}", convert_error(input, e));

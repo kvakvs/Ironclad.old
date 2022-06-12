@@ -87,14 +87,14 @@ impl ErlModule {
     T: Fn(TokInput) -> TokResult<Vec<Token>>,
   {
     let input = src_file.text.as_str();
-    let (tail, forms) = panicking_tokenizer_error_reporter(input, parse_fn(input).finish());
+    let forms = panicking_tokenizer_error_reporter(input, parse_fn(input).finish());
 
-    assert!(
-      tail.trim().is_empty(),
-      "Not all input was consumed by tokenizer.\n\tTail: «{}»\n\tForms: {:?}",
-      tail,
-      forms
-    );
+    // assert!(
+    //   tail.trim().is_empty(),
+    //   "Not all input was consumed by tokenizer.\n\tTail: «{}»\n\tForms: {:?}",
+    //   tail,
+    //   forms
+    // );
 
     Ok(forms)
   }

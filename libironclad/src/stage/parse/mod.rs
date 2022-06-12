@@ -19,7 +19,7 @@ impl ErlParseStage {
 
         // Take only .erl and .hrl files
         if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
-          let compiler_opts = project.get_compiler_options_for(path);
+          let _compiler_opts = project.get_compiler_options_for(path);
 
           let tok_stream = ErlModule::tokens_from_module_source(
             &source_file.file_name,
@@ -28,12 +28,12 @@ impl ErlParseStage {
           )?;
           tok_stream.into_iter().for_each(|t| print!("{} ", t));
 
-          let mut parsed = ErlModule::from_module_source(
-            &source_file.file_name,
-            source_file.text.as_str(),
-            Some(project.clone()),
-          )?;
-          parsed.compiler_options = compiler_opts;
+          // let mut parsed = ErlModule::from_module_source(
+          //   &source_file.file_name,
+          //   source_file.text.as_str(),
+          //   Some(project.clone()),
+          // )?;
+          // parsed.compiler_options = compiler_opts;
         }
       }
     }
