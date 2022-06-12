@@ -85,4 +85,16 @@ impl Pretty {
     }
     write!(f, "\"")
   }
+
+  /// Display a `\' {text} \'` with special characters quoted.
+  pub fn singlequot_string(f: &mut std::fmt::Formatter, s: &str) -> std::fmt::Result {
+    write!(f, "\'")?;
+    for (_i, ch) in s.chars().enumerate() {
+      match ch {
+        '\'' | '\\' => write!(f, "\\{}", ch)?,
+        _ => write!(f, "{}", ch)?,
+      }
+    }
+    write!(f, "\'")
+  }
 }

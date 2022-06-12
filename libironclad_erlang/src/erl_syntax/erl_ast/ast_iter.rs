@@ -5,7 +5,7 @@ use ::function_name::named;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   GenericAttr, IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit,
-  ModuleRoot, RecordDefinition, Token, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
+  ModuleRoot, RecordDefinition, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
@@ -80,7 +80,6 @@ impl IterableAstNodeT for AstNodeImpl {
       }
       ListComprehensionGenerator { left, right, .. } => Some(vec![left.clone(), right.clone()]),
 
-      Token { .. } => panic!("Token {} must be eliminated in AST build phase", self),
       TryCatch { body, of_branches, catch_clauses, .. } => {
         let mut r: Vec<AstNode> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch

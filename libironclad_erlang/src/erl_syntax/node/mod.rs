@@ -11,6 +11,5 @@ pub mod erl_fn_def;
 pub mod erl_if_clause;
 pub mod erl_map;
 pub mod erl_record;
-pub mod erl_token;
 pub mod erl_unop;
 pub mod erl_var;

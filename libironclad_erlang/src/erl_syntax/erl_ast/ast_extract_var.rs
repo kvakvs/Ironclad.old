@@ -110,8 +110,7 @@ impl AstNodeImpl {
       AstNodeType::RecordDefinition { .. }
       | AstNodeType::Empty { .. }
       | AstNodeType::BinaryOp { .. }
-      | AstNodeType::Lit { .. }
-      | AstNodeType::Token { .. } => {
+      | AstNodeType::Lit { .. } => {
         Ok(()) // do nothing
       }
 

@@ -12,10 +12,10 @@ use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::node::erl_token::ErlToken;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
+use crate::erl_syntax::token_stream::token::Token;
 use crate::error::ic_error::IcResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -41,12 +41,6 @@ pub enum AstNodeType {
   Empty {
     /// How this `Empty` was created.
     comment: String,
-  },
-
-  /// A token to be consumed by AST builder, temporary, must not exist in final AST
-  Token {
-    /// The token enum
-    token: ErlToken,
   },
 
   /// Forms list, root of a module
@@ -241,17 +235,6 @@ impl AstNodeImpl {
   /// Returns true for ErlAst::Var
   pub fn is_var(&self) -> bool {
     matches!(&self.content, AstNodeType::Var(..))
-  }
-
-  /// Create a new temporary token, which holds a place temporarily, it must be consumed in the
-  /// same function and not exposed to the rest of the program.
-  #[allow(dead_code)]
-  pub(crate) fn temporary_token(t: ErlToken) -> AstNode {
-    AstNodeImpl {
-      location: SourceLoc::None,
-      content: AstNodeType::Token { token: t },
-    }
-    .into()
   }
 
   /// Retrieve Some(atom text) if AST node is atom
