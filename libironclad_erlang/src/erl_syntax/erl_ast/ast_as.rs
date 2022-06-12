@@ -91,6 +91,7 @@ impl AstNodeImpl {
   }
 
   /// Unwrap an `-include` attr and return path
+  #[deprecated = "preprocessor include is not visible in the resulting AST"]
   pub fn as_preprocessor_include(&self) -> &str {
     match self.as_preprocessor() {
       PreprocessorNodeType::Include(path) => path.as_str(),

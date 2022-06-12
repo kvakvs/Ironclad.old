@@ -5,10 +5,7 @@ use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::if_ifdef::{
-  if_condition, parse_if_block,
-};
+use libironclad_erlang::erl_syntax::preprocessor::parsers::if_ifdef::if_condition;
 use nom::Finish;
 
 #[test]
@@ -67,32 +64,17 @@ fn parse_if_block_with_comments() {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let input = "  -if(%true)
 false).
--warning(\"on_true\"
-).
+-test_fail.
 -else.
 %%-endif.
--warning(\"on_false\").
+-test_success().
 -endif().";
-  println!("In=«{}»", input);
 
-  let parser_input = ParserInput::new_str(input);
-  let (_tail, ast) =
-    panicking_parser_error_reporter(parser_input.clone(), parse_if_block(parser_input).finish());
-  println!("Parsed={}", ast);
+  let module = test_util::parse_module0(function_name!(), input);
+  let nodes = module.ast.children().unwrap_or_default();
 
-  let pp_node = ast.as_preprocessor();
-  if let PreprocessorNodeType::IfBlock { cond, cond_true, cond_false } = pp_node {
-    assert!(cond.is_atom());
-    assert_eq!(cond.as_atom(), "false");
-
-    assert_eq!(cond_true.len(), 1, "true branch must have exact one item");
-    assert!(cond_true[0].is_preprocessor_warning("on_true"));
-
-    assert_eq!(cond_false.len(), 1, "false branch must have exact one item");
-    assert!(cond_false[0].is_preprocessor_warning("on_false"));
-  } else {
-    panic!("Expected PpAst::IfBlock, but received {:?}", ast);
-  }
+  assert_eq!(nodes.len(), 1, "Expect to only have 1 attribute: -test_success.");
+  assert!(nodes[0].is_generic_attr("test_success"));
 }
 
 #[test]
@@ -167,6 +149,7 @@ fn parse_define_with_body_2_args() {
 
 #[test]
 #[named]
+#[ignore = "Hard to test fake filename includes, rewrite to include real file on disk"]
 fn parse_include_varied_spacing_1() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let input = "-include (\n\"testinclude\").\n";
@@ -177,6 +160,7 @@ fn parse_include_varied_spacing_1() {
 
 #[test]
 #[named]
+#[ignore = "Hard to test fake filename includes, rewrite to include real file on disk"]
 fn parse_include_varied_spacing_2() {
   test_util::start(function_name!(), "Parse -include() with varied spaces and newlines");
   let input = " - include(\"test\"\n).\n";
@@ -215,12 +199,10 @@ fn parse_define_varied_spacing() {
 #[named]
 fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
-  let nodes = test_util::parse_module_unwrap(function_name!(), input);
-  assert_eq!(nodes.len(), 1);
-  let (name, args, body) = nodes[0].as_preprocessor_define();
-  assert_eq!(name, "AAA");
-  assert_eq!(*args, vec!["X", "Y"]);
-  assert_eq!(body, "\"aaa\"");
+  let module = test_util::parse_module0(function_name!(), input);
+  let pdef = module.parser_scope.get_value("AAA", 2).unwrap();
+  assert_eq!(pdef.text, "\"aaa\"");
+  assert_eq!(pdef.args, vec!["X", "Y"]);
 }
 
 // #[test]
@@ -279,6 +261,7 @@ fn test_ast_macro() {
     function_name!(),
     "(1) Substitute from macro completes the syntax and makes it parseable",
   );
+  // TODO: This will not parse till the method of macro substitution is changed
   let input = "-define(M1, A:B:C ->).
 myfunction1() ->
   try test
@@ -295,6 +278,7 @@ fn test_ast_macro_with_keyword() {
     function_name!(),
     "(2) Substitute from macro completes the syntax and makes it parseable",
   );
+  // TODO: This will not parse till the method of macro substitution is changed
   let input = "-define(M2, end.).
 myfunction2() ->
   begin ok ?M2";

@@ -66,6 +66,7 @@ impl PreprocessorNodeType {
   // }
 
   /// Creates a new preprocessor IF node
+  #[deprecated = "not used"]
   pub(crate) fn new_if(
     location: SourceLoc,
     expr: AstNode,
@@ -81,6 +82,7 @@ impl PreprocessorNodeType {
   }
 
   /// Create a new `-if()` temporary node.
+  #[deprecated = "not used"]
   pub(crate) fn new_if_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
     Self::construct_with_location(location, _TemporaryIf(expr))
   }
@@ -91,6 +93,7 @@ impl PreprocessorNodeType {
   }
 
   /// Create a new `-ifdef()` temporary node.
+  #[deprecated = "not used"]
   pub(crate) fn new_ifdef_temporary(location: SourceLoc, ident: String) -> AstNode {
     Self::construct_with_location(location, _TemporaryIfdef(ident))
   }

@@ -178,7 +178,7 @@ impl AstNodeImpl {
   fn flatten_forms(forms: Vec<AstNode>) -> Vec<AstNode> {
     let mut result = Vec::new();
     forms.into_iter().for_each(|n| {
-      if let AstNodeType::Preprocessor(p) = &n.content {
+      if let AstNodeType::Preprocessor(_) = &n.content {
         result.extend(n.as_preprocessor_group().iter().cloned())
       } else {
         result.push(n)
