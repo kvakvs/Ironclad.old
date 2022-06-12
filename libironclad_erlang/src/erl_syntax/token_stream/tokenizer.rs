@@ -1,15 +1,18 @@
 //! Nom parser breaking input text into `ErlToken`s
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::misc::ws_before;
+use crate::erl_syntax::token_stream::misc::{macro_ident, parse_varname, ws_before};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
-use crate::erl_syntax::token_stream::tok_strings::str_literal::parse_doublequot_string;
+use crate::erl_syntax::token_stream::tok_strings::str_literal::{
+  parse_doublequot_string, parse_int,
+};
 use crate::erl_syntax::token_stream::token::Token;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::char;
 use nom::combinator::{map, not};
 use nom::multi::many0;
+use nom::sequence::preceded;
 use nom::Parser;
 
 pub type TokInput<'a> = &'a str;
@@ -19,182 +22,212 @@ pub type TokResult<'a, Out> =
 pub type TokenizerError<'a> = nom::error::VerboseError<TokInput<'a>>;
 
 #[inline]
-fn tok_atom(input: &str) -> TokResult<Token> {
+fn tok_atom(input: TokInput) -> TokResult<Token> {
   map(parse_tok_atom, |s| Token::Atom(s))(input)
 }
 
 #[inline]
-fn symbol_comma(input: &str) -> TokResult<Token> {
-  map(ws_before(char(',')), |_| Token::Comma)(input)
+fn tok_variable(input: TokInput) -> TokResult<Token> {
+  map(ws_before(parse_varname), |v| Token::Variable(v))(input)
 }
 
 #[inline]
-fn symbol_curlyclose(input: &str) -> TokResult<Token> {
-  map(ws_before(char('}')), |_| Token::CurlyClose)(input)
+fn tok_integer(input: TokInput) -> TokResult<Token> {
+  map(parse_int, |i| Token::Integer(i))(input)
 }
 
 #[inline]
-fn symbol_curlyopen(input: &str) -> TokResult<Token> {
-  map(ws_before(char('{')), |_| Token::CurlyOpen)(input)
+fn symbol_comma(input: TokInput) -> TokResult<Token> {
+  map(char(','), |_| Token::Comma)(input)
 }
 
 #[inline]
-fn symbol_div(input: &str) -> TokResult<Token> {
-  map(ws_before(char('/').and(not(char('=')))), |_| Token::Div)(input)
+fn symbol_curlyclose(input: TokInput) -> TokResult<Token> {
+  map(char('}'), |_| Token::CurlyClose)(input)
 }
 
 #[inline]
-fn symbol_doubleangleclose(input: &str) -> TokResult<Token> {
-  map(ws_before(tag(">>")), |_| Token::DoubleAngleClose)(input)
+fn symbol_curlyopen(input: TokInput) -> TokResult<Token> {
+  map(char('{'), |_| Token::CurlyOpen)(input)
 }
 
 #[inline]
-fn symbol_doubleangleopen(input: &str) -> TokResult<Token> {
-  map(ws_before(tag(">>")), |_| Token::DoubleAngleOpen)(input)
+fn symbol_div(input: TokInput) -> TokResult<Token> {
+  map(char('/').and(not(char('='))), |_| Token::Div)(input)
 }
 
 #[inline]
-fn symbol_eq(input: &str) -> TokResult<Token> {
-  map(ws_before(char(',')), |_| Token::EqualEqual)(input)
+fn symbol_doubleangleclose(input: TokInput) -> TokResult<Token> {
+  map(tag(">>"), |_| Token::DoubleAngleClose)(input)
 }
 
 #[inline]
-fn symbol_equalsymbol(input: &str) -> TokResult<Token> {
-  map(ws_before(char('=').and(not(char('>')))), |_| Token::EqualSymbol)(input)
+fn symbol_doubleangleopen(input: TokInput) -> TokResult<Token> {
+  map(tag(">>"), |_| Token::DoubleAngleOpen)(input)
 }
 
 #[inline]
-fn symbol_greatereq(input: &str) -> TokResult<Token> {
-  map(ws_before(tag(">=")), |_| Token::GreaterEq)(input)
+fn symbol_barbar(input: TokInput) -> TokResult<Token> {
+  map(tag("||"), |_| Token::BarBar)(input)
 }
 
 #[inline]
-fn symbol_greaterthan(input: &str) -> TokResult<Token> {
-  map(ws_before(char('>').and(not(char('=')))), |_| Token::GreaterThan)(input)
+fn symbol_bar(input: TokInput) -> TokResult<Token> {
+  map(char('|'), |_| Token::Bar)(input)
 }
 
 #[inline]
-fn symbol_hardeq(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("=:=")), |_| Token::HardEq)(input)
+fn symbol_eq(input: TokInput) -> TokResult<Token> {
+  map(char(','), |_| Token::EqualEqual)(input)
 }
 
 #[inline]
-fn symbol_equalequal(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("==")), |_| Token::HardEq)(input)
+fn symbol_equalsymbol(input: TokInput) -> TokResult<Token> {
+  map(char('=').and(not(char('>'))), |_| Token::EqualSymbol)(input)
 }
 
 #[inline]
-fn symbol_hardnoteq(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("=/=")), |_| Token::HardNotEq)(input)
+fn symbol_greatereq(input: TokInput) -> TokResult<Token> {
+  map(tag(">="), |_| Token::GreaterEq)(input)
 }
 
 #[inline]
-fn symbol_leftarr(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("<-")), |_| Token::LeftArr)(input)
+fn symbol_greaterthan(input: TokInput) -> TokResult<Token> {
+  map(char('>').and(not(char('='))), |_| Token::GreaterThan)(input)
 }
 
 #[inline]
-fn symbol_leftdoublearr(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("<=")), |_| Token::LeftDoubleArr)(input)
+fn symbol_hardeq(input: TokInput) -> TokResult<Token> {
+  map(tag("=:="), |_| Token::HardEq)(input)
 }
 
 #[inline]
-fn symbol_lessthan(input: &str) -> TokResult<Token> {
+fn symbol_equalequal(input: TokInput) -> TokResult<Token> {
+  map(tag("=="), |_| Token::HardEq)(input)
+}
+
+#[inline]
+fn symbol_hardnoteq(input: TokInput) -> TokResult<Token> {
+  map(tag("=/="), |_| Token::HardNotEq)(input)
+}
+
+#[inline]
+fn symbol_leftarr(input: TokInput) -> TokResult<Token> {
+  map(tag("<-"), |_| Token::LeftArr)(input)
+}
+
+#[inline]
+fn symbol_leftdoublearr(input: TokInput) -> TokResult<Token> {
+  map(tag("<="), |_| Token::LeftDoubleArr)(input)
+}
+
+#[inline]
+fn symbol_lessthan(input: TokInput) -> TokResult<Token> {
   // TODO? and not =, -, etc
-  map(ws_before(char('<')), |_| Token::LessThan)(input)
+  map(char('<'), |_| Token::LessThan)(input)
 }
 
 #[inline]
-fn symbol_lessthaneq(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("=<")), |_| Token::LessThanEq)(input)
+fn symbol_lessthaneq(input: TokInput) -> TokResult<Token> {
+  map(tag("=<"), |_| Token::LessThanEq)(input)
 }
 
 #[inline]
-fn symbol_listappend(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("++")), |_| Token::ListAppend)(input)
+fn symbol_listappend(input: TokInput) -> TokResult<Token> {
+  map(tag("++"), |_| Token::ListAppend)(input)
 }
 
 #[inline]
-fn symbol_listsubtract(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("--")), |_| Token::ListSubtract)(input)
+fn symbol_listsubtract(input: TokInput) -> TokResult<Token> {
+  map(tag("--"), |_| Token::ListSubtract)(input)
 }
 
 #[inline]
-fn symbol_minus(input: &str) -> TokResult<Token> {
-  map(ws_before(char('-')), |_| Token::Minus)(input)
+fn symbol_minus(input: TokInput) -> TokResult<Token> {
+  map(char('-'), |_| Token::Minus)(input)
 }
 
 #[inline]
-fn symbol_mul(input: &str) -> TokResult<Token> {
-  map(ws_before(char('*')), |_| Token::Mul)(input)
+fn symbol_mul(input: TokInput) -> TokResult<Token> {
+  map(char('*'), |_| Token::Mul)(input)
 }
 
 #[inline]
-fn symbol_noteq(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("/=")), |_| Token::NotEq)(input)
+fn symbol_noteq(input: TokInput) -> TokResult<Token> {
+  map(tag("/="), |_| Token::NotEq)(input)
 }
 
 #[inline]
-fn symbol_parclose(input: &str) -> TokResult<Token> {
-  map(ws_before(char(')')), |_| Token::ParClose)(input)
+fn symbol_parclose(input: TokInput) -> TokResult<Token> {
+  map(char(')'), |_| Token::ParClose)(input)
 }
 
 #[inline]
-fn symbol_paropen(input: &str) -> TokResult<Token> {
-  map(ws_before(char('(')), |_| Token::ParOpen)(input)
+fn symbol_paropen(input: TokInput) -> TokResult<Token> {
+  map(char('('), |_| Token::ParOpen)(input)
 }
 
 #[inline]
-fn symbol_period(input: &str) -> TokResult<Token> {
-  map(ws_before(char('.')), |_| Token::Period)(input)
+fn symbol_period(input: TokInput) -> TokResult<Token> {
+  map(char('.'), |_| Token::Period)(input)
 }
 
 #[inline]
-fn symbol_hash(input: &str) -> TokResult<Token> {
-  map(ws_before(char('#')), |_| Token::Period)(input)
+fn symbol_hash(input: TokInput) -> TokResult<Token> {
+  map(char('#'), |_| Token::Period)(input)
 }
 
 #[inline]
-fn symbol_plus(input: &str) -> TokResult<Token> {
-  map(ws_before(char('+')), |_| Token::Plus)(input)
+fn symbol_plus(input: TokInput) -> TokResult<Token> {
+  map(char('+'), |_| Token::Plus)(input)
 }
 
 #[inline]
-fn symbol_rightarr(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("->")), |_| Token::RightArr)(input)
+fn symbol_rightarr(input: TokInput) -> TokResult<Token> {
+  map(tag("->"), |_| Token::RightArr)(input)
 }
 
 #[inline]
-fn symbol_rightdoublearr(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("=>")), |_| Token::RightDoubleArr)(input)
+fn symbol_rightdoublearr(input: TokInput) -> TokResult<Token> {
+  map(tag("=>"), |_| Token::RightDoubleArr)(input)
 }
 
 #[inline]
-fn symbol_semicolon(input: &str) -> TokResult<Token> {
-  map(ws_before(char(';')), |_| Token::Semicolon)(input)
+fn symbol_semicolon(input: TokInput) -> TokResult<Token> {
+  map(char(';'), |_| Token::Semicolon)(input)
 }
 
 #[inline]
-fn symbol_send(input: &str) -> TokResult<Token> {
-  map(ws_before(char('!')), |_| Token::Send)(input)
+fn symbol_colon(input: TokInput) -> TokResult<Token> {
+  map(char(':'), |_| Token::Colon)(input)
 }
 
 #[inline]
-fn symbol_squareclose(input: &str) -> TokResult<Token> {
-  map(ws_before(char(']')), |_| Token::SquareClose)(input)
+fn symbol_send(input: TokInput) -> TokResult<Token> {
+  map(char('!'), |_| Token::Send)(input)
 }
 
 #[inline]
-fn symbol_squareopen(input: &str) -> TokResult<Token> {
-  map(ws_before(char('[')), |_| Token::SquareOpen)(input)
+fn symbol_squareclose(input: TokInput) -> TokResult<Token> {
+  map(char(']'), |_| Token::SquareClose)(input)
 }
 
 #[inline]
-fn tok_string(input: &str) -> TokResult<Token> {
+fn symbol_squareopen(input: TokInput) -> TokResult<Token> {
+  map(char('['), |_| Token::SquareOpen)(input)
+}
+
+#[inline]
+fn tok_string(input: TokInput) -> TokResult<Token> {
   map(parse_doublequot_string, |s| Token::Str(s))(input)
 }
 
-fn tok_symbol(input: &str) -> TokResult<Token> {
+#[inline]
+fn tok_macro_invocation(input: TokInput) -> TokResult<Token> {
+  map(preceded(char('?'), macro_ident), |m| Token::MacroInvocation(m))(input)
+}
+
+fn tok_symbol(input: TokInput) -> TokResult<Token> {
   alt((
     alt((
       symbol_comma,            // ,
@@ -230,7 +263,10 @@ fn tok_symbol(input: &str) -> TokResult<Token> {
       symbol_equalsymbol,    // =
     )),
     symbol_hash,        // #
+    symbol_barbar,      // ||
+    symbol_bar,         // |
     symbol_semicolon,   // ;
+    symbol_colon,       // :
     symbol_send,        // !
     symbol_squareclose, // ]
     symbol_squareopen,  // [
@@ -238,121 +274,119 @@ fn tok_symbol(input: &str) -> TokResult<Token> {
 }
 
 #[inline]
-fn keyword_after(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("after")), |_| Token::Keyword(Keyword::After))(input)
+fn keyword_after(input: TokInput) -> TokResult<Token> {
+  map(tag("after"), |_| Token::Keyword(Keyword::After))(input)
 }
 #[inline]
-fn keyword_and(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("and")), |_| Token::Keyword(Keyword::And))(input)
+fn keyword_and(input: TokInput) -> TokResult<Token> {
+  map(tag("and"), |_| Token::Keyword(Keyword::And))(input)
 }
 #[inline]
-fn keyword_andalso(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("andalso")), |_| Token::Keyword(Keyword::AndAlso))(input)
+fn keyword_andalso(input: TokInput) -> TokResult<Token> {
+  map(tag("andalso"), |_| Token::Keyword(Keyword::AndAlso))(input)
 }
 #[inline]
-fn keyword_begin(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("begin")), |_| Token::Keyword(Keyword::Begin))(input)
+fn keyword_begin(input: TokInput) -> TokResult<Token> {
+  map(tag("begin"), |_| Token::Keyword(Keyword::Begin))(input)
 }
 #[inline]
-fn keyword_binaryand(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binaryand")), |_| Token::Keyword(Keyword::BinaryAnd))(input)
+fn keyword_binaryand(input: TokInput) -> TokResult<Token> {
+  map(tag("band"), |_| Token::Keyword(Keyword::BinaryAnd))(input)
 }
 #[inline]
-fn keyword_binarynot(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binarynot")), |_| Token::Keyword(Keyword::BinaryNot))(input)
+fn keyword_binarynot(input: TokInput) -> TokResult<Token> {
+  map(tag("bnot"), |_| Token::Keyword(Keyword::BinaryNot))(input)
 }
 #[inline]
-fn keyword_binaryor(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binaryor")), |_| Token::Keyword(Keyword::BinaryOr))(input)
+fn keyword_binaryor(input: TokInput) -> TokResult<Token> {
+  map(tag("bor"), |_| Token::Keyword(Keyword::BinaryOr))(input)
 }
 #[inline]
-fn keyword_binaryshiftleft(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binaryshiftleft")), |_| Token::Keyword(Keyword::BinaryShiftLeft))(input)
+fn keyword_binaryshiftleft(input: TokInput) -> TokResult<Token> {
+  map(tag("bsl"), |_| Token::Keyword(Keyword::BinaryShiftLeft))(input)
 }
 #[inline]
-fn keyword_binaryshiftright(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binaryshiftright")), |_| {
-    Token::Keyword(Keyword::BinaryShiftRight)
-  })(input)
+fn keyword_binaryshiftright(input: TokInput) -> TokResult<Token> {
+  map(tag("bsr"), |_| Token::Keyword(Keyword::BinaryShiftRight))(input)
 }
 #[inline]
-fn keyword_binaryxor(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("binaryxor")), |_| Token::Keyword(Keyword::BinaryXor))(input)
+fn keyword_binaryxor(input: TokInput) -> TokResult<Token> {
+  map(tag("bxor"), |_| Token::Keyword(Keyword::BinaryXor))(input)
 }
 #[inline]
-fn keyword_case(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("case")), |_| Token::Keyword(Keyword::Case))(input)
+fn keyword_case(input: TokInput) -> TokResult<Token> {
+  map(tag("case"), |_| Token::Keyword(Keyword::Case))(input)
 }
 #[inline]
-fn keyword_catch(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("catch")), |_| Token::Keyword(Keyword::Catch))(input)
+fn keyword_catch(input: TokInput) -> TokResult<Token> {
+  map(tag("catch"), |_| Token::Keyword(Keyword::Catch))(input)
 }
 #[inline]
-fn keyword_cond(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("cond")), |_| Token::Keyword(Keyword::Cond))(input)
+fn keyword_cond(input: TokInput) -> TokResult<Token> {
+  map(tag("cond"), |_| Token::Keyword(Keyword::Cond))(input)
 }
 #[inline]
-fn keyword_end(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("end")), |_| Token::Keyword(Keyword::End))(input)
+fn keyword_end(input: TokInput) -> TokResult<Token> {
+  map(tag("end"), |_| Token::Keyword(Keyword::End))(input)
 }
 #[inline]
-fn keyword_fun(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("fun")), |_| Token::Keyword(Keyword::Fun))(input)
+fn keyword_fun(input: TokInput) -> TokResult<Token> {
+  map(tag("fun"), |_| Token::Keyword(Keyword::Fun))(input)
 }
 #[inline]
-fn keyword_if(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("if")), |_| Token::Keyword(Keyword::If))(input)
+fn keyword_if(input: TokInput) -> TokResult<Token> {
+  map(tag("if"), |_| Token::Keyword(Keyword::If))(input)
 }
 #[inline]
-fn keyword_let(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("let")), |_| Token::Keyword(Keyword::Let))(input)
+fn keyword_let(input: TokInput) -> TokResult<Token> {
+  map(tag("let"), |_| Token::Keyword(Keyword::Let))(input)
 }
 #[inline]
-fn keyword_integerdiv(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("integerdiv")), |_| Token::Keyword(Keyword::IntegerDiv))(input)
+fn keyword_integerdiv(input: TokInput) -> TokResult<Token> {
+  map(tag("div"), |_| Token::Keyword(Keyword::IntegerDiv))(input)
 }
 #[inline]
-fn keyword_maybe(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("maybe")), |_| Token::Keyword(Keyword::Maybe))(input)
+fn keyword_maybe(input: TokInput) -> TokResult<Token> {
+  map(tag("maybe"), |_| Token::Keyword(Keyword::Maybe))(input)
 }
 #[inline]
-fn keyword_not(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("not")), |_| Token::Keyword(Keyword::Not))(input)
+fn keyword_not(input: TokInput) -> TokResult<Token> {
+  map(tag("not"), |_| Token::Keyword(Keyword::Not))(input)
 }
 #[inline]
-fn keyword_of(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("of")), |_| Token::Keyword(Keyword::Of))(input)
+fn keyword_of(input: TokInput) -> TokResult<Token> {
+  map(tag("of"), |_| Token::Keyword(Keyword::Of))(input)
 }
 #[inline]
-fn keyword_or(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("or")), |_| Token::Keyword(Keyword::Or))(input)
+fn keyword_or(input: TokInput) -> TokResult<Token> {
+  map(tag("or"), |_| Token::Keyword(Keyword::Or))(input)
 }
 #[inline]
-fn keyword_orelse(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("orelse")), |_| Token::Keyword(Keyword::OrElse))(input)
+fn keyword_orelse(input: TokInput) -> TokResult<Token> {
+  map(tag("orelse"), |_| Token::Keyword(Keyword::OrElse))(input)
 }
 #[inline]
-fn keyword_receive(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("receive")), |_| Token::Keyword(Keyword::Receive))(input)
+fn keyword_receive(input: TokInput) -> TokResult<Token> {
+  map(tag("receive"), |_| Token::Keyword(Keyword::Receive))(input)
 }
 #[inline]
-fn keyword_rem(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("rem")), |_| Token::Keyword(Keyword::Rem))(input)
+fn keyword_rem(input: TokInput) -> TokResult<Token> {
+  map(tag("rem"), |_| Token::Keyword(Keyword::Rem))(input)
 }
 #[inline]
-fn keyword_try(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("try")), |_| Token::Keyword(Keyword::Try))(input)
+fn keyword_try(input: TokInput) -> TokResult<Token> {
+  map(tag("try"), |_| Token::Keyword(Keyword::Try))(input)
 }
 #[inline]
-fn keyword_when(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("when")), |_| Token::Keyword(Keyword::When))(input)
+fn keyword_when(input: TokInput) -> TokResult<Token> {
+  map(tag("when"), |_| Token::Keyword(Keyword::When))(input)
 }
 #[inline]
-fn keyword_xor(input: &str) -> TokResult<Token> {
-  map(ws_before(tag("xor")), |_| Token::Keyword(Keyword::Xor))(input)
+fn keyword_xor(input: TokInput) -> TokResult<Token> {
+  map(tag("xor"), |_| Token::Keyword(Keyword::Xor))(input)
 }
 
-fn tok_keyword(input: &str) -> TokResult<Token> {
+fn tok_keyword(input: TokInput) -> TokResult<Token> {
   alt((
     alt((
       keyword_after,
@@ -391,12 +425,15 @@ fn tok_keyword(input: &str) -> TokResult<Token> {
   ))(input)
 }
 
-pub fn tok_module(input: &str) -> TokResult<Vec<Token>> {
+pub fn tok_module(input: TokInput) -> TokResult<Vec<Token>> {
   many0(alt((
     //preprocessor_token,
+    tok_macro_invocation,
     tok_string,
-    tok_keyword,
+    ws_before(tok_keyword),
     tok_atom,
-    tok_symbol,
+    tok_variable,
+    tok_integer,
+    ws_before(tok_symbol),
   )))(input)
 }

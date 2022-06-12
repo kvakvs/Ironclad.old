@@ -1,6 +1,7 @@
 //! Input is broken into tokens
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::typing::erl_integer::ErlInteger;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
 
@@ -11,6 +12,7 @@ use std::fmt::Formatter;
 pub enum Token {
   Comma,
   Semicolon,
+  Colon,
   Period,
   Plus,
   Minus,
@@ -55,17 +57,25 @@ pub enum Token {
   /// `>>` closing a binary
   DoubleAngleClose,
   Hash,
+  Bar,
+  BarBar,
   /// A parsed string token_stream between `" TEXT "`
   Str(String),
   /// A parsed atom token_stream either lowercase `atom` or quoted between `' TEXT '`
   Atom(String),
+  Variable(String),
   Keyword(Keyword),
+  Integer(ErlInteger),
+  MacroInvocation(String),
 }
 
 impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Token::Atom(a) => Pretty::singlequot_string(f, a),
+      Token::Bar => write!(f, "|"),
+      Token::BarBar => write!(f, "||"),
+      Token::Colon => write!(f, ":"),
       Token::Comma => write!(f, ","),
       Token::CurlyClose => write!(f, "}}"),
       Token::CurlyOpen => write!(f, "{{"),
@@ -78,6 +88,8 @@ impl std::fmt::Display for Token {
       Token::GreaterThan => write!(f, ">"),
       Token::HardEq => write!(f, "=:="),
       Token::HardNotEq => write!(f, "=/="),
+      Token::Hash => write!(f, "#"),
+      Token::Integer(i) => write!(f, "{}", i),
       Token::Keyword(kw) => write!(f, "{}", kw),
       Token::LeftArr => write!(f, "<-"),
       Token::LeftDoubleArr => write!(f, "<="),
@@ -99,6 +111,8 @@ impl std::fmt::Display for Token {
       Token::SquareClose => write!(f, "]"),
       Token::SquareOpen => write!(f, "["),
       Token::Str(s) => Pretty::doublequot_string(f, s),
+      Token::Variable(v) => write!(f, "{}", v),
+      Token::MacroInvocation(m) => write!(f, "?{}", m),
     }
   }
 }

@@ -10,13 +10,16 @@ use std::sync::{Arc, RwLock};
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
-use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use crate::erl_syntax::parsers::misc::{
+  panicking_parser_error_reporter, panicking_tokenizer_error_reporter,
+};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
 use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::tokenizer::{tok_module, TokInput, TokResult};
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::ErlProject;
@@ -75,35 +78,25 @@ impl ErlModule {
   }
 
   /// Generic tokenizer for any Nom entry point
-  pub fn tokenize_helper<'a, T>(
-    project: ErlProject,
+  pub fn tokenize_helper<T>(
+    _project: ErlProject,
     src_file: SourceFile,
     parse_fn: T,
   ) -> IcResult<Vec<Token>>
   where
-    T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
+    T: Fn(TokInput) -> TokResult<Vec<Token>>,
   {
-    let parser_scope = ParserScopeImpl::new_from_project(project, &PathBuf::new());
-    let input = ParserInput::new_with_source_file(parser_scope.clone(), src_file.clone());
-    let mut module = ErlModule::default();
-    let (tail, forms) =
-      panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());
+    let input = src_file.text.as_str();
+    let (tail, forms) = panicking_tokenizer_error_reporter(input, parse_fn(input).finish());
 
     assert!(
       tail.trim().is_empty(),
-      "Not all input was consumed by parse.\n\tTail: «{}»\n\tForms: {}",
+      "Not all input was consumed by tokenizer.\n\tTail: «{}»\n\tForms: {:?}",
       tail,
       forms
     );
-    // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
-    module.parser_scope = parser_scope;
-    module.source_file = src_file;
-    module.ast = forms;
 
-    // Scan AST and find FnDef nodes, update functions knowledge
-    Scope::update_from_ast(&module.scope, &module.ast);
-
-    Ok(module)
+    Ok(forms)
   }
 
   /// Generic parse helper for any Nom entry point
@@ -143,9 +136,9 @@ impl ErlModule {
     filename: &Path,
     input: &str,
     project: Option<ErlProject>,
-  ) -> IcResult<Self> {
+  ) -> IcResult<Vec<Token>> {
     let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::tokenize_helper(project.unwrap_or_default(), src_file, parse_module)
+    Self::tokenize_helper(project.unwrap_or_default(), src_file, tok_module)
   }
 
   /// Parses code fragment starting with "-module(...)." and containing some function definitions

@@ -1,6 +1,7 @@
 //! Helper functions for Nom parsing
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
+use crate::erl_syntax::token_stream::tokenizer::TokInput;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::branch::alt;
@@ -104,7 +105,7 @@ fn parse_int_decimal(input: ParserInput) -> ParserResult<ErlInteger> {
   map(
     ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
     |num| {
-      ErlInteger::new_from_string(num.clone())
+      ErlInteger::new_from_string(num.as_str())
         .unwrap_or_else(|| panic!("Can't parse {} as integer", num))
     },
   )(input)
@@ -258,6 +259,28 @@ pub fn panicking_parser_error_reporter<'a, Out>(
   }
 }
 
+/// Print detailed error with source pointers, and panic
+#[named]
+pub fn panicking_tokenizer_error_reporter<'a, Out>(
+  input: TokInput,
+  res: Result<(TokInput<'a>, Out), nom::error::VerboseError<TokInput<'a>>>,
+) -> (TokInput<'a>, Out) {
+  match res {
+    Ok((tail, out)) => {
+      let tail_trim_whitespace = tail.trim();
+
+      if !tail_trim_whitespace.is_empty() {
+        panic!("Not all input was consumed: tail=«{}»", tail_trim_whitespace)
+      }
+      (tail, out)
+    }
+    Err(e) => {
+      println!("Parse error: {}", convert_error(input, e));
+      panic!("{}: Parse error", function_name!())
+    }
+  }
+}
+
 /// Returns a new parser which recognizes a `<spaces> "-" <spaces> <tag>` and returns it as
 /// a `&str` slice (*recognizes*, i.e. returns with all whitespace included)
 pub(crate) fn match_dash_tag<'a>(
@@ -281,6 +304,12 @@ pub(crate) fn match_word<'a>(
 /// Print function location and trimmed input, for debugging
 #[allow(dead_code)]
 pub(crate) fn print_input(fn_name: &str, input: ParserInput) {
+  println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
+}
+
+/// Print function location and trimmed input, for debugging
+#[allow(dead_code)]
+pub(crate) fn print_tok_input(fn_name: &str, input: TokInput) {
   println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
 }
 

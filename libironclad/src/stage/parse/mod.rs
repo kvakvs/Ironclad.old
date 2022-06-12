@@ -25,7 +25,8 @@ impl ErlParseStage {
             &source_file.file_name,
             source_file.text.as_str(),
             Some(project.clone()),
-          );
+          )?;
+          tok_stream.into_iter().for_each(|t| print!("{} ", t));
 
           let mut parsed = ErlModule::from_module_source(
             &source_file.file_name,

@@ -19,7 +19,7 @@ pub enum ErlInteger {
 
 impl ErlInteger {
   /// Creates from string
-  pub(crate) fn new_from_string(input: ParserInput) -> Option<Self> {
+  pub(crate) fn new_from_string(input: &str) -> Option<Self> {
     match input.parse::<BigInt>() {
       Ok(parsed) => {
         if let Some(small) = &parsed.to_i64() {

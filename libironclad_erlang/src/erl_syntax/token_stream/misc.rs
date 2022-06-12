@@ -61,3 +61,26 @@ pub(crate) fn parse_ident(input: TokInput) -> TokResult<String> {
     |result| result.to_string(),
   )(input)
 }
+
+/// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
+pub(crate) fn parse_varname(input: TokInput) -> TokResult<String> {
+  map(
+    recognize(pair(
+      // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
+      verify(anychar, |c: &char| c.is_uppercase() || *c == '_'),
+      many0(alt((alphanumeric1, tag("_")))),
+    )),
+    |result: TokInput| result.to_string(),
+  )(input)
+}
+
+/// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
+pub(crate) fn macro_ident(input: TokInput) -> TokResult<String> {
+  map(
+    ws_before_mut(recognize(pair(
+      verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
+      many0(alt((alphanumeric1, tag("_")))),
+    ))),
+    |pi| pi.to_string(),
+  )(input)
+}
