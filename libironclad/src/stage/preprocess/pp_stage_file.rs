@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 /// Preprocessor state for 1 file with AST cache, macro definitions, etc
+#[deprecated = "Not used atm"]
 pub struct PreprocessFile {
   /// For headers included more than once, parse them and cache here for reinterpretation as needed
   ast_cache: Arc<RwLock<PpAstCache>>,

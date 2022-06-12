@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 /// Preprocessor stage
+#[deprecated = "Not used atm"]
 pub struct PreprocessStage {
   /// Counters for files/bytes read, caches, duration etc.
   stats: PreprocessorStats,

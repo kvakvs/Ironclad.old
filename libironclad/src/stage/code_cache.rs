@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 /// Contains cache of compile state keyed by filename
+#[deprecated = "Not used atm"]
 pub struct ErlCodeCache {
   /// Module compile states
   pub items: HashMap<String, Arc<RwLock<ErlModule>>>,

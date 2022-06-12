@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 /// Compile state, used as input to begin the compilation
+#[deprecated = "Not used atm"]
 pub struct CompileModule {
   /// Path for the file
   pub in_file: PathBuf,
