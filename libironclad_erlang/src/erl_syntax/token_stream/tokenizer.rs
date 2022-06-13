@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
-  line_comment, macro_ident, varname, ws_before, ws_before_mut, ws_mut,
+  bigcapacity_many0, line_comment, macro_ident, varname, ws_before, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
 use crate::erl_syntax::token_stream::tok_strings::str_literal::{
@@ -477,7 +477,7 @@ fn tok_keyword(input: TokInput) -> TokResult<Token> {
 pub fn tok_module(input: TokInput) -> TokResult<Vec<Token>> {
   // Comments after the code are consumed by the outer ws_mut
   // Comments and spaces between the tokens are consumed by the inner ws_before_mut
-  complete(ws_mut(many0(ws_before_mut(alt((
+  complete(ws_mut(bigcapacity_many0(ws_before_mut(alt((
     //preprocessor_token,
     tok_macro_invocation,
     tok_dollar_character,

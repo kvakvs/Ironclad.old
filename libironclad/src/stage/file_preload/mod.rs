@@ -31,7 +31,7 @@ impl FilePreloadStage {
     // Print runtime and counters
     if let Ok(r_stats) = self.stats.read() {
       if let Ok(mut w_time) = r_stats.time.write() {
-        w_time.stage_finished(); // mark ending time
+        w_time.stop_timer(); // mark ending time
       } else {
         panic!("Can't lock time stats for updating")
       }

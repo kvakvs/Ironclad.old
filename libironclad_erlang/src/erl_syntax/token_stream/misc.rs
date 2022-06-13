@@ -101,3 +101,30 @@ pub(crate) fn varname(input: TokInput) -> TokResult<String> {
     |result: TokInput| result.to_string(),
   )(input)
 }
+
+pub fn bigcapacity_many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, Vec<O>, E>
+where
+  I: Clone + nom::InputLength,
+  F: nom::Parser<I, O, E>,
+  E: nom::error::ParseError<I>,
+{
+  move |mut i: I| {
+    let mut acc = Vec::with_capacity(5000);
+    loop {
+      let len = i.input_len();
+      match f.parse(i.clone()) {
+        Err(nom::Err::Error(_)) => return Ok((i, acc)),
+        Err(e) => return Err(e),
+        Ok((i1, o)) => {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
+            return Err(nom::Err::Error(E::from_error_kind(i, nom::error::ErrorKind::Many0)));
+          }
+
+          i = i1;
+          acc.push(o);
+        }
+      }
+    }
+  }
+}

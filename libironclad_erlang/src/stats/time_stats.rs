@@ -16,7 +16,7 @@ pub type TimeStats = Arc<RwLock<TimeStatsImpl>>;
 
 impl TimeStatsImpl {
   /// Mark end time for duration purposes
-  pub fn stage_finished(&mut self) {
+  pub fn stop_timer(&mut self) {
     self.finished = SystemTime::now();
   }
 }
@@ -24,7 +24,7 @@ impl TimeStatsImpl {
 impl std::fmt::Display for TimeStatsImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let micros = self.finished.duration_since(self.started).unwrap();
-    writeln!(f, "Duration: {}.{} s", micros.as_secs(), micros.subsec_millis())
+    writeln!(f, "Duration: {}.{:03} s", micros.as_secs(), micros.subsec_millis())
   }
 }
 
