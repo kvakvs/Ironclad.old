@@ -5,41 +5,45 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{parse_float, parse_int};
-use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
-use crate::erl_syntax::parsers::parse_strings::str_literal::parse_doublequot_string;
+use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string};
 use crate::literal::Literal;
+use crate::source_loc::SourceLoc;
+use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::map;
 
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_doublequot_string, |s| {
-    AstNodeImpl::construct_with_location(input.loc(), Lit { value: Literal::String(s).into() })
+  map(tok_string, |s| {
+    AstNodeImpl::construct_with_location(
+      SourceLoc::new(input),
+      Lit { value: Literal::String(s).into() },
+    )
   })(input.clone())
 }
 
 fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_atom, |s| {
-    AstNodeImpl::construct_with_location(input.loc(), Lit { value: Literal::Atom(s).into() })
+  map(tok_atom, |s| {
+    AstNodeImpl::construct_with_location(
+      SourceLoc::new(input),
+      Lit { value: Literal::Atom(s).into() },
+    )
   })(input.clone())
 }
 
 fn parse_float_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_float, |s| {
-    let lit_node = Lit {
-      value: Literal::Float(s.parse::<f64>().unwrap()).into(),
-    };
-    AstNodeImpl::construct_with_location(input.loc(), lit_node)
+  map(tok_float, |f: f64| {
+    let lit_node = Lit { value: Literal::Float(f).into() };
+    AstNodeImpl::construct_with_location(SourceLoc::new(input), lit_node)
   })(input.clone())
 }
 
 fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_int, |erl_int| {
+  map(tok_integer, |i: ErlInteger| {
     let lit_node = Lit {
       // TODO: Can parsed integer create a parse error?
-      value: Literal::Integer(erl_int).into(),
+      value: Literal::Integer(i).into(),
     };
-    AstNodeImpl::construct_with_location(input.loc(), lit_node)
+    AstNodeImpl::construct_with_location(SourceLoc::new(input), lit_node)
   })(input.clone())
 }
 

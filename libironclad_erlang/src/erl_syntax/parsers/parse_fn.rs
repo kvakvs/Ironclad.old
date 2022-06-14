@@ -5,14 +5,13 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{
-  match_word, period_tag, semicolon_tag, ws_before, ws_before_mut,
-};
+use crate::erl_syntax::parsers::misc::{tok, tok_atom, tok_keyword};
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
   EXPR_STYLE_MATCHEXPR,
 };
-use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
+use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::character::complete::char;
@@ -29,12 +28,12 @@ fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
 ) -> ParserResult<Option<String>> {
   if REQUIRE_FN_NAME {
     // Succeed if FN_NAME=true and there is an atom
-    return context("function clause name", map(parse_atom, Some))(input);
+    return context("function clause name", map(tok_atom, Some))(input);
   }
   // Succeed if FN_NAME=false and there is no atom
   context(
     "function clause without a name (must not begin with an atom)",
-    map(peek(not(parse_atom)), |_| None),
+    map(peek(not(tok_atom)), |_| None),
   )(input)
 }
 
@@ -46,7 +45,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
   map(
     tuple((
       // Function clause name
-      ws_before_mut(parse_fnclause_name::<REQUIRE_FN_NAME>),
+      parse_fnclause_name::<REQUIRE_FN_NAME>,
       // Function arguments
       context(
         "function clause arguments of a function definition",
@@ -56,12 +55,12 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       context(
         "`when` expression of a function clause",
         opt(preceded(
-          match_word("when".into()),
+          tok_keyword(Keyword::When),
           context("function's guard", cut(parse_guardexpr)),
         )),
       ),
       preceded(
-        ws_before(tag("->".into())),
+        tok(TokenType::RightArr),
         // Body as list of exprs
         context(
           "function clause body of a function definition",
@@ -70,7 +69,12 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       ),
     )),
     |(maybe_name, args, when_expr, body)| {
-      ErlFnClause::new(maybe_name, args, AstNodeImpl::new_comma_expr(input.loc(), body), when_expr)
+      ErlFnClause::new(
+        maybe_name,
+        args,
+        AstNodeImpl::new_comma_expr(SourceLoc::new(input), body),
+        when_expr,
+      )
     },
   )(input.clone())
 }
@@ -101,15 +105,15 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       // does not begin with - (that would be a mis-parsed attribute)
-      not(peek(ws_before(char('-')))),
+      not(peek(tok(TokenType::Minus))),
       separated_list1(
-        semicolon_tag,
+        tok(TokenType::Semicolon),
         // if parse fails under here, will show this context message in error
         context("function clause of a function definition", parse_fnclause::<true>),
       ),
-      period_tag,
+      tok(TokenType::Period),
     ),
-    |t| _construct_fndef(input.loc(), t),
+    |t| _construct_fndef(SourceLoc::new(input), t),
   )(input.clone())
 }
 
@@ -118,12 +122,12 @@ pub(crate) fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
   // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
   map(
     preceded(
-      match_word("fun".into()),
+      tok_keyword(Keyword::Fun),
       terminated(
-        context("", separated_list1(semicolon_tag, parse_fnclause::<false>)),
-        match_word("end".into()),
+        context("", separated_list1(tok(TokenType::Semicolon), parse_fnclause::<false>)),
+        tok_keyword(Keyword::End),
       ),
     ),
-    |t| _construct_fndef(input.loc(), t),
+    |t| _construct_fndef(SourceLoc::new(input), t),
   )(input.clone())
 }

@@ -109,7 +109,7 @@ impl ErlModule {
     T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
   {
     let parser_scope = ParserScopeImpl::new_from_project(project, &PathBuf::new());
-    let input = ParserInput::new_with_source_file(parser_scope.clone(), src_file.clone());
+    let input = ParserInput::new_with_scope(parser_scope.clone(), src_file.clone());
     let mut module = ErlModule::default();
     let (tail, forms) =
       panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());

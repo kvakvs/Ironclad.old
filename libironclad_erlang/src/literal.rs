@@ -36,7 +36,7 @@ pub enum Literal {
   Nil,
 
   /// A list containing only unicode codepoints is-a(List)
-  String(String),
+  String(Arc<String>),
 
   /// A tuple of literals
   Tuple(Vec<Literal>),

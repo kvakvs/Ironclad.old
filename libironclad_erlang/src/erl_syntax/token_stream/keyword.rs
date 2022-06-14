@@ -17,6 +17,7 @@ pub enum Keyword {
   Case,
   Catch,
   Cond, // not in the language?
+  Else,
   End,
   Fun,
   If,
@@ -56,6 +57,7 @@ impl std::fmt::Display for Keyword {
       Keyword::Begin => write!(f, "begin"),
       Keyword::Case => write!(f, "case"),
       Keyword::Cond => write!(f, "cond"),
+      Keyword::Else => write!(f, "else"),
       Keyword::End => write!(f, "end"),
       Keyword::Fun => write!(f, "fun"),
       Keyword::If => write!(f, "if"),

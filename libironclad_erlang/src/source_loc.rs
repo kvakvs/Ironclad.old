@@ -1,5 +1,6 @@
 //! Source file locations for printing and reporting to the user
 use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
+use crate::erl_syntax::token_stream::token::Token;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -9,12 +10,10 @@ use std::sync::Arc;
 pub enum SourceLoc {
   /// We do not know the location, or do not care
   None,
-  /// Points to a file
-  File(PathBuf),
-  /// Stores the chain of inputs, and the read position
-  Input {
-    /// Location in the input chain of the parser
-    input: Arc<ParserInputSlice>,
+  /// Offset in the input string
+  Offset {
+    /// Start of the input
+    start: *const u8,
   },
 }
 
@@ -27,8 +26,8 @@ impl SourceLoc {
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub(crate) fn from_input(i: Arc<ParserInputSlice>) -> Self {
-    Self::Input { input: i }
+  pub(crate) fn new(input: &[Token]) -> Self {
+    Self::Offset { start: input.iter().next().unwrap().offset }
   }
 }
 
@@ -42,9 +41,7 @@ impl std::fmt::Display for SourceLoc {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       SourceLoc::None => write!(f, "<No info>"),
-      SourceLoc::Input { input } => write!(f, "{}", input),
-      // SourceLoc::InputSpan { start, end } => write!(f, "Source: bytes {}..{}", start, end),
-      SourceLoc::File(p) => write!(f, "File: {}", p.to_string_lossy()),
+      SourceLoc::Offset { start } => write!(f, "SourceLoc[{:x}]", *start as usize),
     }
   }
 }

@@ -4,12 +4,12 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  comma_tag, match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before_mut,
+  parenthesis_period_newline, period_newline, tok, tok_atom, tok_atom_of,
 };
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::parsers::preprocessor::{
-  comma_sep_macro_idents, macro_ident, parenthesis_dot_newline,
-};
+use crate::erl_syntax::preprocessor::parsers::preprocessor::{comma_sep_macro_idents, macro_ident};
+use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::character::complete::anychar;
 use nom::combinator::{map, opt};
@@ -33,10 +33,14 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
       // Macro name
       macro_ident,
       // Optional (ARG1, ARG2, ...) with trailing comma
-      opt(delimited(par_open_tag, comma_sep_macro_idents, par_close_tag)),
-      comma_tag,
+      opt(delimited(
+        tok(TokenType::ParOpen),
+        comma_sep_macro_idents,
+        tok(TokenType::ParClose),
+      )),
+      tok(TokenType::Comma),
       // Followed by a body
-      ws_before_mut(many_till(anychar, parenthesis_dot_newline)),
+      many_till(anychar, parenthesis_period_newline),
     )),
     |(ident, args, _comma, (body, _term))| {
       let body_str = body.into_iter().collect::<String>();
@@ -73,16 +77,16 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<AstN
 /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
 pub(crate) fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    match_dash_tag("define".into()),
+    tok_atom_of("define"),
     alt((
       context(
         "-define directive with no args and no body",
-        delimited(par_open_tag, define_no_args_no_body, parenthesis_dot_newline),
+        delimited(tok(TokenType::ParOpen), define_no_args_no_body, parenthesis_period_newline),
       ),
       // `define_with_args_body_and_terminator` will consume end delimiter
       context(
         "-define directive with optional args and body",
-        preceded(par_open_tag, define_with_args_body_and_terminator),
+        preceded(tok(TokenType::ParOpen), define_with_args_body_and_terminator),
       ),
     )),
   )(input)
@@ -92,10 +96,10 @@ pub(crate) fn define_directive(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn undef_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("undef".into()),
-      delimited(par_open_tag, macro_ident, par_close_tag),
-      period_newline_tag,
+      tok_atom_of("undef"),
+      delimited(tok(TokenType::ParOpen), macro_ident, tok(TokenType::ParClose)),
+      period_newline,
     ),
-    |ident: String| PreprocessorNodeType::new_undef(input.loc(), ident),
+    |ident: String| PreprocessorNodeType::new_undef(SourceLoc::new(input), ident),
   )(input.clone())
 }

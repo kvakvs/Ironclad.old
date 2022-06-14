@@ -2,10 +2,11 @@
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
-use crate::erl_syntax::parsers::misc::{comma_tag, par_close_tag, par_open_tag};
+use crate::erl_syntax::parsers::misc::tok;
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::macro_ident;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
+use crate::erl_syntax::token_stream::token_type::TokenType;
 use nom::branch::alt;
 use nom::character::complete::char;
 use nom::combinator::{cut, map, verify};
@@ -56,7 +57,11 @@ fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
 
 /// Parse a parenthesized list of exprs `( EXPR1, ... )`
 fn macro_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
-  delimited(par_open_tag, separated_list0(comma_tag, parse_expr), par_close_tag)(input)
+  delimited(
+    tok(TokenType::ParOpen),
+    separated_list0(tok(TokenType::Comma), parse_expr),
+    tok(TokenType::ParClose),
+  )(input)
 }
 
 /// Parse a `? <IDENT> ( ARGS, ... )` for a macro with arguments.

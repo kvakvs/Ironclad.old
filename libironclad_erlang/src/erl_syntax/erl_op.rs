@@ -37,9 +37,9 @@ pub enum ErlBinaryOp {
   LessEq,
   /// Left value is greater or equal to the right value
   GreaterEq,
-  /// Equality of two any values
+  /// Equality of two any values == operator
   Eq,
-  /// Inequality of two any values
+  /// Inequality of two any values, /= operator
   NotEq,
   /// Hard equality (identity) of two any values
   HardEq,
@@ -62,7 +62,7 @@ pub enum ErlBinaryOp {
   /// Match operator =, also will assign unbound left variable expressions to right counterparts
   Match,
   /// Send operator "!"
-  Bang,
+  Send,
 }
 
 /// Unary operation takes 1 argument of bool or number, and returns same type

@@ -185,7 +185,7 @@ impl std::fmt::Display for ErlBinaryOp {
       ErlBinaryOp::BinaryShiftLeft => write!(f, "bsl"),
       ErlBinaryOp::BinaryShiftRight => write!(f, "bsr"),
       ErlBinaryOp::Match => write!(f, "="),
-      ErlBinaryOp::Bang => write!(f, "!"),
+      ErlBinaryOp::Send => write!(f, "!"),
     }
   }
 }

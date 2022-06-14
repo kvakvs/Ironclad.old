@@ -4,14 +4,15 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult, VecAstParserResult};
-use crate::erl_syntax::parsers::misc::{
-  match_dash_tag, par_close_tag, par_open_tag, period_newline_tag, ws_before,
-};
+use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom_of, tok_keyword};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_one_module_form;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{_TemporaryElse, _TemporaryEndif};
 use crate::erl_syntax::preprocessor::parsers::preprocessor::macro_ident;
+use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::source_loc::SourceLoc;
 use nom::combinator::{map, opt, recognize, verify};
 use nom::error::context;
 use nom::multi::many0;
@@ -60,9 +61,9 @@ pub fn parse_if_block(input: ParserInput) -> ParserResult<AstNode> {
 pub fn if_condition(input: ParserInput) -> ParserResult<bool> {
   map(
     delimited(
-      match_dash_tag("if".into()),
-      delimited(par_open_tag, ws_before(parse_expr), par_close_tag),
-      period_newline_tag,
+      tok_keyword(Keyword::If),
+      delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
+      period_newline,
     ),
     // Builds a temporary If node with erl expression in it
     |expr| match expr.walk_boolean_litexpr() {
@@ -77,20 +78,20 @@ pub fn if_condition(input: ParserInput) -> ParserResult<bool> {
 pub(crate) fn elif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("elif".into()),
-      delimited(par_open_tag, ws_before(parse_expr), par_close_tag),
-      period_newline_tag,
+      tok_atom_of("elif"),
+      delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
+      period_newline,
     ),
-    |t| PreprocessorNodeType::new_elif_temporary(input.loc(), t),
+    |t| PreprocessorNodeType::new_elif_temporary(SourceLoc::new(input), t),
   )(input.clone())
 }
 
 fn ifdef_condition(input: ParserInput) -> ParserResult<bool> {
   map(
     delimited(
-      match_dash_tag("ifdef".into()),
-      delimited(par_open_tag, macro_ident, par_close_tag),
-      period_newline_tag,
+      tok_atom_of("ifdef"),
+      delimited(tok(TokenType::ParOpen), macro_ident, tok(TokenType::ParClose)),
+      period_newline,
     ),
     |tag: String| input.parser_scope.is_defined(&tag),
   )(input.clone())
@@ -124,11 +125,11 @@ pub(crate) fn ifdef_directive(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("ifndef".into()),
-      delimited(par_open_tag, macro_ident, par_close_tag),
-      period_newline_tag,
+      tok_atom_of("ifndef"),
+      delimited(tok(TokenType::ParOpen), macro_ident, tok(TokenType::ParClose)),
+      period_newline,
     ),
-    |t: String| PreprocessorNodeType::new_ifndef_temporary(input.loc(), t),
+    |t: String| PreprocessorNodeType::new_ifndef_temporary(SourceLoc::new(input), t),
   )(input.clone())
 }
 
@@ -136,22 +137,21 @@ pub(crate) fn ifndef_temporary_directive(input: ParserInput) -> ParserResult<Ast
 pub(crate) fn else_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("else".into()),
-      opt(pair(par_open_tag, par_close_tag)),
-      period_newline_tag,
+      tok_keyword(Keyword::Else),
+      opt(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose))),
+      period_newline,
     ),
-    |_opt| PreprocessorNodeType::construct_with_location(input.loc(), _TemporaryElse),
+    |_opt| PreprocessorNodeType::construct_with_location(SourceLoc::new(input), _TemporaryElse),
   )(input.clone())
 }
 
 fn maybe_empty_parens(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(opt(pair(par_open_tag, par_close_tag)))(input)
+  recognize(opt(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose))))(input)
 }
 
 /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
 pub(crate) fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
-  map(
-    delimited(match_dash_tag("endif".into()), maybe_empty_parens, period_newline_tag),
-    |_opt| PreprocessorNodeType::construct_with_location(input.loc(), _TemporaryEndif),
-  )(input.clone())
+  map(delimited(tok_atom_of("endif"), maybe_empty_parens, period_newline), |_opt| {
+    PreprocessorNodeType::construct_with_location(SourceLoc::new(input), _TemporaryEndif)
+  })(input.clone())
 }

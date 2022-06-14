@@ -5,12 +5,13 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  colon_colon_tag, comma_tag, curly_close_tag, curly_open_tag, dot_dot_tag, hash_tag,
-  match_dash_tag, match_word, par_close_tag, par_open_tag, parse_int, parse_varname,
-  period_newline_tag, semicolon_tag, square_close_tag, square_open_tag, ws_before,
+  tok, tok_atom, tok_atom_of, tok_integer, tok_keyword, tok_var,
 };
-use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
+use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;
+use crate::source_loc::SourceLoc;
+use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
@@ -33,18 +34,15 @@ impl ErlTypeParser {
     map(
       // all between -spec and .
       delimited(
-        match_dash_tag("spec".into()),
+        tok_atom_of("spec"),
         tuple((
-          context("Function name in a -spec() attribute", cut(parse_atom)),
+          context("Function name in a -spec() attribute", cut(tok_atom)),
           separated_list1(
-            semicolon_tag,
-            context(
-              "Function clause in a -spec() attribute",
-              cut(ws_before(Self::parse_fn_spec_fnclause)),
-            ),
+            tok(TokenType::Semicolon),
+            context("Function clause in a -spec() attribute", cut(Self::parse_fn_spec_fnclause)),
           ),
         )),
-        period_newline_tag,
+        tok(TokenType::Period), // TODO: Check for newline smh? Newline token?
       ),
       |(name, clauses)| {
         let arity = clauses[0].arity();
@@ -54,7 +52,7 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        AstNodeImpl::new_fn_spec(input.loc(), funarity, fntypespec.into())
+        AstNodeImpl::new_fn_spec(SourceLoc::new(input), funarity, fntypespec.into())
       },
     )(input.clone())
   }
@@ -66,13 +64,13 @@ impl ErlTypeParser {
     map(
       tuple((
         // Function clause name
-        opt(parse_atom),
+        opt(tok_atom),
         // Args list (list of type variables with some types possibly)
         context(
           "arguments list in a function clause spec",
           Self::parse_parenthesized_arg_spec_list,
         ),
-        ws_before(tag("->".into())),
+        tok(TokenType::RightArr),
         // Return type for fn clause
         context(
           "return type in function clause spec",
@@ -100,8 +98,8 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     preceded(
-      colon_colon_tag,
-      context("Type ascription or a type after ::", ws_before(Self::parse_type)),
+      tok(TokenType::ColonColon),
+      context("Type ascription or a type after ::", Self::parse_type),
     )(input)
   }
 
@@ -139,9 +137,7 @@ impl ErlTypeParser {
   pub(crate) fn parse_parenthesized_arg_spec_list(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    let (input, _) = par_open_tag(input)?;
-
-    terminated(Self::comma_sep_typeargs0, par_close_tag)(input)
+    delimited(tok(TokenType::ParOpen), Self::comma_sep_typeargs0, tok(TokenType::ParClose))(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -149,15 +145,13 @@ impl ErlTypeParser {
   pub(crate) fn parse_when_expr_for_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    let (input, _) = match_word("when".into())(input)?;
-    Self::parse_comma_sep_typeargs1(input)
+    preceded(tok_keyword(Keyword::When), Self::parse_comma_sep_typeargs1)(input)
   }
 
   /// Parse only capitalized type variable name
-  pub(crate) fn parse_typevar_name(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, String, ErlParserError> {
-    ws_before(parse_varname)(input)
+  #[inline]
+  pub(crate) fn parse_typevar_name(input: ParserInput) -> ParserResult<'_, String> {
+    tok_var(input)
   }
 
   fn alt_typevar_or_type(input: ParserInput) -> nom::IResult<ParserInput, Typevar, ErlParserError> {
@@ -170,7 +164,7 @@ impl ErlTypeParser {
 
   #[allow(dead_code)]
   fn parse_typearg(input: ParserInput) -> nom::IResult<ParserInput, Typevar, ErlParserError> {
-    map(ws_before(Self::parse_type), |t| Typevar::from_erltype(&t))(input)
+    map(Self::parse_type, |t| Typevar::from_erltype(&t))(input)
   }
 
   /// Parses a comma separated list of 0 or more type arguments.
@@ -179,7 +173,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     separated_list0(
-      comma_tag,
+      tok(TokenType::Comma),
       context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
     )(input)
   }
@@ -190,7 +184,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     separated_list1(
-      comma_tag,
+      tok(TokenType::Comma),
       context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
     )(input)
   }
@@ -199,22 +193,20 @@ impl ErlTypeParser {
   fn parse_type_modulename_colon(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, String, ErlParserError> {
-    terminated(parse_atom, ws_before(char(':')))(input)
+    terminated(tok_atom, tok(TokenType::Colon))(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
   /// Optional with module name `module:name()`.
-  fn user_defined_type(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
+  fn user_defined_type(input: ParserInput) -> ParserResult<Arc<ErlType>> {
     map(
       tuple((
         opt(Self::parse_type_modulename_colon),
-        parse_atom,
+        tok_atom,
         delimited(
-          par_open_tag,
+          tok(TokenType::ParOpen),
           context("type arguments for a user-defined type", Self::comma_sep_typeargs0),
-          par_close_tag,
+          tok(TokenType::ParClose),
         ),
       )),
       |(maybe_module, type_name, elements)| ErlType::from_name(maybe_module, type_name, &elements),
@@ -224,7 +216,10 @@ impl ErlTypeParser {
   /// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
   fn record_ref(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
-      preceded(hash_tag, pair(parse_atom, pair(curly_open_tag, curly_close_tag))),
+      preceded(
+        tok(TokenType::Hash),
+        pair(tok_atom, pair(tok(TokenType::CurlyOpen), tok(TokenType::CurlyClose))),
+      ),
       |(tag, (_, _))| ErlType::new_record_ref(tag),
     )(input)
   }
@@ -233,9 +228,9 @@ impl ErlTypeParser {
   fn type_of_list(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        square_open_tag,
+        tok(TokenType::SquareOpen),
         context("type arguments for a list() type", Self::comma_sep_typeargs0),
-        square_close_tag,
+        tok(TokenType::SquareClose),
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -248,9 +243,9 @@ impl ErlTypeParser {
   fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        curly_open_tag,
+        tok(TokenType::CurlyOpen),
         context("a tuple() type", Self::comma_sep_typeargs0),
-        curly_close_tag,
+        tok(TokenType::CurlyClose),
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -265,7 +260,7 @@ impl ErlTypeParser {
     map(
       separated_pair(
         Self::alt_typevar_or_type,
-        ws_before(tag("=>".into())),
+        tok(TokenType::RightDoubleArr),
         Self::alt_typevar_or_type,
       ),
       |(key, value)| MapMemberType {
@@ -276,21 +271,20 @@ impl ErlTypeParser {
   }
 
   /// Parses a comma separated list of map field types
-  fn comma_sep_map_members0(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, Vec<MapMemberType>, ErlParserError> {
-    separated_list0(comma_tag, context("parsing member types of a map type", Self::map_member_type))(
-      input,
-    )
+  fn comma_sep_map_members0(input: ParserInput) -> ParserResult<Vec<MapMemberType>> {
+    separated_list0(
+      tok(TokenType::Comma),
+      context("parsing member types of a map type", Self::map_member_type),
+    )(input)
   }
 
   /// Parse a map of types, returns a map-type
   fn type_of_map(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        pair(hash_tag, curly_open_tag),
+        pair(tok(TokenType::Hash), tok(TokenType::CurlyOpen)),
         context("a map() type", Self::comma_sep_map_members0),
-        curly_close_tag,
+        tok(TokenType::CurlyClose),
       ),
       ErlType::new_map,
     )(input)
@@ -300,9 +294,9 @@ impl ErlTypeParser {
   pub(crate) fn int_literal_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(parse_int, |erl_int| {
+    map(tok_integer, |i: ErlInteger| {
       // TODO: Can a parsed integer parse with an error?
-      ErlType::new_singleton(&Literal::Integer(erl_int).into())
+      ErlType::new_singleton(&Literal::Integer(i).into())
     })(input)
   }
 
@@ -311,17 +305,18 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     // print_input("int_range_type", input);
-    map(separated_pair(parse_int, dot_dot_tag, parse_int), |(a, b)| {
-      // TODO: Can a parsed integer parse with an error?
-      ErlType::new_range(a, b)
-    })(input)
+    map(
+      separated_pair(tok_integer, tok(TokenType::PeriodPeriod), tok_integer),
+      |(a, b)| {
+        // TODO: Can a parsed integer parse with an error?
+        ErlType::new_range(a, b)
+      },
+    )(input)
   }
 
   /// Parse an atom, and produce a literal atom type
-  pub(crate) fn atom_literal_type(
-    input: ParserInput,
-  ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(parse_atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
+  pub(crate) fn atom_literal_type(input: ParserInput) -> ParserResult<Arc<ErlType>> {
+    map(tok_atom, |a_str| ErlType::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
   /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
@@ -345,16 +340,15 @@ impl ErlTypeParser {
   pub(crate) fn parse_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(
-      separated_list1(ws_before(char('|')), ws_before(Self::parse_nonunion_type)),
-      |types| ErlType::new_union(&types),
-    )(input)
+    map(separated_list1(tok(TokenType::Bar), Self::parse_nonunion_type), |types| {
+      ErlType::new_union(&types)
+    })(input)
   }
 
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: ParserInput) -> ParserResult<AstNode> {
     map(Self::parse_type, |t| {
-      AstNodeImpl::construct_with_location(input.loc(), AstNodeType::Type { ty: t })
+      AstNodeImpl::construct_with_location(SourceLoc::new(input), AstNodeType::Type { ty: t })
     })(input.clone())
   }
 }

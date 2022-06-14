@@ -10,6 +10,7 @@ use crate::erl_syntax::token_stream::tok_strings::str_literal::{
 };
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token::Token;
+use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{anychar, char};
@@ -169,6 +170,11 @@ fn symbol_paropen(input: TokInput) -> TokResult<Token> {
 }
 
 #[inline]
+fn symbol_periodperiod(input: TokInput) -> TokResult<Token> {
+  map(tag(".."), |_| Token::PeriodPeriod)(input)
+}
+
+#[inline]
 fn symbol_period(input: TokInput) -> TokResult<Token> {
   map(char('.'), |_| Token::Period)(input)
 }
@@ -196,6 +202,11 @@ fn symbol_rightdoublearr(input: TokInput) -> TokResult<Token> {
 #[inline]
 fn symbol_semicolon(input: TokInput) -> TokResult<Token> {
   map(char(';'), |_| Token::Semicolon)(input)
+}
+
+#[inline]
+fn symbol_coloncolon(input: TokInput) -> TokResult<Token> {
+  map(tag("::"), |_| Token::ColonColon)(input)
 }
 
 #[inline]
@@ -252,6 +263,7 @@ fn tok_symbol(input: TokInput) -> TokResult<Token> {
       symbol_doubleangleclose, // >>
       symbol_greatereq,        // > =
       symbol_greaterthan,      // >
+      symbol_periodperiod,     // ..
       symbol_period,           // .
       symbol_mul,              // *
     )),
@@ -283,6 +295,7 @@ fn tok_symbol(input: TokInput) -> TokResult<Token> {
       symbol_bar,         // |
       symbol_semicolon,   // ;
       symbol_colon,       // :
+      symbol_coloncolon,  // ::
       symbol_send,        // !
       symbol_squareclose, // ]
       symbol_squareopen,  // [
@@ -292,142 +305,147 @@ fn tok_symbol(input: TokInput) -> TokResult<Token> {
 
 #[inline]
 fn keyword_after(input: TokInput) -> TokResult<Token> {
-  map(tag("after"), |_| Token::Keyword(Keyword::After))(input)
+  map(tag("after"), |_| Token::new_keyword(input.as_ptr(), Keyword::After))(input)
 }
 
 #[inline]
 fn keyword_and(input: TokInput) -> TokResult<Token> {
-  map(tag("and"), |_| Token::Keyword(Keyword::And))(input)
+  map(tag("and"), |_| Token::new_keyword(input.as_ptr(), Keyword::And))(input)
 }
 
 #[inline]
 fn keyword_andalso(input: TokInput) -> TokResult<Token> {
-  map(tag("andalso"), |_| Token::Keyword(Keyword::AndAlso))(input)
+  map(tag("andalso"), |_| Token::new_keyword(input.as_ptr(), Keyword::AndAlso))(input)
 }
 
 #[inline]
 fn keyword_begin(input: TokInput) -> TokResult<Token> {
-  map(tag("begin"), |_| Token::Keyword(Keyword::Begin))(input)
+  map(tag("begin"), |_| Token::new_keyword(input.as_ptr(), Keyword::Begin))(input)
 }
 
 #[inline]
 fn keyword_binaryand(input: TokInput) -> TokResult<Token> {
-  map(tag("band"), |_| Token::Keyword(Keyword::BinaryAnd))(input)
+  map(tag("band"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryAnd))(input)
 }
 
 #[inline]
 fn keyword_binarynot(input: TokInput) -> TokResult<Token> {
-  map(tag("bnot"), |_| Token::Keyword(Keyword::BinaryNot))(input)
+  map(tag("bnot"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryNot))(input)
 }
 
 #[inline]
 fn keyword_binaryor(input: TokInput) -> TokResult<Token> {
-  map(tag("bor"), |_| Token::Keyword(Keyword::BinaryOr))(input)
+  map(tag("bor"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryOr))(input)
 }
 
 #[inline]
 fn keyword_binaryshiftleft(input: TokInput) -> TokResult<Token> {
-  map(tag("bsl"), |_| Token::Keyword(Keyword::BinaryShiftLeft))(input)
+  map(tag("bsl"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryShiftLeft))(input)
 }
 
 #[inline]
 fn keyword_binaryshiftright(input: TokInput) -> TokResult<Token> {
-  map(tag("bsr"), |_| Token::Keyword(Keyword::BinaryShiftRight))(input)
+  map(tag("bsr"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryShiftRight))(input)
 }
 
 #[inline]
 fn keyword_binaryxor(input: TokInput) -> TokResult<Token> {
-  map(tag("bxor"), |_| Token::Keyword(Keyword::BinaryXor))(input)
+  map(tag("bxor"), |_| Token::new_keyword(input.as_ptr(), Keyword::BinaryXor))(input)
 }
 
 #[inline]
 fn keyword_case(input: TokInput) -> TokResult<Token> {
-  map(tag("case"), |_| Token::Keyword(Keyword::Case))(input)
+  map(tag("case"), |_| Token::new_keyword(input.as_ptr(), Keyword::Case))(input)
 }
 
 #[inline]
 fn keyword_catch(input: TokInput) -> TokResult<Token> {
-  map(tag("catch"), |_| Token::Keyword(Keyword::Catch))(input)
+  map(tag("catch"), |_| Token::new_keyword(input.as_ptr(), Keyword::Catch))(input)
 }
 
 #[inline]
 fn keyword_cond(input: TokInput) -> TokResult<Token> {
-  map(tag("cond"), |_| Token::Keyword(Keyword::Cond))(input)
+  map(tag("cond"), |_| Token::new_keyword(input.as_ptr(), Keyword::Cond))(input)
 }
 
 #[inline]
 fn keyword_end(input: TokInput) -> TokResult<Token> {
-  map(tag("end"), |_| Token::Keyword(Keyword::End))(input)
+  map(tag("end"), |_| Token::new_keyword(input.as_ptr(), Keyword::End))(input)
 }
 
 #[inline]
 fn keyword_fun(input: TokInput) -> TokResult<Token> {
-  map(tag("fun"), |_| Token::Keyword(Keyword::Fun))(input)
+  map(tag("fun"), |_| Token::new_keyword(input.as_ptr(), Keyword::Fun))(input)
 }
 
 #[inline]
 fn keyword_if(input: TokInput) -> TokResult<Token> {
-  map(tag("if"), |_| Token::Keyword(Keyword::If))(input)
+  map(tag("if"), |_| Token::new_keyword(input.as_ptr(), Keyword::If))(input)
 }
 
 #[inline]
 fn keyword_let(input: TokInput) -> TokResult<Token> {
-  map(tag("let"), |_| Token::Keyword(Keyword::Let))(input)
+  map(tag("let"), |_| Token::new_keyword(input.as_ptr(), Keyword::Let))(input)
 }
 
 #[inline]
 fn keyword_integerdiv(input: TokInput) -> TokResult<Token> {
-  map(tag("div"), |_| Token::Keyword(Keyword::IntegerDiv))(input)
+  map(tag("div"), |_| Token::new_keyword(input.as_ptr(), Keyword::IntegerDiv))(input)
 }
 
 #[inline]
 fn keyword_maybe(input: TokInput) -> TokResult<Token> {
-  map(tag("maybe"), |_| Token::Keyword(Keyword::Maybe))(input)
+  map(tag("maybe"), |_| Token::new_keyword(input.as_ptr(), Keyword::Maybe))(input)
 }
 
 #[inline]
 fn keyword_not(input: TokInput) -> TokResult<Token> {
-  map(tag("not"), |_| Token::Keyword(Keyword::Not))(input)
+  map(tag("not"), |_| Token::new_keyword(input.as_ptr(), Keyword::Not))(input)
 }
 
 #[inline]
 fn keyword_of(input: TokInput) -> TokResult<Token> {
-  map(tag("of"), |_| Token::Keyword(Keyword::Of))(input)
+  map(tag("of"), |_| Token::new_keyword(input.as_ptr(), Keyword::Of))(input)
 }
 
 #[inline]
 fn keyword_or(input: TokInput) -> TokResult<Token> {
-  map(tag("or"), |_| Token::Keyword(Keyword::Or))(input)
+  map(tag("or"), |_| Token::new_keyword(input.as_ptr(), Keyword::Or))(input)
 }
 
 #[inline]
 fn keyword_orelse(input: TokInput) -> TokResult<Token> {
-  map(tag("orelse"), |_| Token::Keyword(Keyword::OrElse))(input)
+  map(tag("orelse"), |_| Token::new_keyword(input.as_ptr(), Keyword::OrElse))(input)
 }
 
 #[inline]
 fn keyword_receive(input: TokInput) -> TokResult<Token> {
-  map(tag("receive"), |_| Token::Keyword(Keyword::Receive))(input)
+  map(tag("receive"), |_| Token::new_keyword(input.as_ptr(), Keyword::Receive))(input)
 }
 
 #[inline]
 fn keyword_rem(input: TokInput) -> TokResult<Token> {
-  map(tag("rem"), |_| Token::Keyword(Keyword::Rem))(input)
+  map(tag("rem"), |_| Token::new_keyword(input.as_ptr(), Keyword::Rem))(input)
 }
 
 #[inline]
 fn keyword_try(input: TokInput) -> TokResult<Token> {
-  map(tag("try"), |_| Token::Keyword(Keyword::Try))(input)
+  map(tag("try"), |_| Token::new_keyword(input.as_ptr(), Keyword::Try))(input)
 }
 
 #[inline]
 fn keyword_when(input: TokInput) -> TokResult<Token> {
-  map(tag("when"), |_| Token::Keyword(Keyword::When))(input)
+  map(tag("when"), |_| Token::new_keyword(input.as_ptr(), Keyword::When))(input)
+}
+
+#[inline]
+fn keyword_else(input: TokInput) -> TokResult<Token> {
+  map(tag("else"), |_| Token::new_keyword(input.as_ptr(), Keyword::Else))(input)
 }
 
 #[inline]
 fn keyword_xor(input: TokInput) -> TokResult<Token> {
-  map(tag("xor"), |_| Token::Keyword(Keyword::Xor))(input)
+  map(tag("xor"), |_| Token::new_keyword(input.as_ptr(), Keyword::Xor))(input)
 }
 
 // #[inline]

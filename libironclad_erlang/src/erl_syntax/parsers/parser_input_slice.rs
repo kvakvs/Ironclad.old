@@ -8,6 +8,7 @@ use std::sync::Arc;
 /// Slices are chained old to new, forming a readonly list of past inputs, allowing to track back,
 /// and find the parsing locations
 #[derive(Clone)]
+#[deprecated = "switched to using stream of tokens"]
 pub struct ParserInputSlice {
   /// Maybe an `Arc<>` to the source file, if we have the filename.
   pub parent_file: Option<SourceFile>,

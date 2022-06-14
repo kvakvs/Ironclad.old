@@ -3,14 +3,12 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{
-  colon_colon_tag, comma_tag, match_dash_tag, par_close_tag, par_open_tag, parse_int,
-  period_newline_tag, square_close_tag, square_open_tag, ws_before,
-};
+use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom, tok_atom_of, tok_integer};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_record::parse_record_def;
-use crate::erl_syntax::parsers::parse_strings::atom_literal::parse_atom;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
+use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map};
@@ -20,16 +18,16 @@ use nom::{character::complete::char, error::context};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn parse_parentheses_no_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
-  map(pair(par_open_tag, par_close_tag), |_| None)(input)
+  map(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose)), |_| None)(input)
 }
 
 /// Parse a `( EXPR )` for a generic attribute `-<atom> ( EXPR ).`
 fn parse_generic_attr_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
   map(
     delimited(
-      par_open_tag,
+      tok(TokenType::ParOpen),
       context("an expression inside a custom -<name>() attribute", cut(parse_expr)),
-      par_close_tag,
+      tok(TokenType::ParClose),
     ),
     Option::Some,
   )(input)
@@ -41,22 +39,22 @@ fn parse_generic_attr_expr(input: ParserInput) -> ParserResult<Option<AstNode>> 
 pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      ws_before(char('-')),
+      tok(TokenType::Minus),
       pair(
-        parse_atom,
+        tok_atom,
         // Expr in parentheses
         alt((parse_parentheses_no_expr, parse_generic_attr_expr)),
       ),
-      period_newline_tag,
+      period_newline,
     ),
-    |(tag, term)| AstNodeImpl::new_generic_attr(input.loc(), tag, term),
+    |(tag, term)| AstNodeImpl::new_generic_attr(SourceLoc::new(input), tag, term),
   )(input.clone())
 }
 
 /// Parses a generic `-TAG.` attribute, no parentheses, no expr.
 pub(crate) fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
-  map(delimited(ws_before(char('-')), parse_atom, period_newline_tag), |tag| {
-    AstNodeImpl::new_generic_attr(input.loc(), tag, None)
+  map(delimited(tok(TokenType::Minus), tok_atom, period_newline), |tag| {
+    AstNodeImpl::new_generic_attr(SourceLoc::new(input), tag, None)
   })(input.clone())
 }
 
@@ -67,22 +65,25 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<String> {
   context(
     "expected -module() attribute",
     cut(delimited(
-      match_dash_tag("module".into()),
+      tok_atom_of("module"),
       context(
         "the module name in a -module() attribute",
-        cut(delimited(par_open_tag, parse_atom, par_close_tag)),
+        cut(delimited(tok(TokenType::ParOpen), tok_atom, tok(TokenType::ParClose))),
       ),
-      period_newline_tag,
+      period_newline,
     )),
   )(input.clone())
 }
 
 /// Parses a `fun/arity` atom with an integer.
 pub fn parse_funarity(input: ParserInput) -> nom::IResult<ParserInput, MFArity, ErlParserError> {
-  map(tuple((parse_atom, char('/'), parse_int)), |(name, _slash, erl_int)| {
-    let arity = erl_int.as_usize().unwrap_or_default();
-    MFArity::new_local_from_string(name, arity)
-  })(input)
+  map(
+    tuple((tok_atom, tok(TokenType::Div), tok_integer)),
+    |(name, _slash, erl_int)| {
+      let arity = erl_int.as_usize().unwrap_or_default();
+      MFArity::new_local_from_string(name, arity)
+    },
+  )(input)
 }
 
 /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
@@ -90,15 +91,15 @@ fn parse_square_funarity_list1(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<MFArity>, ErlParserError> {
   delimited(
-    square_open_tag,
-    separated_list1(comma_tag, ws_before(parse_funarity)),
-    square_close_tag,
+    tok(TokenType::SquareOpen),
+    separated_list1(tok(TokenType::Comma), parse_funarity),
+    tok(TokenType::SquareClose),
   )(input)
 }
 
 /// Parses a list of mfarities: `( MFA/1, MFA/2, ... )` for export attr
 fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
-  delimited(par_open_tag, ws_before(parse_square_funarity_list1), par_close_tag)(input)
+  delimited(tok(TokenType::ParOpen), parse_square_funarity_list1, tok(TokenType::ParClose))(input)
 }
 
 /// Parses an `-export([fn/arity, ...]).` attribute.
@@ -106,11 +107,11 @@ fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
 pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("export".into()),
+      tok_atom_of("export"),
       context("list of exports in an -export() attribute", cut(parse_export_mfa_list)),
-      period_newline_tag,
+      period_newline,
     ),
-    |t| AstNodeImpl::new_export_attr(input.loc(), t),
+    |t| AstNodeImpl::new_export_attr(SourceLoc::new(input), t),
   )(input.clone())
 }
 
@@ -119,11 +120,11 @@ pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("export_type".into()),
+      tok_atom_of("export_type"),
       context("list of exports in an -export_type() attribute", cut(parse_export_mfa_list)),
-      period_newline_tag,
+      period_newline,
     ),
-    |t| AstNodeImpl::new_export_type_attr(input.loc(), t),
+    |t| AstNodeImpl::new_export_type_attr(SourceLoc::new(input), t),
   )(input.clone())
 }
 
@@ -132,18 +133,18 @@ pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      match_dash_tag("import".into()),
+      tok_atom_of("import"),
       context(
         "list of imports in an -import() attribute",
         cut(delimited(
-          par_open_tag,
-          separated_pair(parse_atom, comma_tag, parse_square_funarity_list1),
-          par_close_tag,
+          tok(TokenType::ParOpen),
+          separated_pair(tok_atom, tok(TokenType::Comma), parse_square_funarity_list1),
+          tok(TokenType::ParClose),
         )),
       ),
-      period_newline_tag,
+      period_newline,
     ),
-    |(mod_name, imports)| AstNodeImpl::new_import_attr(input.loc(), mod_name, imports),
+    |(mod_name, imports)| AstNodeImpl::new_import_attr(SourceLoc::new(input), mod_name, imports),
   )(input.clone())
 }
 
@@ -152,9 +153,9 @@ pub(crate) fn parse_parenthesized_list_of_vars(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<String>, ErlParserError> {
   delimited(
-    par_open_tag,
-    cut(separated_list0(comma_tag, ErlTypeParser::parse_typevar_name)),
-    par_close_tag,
+    tok(TokenType::ParOpen),
+    cut(separated_list0(tok(TokenType::Comma), ErlTypeParser::parse_typevar_name)),
+    tok(TokenType::ParClose),
   )(input)
 }
 
@@ -164,20 +165,20 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
   // print_input("type_definition_attr", input);
   map(
     delimited(
-      match_dash_tag("type".into()),
+      tok_atom_of("type"),
       tuple((
-        parse_atom,
+        tok_atom,
         context(
           "type arguments in a -type() definition attribute",
           cut(parse_parenthesized_list_of_vars),
         ),
-        colon_colon_tag,
+        tok(TokenType::ColonColon),
         context("type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
       )),
-      period_newline_tag,
+      period_newline,
     ),
     |(type_name, type_args, _coloncolon, new_type)| {
-      AstNodeImpl::new_type_attr(input.loc(), type_name, type_args, new_type)
+      AstNodeImpl::new_type_attr(SourceLoc::new(input), type_name, type_args, new_type)
     },
   )(input.clone())
 }
