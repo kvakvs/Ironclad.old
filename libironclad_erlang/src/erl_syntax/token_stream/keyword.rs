@@ -2,7 +2,7 @@
 
 /// Recognized keywords
 #[allow(missing_docs)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Keyword {
   After,
   And,

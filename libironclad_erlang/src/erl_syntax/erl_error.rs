@@ -1,6 +1,5 @@
 //! Erlang errors
 use crate::erl_syntax::parsers::defs::ErlParserError;
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::error::ic_error::IcResult;
 use crate::error::ic_error_category::IcErrorCategory;
 use crate::error::ic_error_trait::IcErrorT;
@@ -74,17 +73,17 @@ impl ErlError {
     Self { ic_category: ic_cat, category: cat, loc, msg }
   }
 
-  /// Builds ErlError with nice error details from input string and Nom's verbose error
-  #[allow(dead_code)]
-  pub(crate) fn from_nom_error<T>(input: ParserInput, value: ErlParserError) -> IcResult<T> {
-    let new_err = Self {
-      ic_category: IcErrorCategory::ErlangParse,
-      category: ErlErrorCategory::Parser,
-      loc: SourceLoc::None,
-      msg: nom::error::convert_error(input, value),
-    };
-    Err(Box::new(new_err))
-  }
+  // /// Builds ErlError with nice error details from input string and Nom's verbose error
+  // #[allow(dead_code)]
+  // pub(crate) fn from_nom_error<T>(input: ParserInput, value: ErlParserError) -> IcResult<T> {
+  //   let new_err = Self {
+  //     ic_category: IcErrorCategory::ErlangParse,
+  //     category: ErlErrorCategory::Parser,
+  //     loc: SourceLoc::None,
+  //     msg: nom::error::convert_error(input, value),
+  //   };
+  //   Err(Box::new(new_err))
+  // }
 
   /// Creates an "Unacceptable" error
   pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {

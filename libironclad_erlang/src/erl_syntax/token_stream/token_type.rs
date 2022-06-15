@@ -8,7 +8,7 @@ use std::sync::Arc;
 /// Temporary token_stream marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
 #[allow(missing_docs)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenType {
   Comma,
   Semicolon,

@@ -2,9 +2,9 @@
 //! String parsing code from Nom examples.
 
 use crate::erl_syntax::token_stream::misc::{parse_ident, ws_before_mut};
+use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
 use crate::erl_syntax::token_stream::tok_strings::shared::{parse_u32, StringFragment};
 use crate::erl_syntax::token_stream::tok_strings::{shared, Char};
-use crate::erl_syntax::token_stream::tokenizer::{TokInput, TokResult};
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
 use nom::character::complete::char;

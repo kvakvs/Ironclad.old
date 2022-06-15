@@ -3,9 +3,9 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string};
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;

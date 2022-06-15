@@ -4,12 +4,14 @@ use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
   bigcapacity_many0, line_comment, macro_ident, varname, ws_before, ws_before_mut, ws_mut,
 };
+use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
 use crate::erl_syntax::token_stream::tok_strings::str_literal::{
   parse_doublequot_string, parse_int,
 };
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -20,218 +22,216 @@ use nom::multi::many0;
 use nom::sequence::{preceded, terminated};
 use nom::Parser;
 
-/// Tokenizer input type
-pub type TokInput<'a> = &'a str;
-/// Tokenizer parsers re
-pub type TokResult<'a, Out> =
-  nom::IResult<TokInput<'a>, Out, nom::error::VerboseError<TokInput<'a>>>;
-/// Gathers multiple errors and contexts together
-pub type TokenizerError<'a> = nom::error::VerboseError<TokInput<'a>>;
-
 #[inline]
 fn tok_atom(input: TokInput) -> TokResult<Token> {
-  map(parse_tok_atom, |s| Token::Atom(s))(input)
+  map(parse_tok_atom, |s| Token::new(input.as_ptr(), TokenType::Atom(s)))(input)
 }
 
 #[inline]
 fn tok_variable(input: TokInput) -> TokResult<Token> {
-  map(varname, |v| Token::Variable(v))(input)
+  map(varname, |v| Token::new(input.as_ptr(), TokenType::Variable(v)))(input)
 }
 
 #[inline]
 fn tok_integer(input: TokInput) -> TokResult<Token> {
-  map(parse_int, |i| Token::Integer(i))(input)
+  map(parse_int, |i| Token::new(input.as_ptr(), TokenType::Integer(i)))(input)
 }
 
 #[inline]
 fn symbol_comma(input: TokInput) -> TokResult<Token> {
-  map(char(','), |_| Token::Comma)(input)
+  map(char(','), |_| Token::new(input.as_ptr(), TokenType::Comma))(input)
 }
 
 #[inline]
 fn symbol_curlyclose(input: TokInput) -> TokResult<Token> {
-  map(char('}'), |_| Token::CurlyClose)(input)
+  map(char('}'), |_| Token::new(input.as_ptr(), TokenType::CurlyClose))(input)
 }
 
 #[inline]
 fn symbol_curlyopen(input: TokInput) -> TokResult<Token> {
-  map(char('{'), |_| Token::CurlyOpen)(input)
+  map(char('{'), |_| Token::new(input.as_ptr(), TokenType::CurlyOpen))(input)
 }
 
 #[inline]
 fn symbol_div(input: TokInput) -> TokResult<Token> {
-  map(char('/').and(not(char('='))), |_| Token::Div)(input)
+  map(char('/').and(not(char('='))), |_| Token::new(input.as_ptr(), TokenType::Div))(input)
 }
 
 #[inline]
 fn symbol_doubleangleclose(input: TokInput) -> TokResult<Token> {
-  map(tag(">>"), |_| Token::DoubleAngleClose)(input)
+  map(tag(">>"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleClose))(input)
 }
 
 #[inline]
 fn symbol_doubleangleopen(input: TokInput) -> TokResult<Token> {
-  map(tag(">>"), |_| Token::DoubleAngleOpen)(input)
+  map(tag(">>"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleOpen))(input)
 }
 
 #[inline]
 fn symbol_barbar(input: TokInput) -> TokResult<Token> {
-  map(tag("||"), |_| Token::BarBar)(input)
+  map(tag("||"), |_| Token::new(input.as_ptr(), TokenType::BarBar))(input)
 }
 
 #[inline]
 fn symbol_bar(input: TokInput) -> TokResult<Token> {
-  map(char('|'), |_| Token::Bar)(input)
+  map(char('|'), |_| Token::new(input.as_ptr(), TokenType::Bar))(input)
 }
 
 #[inline]
 fn symbol_equalsymbol(input: TokInput) -> TokResult<Token> {
-  map(char('=').and(not(char('>'))), |_| Token::EqualSymbol)(input)
+  map(char('=').and(not(char('>'))), |_| {
+    Token::new(input.as_ptr(), TokenType::EqualSymbol)
+  })(input)
 }
 
 #[inline]
 fn symbol_greatereq(input: TokInput) -> TokResult<Token> {
-  map(tag(">="), |_| Token::GreaterEq)(input)
+  map(tag(">="), |_| Token::new(input.as_ptr(), TokenType::GreaterEq))(input)
 }
 
 #[inline]
 fn symbol_greaterthan(input: TokInput) -> TokResult<Token> {
-  map(char('>').and(not(char('='))), |_| Token::GreaterThan)(input)
+  map(char('>').and(not(char('='))), |_| {
+    Token::new(input.as_ptr(), TokenType::GreaterThan)
+  })(input)
 }
 
 #[inline]
 fn symbol_hardeq(input: TokInput) -> TokResult<Token> {
-  map(tag("=:="), |_| Token::HardEq)(input)
+  map(tag("=:="), |_| Token::new(input.as_ptr(), TokenType::HardEq))(input)
 }
 
 #[inline]
 fn symbol_equalequal(input: TokInput) -> TokResult<Token> {
-  map(tag("=="), |_| Token::HardEq)(input)
+  map(tag("=="), |_| Token::new(input.as_ptr(), TokenType::HardEq))(input)
 }
 
 #[inline]
 fn symbol_hardnoteq(input: TokInput) -> TokResult<Token> {
-  map(tag("=/="), |_| Token::HardNotEq)(input)
+  map(tag("=/="), |_| Token::new(input.as_ptr(), TokenType::HardNotEq))(input)
 }
 
 #[inline]
 fn symbol_leftarr(input: TokInput) -> TokResult<Token> {
-  map(tag("<-"), |_| Token::LeftArr)(input)
+  map(tag("<-"), |_| Token::new(input.as_ptr(), TokenType::LeftArr))(input)
 }
 
 #[inline]
 fn symbol_leftdoublearr(input: TokInput) -> TokResult<Token> {
-  map(tag("<="), |_| Token::LeftDoubleArr)(input)
+  map(tag("<="), |_| Token::new(input.as_ptr(), TokenType::LeftDoubleArr))(input)
 }
 
 #[inline]
 fn symbol_lessthan(input: TokInput) -> TokResult<Token> {
   // TODO? and not =, -, etc
-  map(char('<'), |_| Token::LessThan)(input)
+  map(char('<'), |_| Token::new(input.as_ptr(), TokenType::LessThan))(input)
 }
 
 #[inline]
 fn symbol_lessthaneq(input: TokInput) -> TokResult<Token> {
-  map(tag("=<"), |_| Token::LessThanEq)(input)
+  map(tag("=<"), |_| Token::new(input.as_ptr(), TokenType::LessThanEq))(input)
 }
 
 #[inline]
 fn symbol_listappend(input: TokInput) -> TokResult<Token> {
-  map(tag("++"), |_| Token::ListAppend)(input)
+  map(tag("++"), |_| Token::new(input.as_ptr(), TokenType::ListAppend))(input)
 }
 
 #[inline]
 fn symbol_listsubtract(input: TokInput) -> TokResult<Token> {
-  map(tag("--"), |_| Token::ListSubtract)(input)
+  map(tag("--"), |_| Token::new(input.as_ptr(), TokenType::ListSubtract))(input)
 }
 
 #[inline]
 fn symbol_minus(input: TokInput) -> TokResult<Token> {
-  map(char('-'), |_| Token::Minus)(input)
+  map(char('-'), |_| Token::new(input.as_ptr(), TokenType::Minus))(input)
 }
 
 #[inline]
 fn symbol_mul(input: TokInput) -> TokResult<Token> {
-  map(char('*'), |_| Token::Mul)(input)
+  map(char('*'), |_| Token::new(input.as_ptr(), TokenType::Mul))(input)
 }
 
 #[inline]
 fn symbol_noteq(input: TokInput) -> TokResult<Token> {
-  map(tag("/="), |_| Token::NotEq)(input)
+  map(tag("/="), |_| Token::new(input.as_ptr(), TokenType::NotEq))(input)
 }
 
 #[inline]
 fn symbol_parclose(input: TokInput) -> TokResult<Token> {
-  map(char(')'), |_| Token::ParClose)(input)
+  map(char(')'), |_| Token::new(input.as_ptr(), TokenType::ParClose))(input)
 }
 
 #[inline]
 fn symbol_paropen(input: TokInput) -> TokResult<Token> {
-  map(char('('), |_| Token::ParOpen)(input)
+  map(char('('), |_| Token::new(input.as_ptr(), TokenType::ParOpen))(input)
 }
 
 #[inline]
 fn symbol_periodperiod(input: TokInput) -> TokResult<Token> {
-  map(tag(".."), |_| Token::PeriodPeriod)(input)
+  map(tag(".."), |_| Token::new(input.as_ptr(), TokenType::PeriodPeriod))(input)
 }
 
 #[inline]
 fn symbol_period(input: TokInput) -> TokResult<Token> {
-  map(char('.'), |_| Token::Period)(input)
+  map(char('.'), |_| Token::new(input.as_ptr(), TokenType::Period))(input)
 }
 
 #[inline]
 fn symbol_hash(input: TokInput) -> TokResult<Token> {
-  map(char('#'), |_| Token::Period)(input)
+  map(char('#'), |_| Token::new(input.as_ptr(), TokenType::Period))(input)
 }
 
 #[inline]
 fn symbol_plus(input: TokInput) -> TokResult<Token> {
-  map(char('+'), |_| Token::Plus)(input)
+  map(char('+'), |_| Token::new(input.as_ptr(), TokenType::Plus))(input)
 }
 
 #[inline]
 fn symbol_rightarr(input: TokInput) -> TokResult<Token> {
-  map(tag("->"), |_| Token::RightArr)(input)
+  map(tag("->"), |_| Token::new(input.as_ptr(), TokenType::RightArr))(input)
 }
 
 #[inline]
 fn symbol_rightdoublearr(input: TokInput) -> TokResult<Token> {
-  map(tag("=>"), |_| Token::RightDoubleArr)(input)
+  map(tag("=>"), |_| Token::new(input.as_ptr(), TokenType::RightDoubleArr))(input)
 }
 
 #[inline]
 fn symbol_semicolon(input: TokInput) -> TokResult<Token> {
-  map(char(';'), |_| Token::Semicolon)(input)
+  map(char(';'), |_| Token::new(input.as_ptr(), TokenType::Semicolon))(input)
 }
 
 #[inline]
 fn symbol_coloncolon(input: TokInput) -> TokResult<Token> {
-  map(tag("::"), |_| Token::ColonColon)(input)
+  map(tag("::"), |_| Token::new(input.as_ptr(), TokenType::ColonColon))(input)
 }
 
 #[inline]
 fn symbol_colon(input: TokInput) -> TokResult<Token> {
-  map(char(':'), |_| Token::Colon)(input)
+  map(char(':'), |_| Token::new(input.as_ptr(), TokenType::Colon))(input)
 }
 
 #[inline]
 fn symbol_send(input: TokInput) -> TokResult<Token> {
-  map(char('!'), |_| Token::Send)(input)
+  map(char('!'), |_| Token::new(input.as_ptr(), TokenType::Send))(input)
 }
 
 #[inline]
 fn symbol_squareclose(input: TokInput) -> TokResult<Token> {
-  map(char(']'), |_| Token::SquareClose)(input)
+  map(char(']'), |_| Token::new(input.as_ptr(), TokenType::SquareClose))(input)
 }
 
 #[inline]
 fn symbol_squareopen(input: TokInput) -> TokResult<Token> {
-  map(char('['), |_| Token::SquareOpen)(input)
+  map(char('['), |_| Token::new(input.as_ptr(), TokenType::SquareOpen))(input)
 }
 
 #[inline]
 fn tok_string(input: TokInput) -> TokResult<Token> {
-  map(parse_doublequot_string, |s| Token::Str(s))(input)
+  map(parse_doublequot_string, |s| {
+    Token::new(input.as_ptr(), TokenType::Str(s.into()))
+  })(input)
 }
 
 #[inline]
@@ -243,13 +243,15 @@ fn dollar_character(input: TokInput) -> TokResult<Char> {
 
 #[inline]
 fn tok_dollar_character(input: TokInput) -> TokResult<Token> {
-  map(preceded(char('$'), dollar_character), |c: Char| Token::Character(c))(input)
+  map(preceded(char('$'), dollar_character), |c: Char| {
+    Token::new(input.as_ptr(), TokenType::Character(c))
+  })(input)
 }
 
 #[inline]
 fn tok_macro_invocation(input: TokInput) -> TokResult<Token> {
   map(preceded(char('?'), context("macro invocation", cut(macro_ident))), |m| {
-    Token::MacroInvocation(m)
+    Token::new(input.as_ptr(), TokenType::MacroInvocation(m))
   })(input)
 }
 
@@ -450,7 +452,7 @@ fn keyword_xor(input: TokInput) -> TokResult<Token> {
 
 // #[inline]
 // fn tok_comment(input: TokInput) -> TokResult<Token> {
-//   map(line_comment, |s| Token::Comment(s.to_string()))(input)
+//   map(line_comment, |s| TokenType::Comment(s.to_string()))(input)
 // }
 
 fn tok_keyword(input: TokInput) -> TokResult<Token> {

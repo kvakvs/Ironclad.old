@@ -3,10 +3,11 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom, tok_atom_of};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};

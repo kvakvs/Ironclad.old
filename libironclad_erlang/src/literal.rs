@@ -2,6 +2,7 @@
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
+use crate::literal::Literal::List;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::ErlType;
 use std::sync::Arc;
@@ -88,6 +89,11 @@ impl Hash for Literal {
 }
 
 impl Literal {
+  /// Clones input and wraps with `Arc<>`
+  pub(crate) fn new_string(s: &str) -> Literal {
+    Literal::String(s.to_string().into())
+  }
+
   /// Synthesizes a type of this literal
   pub(crate) fn synthesize_type(&self) -> Arc<ErlType> {
     match self {

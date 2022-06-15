@@ -1,6 +1,5 @@
 //! Support integers small and large
 
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::typing::erl_integer::ErlInteger::{Big, Small};
 use num::{FromPrimitive, Signed, ToPrimitive};
 use num_bigint::BigInt;

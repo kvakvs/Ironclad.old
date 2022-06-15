@@ -5,12 +5,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{tok, tok_atom_of, tok_integer, tok_var};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
-use crate::erl_syntax::preprocessor::parsers::parse_macro::macro_invocation_as_ast_node;
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -25,8 +24,6 @@ use std::ops::Deref;
 /// Parse a literal value, variable, or an expression in parentheses.
 fn bin_element_value(input: ParserInput) -> ParserResult<AstNode> {
   alt((
-    // Expect an expression if a macro is expanded here
-    macro_invocation_as_ast_node,
     map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(input), &v)),
     parse_erl_literal,
     delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
@@ -67,16 +64,18 @@ fn bin_element_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> 
 
 fn bin_element_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
-    map(tag("signed".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
-    map(tag("unsigned".into()), |_| TypeSpecifier::Signedness(ValueSignedness::Unsigned)),
+    map(tok_atom_of("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
+    map(tok_atom_of("unsigned"), |_| {
+      TypeSpecifier::Signedness(ValueSignedness::Unsigned)
+    }),
   ))(input)
 }
 
 fn bin_element_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
   alt((
-    map(tag("big".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
-    map(tag("little".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
-    map(tag("native".into()), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
+    map(tok_atom_of("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
+    map(tok_atom_of("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
+    map(tok_atom_of("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
   ))(input)
 }
 

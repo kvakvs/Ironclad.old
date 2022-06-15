@@ -17,11 +17,19 @@ pub struct Token {
 
 impl Token {
   /// Create a new keyword token
+  #[inline]
   pub fn new_keyword(offset: *const u8, k: Keyword) -> Self {
     Self { offset, content: TokenType::Keyword(k) }
   }
 
+  /// Create a new symbol token
+  #[inline]
+  pub fn new(offset: *const u8, tt: TokenType) -> Self {
+    Self { offset, content: tt }
+  }
+
   /// Check whether the token is an atom of given value
+  #[inline]
   pub fn is_atom_of(&self, sample: &str) -> bool {
     match &self.content {
       TokenType::Atom(s) => s == sample,
@@ -30,9 +38,10 @@ impl Token {
   }
 
   /// Check whether the token is a keyword of given value
+  #[inline]
   pub fn is_keyword(&self, sample: Keyword) -> bool {
     match &self.content {
-      TokenType::Keyword(kw) => kw == sample,
+      TokenType::Keyword(kw) => kw == &sample,
       _ => false,
     }
   }
@@ -46,7 +55,7 @@ impl std::fmt::Debug for Token {
 
 impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self.content {
+    match &self.content {
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
       TokenType::Bar => write!(f, "|"),
       TokenType::BarBar => write!(f, "||"),
@@ -66,7 +75,7 @@ impl std::fmt::Display for Token {
       TokenType::HardNotEq => write!(f, "=/="),
       TokenType::Hash => write!(f, "#"),
       TokenType::Integer(i) => write!(f, "{}", i),
-      TokenType::Float(f) => write!(f, "{}", f),
+      TokenType::Float(flt) => write!(f, "{}", flt),
       TokenType::Keyword(kw) => write!(f, "{}", kw),
       TokenType::LeftArr => write!(f, "<-"),
       TokenType::LeftDoubleArr => write!(f, "<="),

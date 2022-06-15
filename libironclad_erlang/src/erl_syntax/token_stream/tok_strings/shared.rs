@@ -1,7 +1,7 @@
 //! Shared code for string and atom parsers
 
+use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
 use crate::erl_syntax::token_stream::tok_strings::Char;
-use crate::erl_syntax::token_stream::tokenizer::{TokInput, TokResult};
 use nom::branch::alt;
 use nom::bytes::complete::take_while_m_n;
 use nom::character::complete::{char, multispace1};

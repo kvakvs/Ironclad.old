@@ -1,5 +1,4 @@
 //! Projcet configuration: inputs, etc
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::error::ic_error::{IroncladError, IroncladResult};
 use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
 use crate::project::conf::serializable_input_opts::SerializableInputOpts;
@@ -35,9 +34,9 @@ impl ProjectConf {
   }
 
   /// Creates project struct from a TOML config as a string
-  pub fn from_string(input: ParserInput) -> Result<Self, IroncladError> {
+  pub fn from_string(input: &str) -> Result<Self, IroncladError> {
     // Parse, and convert toml error into ErlError
-    toml::from_str(input.as_str()).map_err(|e| e.into())
+    toml::from_str(input).map_err(|e| e.into())
   }
 }
 

@@ -1,10 +1,12 @@
 //! Helper functions for Nom parsing
+use crate::erl_syntax::parsers::defs::ErlParserError;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput};
+use crate::erl_syntax::parsers::error_report;
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
+use crate::erl_syntax::token_stream::tok_input::TokInput;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::erl_syntax::token_stream::tokenizer::TokInput;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::branch::alt;
@@ -16,35 +18,38 @@ use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::{
   bytes::complete::tag,
   character::complete::{alphanumeric1, char, multispace1, one_of},
+  InputIter, Slice,
 };
 use std::ops::RangeFrom;
 use std::sync::Arc;
 
 /// Recognizes one token of a given tokentype, the tokentype fields are ignored.
 /// *Complete version*: Will return an error if there's not enough input data.
-pub fn tok(compare_val: TokenType) -> impl Fn(&[Token]) -> ParserResult<()> {
+pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
-    if input
-      .iter_elements()
+    match input
+      .tokens
+      .iter()
       .next()
-      .map(|next_tok| matches!(next_tok.content, compare_val))
+      .map(|next_tok| -> bool { matches!(&next_tok.content, compare_val) })
     {
-      Ok((input.slice(1), ()))
-    } else {
-      Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-        input,
-        nom::error::ErrorKind::Fail, // TODO: new error TokenExpected
-      )))
+      Some(true) => Ok((input.slice(1..), ())),
+      _other => {
+        Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+          input,
+          nom::error::ErrorKind::Fail, // TODO: new error TokenExpected
+        )))
+      }
     }
   }
 }
 
 /// Recognizes one atom of given text value
-pub fn tok_atom_of(value: &str) -> impl Fn(&[Token]) -> ParserResult<()> {
+pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
-    match input.iter_elements().next() {
-      Some(tok) if tok.is_atom_of(value) => Ok((input.slice(1), ())),
-      _ => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+    match input.tokens.iter().next() {
+      Some(tok) if tok.is_atom_of(value) => Ok((input.slice(1..), ())),
+      _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
         input,
         nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
       ))),
@@ -53,10 +58,10 @@ pub fn tok_atom_of(value: &str) -> impl Fn(&[Token]) -> ParserResult<()> {
 }
 
 /// Recognizes one keyword of given keyword enum value
-pub fn tok_keyword(k: Keyword) -> impl Fn(&[Token]) -> ParserResult<()> {
+pub fn tok_keyword(k: Keyword) -> impl Fn(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
-    match input.iter_elements().next() {
-      Some(tok) if tok.is_keyword(k) => Ok((input.slice(1), ())),
+    match input.tokens.iter().next() {
+      Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),
       _ => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
         input,
         nom::error::ErrorKind::Fail, // TODO: new error KeywordExpected(s)
@@ -67,9 +72,9 @@ pub fn tok_keyword(k: Keyword) -> impl Fn(&[Token]) -> ParserResult<()> {
 
 /// Recognizes one integer token, returns the integer.
 pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
-  match input.iter_elements().next() {
-    Some(TokenType::Integer(i)) => Ok((input.slice(1), i)),
-    None => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Integer(i), .. }) => Ok((input.slice(1..), i.clone())),
+    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error IntegerExpected
     ))),
@@ -78,9 +83,9 @@ pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
 
 /// Recognizes one atom token, returns the string.
 pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
-  match input.iter_elements().next() {
-    Some(TokenType::Atom(s)) => Ok((input.slice(1), s.clone())),
-    None => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),
+    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error AnyAtomExpected
     ))),
@@ -89,9 +94,9 @@ pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
 
 /// Recognizes one str token, returns the string.
 pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
-  match input.iter_elements().next() {
-    Some(TokenType::Str(s)) => Ok((input.slice(1), s.clone())),
-    None => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Str(s), .. }) => Ok((input.slice(1..), s.clone())),
+    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error StringExpected
     ))),
@@ -100,9 +105,9 @@ pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
 
 /// Recognizes one variable name token, returns the string.
 pub fn tok_var(input: ParserInput) -> ParserResult<String> {
-  match input.iter_elements().next() {
-    Some(TokenType::Variable(v)) => Ok((input.slice(1), v.clone())),
-    None => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
+    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error VariableExpected
     ))),
@@ -111,9 +116,9 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
 
 /// Recognizes one float token, returns the value.
 pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
-  match input.iter_elements().next() {
-    Some(TokenType::Float(f)) => Ok((input.slice(1), f)),
-    None => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), f.clone())),
+    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error FloatExpected
     ))),
@@ -350,15 +355,13 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 ) -> (ParserInput<'a>, Out) {
   match res {
     Ok((tail, out)) => {
-      let tail_trim_whitespace = tail.trim();
-
-      if !tail_trim_whitespace.is_empty() {
-        panic!("Parser: Not all input was consumed: tail=«{}»", tail_trim_whitespace)
+      if !tail.is_empty() {
+        panic!("Parser: Not all input was consumed: tail=«{:?}»", tail)
       }
       (tail, out)
     }
     Err(e) => {
-      println!("Parse error: {}", convert_error(input, e));
+      println!("Parse error: {}", error_report::ironclad_convert_error(input, e));
       panic!("{}: Parse error", function_name!())
     }
   }
@@ -409,7 +412,8 @@ pub fn panicking_tokenizer_error_reporter<'a, Out>(
 /// Print function location and trimmed input, for debugging
 #[allow(dead_code)]
 pub(crate) fn print_input(fn_name: &str, input: ParserInput) {
-  println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
+  let tok_slice: Vec<Token> = input.tokens.iter().take(20).cloned().collect();
+  println!("{} input=«{:?}»", fn_name, tok_slice);
 }
 
 /// Print function location and trimmed input, for debugging

@@ -27,7 +27,7 @@ impl ErlParseStage {
           let _compiler_opts = project.get_compiler_options_for(path);
 
           let mut file_time = TimeStatsImpl::default();
-          let tok_stream = ErlModule::tokens_from_module_source(
+          let tok_stream = ErlModule::tokenize(
             &source_file.file_name,
             source_file.text.as_str(),
             Some(project.clone()),

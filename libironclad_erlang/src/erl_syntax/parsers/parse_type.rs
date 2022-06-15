@@ -2,11 +2,11 @@
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
   tok, tok_atom, tok_atom_of, tok_integer, tok_keyword, tok_var,
 };
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;

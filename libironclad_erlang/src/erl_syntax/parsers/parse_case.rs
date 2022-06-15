@@ -2,11 +2,12 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_expr, parse_matchexpr, EXPR_STYLE_FULL,
 };
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;

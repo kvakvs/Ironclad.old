@@ -1,4 +1,5 @@
 //! Source file locations for printing and reporting to the user
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::parser_input_slice::ParserInputSlice;
 use crate::erl_syntax::token_stream::token::Token;
 use std::fmt::Formatter;
@@ -26,14 +27,8 @@ impl SourceLoc {
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub(crate) fn new(input: &[Token]) -> Self {
-    Self::Offset { start: input.iter().next().unwrap().offset }
-  }
-}
-
-impl From<&PathBuf> for SourceLoc {
-  fn from(p: &PathBuf) -> Self {
-    Self::File(p.clone())
+  pub(crate) fn new(input: ParserInput) -> Self {
+    Self::Offset { start: input.tokens.iter().next().unwrap().offset }
   }
 }
 

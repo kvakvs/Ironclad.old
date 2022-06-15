@@ -1,7 +1,7 @@
 //! Tokenizer helpers
 
+use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult, TokenizerError};
 use crate::erl_syntax::token_stream::tok_strings::Char;
-use crate::erl_syntax::token_stream::tokenizer::{TokInput, TokResult, TokenizerError};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, anychar, char, multispace1};

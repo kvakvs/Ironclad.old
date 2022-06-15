@@ -6,24 +6,30 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::source_file::SourceFile;
 use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
+use std::iter::{Copied, Enumerate};
+use std::mem::size_of;
 use std::ops::{Deref, RangeFrom, RangeTo};
 use std::path::PathBuf;
+use std::slice::Iter;
 use std::str::{CharIndices, Chars};
 use std::sync::Arc;
 
-/// Used as input to all parsers, and contains the chain of inputs (for nested parsing), and current
-/// position for the current parser.
-#[derive(Clone)]
-#[deprecated]
-pub struct ParserInputImpl<'a> {
-  /// Where we're reading from
-  pub parent_file: Option<SourceFile>,
-  /// Scope of preprocessor symbols, records etc.
-  /// This is mutated as we descend into module AST and meet more `-define/undef` directives and
-  /// include more files.
-  pub parser_scope: ParserScope,
-  /// The stream of tokens coming from the Tokenizer
-  pub input: &'a [Token],
+/// The nom-compatible token input
+#[derive(Debug, Clone)]
+pub struct ParserInput<'a> {
+  /// Access to filename and source text, if value is defined
+  pub source_file: Option<SourceFile>,
+  /// The token stream
+  pub tokens: &'a [Token],
+}
+
+impl<'a> nom::Offset for ParserInput<'a> {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.tokens.as_ptr();
+    let snd = second.tokens.as_ptr();
+
+    (snd as usize - fst as usize) / size_of::<Token>()
+  }
 }
 
 // impl std::fmt::Display for ParserInputImpl<'_> {
@@ -38,118 +44,86 @@ pub struct ParserInputImpl<'a> {
 //   }
 // }
 //
-// impl<'a> ParserInputImpl<'a> {
-//   /// Return a code location
-//   pub(crate) fn loc(&self) -> SourceLoc {
-//     SourceLoc::from_input(self.input)
-//   }
-//
-//   // /// Proxy call to `self.preprocessor_scope`
-//   // pub(crate) fn preprocessor_define(&self, name: &str, args: &[String], text: &str) {
-//   //   if let Ok(mut writable_scope) = self.parser_scope.write() {
-//   //     writable_scope.define(name, args, text)
-//   //   }
-//   // }
-//
-//   // /// Proxy call to `self.preprocessor_scope`
-//   // pub(crate) fn preprocessor_define_symbol(&self, name: &str) {
-//   //   if let Ok(mut writable_scope) = self.parser_scope.write() {
-//   //     writable_scope.define(name, &Vec::default(), "")
-//   //   }
-//   // }
-//
-//   // /// Proxy call to `self.preprocessor_scope`
-//   // pub(crate) fn preprocessor_is_defined_with_arity(&self, name: &str, arity: usize) -> bool {
-//   //   if let Ok(read_scope) = self.parser_scope.read() {
-//   //     read_scope.is_defined_with_arity(name, arity)
-//   //   } else {
-//   //     panic!("Can't lock preprocessor scope for reading (is_defined_with_arity)")
-//   //   }
-//   // }
-//
-//   // /// Proxy call to `self.preprocessor_scope`
-//   // pub(crate) fn preprocessor_get_value(
-//   //   &self,
-//   //   name: &str,
-//   //   arity: usize,
-//   // ) -> Option<PreprocessorDefine> {
-//   //   if let Ok(read_scope) = self.parser_scope.read() {
-//   //     read_scope.get_value(name, arity)
-//   //   } else {
-//   //     panic!("Can't lock preprocessor scope for reading (get_value)")
-//   //   }
-//   // }
-//
-//   /// Create a parser input with a string slice
-//   pub fn new(source_file: &SourceFile, input: &'a [Token]) -> Self {
-//     Self {
-//       parent_file: Some(source_file.clone()),
-//       parser_scope: ParserScopeImpl::new_empty().into(),
-//       input,
-//     }
-//   }
-//
-//   pub(crate) fn file_name(&self) -> Option<PathBuf> {
-//     self.parent_file.map(|pf| pf.file_name.to_path_buf())
-//     // if let Some(pf) = &self.input.parent_file {
-//     //   Some(pf.file_name.to_path_buf())
-//     // } else {
-//     //   None
-//     // }
-//   }
-//
-//   /// Clone into a new custom parser input from a str slice. Assert that it belongs to the same input slice.
-//   pub(crate) fn clone_with_read_slice(&self, input: &'a [Token]) -> Self {
-//     Self {
-//       parent_file: self.parent_file.clone(),
-//       parser_scope: self.parser_scope.clone(),
-//       input,
-//     }
-//   }
-//
-//   /// Build a new custom parser input from a loaded source file
-//   pub(crate) fn new_with_scope(
-//     scope: ParserScope,
-//     source_file: &SourceFile,
-//     input: &'a [Token],
-//   ) -> Self {
-//     Self {
-//       parent_file: Some(source_file.clone()),
-//       parser_scope: scope,
-//       input,
-//     }
-//   }
-//
-//   /// Build a new custom parser input from a loaded source file
-//   pub(crate) fn clone_with_input(&self, input: &'a [Token]) -> Self {
-//     Self {
-//       parent_file: self.parent_file.clone(),
-//       parser_scope: self.parser_scope.clone(),
-//       input,
-//     }
-//   }
-//
-//   // /// Build a new custom parser and chain the old to it
-//   // pub(crate) fn clone_nested(&self, input: &str) -> Self {
-//   //   // println!("Parser input clone nested...");
-//   //   ParserInputImpl {
-//   //     parser_scope: self.parser_scope.clone(),
-//   //     input: ParserInputSlice::chain_into_new(&self.input, input),
-//   //     _phantom: Default::default(),
-//   //   }
-//   // }
-//
-//   /// Check whether there's any input remaining
-//   pub(crate) fn is_empty(&self) -> bool {
-//     self.as_str().is_empty()
-//   }
-//
-//   // /// Quick access to last input in chain as `&str`
-//   // #[inline(always)]
-//   // pub fn as_str(&self) -> &'a str {
-//   //   self.input.as_str()
-//   // }
-// }
+impl<'a> ParserInput<'a> {
+  pub(crate) fn new(source_file: &SourceFile, tokens: &'a [Token]) -> Self {
+    Self { source_file: Some(source_file.clone()), tokens }
+  }
+
+  pub(crate) fn is_empty(&self) -> bool {
+    self.tokens.is_empty()
+  }
+
+  //   /// Return a code location
+  //   pub(crate) fn loc(&self) -> SourceLoc {
+  //     SourceLoc::from_input(self.input)
+  //   }
+  //
+  //   /// Create a parser input with a string slice
+  //   pub fn new(source_file: &SourceFile, input: &'a [Token]) -> Self {
+  //     Self {
+  //       parent_file: Some(source_file.clone()),
+  //       parser_scope: ParserScopeImpl::new_empty().into(),
+  //       input,
+  //     }
+  //   }
+  //
+  //   pub(crate) fn file_name(&self) -> Option<PathBuf> {
+  //     self.parent_file.map(|pf| pf.file_name.to_path_buf())
+  //     // if let Some(pf) = &self.input.parent_file {
+  //     //   Some(pf.file_name.to_path_buf())
+  //     // } else {
+  //     //   None
+  //     // }
+  //   }
+  //
+  /// Clone into a new custom parser input from a str slice. Assert that it belongs to the same input slice.
+  pub(crate) fn clone_with_slice(&self, input: &'a [Token]) -> Self {
+    Self { source_file: None, tokens: input }
+  }
+  //
+  //   /// Build a new custom parser input from a loaded source file
+  //   pub(crate) fn new_with_scope(
+  //     scope: ParserScope,
+  //     source_file: &SourceFile,
+  //     input: &'a [Token],
+  //   ) -> Self {
+  //     Self {
+  //       parent_file: Some(source_file.clone()),
+  //       parser_scope: scope,
+  //       input,
+  //     }
+  //   }
+  //
+  //   /// Build a new custom parser input from a loaded source file
+  //   pub(crate) fn clone_with_input(&self, input: &'a [Token]) -> Self {
+  //     Self {
+  //       parent_file: self.parent_file.clone(),
+  //       parser_scope: self.parser_scope.clone(),
+  //       input,
+  //     }
+  //   }
+  //
+  //   // /// Build a new custom parser and chain the old to it
+  //   // pub(crate) fn clone_nested(&self, input: &str) -> Self {
+  //   //   // println!("Parser input clone nested...");
+  //   //   ParserInputImpl {
+  //   //     parser_scope: self.parser_scope.clone(),
+  //   //     input: ParserInputSlice::chain_into_new(&self.input, input),
+  //   //     _phantom: Default::default(),
+  //   //   }
+  //   // }
+  //
+  //   /// Check whether there's any input remaining
+  //   pub(crate) fn is_empty(&self) -> bool {
+  //     self.as_str().is_empty()
+  //   }
+  //
+  //   // /// Quick access to last input in chain as `&str`
+  //   // #[inline(always)]
+  //   // pub fn as_str(&self) -> &'a str {
+  //   //   self.input.as_str()
+  //   // }
+}
 //
 // impl From<&str> for ParserInputImpl<'_> {
 //   fn from(s: &str) -> Self {
@@ -177,208 +151,59 @@ pub struct ParserInputImpl<'a> {
 //     second_n - self_n
 //   }
 // }
-//
-// impl Deref for ParserInputImpl<'_> {
+
+// impl Deref for ParserInput<'_> {
 //   type Target = str;
 //
 //   fn deref(&self) -> &Self::Target {
-//     self.as_str()
+//     self.tokens.iter().next().unwrap()
 //   }
 // }
-//
-// impl nom::Slice<RangeFrom<usize>> for ParserInputImpl<'_> {
-//   fn slice(&self, mut range: RangeFrom<usize>) -> Self {
-//     range.advance_by(self.input.input_start).unwrap();
-//     let parent_s = self.input.parent.as_str();
-//     self.clone_with_read_slice(parent_s.slice(range))
-//   }
-// }
-//
-// impl nom::Slice<RangeTo<usize>> for ParserInputImpl<'_> {
-//   fn slice(&self, range: RangeTo<usize>) -> Self {
-//     let parent_s = self.input.parent.as_str();
-//     let start = self.input.input_start;
-//     let end = start + range.end;
-//     assert!(parent_s.len() >= end);
-//     self.clone_with_read_slice(&parent_s[start..end])
-//   }
-// }
-//
-// // Copied from impl for `nom::InputIter` for `&'a str` and adapted to handle last input
-// impl<'a> nom::InputIter for ParserInputImpl<'a> {
-//   type Item = char;
-//   type Iter = CharIndices<'a>;
-//   type IterElem = Chars<'a>;
-//
-//   #[inline]
-//   fn iter_indices(&self) -> Self::Iter {
-//     self.as_str().char_indices()
-//   }
-//
-//   #[inline]
-//   fn iter_elements(&self) -> Self::IterElem {
-//     self.as_str().chars()
-//   }
-//
-//   fn position<P>(&self, predicate: P) -> Option<usize>
-//   where
-//     P: Fn(Self::Item) -> bool,
-//   {
-//     for (o, c) in self.as_str().char_indices() {
-//       if predicate(c) {
-//         return Some(o);
-//       }
-//     }
-//     None
-//   }
-//
-//   fn slice_index(&self, count: usize) -> Result<usize, Needed> {
-//     let mut cnt = 0;
-//     for (index, _) in self.as_str().char_indices() {
-//       if cnt == count {
-//         return Ok(index);
-//       }
-//       cnt += 1;
-//     }
-//     if cnt == count {
-//       return Ok(self.as_str().len());
-//     }
-//     Err(Needed::Unknown)
-//   }
-// }
-//
-// // Copied from impl for `nom::InputIter` for `&'a str` and adapted to handle last input
-// impl nom::InputLength for ParserInputImpl<'_> {
-//   #[inline]
-//   fn input_len(&self) -> usize {
-//     self.as_str().len()
-//   }
-// }
-//
-// impl nom::InputTake for ParserInputImpl<'_> {
-//   #[inline]
-//   fn take(&self, count: usize) -> Self {
-//     self.clone_with_read_slice(&self.as_str()[..count])
-//   }
-//
-//   // return byte index
-//   #[inline]
-//   fn take_split(&self, count: usize) -> (Self, Self) {
-//     let (prefix, suffix) = self.as_str().split_at(count);
-//     (self.clone_with_read_slice(suffix), self.clone_with_read_slice(prefix))
-//   }
-// }
-//
-// impl nom::UnspecializedInput for ParserInputImpl<'_> {}
-//
-// // impl<'a> nom::InputTakeAtPosition for CustomParserInput {
-// //   type Item = char;
-// //
-// //   fn split_at_position<P, E: nom::error::ParseError<Self>>(
-// //     &self,
-// //     predicate: P,
-// //   ) -> nom::IResult<Self, Self, E>
-// //   where
-// //     P: Fn(Self::Item) -> bool,
-// //   {
-// //     match self.find(predicate) {
-// //       // find() returns a byte index that is already in the slice at a char boundary
-// //       Some(i) => unsafe {
-// //         let a = self.as_str().get_unchecked(i..);
-// //         let b = self.as_str().get_unchecked(..i);
-// //         Ok((self.clone_with_read_slice(a), self.clone_with_read_slice(b)))
-// //       },
-// //       None => Err(nom::Err::Incomplete(Needed::new(1))),
-// //     }
-// //   }
-// //
-// //   fn split_at_position1<P, E: nom::error::ParseError<Self>>(
-// //     &self,
-// //     predicate: P,
-// //     e: nom::error::ErrorKind,
-// //   ) -> nom::IResult<Self, Self, E>
-// //   where
-// //     P: Fn(Self::Item) -> bool,
-// //   {
-// //     match self.find(predicate) {
-// //       Some(0) => Err(nom::Err::Error(E::from_error_kind(self, e))),
-// //       // find() returns a byte index that is already in the slice at a char boundary
-// //       Some(i) => unsafe {
-// //         let a = self.as_str().get_unchecked(i..);
-// //         let b = self.as_str().get_unchecked(..i);
-// //         Ok((self.clone_with_read_slice(a), self.clone_with_read_slice(b)))
-// //       },
-// //       None => Err(nom::Err::Incomplete(Needed::new(1))),
-// //     }
-// //   }
-// //
-// //   fn split_at_position_complete<P, E: nom::error::ParseError<Self>>(
-// //     &self,
-// //     predicate: P,
-// //   ) -> nom::IResult<Self, Self, E>
-// //   where
-// //     P: Fn(Self::Item) -> bool,
-// //   {
-// //     let inp = self.as_str();
-// //
-// //     match self.find(predicate) {
-// //       // find() returns a byte index that is already in the slice at a char boundary
-// //       Some(i) => unsafe {
-// //         let a = inp.get_unchecked(i..);
-// //         let b = inp.get_unchecked(..i);
-// //         Ok((self.clone_with_read_slice(a), self.clone_with_read_slice(b)))
-// //       },
-// //       // the end of slice is a char boundary
-// //       None => unsafe {
-// //         let c = inp.get_unchecked(inp.len()..);
-// //         let d = inp.get_unchecked(..inp.len());
-// //         Ok((self.clone_with_read_slice(c), self.clone_with_read_slice(d)))
-// //       },
-// //     }
-// //   }
-// //
-// //   fn split_at_position1_complete<P, E: nom::error::ParseError<Self>>(
-// //     &self,
-// //     predicate: P,
-// //     e: nom::error::ErrorKind,
-// //   ) -> nom::IResult<Self, Self, E>
-// //   where
-// //     P: Fn(Self::Item) -> bool,
-// //   {
-// //     let inp = self.as_str();
-// //
-// //     match self.find(predicate) {
-// //       Some(0) => Err(nom::Err::Error(E::from_error_kind(self, e))),
-// //       // find() returns a byte index that is already in the slice at a char boundary
-// //       Some(i) => unsafe {
-// //         let a = inp.get_unchecked(i..);
-// //         let b = inp.get_unchecked(..i);
-// //         Ok((self.clone_with_read_slice(a), self.clone_with_read_slice(b)))
-// //       },
-// //       None => {
-// //         if self.is_empty() {
-// //           Err(nom::Err::Error(E::from_error_kind(self, e)))
-// //         } else {
-// //           // the end of slice is a char boundary
-// //           unsafe {
-// //             let c = inp.get_unchecked(inp.len()..);
-// //             let d = inp.get_unchecked(..inp.len());
-// //             Ok((self.clone_with_read_slice(c), self.clone_with_read_slice(d)))
-// //           }
-// //         }
-// //       }
-// //     }
-// //   }
-// // }
-//
-// impl<'a> nom::Compare<ParserInputImpl<'a>> for ParserInputImpl<'a> {
-//   #[inline(always)]
-//   fn compare(&self, t: ParserInputImpl) -> CompareResult {
-//     self.as_str().compare(t.as_str())
-//   }
-//
-//   #[inline(always)]
-//   fn compare_no_case(&self, t: ParserInputImpl) -> CompareResult {
-//     self.as_str().compare_no_case(t.as_str())
-//   }
-// }
+
+impl nom::Slice<RangeFrom<usize>> for ParserInput<'_> {
+  fn slice(&self, mut range: RangeFrom<usize>) -> Self {
+    self.clone_with_slice(self.tokens.slice(range))
+  }
+}
+
+impl nom::Slice<RangeTo<usize>> for ParserInput<'_> {
+  fn slice(&self, range: RangeTo<usize>) -> Self {
+    self.clone_with_slice(self.tokens.slice(range))
+  }
+}
+
+impl<'a> nom::InputIter for ParserInput<'a> {
+  type Item = Token;
+  type Iter = Enumerate<Self::IterElem>;
+  type IterElem = std::iter::Cloned<Iter<'a, Token>>;
+
+  #[inline]
+  fn iter_indices(&self) -> Self::Iter {
+    self.iter_elements().enumerate()
+  }
+  #[inline]
+  fn iter_elements(&self) -> Self::IterElem {
+    self.tokens.iter().cloned()
+  }
+  #[inline]
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.tokens.iter().position(|b| predicate(b.clone()))
+  }
+  #[inline]
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    if self.tokens.len() >= count {
+      Ok(count)
+    } else {
+      Err(Needed::new(count - self.tokens.len()))
+    }
+  }
+}
+
+impl<'a> nom::InputLength for ParserInput<'a> {
+  fn input_len(&self) -> usize {
+    self.tokens.len()
+  }
+}

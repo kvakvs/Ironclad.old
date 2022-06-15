@@ -113,7 +113,7 @@ impl AstNodeImpl {
   /// Create a new literal AST node of a "string"
   #[allow(dead_code)]
   pub(crate) fn new_lit_string(location: SourceLoc, val: &str) -> AstNode {
-    let lit_node = Lit { value: Literal::String(String::from(val)).into() };
+    let lit_node = Lit { value: Literal::new_string(val).into() };
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 

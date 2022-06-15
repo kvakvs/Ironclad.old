@@ -10,7 +10,6 @@ use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::erl_syntax::parsers::defs::ParserInput;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult, VecAstParserResult};
 use crate::erl_syntax::parsers::misc::{tok, tok_var};
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
@@ -27,7 +26,7 @@ use crate::erl_syntax::parsers::parse_fn::parse_lambda;
 use crate::erl_syntax::parsers::parse_if_stmt::parse_if_statement;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
-use crate::erl_syntax::preprocessor::parsers::parse_macro::macro_invocation_as_ast_node;
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -197,7 +196,6 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
     EXPR_STYLE_FULL => context(
       "parse expression (highest precedence)",
       alt((
-        macro_invocation_as_ast_node,
         parse_lambda,
         parse_try_catch,
         parse_if_statement,
@@ -215,7 +213,6 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
     EXPR_STYLE_MATCHEXPR => context(
       "parse match expression (highest precedence)",
       alt((
-        macro_invocation_as_ast_node,
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
@@ -226,12 +223,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
     )(input),
     EXPR_STYLE_GUARD => context(
       "parse guard expression (highest precedence)",
-      alt((
-        macro_invocation_as_ast_node,
-        parenthesized_expr::<STYLE>,
-        parse_var,
-        parse_erl_literal,
-      )),
+      alt((parenthesized_expr::<STYLE>, parse_var, parse_erl_literal)),
     )(input),
     _ => panic!("STYLE={} not implemented in parse_expr", STYLE),
   }

@@ -2,8 +2,9 @@
 #![allow(missing_docs)]
 
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::erl_syntax::parsers::defs::{ParserInput, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use nom::branch::alt;

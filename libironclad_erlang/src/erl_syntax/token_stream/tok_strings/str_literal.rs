@@ -1,11 +1,11 @@
 //! Parse double quoted strings
 
 use crate::erl_syntax::token_stream::misc::{ws_before, ws_before_mut};
+use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
 use crate::erl_syntax::token_stream::tok_strings::shared;
 use crate::erl_syntax::token_stream::tok_strings::shared::{
   parse_escaped_whitespace, StringFragment,
 };
-use crate::erl_syntax::token_stream::tokenizer::{TokInput, TokResult};
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
