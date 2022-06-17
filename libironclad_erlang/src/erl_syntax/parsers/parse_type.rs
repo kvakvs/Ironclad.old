@@ -52,7 +52,7 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        AstNodeImpl::new_fn_spec(SourceLoc::new(input), funarity, fntypespec.into())
+        AstNodeImpl::new_fn_spec(SourceLoc::new(&input), funarity, fntypespec.into())
       },
     )(input.clone())
   }
@@ -348,7 +348,7 @@ impl ErlTypeParser {
   /// Wraps parsed type into a type-AST-node
   pub fn parse_type_node(input: ParserInput) -> ParserResult<AstNode> {
     map(Self::parse_type, |t| {
-      AstNodeImpl::construct_with_location(SourceLoc::new(input), AstNodeType::Type { ty: t })
+      AstNodeImpl::construct_with_location(SourceLoc::new(&input), AstNodeType::Type { ty: t })
     })(input.clone())
   }
 }

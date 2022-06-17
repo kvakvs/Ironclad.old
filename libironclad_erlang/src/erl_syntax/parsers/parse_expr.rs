@@ -53,7 +53,7 @@ fn parse_apply(input: ParserInput) -> ParserResult<AstNode> {
     tuple((parse_expr, parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>)),
     |(expr, args)| {
       let target = CallableTarget::new_expr(expr);
-      AstNodeImpl::new_application(SourceLoc::new(input), target, args)
+      AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
     },
   )(input.clone())
 }
@@ -82,7 +82,7 @@ fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<A
       tok(TokenType::SquareClose),
     )),
     |(_open, elements, maybe_tail, _close)| {
-      AstNodeImpl::new_list(SourceLoc::new(input), elements, maybe_tail)
+      AstNodeImpl::new_list(SourceLoc::new(&input), elements, maybe_tail)
     },
   )(input.clone())
 }
@@ -90,7 +90,7 @@ fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<A
 /// Parses a `Expr <- Expr` generator
 pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
   map(separated_pair(parse_expr, tok(TokenType::LeftArr), parse_expr), |(a, b)| {
-    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(input), a, b)
+    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&input), a, b)
   })(input.clone())
 }
 
@@ -114,7 +114,7 @@ fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
       ),
     ),
     |(expr, generators)| {
-      AstNodeImpl::new_list_comprehension(SourceLoc::new(input), expr, generators)
+      AstNodeImpl::new_list_comprehension(SourceLoc::new(&input), expr, generators)
     },
   )(input.clone())
 }
@@ -135,7 +135,7 @@ fn parse_tuple_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<
       parse_comma_sep_exprs0::<STYLE>,
       tok(TokenType::CurlyClose),
     ),
-    |elements| AstNodeImpl::new_tuple(SourceLoc::new(input), elements),
+    |elements| AstNodeImpl::new_tuple(SourceLoc::new(&input), elements),
   )(input.clone())
 }
 
@@ -160,7 +160,7 @@ fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<
       separated_list0(tok(TokenType::Comma), map_builder_member::<STYLE>),
       tok(TokenType::CurlyClose),
     ),
-    |members| AstNodeImpl::new_map_builder(SourceLoc::new(input), members),
+    |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), members),
   )(input.clone())
 }
 
@@ -256,11 +256,11 @@ fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
           Some(expr2) => {
             // TODO: merge match clause 2 and 3 as new_mfa_expr should be doing job of both?
             let target = CallableTarget::new_mfa_expr(Some(expr1), expr2, args.len());
-            AstNodeImpl::new_application(SourceLoc::new(input), target, args)
+            AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
           }
           None => {
             let target = CallableTarget::new_expr(expr1);
-            AstNodeImpl::new_application(SourceLoc::new(input), target, args)
+            AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
           }
         }
       } else {
@@ -282,7 +282,7 @@ fn parse_expr_prec03<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
       alt((unop_negative, unop_positive, unop_bnot, unop_not)),
       parse_expr_prec02::<STYLE>,
     ),
-    |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::new(input), unop, expr),
+    |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), unop, expr),
   )(input.clone())
   .or_else(|_err| parse_expr_prec02::<STYLE>(input.clone()))
 }
@@ -403,7 +403,7 @@ fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   // Try parse (catch Expr) otherwise try next precedence level
   map(pair(unop_catch, parse_expr_prec10::<STYLE>), |(catch_op, expr)| {
-    ErlUnaryOperatorExpr::new_ast(SourceLoc::new(input), catch_op, expr)
+    ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), catch_op, expr)
   })(input.clone())
   .or_else(|_err| parse_expr_prec10::<STYLE>(input.clone()))
 }

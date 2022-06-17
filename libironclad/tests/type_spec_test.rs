@@ -12,7 +12,7 @@ use libironclad_erlang::erl_syntax::parsers::parse_attr::{
 };
 use libironclad_erlang::erl_syntax::parsers::parse_type::ErlTypeParser;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::erl_module::ErlModule;
 use libironclad_erlang::project::ErlProject;
 use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::typing::erl_type::ErlType;

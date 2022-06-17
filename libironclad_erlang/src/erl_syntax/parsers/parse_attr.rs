@@ -47,14 +47,14 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
       ),
       period_newline,
     ),
-    |(tag, term)| AstNodeImpl::new_generic_attr(SourceLoc::new(input), tag, term),
+    |(tag, term)| AstNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, term),
   )(input.clone())
 }
 
 /// Parses a generic `-TAG.` attribute, no parentheses, no expr.
 pub(crate) fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
   map(delimited(tok(TokenType::Minus), tok_atom, period_newline), |tag| {
-    AstNodeImpl::new_generic_attr(SourceLoc::new(input), tag, None)
+    AstNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, None)
   })(input.clone())
 }
 
@@ -111,7 +111,7 @@ pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
       context("list of exports in an -export() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
-    |t| AstNodeImpl::new_export_attr(SourceLoc::new(input), t),
+    |t| AstNodeImpl::new_export_attr(SourceLoc::new(&input), t),
   )(input.clone())
 }
 
@@ -124,7 +124,7 @@ pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
       context("list of exports in an -export_type() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
-    |t| AstNodeImpl::new_export_type_attr(SourceLoc::new(input), t),
+    |t| AstNodeImpl::new_export_type_attr(SourceLoc::new(&input), t),
   )(input.clone())
 }
 
@@ -144,7 +144,7 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
       ),
       period_newline,
     ),
-    |(mod_name, imports)| AstNodeImpl::new_import_attr(SourceLoc::new(input), mod_name, imports),
+    |(mod_name, imports)| AstNodeImpl::new_import_attr(SourceLoc::new(&input), mod_name, imports),
   )(input.clone())
 }
 
@@ -178,7 +178,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
       period_newline,
     ),
     |(type_name, type_args, _coloncolon, new_type)| {
-      AstNodeImpl::new_type_attr(SourceLoc::new(input), type_name, type_args, new_type)
+      AstNodeImpl::new_type_attr(SourceLoc::new(&input), type_name, type_args, new_type)
     },
   )(input.clone())
 }

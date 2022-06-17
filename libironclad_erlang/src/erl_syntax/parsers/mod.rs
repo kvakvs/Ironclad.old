@@ -47,7 +47,7 @@ pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
   map(
     pair(module_start_attr, parse_module_forms),
     |(mod_name, forms): (String, Vec<AstNode>)| {
-      AstNodeImpl::new_module_forms(SourceLoc::new(input), mod_name, forms)
+      AstNodeImpl::new_module_forms(SourceLoc::new(&input), mod_name, forms)
     },
   )(input.clone())
 }

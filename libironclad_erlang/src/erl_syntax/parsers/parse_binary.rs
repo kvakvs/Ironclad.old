@@ -24,7 +24,7 @@ use std::ops::Deref;
 /// Parse a literal value, variable, or an expression in parentheses.
 fn bin_element_value(input: ParserInput) -> ParserResult<AstNode> {
   alt((
-    map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(input), &v)),
+    map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(&input), &v)),
     parse_erl_literal,
     delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
   ))(input.clone())
@@ -132,7 +132,7 @@ pub(crate) fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
       cut(terminated(
         map(
           separated_list0(tok(TokenType::Comma), context("binary expression element", bin_element)),
-          |bin_exprs| AstNodeImpl::new_binary_expr(SourceLoc::new(input), bin_exprs),
+          |bin_exprs| AstNodeImpl::new_binary_expr(SourceLoc::new(&input), bin_exprs),
         ),
         tok(TokenType::DoubleAngleClose),
       )),

@@ -15,7 +15,7 @@ use nom::combinator::map;
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_string, |s| {
     AstNodeImpl::construct_with_location(
-      SourceLoc::new(input),
+      SourceLoc::new(&input),
       Lit { value: Literal::String(s).into() },
     )
   })(input.clone())
@@ -24,7 +24,7 @@ fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_atom, |s| {
     AstNodeImpl::construct_with_location(
-      SourceLoc::new(input),
+      SourceLoc::new(&input),
       Lit { value: Literal::Atom(s).into() },
     )
   })(input.clone())
@@ -33,7 +33,7 @@ fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 fn parse_float_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_float, |f: f64| {
     let lit_node = Lit { value: Literal::Float(f).into() };
-    AstNodeImpl::construct_with_location(SourceLoc::new(input), lit_node)
+    AstNodeImpl::construct_with_location(SourceLoc::new(&input), lit_node)
   })(input.clone())
 }
 
@@ -43,7 +43,7 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
       // TODO: Can parsed integer create a parse error?
       value: Literal::Integer(i).into(),
     };
-    AstNodeImpl::construct_with_location(SourceLoc::new(input), lit_node)
+    AstNodeImpl::construct_with_location(SourceLoc::new(&input), lit_node)
   })(input.clone())
 }
 

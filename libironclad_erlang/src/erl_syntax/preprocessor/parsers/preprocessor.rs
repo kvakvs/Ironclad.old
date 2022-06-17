@@ -47,7 +47,7 @@
 //   if let Ok((input2, path)) = result {
 //     let included_file = input
 //       .parser_scope
-//       .load_include(SourceLoc::new(input), &PathBuf::from(path), input.file_name())
+//       .load_include(SourceLoc::new(&input), &PathBuf::from(path), input.file_name())
 //       .unwrap();
 //     let input3 = input2.clone_with_input(included_file);
 //     parse_module(input3)
@@ -64,7 +64,7 @@
 //       delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |t| PreprocessorNodeType::new_include_lib(SourceLoc::new(input), t.into_string()),
+//     |t| PreprocessorNodeType::new_include_lib(SourceLoc::new(&input), t.into_string()),
 //   )(input.clone())
 // }
 //
@@ -76,7 +76,7 @@
 //       delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |t| PreprocessorNodeType::new_error(SourceLoc::new(input), t.into_string()),
+//     |t| PreprocessorNodeType::new_error(SourceLoc::new(&input), t.into_string()),
 //   )(input.clone())
 // }
 //
@@ -88,7 +88,7 @@
 //       delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |t| PreprocessorNodeType::new_warning(SourceLoc::new(input), t.into_string()),
+//     |t| PreprocessorNodeType::new_warning(SourceLoc::new(&input), t.into_string()),
 //   )(input.clone())
 // }
 //

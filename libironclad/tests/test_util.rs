@@ -2,7 +2,7 @@
 
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
-use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::erl_module::ErlModule;
 use std::path::PathBuf;
 
 pub fn fail_unexpected<T>(val: &T)

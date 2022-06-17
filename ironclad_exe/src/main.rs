@@ -5,7 +5,6 @@ use std::process::exit;
 
 use libironclad::stage::file_preload::FilePreloadStage;
 use libironclad::stage::parse::ErlParseStage;
-use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInputImpl;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
@@ -13,7 +12,7 @@ use libironclad_erlang::project::ErlProject;
 
 fn main_do() -> IcResult<()> {
   // Test default project from ""
-  let default_project: ErlProject = match ProjectConf::from_string(ParserInputImpl::new_str("")) {
+  let default_project: ErlProject = match ProjectConf::from_string("") {
     Ok(dp) => ErlProjectImpl::from(dp).into(),
     Err(e) => return Err(Box::new(e)),
   };

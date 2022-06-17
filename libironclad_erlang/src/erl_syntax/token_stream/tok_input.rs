@@ -1,9 +1,11 @@
 //! Tokenizer input type
 
 /// Tokenizer input type
-pub type TokInput<'a> = &'a str;
+pub type TokenizerInput<'a> = &'a str;
+
 /// Tokenizer parsers re
-pub type TokResult<'a, Out> =
-  nom::IResult<TokInput<'a>, Out, nom::error::VerboseError<TokInput<'a>>>;
+pub type TokensResult<'a, Out> =
+  nom::IResult<TokenizerInput<'a>, Out, nom::error::VerboseError<TokenizerInput<'a>>>;
+
 /// Gathers multiple errors and contexts together
-pub type TokenizerError<'a> = nom::error::VerboseError<TokInput<'a>>;
+pub type TokenizerError<'a> = nom::error::VerboseError<TokenizerInput<'a>>;

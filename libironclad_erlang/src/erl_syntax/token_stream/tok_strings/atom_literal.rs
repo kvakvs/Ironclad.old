@@ -2,7 +2,7 @@
 //! String parsing code from Nom examples.
 
 use crate::erl_syntax::token_stream::misc::{parse_ident, ws_before_mut};
-use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
+use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::shared::{parse_u32, StringFragment};
 use crate::erl_syntax::token_stream::tok_strings::{shared, Char};
 use nom::branch::alt;
@@ -15,7 +15,7 @@ use nom::sequence::{delimited, preceded};
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
 /// to parse sequences like \u{00AC}.
-fn parse_unicode(input: TokInput) -> TokResult<Char> {
+fn parse_unicode(input: TokenizerInput) -> TokensResult<Char> {
   // map_opt is like map_res, but it takes an Option instead of a Result. If
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
@@ -24,7 +24,7 @@ fn parse_unicode(input: TokInput) -> TokResult<Char> {
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-fn parse_escaped_char(input: TokInput) -> TokResult<Char> {
+fn parse_escaped_char(input: TokenizerInput) -> TokensResult<Char> {
   preceded(
     char('\\'),
     // `alt` tries each parser in sequence, returning the result of
@@ -48,25 +48,25 @@ fn parse_escaped_char(input: TokInput) -> TokResult<Char> {
 }
 
 /// Parse a non-empty block of text that doesn't include \ or "
-fn parse_singlequot_literal<'a>(input: TokInput<'a>) -> TokResult<TokInput<'a>> {
+fn parse_singlequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
   // given characters.
-  let not_quote_slash = |inp1: TokInput<'a>| is_not("\'\\")(inp1);
+  let not_quote_slash = |inp1: TokenizerInput<'a>| is_not("\'\\")(inp1);
 
   // `verify` runs a parser, then runs a verification function on the output of
   // the parser. The verification function accepts out output only if it
   // returns true. In this case, we want to ensure that the output of is_not
   // is non-empty.
-  verify(not_quote_slash, |inp2: &TokInput<'a>| !inp2.is_empty())(input)
+  verify(not_quote_slash, |inp2: &TokenizerInput<'a>| !inp2.is_empty())(input)
 }
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_fragment<'a>(input: TokInput<'a>) -> TokResult<StringFragment<'a>> {
+fn parse_fragment<'a>(input: TokenizerInput<'a>) -> TokensResult<StringFragment<'a>> {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.
-    map(parse_singlequot_literal, |inp1: TokInput| StringFragment::Literal(inp1)),
+    map(parse_singlequot_literal, |inp1: TokenizerInput| StringFragment::Literal(inp1)),
     map(parse_escaped_char, StringFragment::EscapedChar),
     value(StringFragment::EscapedWS, shared::parse_escaped_whitespace),
   ))(input)
@@ -74,7 +74,7 @@ fn parse_fragment<'a>(input: TokInput<'a>) -> TokResult<StringFragment<'a>> {
 
 /// fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
 /// and for each output value, calls a folding function on each output value.
-pub(crate) fn build_quoted_atom_body(input: TokInput) -> TokResult<String> {
+pub(crate) fn build_quoted_atom_body(input: TokenizerInput) -> TokensResult<String> {
   fold_many0(
     // Our parser function– parses a single string fragment
     parse_fragment,
@@ -95,7 +95,7 @@ pub(crate) fn build_quoted_atom_body(input: TokInput) -> TokResult<String> {
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-fn parse_quoted_atom(input: TokInput) -> TokResult<String> {
+fn parse_quoted_atom(input: TokenizerInput) -> TokensResult<String> {
   // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the
@@ -105,7 +105,7 @@ fn parse_quoted_atom(input: TokInput) -> TokResult<String> {
 
 /// Parse an atom which can either be a naked identifier starting with lowercase, or a single-quoted
 /// delitmited string
-pub(crate) fn parse_tok_atom(input: TokInput) -> TokResult<String> {
+pub(crate) fn parse_tok_atom(input: TokenizerInput) -> TokensResult<String> {
   // Note: The atom tokenizer is called after keyword tokenizer so there's no chance a keyword
   // can be tokenized into an atom
   ws_before_mut(alt((parse_ident, parse_quoted_atom)))(input)

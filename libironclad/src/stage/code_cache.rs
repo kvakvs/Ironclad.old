@@ -1,5 +1,5 @@
 //! Code cache contains compile states in a dict
-use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::erl_module::ErlModule;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 

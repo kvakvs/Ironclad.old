@@ -6,12 +6,12 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::source_file::SourceFile;
 use crate::source_loc::SourceLoc;
 use nom::{CompareResult, Needed};
-use std::iter::{Copied, Enumerate};
+use std::iter::{Copied, Enumerate, Map};
 use std::mem::size_of;
 use std::ops::{Deref, RangeFrom, RangeTo};
 use std::path::PathBuf;
 use std::slice::Iter;
-use std::str::{CharIndices, Chars};
+use std::str::{CharIndices, Chars, SplitTerminator};
 use std::sync::Arc;
 
 /// The nom-compatible token input
@@ -44,7 +44,17 @@ impl<'a> nom::Offset for ParserInput<'a> {
 //   }
 // }
 //
+
 impl<'a> ParserInput<'a> {
+  /// Calculates offset for second inside `self`
+  pub(crate) fn offset_inside(&self, second: &[Token]) -> usize {
+    let fst = self.tokens.as_ptr();
+    let snd = second.as_ptr();
+    assert!(snd > fst);
+
+    (snd as usize - fst as usize) / size_of::<Token>()
+  }
+
   pub(crate) fn new(source_file: &SourceFile, tokens: &'a [Token]) -> Self {
     Self { source_file: Some(source_file.clone()), tokens }
   }

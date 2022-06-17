@@ -19,7 +19,7 @@ use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
-use crate::erl_syntax::token_stream::tok_input::{TokInput, TokResult};
+use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::tokenizer::tok_module;
 use crate::error::ic_error::IcResult;
@@ -87,7 +87,7 @@ impl ErlModule {
     parse_fn: T,
   ) -> IcResult<Vec<Token>>
   where
-    T: Fn(TokInput) -> TokResult<Vec<Token>>,
+    T: Fn(TokenizerInput) -> TokensResult<Vec<Token>>,
   {
     let input = src_file.text.as_str();
     let forms = panicking_tokenizer_error_reporter(input, parse_fn(input).finish());
@@ -108,24 +108,20 @@ impl ErlModule {
 
   /// Generic parse helper for any Nom entry point.
   /// Input comes as string in the `SourceFile`, the input is tokenized and then parsed.
-  pub fn parse_helper<'a, T>(
-    project: ErlProject,
-    src_file: SourceFile,
-    parse_fn: T,
-  ) -> IcResult<Self>
+  pub fn parse_helper<T>(project: ErlProject, src_file: SourceFile, parse_fn: T) -> IcResult<Self>
   where
-    T: Fn(ParserInput<'a>) -> ParserResult<AstNode>,
+    T: Fn(ParserInput) -> ParserResult<AstNode>,
   {
     let mut module = ErlModule::default();
     module.source_file = src_file.clone();
 
-    let tok_stream1 = module.tokenize_helper(project.clone(), src_file, tok_module)?;
+    let tok_stream1 = module.tokenize_helper(project.clone(), src_file.clone(), tok_module)?;
     let tok_stream2 = module.preprocess(tok_stream1)?;
 
-    // let parser_scope = ParserScopeImpl::new_from_project(project, &PathBuf::new());
-    let input = ParserInput::new(&src_file, &tok_stream2);
-    let (tail, forms) =
-      panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish());
+    let (tail, forms) = {
+      let input = ParserInput::new(&src_file, &tok_stream2);
+      panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish())
+    };
 
     assert!(
       tail.is_empty(),
@@ -133,6 +129,7 @@ impl ErlModule {
       tail,
       forms
     );
+
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
     module.ast = forms;
 

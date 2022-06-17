@@ -101,6 +101,6 @@
 //       delimited(tok(TokenType::ParOpen), macro_ident, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |ident: String| PreprocessorNodeType::new_undef(SourceLoc::new(input), ident),
+//     |ident: String| PreprocessorNodeType::new_undef(SourceLoc::new(&input), ident),
 //   )(input.clone())
 // }

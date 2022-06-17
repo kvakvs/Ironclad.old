@@ -5,7 +5,7 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::erl_module::ErlModule;
 use libironclad_erlang::typing::check::TypeCheck;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_erlang::typing::scope::Scope;

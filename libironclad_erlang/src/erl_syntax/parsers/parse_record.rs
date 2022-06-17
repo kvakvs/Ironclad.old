@@ -54,7 +54,7 @@ fn record_definition_fields(input: ParserInput) -> ParserResult<Vec<RecordField>
 fn record_definition_inner(input: ParserInput) -> ParserResult<AstNode> {
   map(
     separated_pair(tok_atom, tok(TokenType::Comma), record_definition_fields),
-    |(atom, fields)| AstNodeImpl::new_record_definition(SourceLoc::new(input), atom, fields),
+    |(atom, fields)| AstNodeImpl::new_record_definition(SourceLoc::new(&input), atom, fields),
   )(input.clone())
 }
 

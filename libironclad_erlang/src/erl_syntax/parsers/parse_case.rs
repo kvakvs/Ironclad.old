@@ -37,7 +37,7 @@ pub(crate) fn parse_case_clause(
       ErlCaseClause::new(
         pattern,
         maybe_when,
-        AstNodeImpl::new_comma_expr(SourceLoc::new(input), body),
+        AstNodeImpl::new_comma_expr(SourceLoc::new(&input), body),
       )
     },
   )(input.clone())
@@ -61,7 +61,7 @@ pub(crate) fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> 
           tok_keyword(Keyword::End),
         )),
         |(expr, clauses, _end0)| {
-          AstNodeImpl::new_case_statement(SourceLoc::new(input), expr, clauses)
+          AstNodeImpl::new_case_statement(SourceLoc::new(&input), expr, clauses)
         },
       )),
     ),

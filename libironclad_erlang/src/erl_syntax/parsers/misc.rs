@@ -4,7 +4,7 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::tok_input::TokInput;
+use crate::erl_syntax::token_stream::tok_input::TokenizerInput;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
@@ -370,8 +370,8 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 /// Print detailed error with source pointers, and panic
 #[named]
 pub fn panicking_tokenizer_error_reporter<'a, Out>(
-  input: TokInput,
-  res: Result<(TokInput<'a>, Out), nom::error::VerboseError<TokInput<'a>>>,
+  input: TokenizerInput,
+  res: Result<(TokenizerInput<'a>, Out), nom::error::VerboseError<TokenizerInput<'a>>>,
 ) -> Out {
   match res {
     Ok((tail, out)) => {
@@ -418,7 +418,7 @@ pub(crate) fn print_input(fn_name: &str, input: ParserInput) {
 
 /// Print function location and trimmed input, for debugging
 #[allow(dead_code)]
-pub(crate) fn print_tok_input(fn_name: &str, input: TokInput) {
+pub(crate) fn print_tok_input(fn_name: &str, input: TokenizerInput) {
   println!("{} input=«{}»", fn_name, input.chars().take(50).collect::<String>());
 }
 

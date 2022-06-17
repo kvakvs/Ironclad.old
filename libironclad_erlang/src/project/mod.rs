@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 pub mod compiler_opts;
 pub mod conf;
+pub mod erl_module;
 pub mod input_opts;
-pub mod module;
 pub mod project_impl;
 pub mod project_inputs;
 

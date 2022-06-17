@@ -13,19 +13,31 @@ pub struct Token {
   pub offset: *const u8,
   /// The token itself
   pub content: TokenType,
+  /// True for the last item in line before `\n`. Field updated during preprocessing.
+  pub last_in_line: bool,
 }
 
 impl Token {
   /// Create a new keyword token
   #[inline]
   pub fn new_keyword(offset: *const u8, k: Keyword) -> Self {
-    Self { offset, content: TokenType::Keyword(k) }
+    Self {
+      offset,
+      content: TokenType::Keyword(k),
+      last_in_line: false,
+    }
   }
 
   /// Create a new symbol token
   #[inline]
   pub fn new(offset: *const u8, tt: TokenType) -> Self {
-    Self { offset, content: tt }
+    Self { offset, content: tt, last_in_line: false }
+  }
+
+  /// Check whether the token is a newline token (temporary till preprocessing stage)
+  #[inline]
+  pub fn is_newline(&self) -> bool {
+    matches!(self.content, TokenType::Newline)
   }
 
   /// Check whether the token is an atom of given value
@@ -102,6 +114,7 @@ impl std::fmt::Display for Token {
       TokenType::MacroInvocation(m) => write!(f, "?{}", m),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Comment(c) => write!(f, "% {}", c),
+      TokenType::Newline => writeln!(f, ""),
     }
   }
 }

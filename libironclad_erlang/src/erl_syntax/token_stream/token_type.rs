@@ -10,6 +10,8 @@ use std::sync::Arc;
 #[allow(missing_docs)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenType {
+  /// Temporary token, removed during preprocessing.
+  Newline,
   Comma,
   Semicolon,
   Colon,

@@ -27,7 +27,7 @@ impl SourceLoc {
   }
 
   /// Create an absolute pointer from an input position. Use this to determine source location later.
-  pub(crate) fn new(input: ParserInput) -> Self {
+  pub(crate) fn new(input: &ParserInput) -> Self {
     Self::Offset { start: input.tokens.iter().next().unwrap().offset }
   }
 }

@@ -1,6 +1,9 @@
 //! Format parse errors
 
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::token_stream::token_array::TokLinesIter;
+use crate::erl_syntax::token_stream::token_type::TokenType;
+use std::iter::Map;
 
 /// Transforms a `VerboseError` into a trace with input position information
 /// Copy from `nom::error::convert_error` to support token stream errors.
@@ -15,7 +18,7 @@ pub fn ironclad_convert_error(
   let mut result = String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
-    let byte_offset = input.offset(substring);
+    let inp_offset = input.offset(substring);
 
     if input.is_empty() {
       match kind {
@@ -30,37 +33,40 @@ pub fn ironclad_convert_error(
         }
       }
     } else {
-      let prefix = &input.as_bytes()[..byte_offset];
+      let prefix = &input.tokens[..inp_offset];
 
       // Count the number of newlines in the first `offset` bytes of input
-      let line_number = prefix.iter().filter(|&&b| b == b'\n').count() + 1;
+      let line_number = prefix
+        .iter()
+        .filter(|&b| matches!(b.content, TokenType::Newline))
+        .count()
+        + 1;
 
       // Find the line that includes the subslice:
       // Find the *last* newline before the substring starts
       let line_begin = prefix
         .iter()
         .rev()
-        .position(|&b| b == b'\n')
-        .map(|pos| byte_offset - pos)
+        .position(|b| matches!(b.content, TokenType::Newline))
+        .map(|pos| inp_offset - pos)
         .unwrap_or(0);
 
       // Find the full line after that newline
-      let line = input[line_begin..]
-        .lines()
+      let line = TokLinesIter::new(&input.tokens[line_begin..])
         .next()
-        .unwrap_or(&input[line_begin..])
-        .trim_end();
+        .unwrap_or(&input.tokens[line_begin..]);
+      // .trim_end();
 
       // The (1-indexed) column number is the offset of our substring into that line
-      let column_number: usize = line.offset(substring) + 1;
+      let column_number: usize = substring.offset_inside(line) + 1;
 
       match kind {
         nom::error::VerboseErrorKind::Char(c) => {
-          if let Some(actual) = substring.chars().next() {
+          if let Some(actual) = substring.tokens.iter().next() {
             write!(
               &mut result,
               "{i}: at line {line_number}:\n\
-               {line}\n\
+               {line:?}\n\
                {caret:>column$}\n\
                expected '{expected}', found {actual}\n\n",
               i = i,
@@ -75,7 +81,7 @@ pub fn ironclad_convert_error(
             write!(
               &mut result,
               "{i}: at line {line_number}:\n\
-               {line}\n\
+               {line:?}\n\
                {caret:>column$}\n\
                expected '{expected}', got end of input\n\n",
               i = i,
@@ -90,7 +96,7 @@ pub fn ironclad_convert_error(
         nom::error::VerboseErrorKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}, in {context}:\n\
-             {line}\n\
+             {line:?}\n\
              {caret:>column$}\n\n",
           i = i,
           line_number = line_number,
@@ -102,7 +108,7 @@ pub fn ironclad_convert_error(
         nom::error::VerboseErrorKind::Nom(e) => write!(
           &mut result,
           "{i}: at line {line_number}, in {nom_err:?}:\n\
-             {line}\n\
+             {line:?}\n\
              {caret:>column$}\n\n",
           i = i,
           line_number = line_number,

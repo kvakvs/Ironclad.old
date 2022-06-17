@@ -52,7 +52,7 @@ pub fn parse_catch_clause(
       CatchClause::new(
         exc_pattern,
         maybe_when,
-        AstNodeImpl::new_comma_expr(SourceLoc::new(input), body),
+        AstNodeImpl::new_comma_expr(SourceLoc::new(&input), body),
       )
     },
   )(input.clone())
@@ -80,7 +80,7 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
       ),
     )),
     |(body, of_branches, catch_clauses)| {
-      let loc = SourceLoc::new(input);
+      let loc = SourceLoc::new(&input);
       AstNodeImpl::new_try_catch(
         loc.clone(),
         AstNodeImpl::new_comma_expr(loc, body),

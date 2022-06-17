@@ -1,9 +1,10 @@
 //! Parses Erlang source into AST
 
 use libironclad_erlang::erl_syntax::node::erl_binary_element::ValueWidth::Default;
+use libironclad_erlang::erl_syntax::token_stream::tokenizer::tok_module;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::file_cache::FileCache;
-use libironclad_erlang::project::module::ErlModule;
+use libironclad_erlang::project::erl_module::ErlModule;
 use libironclad_erlang::project::ErlProject;
 use libironclad_erlang::stats::time_stats::{TimeStats, TimeStatsImpl};
 use std::sync::RwLock;
@@ -24,17 +25,16 @@ impl ErlParseStage {
 
         // Take only .erl and .hrl files
         if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
-          let _compiler_opts = project.get_compiler_options_for(path);
+          let compiler_opts = project.get_compiler_options_for(path);
 
           let mut file_time = TimeStatsImpl::default();
-          let tok_stream = ErlModule::tokenize(
-            &source_file.file_name,
-            source_file.text.as_str(),
-            Some(project.clone()),
-          )?;
+          let module = ErlModule::new(compiler_opts, source_file.clone());
+
+          let tok_stream =
+            module.tokenize_helper(project.clone(), source_file.clone(), tok_module)?;
 
           file_time.stop_timer();
-          // tok_stream.into_iter().for_each(|t| print!("{} ", t));
+          tok_stream.into_iter().for_each(|t| print!("{} ", t));
           print!("TOKENIZED {}: {}", path_s, file_time);
 
           // let mut parsed = ErlModule::from_module_source(

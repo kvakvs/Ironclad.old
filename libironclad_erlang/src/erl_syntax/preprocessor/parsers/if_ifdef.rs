@@ -82,7 +82,7 @@
 //       delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |t| PreprocessorNodeType::new_elif_temporary(SourceLoc::new(input), t),
+//     |t| PreprocessorNodeType::new_elif_temporary(SourceLoc::new(&input), t),
 //   )(input.clone())
 // }
 //
@@ -129,7 +129,7 @@
 //       delimited(tok(TokenType::ParOpen), macro_ident, tok(TokenType::ParClose)),
 //       period_newline,
 //     ),
-//     |t: String| PreprocessorNodeType::new_ifndef_temporary(SourceLoc::new(input), t),
+//     |t: String| PreprocessorNodeType::new_ifndef_temporary(SourceLoc::new(&input), t),
 //   )(input.clone())
 // }
 //
@@ -141,7 +141,7 @@
 //       opt(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose))),
 //       period_newline,
 //     ),
-//     |_opt| PreprocessorNodeType::construct_with_location(SourceLoc::new(input), _TemporaryElse),
+//     |_opt| PreprocessorNodeType::construct_with_location(SourceLoc::new(&input), _TemporaryElse),
 //   )(input.clone())
 // }
 //
@@ -152,6 +152,6 @@
 // /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
 // pub(crate) fn endif_temporary_directive(input: ParserInput) -> ParserResult<AstNode> {
 //   map(delimited(tok_atom_of("endif"), maybe_empty_parens, period_newline), |_opt| {
-//     PreprocessorNodeType::construct_with_location(SourceLoc::new(input), _TemporaryEndif)
+//     PreprocessorNodeType::construct_with_location(SourceLoc::new(&input), _TemporaryEndif)
 //   })(input.clone())
 // }

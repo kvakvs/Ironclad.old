@@ -29,7 +29,7 @@ pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
           ),
           tok_keyword(Keyword::End),
         ),
-        |clauses| AstNodeImpl::new_if_statement(SourceLoc::new(input), clauses),
+        |clauses| AstNodeImpl::new_if_statement(SourceLoc::new(&input), clauses),
       )),
     ),
   )(input.clone())

@@ -72,7 +72,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       ErlFnClause::new(
         maybe_name,
         args,
-        AstNodeImpl::new_comma_expr(SourceLoc::new(input), body),
+        AstNodeImpl::new_comma_expr(SourceLoc::new(&input), body),
         when_expr,
       )
     },
@@ -113,7 +113,7 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
       ),
       tok(TokenType::Period),
     ),
-    |t| _construct_fndef(SourceLoc::new(input), t),
+    |t| _construct_fndef(SourceLoc::new(&input), t),
   )(input.clone())
 }
 
@@ -128,6 +128,6 @@ pub(crate) fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
         tok_keyword(Keyword::End),
       ),
     ),
-    |t| _construct_fndef(SourceLoc::new(input), t),
+    |t| _construct_fndef(SourceLoc::new(&input), t),
   )(input.clone())
 }
