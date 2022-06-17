@@ -16,9 +16,9 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
+use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::ops::Deref;
 
 /// Parse a literal value, variable, or an expression in parentheses.

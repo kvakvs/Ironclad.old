@@ -1,5 +1,4 @@
 //! Helper functions for Nom parsing
-use crate::erl_syntax::parsers::defs::ErlParserError;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -9,18 +8,10 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
-use nom::branch::alt;
-use nom::character::complete::{anychar, multispace0};
-use nom::combinator::{eof, map, not, opt, peek, recognize, verify};
+use nom::combinator::recognize;
 use nom::error::{convert_error, ParseError};
-use nom::multi::{many0, many1, many_till};
-use nom::sequence::{delimited, pair, preceded, terminated, tuple};
-use nom::{
-  bytes::complete::tag,
-  character::complete::{alphanumeric1, char, multispace1, one_of},
-  InputIter, Slice,
-};
-use std::ops::RangeFrom;
+use nom::sequence::tuple;
+use nom::{bytes::complete::tag, Slice};
 use std::sync::Arc;
 
 /// Recognizes one token of a given tokentype, the tokentype fields are ignored.

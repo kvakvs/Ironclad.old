@@ -1,18 +1,12 @@
 //! Contains implementations required for custom nom input to work
 
-use crate::erl_syntax::parsers::misc::is_part_of;
-use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
 use crate::erl_syntax::token_stream::token::Token;
 use crate::source_file::SourceFile;
-use crate::source_loc::SourceLoc;
-use nom::{CompareResult, Needed};
-use std::iter::{Copied, Enumerate, Map};
+use nom::Needed;
+use std::iter::Enumerate;
 use std::mem::size_of;
-use std::ops::{Deref, RangeFrom, RangeTo};
-use std::path::PathBuf;
+use std::ops::{RangeFrom, RangeTo};
 use std::slice::Iter;
-use std::str::{CharIndices, Chars, SplitTerminator};
-use std::sync::Arc;
 
 /// The nom-compatible token input
 #[derive(Debug, Clone)]

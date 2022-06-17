@@ -3,7 +3,6 @@
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_array::TokLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use std::iter::Map;
 
 /// Transforms a `VerboseError` into a trace with input position information
 /// Copy from `nom::error::convert_error` to support token stream errors.

@@ -12,9 +12,9 @@ use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
+use nom::error::context;
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{bytes::complete::tag, error::context};
 
 /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
 pub(crate) fn parse_case_clause(

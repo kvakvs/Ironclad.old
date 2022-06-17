@@ -1,4 +1,4 @@
-// //! Parse helpers for `-define`/`-undef` preprocessor
+//! Parse helpers for `-define`/`-undef` preprocessor
 //
 // use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 // use crate::erl_syntax::erl_ast::AstNode;

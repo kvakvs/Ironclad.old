@@ -1,5 +1,4 @@
 //! Erlang errors
-use crate::erl_syntax::parsers::defs::ErlParserError;
 use crate::error::ic_error::IcResult;
 use crate::error::ic_error_category::IcErrorCategory;
 use crate::error::ic_error_trait::IcErrorT;

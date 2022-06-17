@@ -12,9 +12,9 @@ use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map};
+use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, separated_pair, tuple};
-use nom::{character::complete::char, error::context};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn parse_parentheses_no_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {

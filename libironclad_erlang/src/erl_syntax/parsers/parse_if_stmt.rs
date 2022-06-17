@@ -13,7 +13,7 @@ use crate::source_loc::SourceLoc;
 use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::{pair, preceded, terminated};
-use nom::{bytes::complete::tag, combinator::cut, error::context};
+use nom::{combinator::cut, error::context};
 
 /// Parses `if COND -> EXPR; ... end`
 pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {

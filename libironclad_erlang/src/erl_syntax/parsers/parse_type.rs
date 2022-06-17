@@ -19,9 +19,9 @@ use crate::typing::typevar::Typevar;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
+use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context};
 use std::sync::Arc;
 
 /// Holds code for parsing types and typespecs

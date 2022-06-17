@@ -14,11 +14,10 @@ use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
-use nom::character::complete::char;
 use nom::combinator::{cut, map, not, opt, peek};
+use nom::error::context;
 use nom::multi::separated_list1;
 use nom::sequence::{delimited, preceded, terminated, tuple};
-use nom::{bytes::complete::tag, error::context};
 
 /// Function will succeed if an atom is parsed and FN_NAME is true, will return Some<Value>.
 /// Function will succeed if no atom found but also FN_NAME is false, will return None.

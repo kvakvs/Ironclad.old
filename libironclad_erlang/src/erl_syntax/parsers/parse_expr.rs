@@ -32,9 +32,9 @@ use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::combinator::{cut, map, opt};
+use nom::error::context;
 use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
-use nom::{character::complete::char, error::context};
 
 /// Full expression including comma operator, for function bodies
 pub const EXPR_STYLE_FULL: usize = 0;

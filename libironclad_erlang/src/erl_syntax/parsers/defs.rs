@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::Token;
 
 /// Gathers multiple errors and contexts together
 pub type ErlParserError<'a> = nom::error::VerboseError<ParserInput<'a>>;

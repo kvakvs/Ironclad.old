@@ -82,28 +82,31 @@ impl PreprocessorNodeType {
   }
 
   /// Create a new `-if()` temporary node.
-  #[deprecated = "not used"]
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_if_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
     Self::construct_with_location(location, _TemporaryIf(expr))
   }
 
   /// Create a new `-elif()` temporary node.
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_elif_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
     Self::construct_with_location(location, _TemporaryElseIf(expr))
   }
 
   /// Create a new `-ifdef()` temporary node.
-  #[deprecated = "not used"]
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_ifdef_temporary(location: SourceLoc, ident: String) -> AstNode {
     Self::construct_with_location(location, _TemporaryIfdef(ident))
   }
 
   /// Create a new `-ifndef()` temporary node.
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_ifndef_temporary(location: SourceLoc, ident: String) -> AstNode {
     Self::construct_with_location(location, _TemporaryIfndef(ident))
   }
 
   /// Create a new UNDEF node
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_undef(location: SourceLoc, ident: String) -> AstNode {
     Self::construct_with_location(location, Undef(ident))
   }
@@ -114,16 +117,19 @@ impl PreprocessorNodeType {
   // }
 
   /// Create a new INCLUDE_LIB node
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_include_lib(location: SourceLoc, p: String) -> AstNode {
     Self::construct_with_location(location, IncludeLib(p))
   }
 
   /// Create a new ERROR node
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_error(location: SourceLoc, p: String) -> AstNode {
     Self::construct_with_location(location, PreprocessorNodeType::Error(p))
   }
 
   /// Create a new WARNING node
+  #[deprecated = "preprocessor stage is not in ast"]
   pub(crate) fn new_warning(location: SourceLoc, p: String) -> AstNode {
     Self::construct_with_location(location, PreprocessorNodeType::Warning(p))
   }

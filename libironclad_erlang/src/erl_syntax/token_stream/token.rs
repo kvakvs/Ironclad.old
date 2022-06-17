@@ -13,8 +13,8 @@ pub struct Token {
   pub offset: *const u8,
   /// The token itself
   pub content: TokenType,
-  /// True for the last item in line before `\n`. Field updated during preprocessing.
-  pub last_in_line: bool,
+  // /// True for the last item in line before `\n`. Field updated during preprocessing.
+  // pub last_in_line: bool,
 }
 
 impl Token {
@@ -24,14 +24,18 @@ impl Token {
     Self {
       offset,
       content: TokenType::Keyword(k),
-      last_in_line: false,
+      // last_in_line: false,
     }
   }
 
   /// Create a new symbol token
   #[inline]
   pub fn new(offset: *const u8, tt: TokenType) -> Self {
-    Self { offset, content: tt, last_in_line: false }
+    Self {
+      offset,
+      content: tt,
+      //last_in_line: false
+    }
   }
 
   /// Check whether the token is a newline token (temporary till preprocessing stage)

@@ -1,15 +1,15 @@
 //! Tokenizer helpers
 
 use crate::erl_syntax::token_stream::tok_input::{TokenizerError, TokenizerInput, TokensResult};
-use crate::erl_syntax::token_stream::tok_strings::Char;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, anychar, char, multispace1};
+use nom::character::complete::{alphanumeric1, anychar, char};
 use nom::combinator::{eof, map, recognize, verify};
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, pair, preceded};
 
 /// Recognizes newline or end of input
+#[inline]
 pub(crate) fn newline_or_eof<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
   recognize(preceded(
     many0(alt((char(' '), char('\t')))),
@@ -18,15 +18,18 @@ pub(crate) fn newline_or_eof<'a>(input: TokenizerInput<'a>) -> TokensResult<Toke
 }
 
 /// Recognizes `% text <newline>` consuming text
+#[inline]
 pub(crate) fn line_comment<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
   recognize(preceded(many1(char('%')), many_till(anychar, newline_or_eof)))(input)
 }
 
+#[inline]
 fn space_only<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
   recognize(many1(alt((char(' '), char('\t')))))(input)
 }
 
 /// Recognizes 0 or more whitespaces and line comments
+#[inline]
 fn spaces_or_comments0<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
   recognize(many0(alt((
     //multispace1,
@@ -37,6 +40,7 @@ fn spaces_or_comments0<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerI
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
+#[inline]
 pub(crate) fn ws_before<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
 ) -> impl FnMut(TokenizerInput<'a>) -> TokensResult<Out>
@@ -51,6 +55,7 @@ where
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
+#[inline]
 pub(crate) fn ws_before_mut<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
 ) -> impl FnMut(TokenizerInput<'a>) -> TokensResult<Out>
@@ -62,6 +67,7 @@ where
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
 /// trailing whitespace, returning the output of `inner`.
+#[inline]
 pub(crate) fn ws_mut<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
 ) -> impl FnMut(TokenizerInput<'a>) -> TokensResult<Out>
@@ -110,7 +116,8 @@ pub(crate) fn varname(input: TokenizerInput) -> TokensResult<String> {
   )(input)
 }
 
-pub fn bigcapacity_many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, Vec<O>, E>
+/// Copied from `nom::many0` but reserves many more items in vector.
+pub(crate) fn bigcapacity_many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, Vec<O>, E>
 where
   I: Clone + nom::InputLength,
   F: nom::Parser<I, O, E>,

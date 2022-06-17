@@ -15,7 +15,6 @@ use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::token_stream::token::Token;
 use crate::error::ic_error::IcResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;

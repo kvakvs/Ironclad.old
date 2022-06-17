@@ -7,9 +7,7 @@ use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use nom::branch::alt;
-use nom::combinator::{map, not};
-use nom::{bytes::complete::tag, character::complete::char, Parser};
+use nom::combinator::map;
 
 type UnaryOpParserResult<'a> = ParserResult<'a, ErlUnaryOp>;
 type BinaryOpParserResult<'a> = ParserResult<'a, ErlBinaryOp>;

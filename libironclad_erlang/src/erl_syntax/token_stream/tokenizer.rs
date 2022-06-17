@@ -452,13 +452,10 @@ fn keyword_xor(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
-  map(newline, |_| Token::new(input.as_ptr(), TokenType::Newline))(input)
+  map(alt((tag("\r\n"), tag("\n"), tag("\r"))), |_| {
+    Token::new(input.as_ptr(), TokenType::Newline)
+  })(input)
 }
-
-// #[inline]
-// fn tok_comment(input: TokInput) -> TokResult<Token> {
-//   map(line_comment, |s| TokenType::Comment(s.to_string()))(input)
-// }
 
 fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
   alt((
@@ -513,6 +510,5 @@ pub fn tok_module(input: TokenizerInput) -> TokensResult<Vec<Token>> {
     tok_variable,
     tok_integer,
     tok_symbol,
-    // tok_comment,
   ))))))(input)
 }

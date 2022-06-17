@@ -57,11 +57,13 @@ pub enum PreprocessorNodeType {
     cond_false: Vec<AstNode>,
   },
   /// Produce a libironclad error
+  #[deprecated = "preprocessor stage is not in ast"]
   Error(String),
   /// Produce a libironclad warning
+  #[deprecated = "preprocessor stage is not in ast"]
   Warning(String),
   /// Nested included file
-  #[deprecated = "files are included while parsing"]
+  #[deprecated = "preprocessor stage is not in ast"]
   IncludedFile {
     /// Filename for this included file
     filename: PathBuf,
@@ -71,19 +73,26 @@ pub enum PreprocessorNodeType {
   // Temporary nodes, appear during parsing and should never appear into the final AST output.
   // These values never leave the parser module.
   /// `-else.` node
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryElse,
   ///`-endif` node
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryEndif,
   /// `-if(...).` node
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryIf(AstNode),
   /// `-elif(...).` node
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryElseIf(AstNode),
   /// -ifdef(...). is pushed on conditions stack in `ParserScope` during parsing
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryIfdef(String),
   /// -ifndef(...). is translated into `IfdefBlock`
+  #[deprecated = "preprocessor stage is not in ast"]
   _TemporaryIfndef(String),
   /// Holds true branches of -if/-ifdef directives, and must be unfolded after parsing. Can only
   /// occur on top level with other module forms, and is flattened automatically on creating the
   /// module root node.
+  #[deprecated = "preprocessor stage is not in ast"]
   Group(Vec<AstNode>),
 }
