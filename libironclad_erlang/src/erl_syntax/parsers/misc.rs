@@ -11,7 +11,7 @@ use ::function_name::named;
 use nom::combinator::recognize;
 use nom::error::{convert_error, ParseError};
 use nom::sequence::tuple;
-use nom::{bytes::complete::tag, Slice};
+use nom::Slice;
 use std::sync::Arc;
 
 /// Recognizes one token of a given tokentype, the tokentype fields are ignored.

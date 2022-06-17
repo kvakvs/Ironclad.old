@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
-  bigcapacity_many0, line_comment, macro_ident, varname, ws_before, ws_before_mut, ws_mut,
+  bigcapacity_many0, macro_ident, varname, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
@@ -12,13 +12,11 @@ use crate::erl_syntax::token_stream::tok_strings::str_literal::{
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{anychar, char, newline};
-use nom::combinator::{complete, cut, map, not, recognize, verify};
+use nom::character::complete::{anychar, char};
+use nom::combinator::{complete, cut, map, not, recognize};
 use nom::error::context;
-use nom::multi::many0;
 use nom::sequence::{preceded, terminated};
 use nom::Parser;
 
@@ -496,7 +494,8 @@ fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
   ))(input)
 }
 
-pub fn tok_module(input: TokenizerInput) -> TokensResult<Vec<Token>> {
+/// Break module source into tokens
+pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
   // Comments after the code are consumed by the outer ws_mut
   // Comments and spaces between the tokens are consumed by the inner ws_before_mut
   complete(ws_mut(bigcapacity_many0(ws_before_mut(alt((

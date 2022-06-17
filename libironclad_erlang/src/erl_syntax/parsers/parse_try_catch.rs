@@ -15,9 +15,9 @@ use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
+use nom::error::context;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{bytes::complete::tag, character::complete::char, error::context};
 
 /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
 pub fn parse_exception_pattern(

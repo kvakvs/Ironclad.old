@@ -3,10 +3,6 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
-use libironclad_erlang::erl_syntax::parsers::defs::ParserInput;
-use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::if_ifdef::if_condition;
-use nom::Finish;
 
 #[test]
 #[named]
@@ -14,11 +10,9 @@ use nom::Finish;
 fn test_fragment_if_true() {
   test_util::start(function_name!(), "Parse -if(true) directive");
 
-  let input = "-if(true).";
-  let parser_input = ParserInput::new_str(input);
-  let (_tail, result) =
-    panicking_parser_error_reporter(parser_input.clone(), if_condition(parser_input).finish());
-  assert!(result, "Parsing -if(true). must produce a 'true'");
+  let input = "-if(true).
+-end.";
+  let _module = test_util::parse_module0(function_name!(), input);
 }
 
 #[test]
@@ -27,11 +21,10 @@ fn test_fragment_if_true() {
 /// Try parse a simple pp directive -if(3). and expect a panic
 fn test_fragment_if_3() {
   test_util::start(function_name!(), "Parse -if(3) directive for a panic");
-  let input = "-if(3).";
-  let parser_input = ParserInput::new_str(input);
-  let (_tail, result) =
-    panicking_parser_error_reporter(parser_input.clone(), if_condition(parser_input).finish());
-  assert!(result, "Parsing -if(3). must produce a panic");
+  let input = "-if(3).
+-end.";
+  let _module = test_util::parse_module0(function_name!(), input);
+  // assert!(result, "Parsing -if(3). must produce a panic");
 }
 
 #[test]

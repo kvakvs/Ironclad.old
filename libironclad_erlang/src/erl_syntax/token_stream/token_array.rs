@@ -1,7 +1,6 @@
 //! Token array processing functions
 
 use crate::erl_syntax::token_stream::token::Token;
-use std::env::Args;
 
 /// Iterate over token stream lines, by finding `Newline` tokens.
 /// Note: `Newline` tokens are removed in the preprocessor.

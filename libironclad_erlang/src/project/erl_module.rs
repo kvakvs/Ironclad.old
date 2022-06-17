@@ -21,7 +21,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
-use crate::erl_syntax::token_stream::tokenizer::tok_module;
+use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::ErlProject;
@@ -102,8 +102,16 @@ impl ErlModule {
     Ok(forms)
   }
 
-  pub fn preprocess(&self, tokens: Vec<Token>) -> IcResult<Vec<Token>> {
-    Ok(tokens.into_iter().collect())
+  /// Filter through the tokens array and produce a new token array with preprocessor directives
+  /// eliminated, files included and macros substituted.
+  pub fn preprocess(&self, tokens: &[Token]) -> IcResult<Vec<Token>> {
+    Ok(
+      tokens
+        .iter()
+        .filter(|t| !t.is_newline()) // throw away newlines
+        .cloned()
+        .collect(),
+    )
   }
 
   /// Generic parse helper for any Nom entry point.
@@ -115,8 +123,8 @@ impl ErlModule {
     let mut module = ErlModule::default();
     module.source_file = src_file.clone();
 
-    let tok_stream1 = module.tokenize_helper(project.clone(), src_file.clone(), tok_module)?;
-    let tok_stream2 = module.preprocess(tok_stream1)?;
+    let tok_stream1 = module.tokenize_helper(project.clone(), src_file.clone(), tokenize_source)?;
+    let tok_stream2 = module.preprocess(&tok_stream1)?;
 
     let (tail, forms) = {
       let input = ParserInput::new(&src_file, &tok_stream2);

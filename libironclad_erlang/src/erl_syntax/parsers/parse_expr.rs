@@ -30,7 +30,6 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::bytes::complete::tag;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::{many0, separated_list0, separated_list1};

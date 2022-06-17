@@ -1,4 +1,4 @@
-// //! Groups type definitions shared by all preprocessor parse modules
+//! Groups type definitions shared by all preprocessor parse modules
 // use crate::erl_syntax::erl_ast::AstNode;
 // use crate::erl_syntax::parsers::defs::ParserResult;
 // use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom_of, tok_string};

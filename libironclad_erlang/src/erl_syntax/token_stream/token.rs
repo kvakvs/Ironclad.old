@@ -1,9 +1,7 @@
 //! Input is broken into tokens
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::typing::erl_integer::ErlInteger;
 use libironclad_util::pretty::Pretty;
 
 /// Token represents basic elements of source code
