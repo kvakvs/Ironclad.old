@@ -4,10 +4,11 @@ use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefi
 use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::conf::ProjectConf;
+use crate::project::erl_module::ErlModule;
 use crate::project::input_opts::InputOpts;
 use crate::project::project_inputs::ErlProjectInputs;
 use crate::source_loc::SourceLoc;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -17,6 +18,8 @@ use std::sync::{Arc, RwLock};
 pub struct ErlProjectImpl {
   /// Inputs and compile options provided from the project file and command line
   pub inputs: RwLock<ErlProjectInputs>,
+  /// Collection of loaded modules
+  pub modules: RwLock<HashMap<String, Arc<ErlModule>>>,
 }
 
 impl ErlProjectImpl {
@@ -154,6 +157,9 @@ impl ErlProjectImpl {
       panic!("Can't lock project inputs to resolve include path")
     }
   }
+
+  /// Register a new module
+  pub fn register_new_module(&mut self, new_module: ErlModule) {}
 }
 
 impl From<ProjectConf> for ErlProjectImpl {
@@ -164,6 +170,9 @@ impl From<ProjectConf> for ErlProjectImpl {
       input_opts: InputOpts::from(conf.inputs),
       inputs: Vec::default(),
     };
-    Self { inputs: RwLock::new(inputs) }
+    Self {
+      inputs: RwLock::new(inputs),
+      modules: RwLock::new(HashMap::default()),
+    }
   }
 }

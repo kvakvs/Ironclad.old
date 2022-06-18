@@ -14,7 +14,7 @@ impl ErlParseStage {
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run(project: ErlProject, contents_cache: FileCache) -> IcResult<()> {
+  pub fn run(project: &mut ErlProject, contents_cache: FileCache) -> IcResult<()> {
     let mut stage_time = TimeStatsImpl::default();
 
     if let Ok(contents_cache_r) = contents_cache.read() {
@@ -32,15 +32,14 @@ impl ErlParseStage {
             module.tokenize_helper(project.clone(), source_file.clone(), tokenize_source)?;
 
           file_time.stop_timer();
-          tok_stream.into_iter().for_each(|t| print!("{} ", t));
-          print!("TOKENIZED {}: {}", path_s, file_time);
 
-          // let mut parsed = ErlModule::from_module_source(
-          //   &source_file.file_name,
-          //   source_file.text.as_str(),
-          //   Some(project.clone()),
-          // )?;
-          // parsed.compiler_options = compiler_opts;
+          let mut module = ErlModule::from_module_source(
+            &source_file.file_name,
+            source_file.text.as_str(),
+            Some(project.clone()),
+          )?;
+          module.compiler_options = compiler_opts.clone();
+          project.register_new_module(module)
         }
       }
     }

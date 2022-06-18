@@ -109,9 +109,10 @@ impl AstNodeImpl {
   }
 
   /// Unwrap an preprocessor-grouped nodes (produced by parsing -if/ifdefs)
+  #[deprecated = "preprocessor nodes should not appear in final AST"]
   pub fn as_preprocessor_group(&self) -> &[AstNode] {
     match self.as_preprocessor() {
-      PreprocessorNodeType::Group(nodes) => &nodes,
+      PreprocessorNodeType::Group(nodes) => nodes,
       _ => panic!("Expected Preprocessor::Group() AST node, but got {}", self),
     }
   }

@@ -17,7 +17,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{anychar, char};
 use nom::combinator::{complete, cut, map, not, recognize};
 use nom::error::context;
-use nom::sequence::{preceded, terminated};
+use nom::sequence::preceded;
 use nom::Parser;
 
 #[inline]
@@ -491,6 +491,7 @@ fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
       keyword_when,
     )),
     keyword_xor,
+    keyword_else,
   ))(input)
 }
 

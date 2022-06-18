@@ -4,7 +4,7 @@ use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Debug;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
@@ -31,7 +31,7 @@ use crate::typing::scope::Scope;
 /// Erlang Module consists of
 /// - List of forms: attributes, and Erlang functions
 /// - Compiler options used to produce this module
-pub struct ErlModule {
+pub struct ErlModuleImpl {
   /// Options used to build this module. Possibly just a ref to the main project's options
   pub compiler_options: Arc<CompilerOpts>,
   /// Module name atom, as a string
@@ -49,7 +49,9 @@ pub struct ErlModule {
   pub errors: RefCell<Vec<ErlError>>,
 }
 
-impl Default for ErlModule {
+pub type ErlModule = Arc<RwLock<ErlModuleImpl>>;
+
+impl Default for ErlModuleImpl {
   fn default() -> Self {
     Self {
       compiler_options: Default::default(),
@@ -63,15 +65,15 @@ impl Default for ErlModule {
   }
 }
 
-impl Debug for ErlModule {
+impl Debug for ErlModuleImpl {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "ErlModule({})", self.name)
   }
 }
 
-impl ErlModule {
+impl ErlModuleImpl {
   /// Create a new empty module
-  pub fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> Self {
+  pub fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> ErlModuleImpl {
     Self {
       compiler_options: opt,
       source_file,
@@ -81,7 +83,6 @@ impl ErlModule {
 
   /// Generic tokenizer for any Nom entry point
   pub fn tokenize_helper<T>(
-    &self,
     _project: ErlProject,
     src_file: SourceFile,
     parse_fn: T,
@@ -104,7 +105,7 @@ impl ErlModule {
 
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
-  pub fn preprocess(&self, tokens: &[Token]) -> IcResult<Vec<Token>> {
+  pub fn preprocess(_module: &ErlModule, tokens: &[Token]) -> IcResult<Vec<Token>> {
     Ok(
       tokens
         .iter()
@@ -116,15 +117,22 @@ impl ErlModule {
 
   /// Generic parse helper for any Nom entry point.
   /// Input comes as string in the `SourceFile`, the input is tokenized and then parsed.
-  pub fn parse_helper<T>(project: ErlProject, src_file: SourceFile, parse_fn: T) -> IcResult<Self>
+  pub fn parse_helper<T>(
+    project: ErlProject,
+    src_file: SourceFile,
+    parse_fn: T,
+  ) -> IcResult<ErlModule>
   where
     T: Fn(ParserInput) -> ParserResult<AstNode>,
   {
-    let mut module = ErlModule::default();
-    module.source_file = src_file.clone();
+    let mut module: ErlModule = RwLock::new(ErlModuleImpl {
+      source_file: src_file.clone(),
+      ..ErlModuleImpl::default()
+    })
+    .into();
 
-    let tok_stream1 = module.tokenize_helper(project.clone(), src_file.clone(), tokenize_source)?;
-    let tok_stream2 = module.preprocess(&tok_stream1)?;
+    let tok_stream1 = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+    let tok_stream2 = ErlModuleImpl::preprocess(&module, &tok_stream1)?;
 
     let (tail, forms) = {
       let input = ParserInput::new(&src_file, &tok_stream2);
@@ -139,7 +147,11 @@ impl ErlModule {
     );
 
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
-    module.ast = forms;
+    if let Ok(w_module) = module.write() {
+      w_module.ast = forms;
+    } else {
+      panic!("Can't lock module for updating AST field")
+    }
 
     // Scan AST and find FnDef nodes, update functions knowledge
     Scope::update_from_ast(&module.scope, &module.ast);
@@ -153,34 +165,34 @@ impl ErlModule {
     filename: &Path,
     input: &str,
     project: Option<ErlProject>,
-  ) -> IcResult<Self> {
+  ) -> IcResult<ErlModule> {
     let src_file = SourceFileImpl::new(filename, input.to_string());
     Self::parse_helper(project.unwrap_or_default(), src_file, parse_module)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
     let project = ErlProject::default();
     let src_file = SourceFileImpl::new(filename, input.to_string());
     Self::parse_helper(project, src_file, parse_expr)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
     let project = ErlProject::default();
     let src_file = SourceFileImpl::new(filename, input.to_string());
     Self::parse_helper(project, src_file, parse_fndef)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
     let project = ErlProject::default();
     let src_file = SourceFileImpl::new(filename, input.to_string());
     Self::parse_helper(project, src_file, ErlTypeParser::fn_spec_attr)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<Self> {
+  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
     let project = ErlProject::default();
     let src_file = SourceFileImpl::new(filename, input.to_string());
     Self::parse_helper(project, src_file, ErlTypeParser::parse_type_node)

@@ -165,7 +165,7 @@ impl<'a> ParserInput<'a> {
 // }
 
 impl nom::Slice<RangeFrom<usize>> for ParserInput<'_> {
-  fn slice(&self, mut range: RangeFrom<usize>) -> Self {
+  fn slice(&self, range: RangeFrom<usize>) -> Self {
     self.clone_with_slice(self.tokens.slice(range))
   }
 }

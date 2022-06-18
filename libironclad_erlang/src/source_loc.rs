@@ -1,9 +1,6 @@
 //! Source file locations for printing and reporting to the user
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::Token;
 use std::fmt::Formatter;
-use std::path::PathBuf;
-use std::sync::Arc;
 
 /// Source code span with start and end
 #[derive(Clone, Debug)]

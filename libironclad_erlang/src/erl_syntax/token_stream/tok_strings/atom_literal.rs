@@ -66,7 +66,7 @@ fn parse_fragment<'a>(input: TokenizerInput<'a>) -> TokensResult<StringFragment<
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.
-    map(parse_singlequot_literal, |inp1: TokenizerInput| StringFragment::Literal(inp1)),
+    map(parse_singlequot_literal, StringFragment::Literal),
     map(parse_escaped_char, StringFragment::EscapedChar),
     value(StringFragment::EscapedWS, shared::parse_escaped_whitespace),
   ))(input)
@@ -111,36 +111,36 @@ pub(crate) fn parse_tok_atom(input: TokenizerInput) -> TokensResult<String> {
   ws_before_mut(alt((parse_ident, parse_quoted_atom)))(input)
 }
 
-fn is_erl_keyword(s: &str) -> bool {
-  matches!(
-    s,
-    "after"
-      | "and"
-      | "andalso"
-      | "band"
-      | "begin"
-      | "bnot"
-      | "bor"
-      | "bsl"
-      | "bsr"
-      | "bxor"
-      | "case"
-      | "catch"
-      | "cond"
-      | "div"
-      | "end"
-      | "fun"
-      | "if"
-      | "let"
-      | "not"
-      | "of"
-      | "or"
-      | "orelse"
-      | "receive"
-      | "rem"
-      | "try"
-      | "when"
-      | "xor"
-      | "maybe" // otp 25 new keyword
-  )
-}
+// fn is_erl_keyword(s: &str) -> bool {
+//   matches!(
+//     s,
+//     "after"
+//       | "and"
+//       | "andalso"
+//       | "band"
+//       | "begin"
+//       | "bnot"
+//       | "bor"
+//       | "bsl"
+//       | "bsr"
+//       | "bxor"
+//       | "case"
+//       | "catch"
+//       | "cond"
+//       | "div"
+//       | "end"
+//       | "fun"
+//       | "if"
+//       | "let"
+//       | "not"
+//       | "of"
+//       | "or"
+//       | "orelse"
+//       | "receive"
+//       | "rem"
+//       | "try"
+//       | "when"
+//       | "xor"
+//       | "maybe" // otp 25 new keyword
+//   )
+// }

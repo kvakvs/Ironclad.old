@@ -1,4 +1,4 @@
-// //! Parsing tools for `-if` family of directives
+//! Parsing tools for `-if` family of directives
 //
 // use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 // use crate::erl_syntax::erl_ast::AstNode;

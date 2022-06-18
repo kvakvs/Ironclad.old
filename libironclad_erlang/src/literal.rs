@@ -2,7 +2,6 @@
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
-use crate::literal::Literal::List;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::ErlType;
 use std::sync::Arc;

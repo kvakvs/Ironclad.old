@@ -108,7 +108,7 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
 /// Recognizes one float token, returns the value.
 pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), f.clone())),
+    Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), *f)),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
       input,
       nom::error::ErrorKind::Fail, // TODO: new error FloatExpected

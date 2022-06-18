@@ -3,10 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::{
-  Group, IfBlock, IncludeLib, IncludedFile, Undef, _TemporaryElseIf, _TemporaryIf, _TemporaryIfdef,
-  _TemporaryIfndef,
-};
+use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType::IncludedFile;
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
 
@@ -65,72 +62,72 @@ impl PreprocessorNodeType {
   //   }
   // }
 
-  /// Creates a new preprocessor IF node
-  #[deprecated = "not used"]
-  pub(crate) fn new_if(
-    location: SourceLoc,
-    expr: AstNode,
-    cond_true: Vec<AstNode>,
-    cond_false: Vec<AstNode>,
-  ) -> AstNode {
-    Self::construct_with_location(location, IfBlock { cond: expr, cond_true, cond_false })
-  }
+  // /// Creates a new preprocessor IF node
+  // #[deprecated = "not used"]
+  // pub(crate) fn new_if(
+  //   location: SourceLoc,
+  //   expr: AstNode,
+  //   cond_true: Vec<AstNode>,
+  //   cond_false: Vec<AstNode>,
+  // ) -> AstNode {
+  //   Self::construct_with_location(location, IfBlock { cond: expr, cond_true, cond_false })
+  // }
 
-  /// Create a new `-if()` temporary node.
-  pub(crate) fn new_group_node_temporary(nodes: Vec<AstNode>) -> AstNode {
-    Self::construct_without_location(Group(nodes))
-  }
+  // /// Create a new `-if()` temporary node.
+  // pub(crate) fn new_group_node_temporary(nodes: Vec<AstNode>) -> AstNode {
+  //   Self::construct_without_location(Group(nodes))
+  // }
 
-  /// Create a new `-if()` temporary node.
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_if_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
-    Self::construct_with_location(location, _TemporaryIf(expr))
-  }
+  // /// Create a new `-if()` temporary node.
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_if_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
+  //   Self::construct_with_location(location, _TemporaryIf(expr))
+  // }
 
-  /// Create a new `-elif()` temporary node.
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_elif_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
-    Self::construct_with_location(location, _TemporaryElseIf(expr))
-  }
+  // /// Create a new `-elif()` temporary node.
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_elif_temporary(location: SourceLoc, expr: AstNode) -> AstNode {
+  //   Self::construct_with_location(location, _TemporaryElseIf(expr))
+  // }
 
-  /// Create a new `-ifdef()` temporary node.
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_ifdef_temporary(location: SourceLoc, ident: String) -> AstNode {
-    Self::construct_with_location(location, _TemporaryIfdef(ident))
-  }
+  // /// Create a new `-ifdef()` temporary node.
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_ifdef_temporary(location: SourceLoc, ident: String) -> AstNode {
+  //   Self::construct_with_location(location, _TemporaryIfdef(ident))
+  // }
 
-  /// Create a new `-ifndef()` temporary node.
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_ifndef_temporary(location: SourceLoc, ident: String) -> AstNode {
-    Self::construct_with_location(location, _TemporaryIfndef(ident))
-  }
+  // /// Create a new `-ifndef()` temporary node.
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_ifndef_temporary(location: SourceLoc, ident: String) -> AstNode {
+  //   Self::construct_with_location(location, _TemporaryIfndef(ident))
+  // }
 
-  /// Create a new UNDEF node
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_undef(location: SourceLoc, ident: String) -> AstNode {
-    Self::construct_with_location(location, Undef(ident))
-  }
+  // /// Create a new UNDEF node
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_undef(location: SourceLoc, ident: String) -> AstNode {
+  //   Self::construct_with_location(location, Undef(ident))
+  // }
 
   // /// Create a new INCLUDE node
   // pub(crate) fn new_include(location: SourceLoc, p: String) -> AstNode {
   //   Self::construct_with_location(location, Include(p))
   // }
 
-  /// Create a new INCLUDE_LIB node
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_include_lib(location: SourceLoc, p: String) -> AstNode {
-    Self::construct_with_location(location, IncludeLib(p))
-  }
+  // /// Create a new INCLUDE_LIB node
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_include_lib(location: SourceLoc, p: String) -> AstNode {
+  //   Self::construct_with_location(location, IncludeLib(p))
+  // }
 
-  /// Create a new ERROR node
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_error(location: SourceLoc, p: String) -> AstNode {
-    Self::construct_with_location(location, PreprocessorNodeType::Error(p))
-  }
+  // /// Create a new ERROR node
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_error(location: SourceLoc, p: String) -> AstNode {
+  //   Self::construct_with_location(location, PreprocessorNodeType::Error(p))
+  // }
 
-  /// Create a new WARNING node
-  #[deprecated = "preprocessor stage is not in ast"]
-  pub(crate) fn new_warning(location: SourceLoc, p: String) -> AstNode {
-    Self::construct_with_location(location, PreprocessorNodeType::Warning(p))
-  }
+  // /// Create a new WARNING node
+  // #[deprecated = "preprocessor stage is not in ast"]
+  // pub(crate) fn new_warning(location: SourceLoc, p: String) -> AstNode {
+  //   Self::construct_with_location(location, PreprocessorNodeType::Warning(p))
+  // }
 }

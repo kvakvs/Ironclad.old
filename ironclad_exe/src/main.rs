@@ -18,7 +18,7 @@ fn main_do() -> IcResult<()> {
   };
   println!("default {:?}", default_project);
 
-  let project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
+  let mut project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
     Ok(erlp) => ErlProjectImpl::from(erlp).into(),
     Err(e) => return Err(Box::new(e)),
   };
@@ -39,7 +39,7 @@ fn main_do() -> IcResult<()> {
   };
 
   // Parse all ERL files and their included includes
-  ErlParseStage::run(project, file_cache).unwrap();
+  ErlParseStage::run(&mut project, file_cache).unwrap();
   Ok(())
 }
 

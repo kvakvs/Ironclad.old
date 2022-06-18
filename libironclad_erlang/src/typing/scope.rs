@@ -180,6 +180,7 @@ impl Scope {
   }
 
   /// Scan AST and find FnDef nodes, update functions knowledge
+  #[deprecated = "This needs to be moved / can be moved to AST parser/builder"]
   pub fn update_from_ast(scope: &RwLock<Scope>, ast: &AstNode) {
     if let Ok(mut scope_w) = scope.write() {
       scope_w.do_update_from_ast(ast)

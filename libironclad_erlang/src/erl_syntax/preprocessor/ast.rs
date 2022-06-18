@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 /// Preprocessor syntax tree nodes, are stored in `ErlAst::Preprocessor()` enum variant
 #[derive(Debug, Clone)]
+#[deprecated = "preprocessor does not belong in AST"]
 pub enum PreprocessorNodeType {
   /// Specific directive: -include("path").
   #[deprecated = "includes are executed while parsing"]
