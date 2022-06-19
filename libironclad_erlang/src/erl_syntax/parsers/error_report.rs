@@ -1,7 +1,7 @@
 //! Format parse errors
 
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::{format_tok_line, format_tok_stream};
+use crate::erl_syntax::token_stream::token::format_tok_line;
 use crate::erl_syntax::token_stream::token_array::TokLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 

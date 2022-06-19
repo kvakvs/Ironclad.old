@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_atom_of, tok_integer, tok_keyword, tok_var,
+  dash_atom, tok, tok_atom, tok_integer, tok_keyword, tok_var,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
@@ -34,7 +34,7 @@ impl ErlTypeParser {
     map(
       // all between -spec and .
       delimited(
-        tok_atom_of("spec"),
+        dash_atom("spec"),
         tuple((
           context("Function name in a -spec() attribute", cut(tok_atom)),
           separated_list1(

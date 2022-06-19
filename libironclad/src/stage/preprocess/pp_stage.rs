@@ -32,7 +32,8 @@ impl PreprocessStage {
   ///
   /// Side effects: Updates file contents cache
   /// Returns preprocessed collection of module sources
-  pub(crate) fn run(
+  #[deprecated]
+  pub(crate) fn run_pp_stage(
     &mut self,
     project: &mut ErlProject,
     file_cache: FileCache,
@@ -65,7 +66,7 @@ impl PreprocessStage {
 
     // Print stage counters
     self.stats.time.stage_finished(); // mark end time
-    print!("{}", self.stats);
+    print!("{}", self.stats.read().unwrap());
 
     Ok(ast_cache)
   }

@@ -13,7 +13,7 @@ impl ErlParseStage {
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run(project: &ErlProject, contents_cache: FileCache) -> IcResult<()> {
+  pub fn run_parse_stage(project: &ErlProject, contents_cache: FileCache) -> IcResult<()> {
     let mut stage_time = TimeStatsImpl::default();
 
     if let Ok(contents_cache_r) = contents_cache.read() {

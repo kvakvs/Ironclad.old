@@ -116,7 +116,7 @@ impl std::fmt::Display for Token {
       TokenType::MacroInvocation(m) => write!(f, "?{}", m),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Comment(c) => write!(f, "% {}", c),
-      TokenType::Newline => write!(f, "␤"),
+      TokenType::Newline => write!(f, "<Newline>"),
     }
   }
 }

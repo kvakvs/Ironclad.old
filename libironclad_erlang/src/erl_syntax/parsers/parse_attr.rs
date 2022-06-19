@@ -2,7 +2,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom, tok_atom_of, tok_integer};
+use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom, tok_integer};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
@@ -14,7 +14,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
+use nom::sequence::{delimited, pair, separated_pair, tuple};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn parse_parentheses_no_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
@@ -65,7 +65,7 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<String> {
   context(
     "expected -module() attribute",
     cut(delimited(
-      preceded(tok(TokenType::Minus), tok_atom_of("module")),
+      dash_atom("module"),
       context(
         "the module name in a -module() attribute",
         cut(delimited(tok(TokenType::ParOpen), tok_atom, tok(TokenType::ParClose))),
@@ -107,7 +107,7 @@ fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
 pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      tok_atom_of("export"),
+      dash_atom("export"),
       context("list of exports in an -export() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
@@ -120,7 +120,7 @@ pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      tok_atom_of("export_type"),
+      dash_atom("export_type"),
       context("list of exports in an -export_type() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
@@ -133,7 +133,7 @@ pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      tok_atom_of("import"),
+      dash_atom("import"),
       context(
         "list of imports in an -import() attribute",
         cut(delimited(
@@ -165,7 +165,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
   // print_input("type_definition_attr", input);
   map(
     delimited(
-      tok_atom_of("type"),
+      dash_atom("type"),
       tuple((
         tok_atom,
         context(

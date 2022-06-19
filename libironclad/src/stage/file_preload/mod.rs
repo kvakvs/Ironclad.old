@@ -17,7 +17,7 @@ impl FilePreloadStage {
   /// ----------------------------
   /// Preload stage will visit all input files and load them in memory.
   /// Future improvement: Lazy loading as required, timestamp checks
-  pub fn run(&mut self, inputs: &[PathBuf]) -> IroncladResult<FileCache> {
+  pub fn run_preload_stage(&mut self, inputs: &[PathBuf]) -> IroncladResult<FileCache> {
     let f_cache = FileCache::default();
 
     for filename in inputs {

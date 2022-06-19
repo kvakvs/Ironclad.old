@@ -40,13 +40,13 @@ fn main_do() -> IcResult<()> {
   } else {
     panic!("Can't lock project inputs to retrieve names of the preload files")
   };
-  let file_cache = match preload_stage.run(&all_inputs) {
+  let file_cache = match preload_stage.run_preload_stage(&all_inputs) {
     Ok(fc) => fc,
     Err(e) => return Err(Box::new(e)),
   };
 
   // Parse all ERL files and their included includes
-  ErlParseStage::run(&project, file_cache).unwrap();
+  ErlParseStage::run_parse_stage(&project, file_cache).unwrap();
   Ok(())
 }
 

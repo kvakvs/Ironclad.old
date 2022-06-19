@@ -10,7 +10,7 @@ use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::combinator::recognize;
 use nom::error::{convert_error, ParseError};
-use nom::sequence::tuple;
+use nom::sequence::{pair, tuple};
 use nom::Slice;
 use std::sync::Arc;
 
@@ -40,6 +40,25 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
       Some(tok) if tok.is_atom_of(value) => Ok((input.slice(1..), ())),
+      _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+        input,
+        nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
+      ))),
+    }
+  }
+}
+
+/// Matches a `<-> <atom>` pair
+pub fn dash_atom(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<()> {
+  // preceded(tok(TokenType::Minus), tok_atom_of(value))
+  use itertools::Itertools;
+
+  move |input: ParserInput| -> ParserResult<()> {
+    match input.tokens.iter().take(2).next_tuple() {
+      Some((
+        Token { content: TokenType::Minus, .. },
+        Token { content: TokenType::Atom(s), .. },
+      )) if s == value => Ok((input.slice(1..), ())),
       _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
         input,
         nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
@@ -429,12 +448,14 @@ pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
 
 #[allow(dead_code)]
 pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<ParserInput> {
-  // TODO: impl newline token for preprocessor/attribute lines
-  recognize(tuple((tok(TokenType::ParClose), tok(TokenType::Period))))(input)
+  recognize(tuple((
+    tok(TokenType::ParClose),
+    tok(TokenType::Period),
+    tok(TokenType::Newline),
+  )))(input)
 }
 
 #[allow(dead_code)]
 pub(crate) fn period_newline(input: ParserInput) -> ParserResult<ParserInput> {
-  // TODO: impl newline token for preprocessor/attribute lines
-  recognize(tok(TokenType::Period))(input)
+  recognize(pair(tok(TokenType::Period), tok(TokenType::Newline)))(input)
 }

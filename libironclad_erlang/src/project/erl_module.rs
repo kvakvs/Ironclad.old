@@ -100,10 +100,13 @@ impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
   pub fn preprocess(_module: &ErlModule, tokens: &[Token]) -> IcResult<Vec<Token>> {
+    // TODO: Interpret -define/undef -if/ifdef/ifndef/else
+    // TODO: Interpret -include and -include_lib
+    // TODO: Parse and store other module attributes
     Ok(
       tokens
         .iter()
-        .filter(|t| !t.is_newline()) // throw away newlines
+        // .filter(|t| !t.is_newline()) // throw away newlines
         .cloned()
         .collect(),
     )
@@ -129,9 +132,20 @@ impl ErlModuleImpl {
     }
     let module: ErlModule = RwLock::new(module_impl).into();
 
+    //----------------------
+    // Stage 1 tokenize the input
+    //----------------------
     let tok_stream1 = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+
+    //----------------------
+    // Stage 2 preprocessor: handle ifdefs, defines, includes etc
+    // tokenize includes and paste in the token stream too
+    //----------------------
     let tok_stream2 = ErlModuleImpl::preprocess(&module, &tok_stream1)?;
 
+    //----------------------
+    // Stage 3 real parsing begins: tokens to AST
+    //----------------------
     let (tail, forms) = {
       let tokens_input = ParserInput::new(&src_file, &tok_stream2);
       panicking_parser_error_reporter(
