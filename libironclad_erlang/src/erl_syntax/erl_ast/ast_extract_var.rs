@@ -119,7 +119,7 @@ impl AstNodeImpl {
       | AstNodeType::MFA { .. }
       | AstNodeType::ExportAttr { .. }
       | AstNodeType::ExportTypesAttr { .. }
-      | AstNodeType::TypeAttr { .. }
+      | AstNodeType::NewType { .. }
       | AstNodeType::ImportAttr { .. }
       | AstNodeType::ModuleRoot { .. }
       | AstNodeType::FnRef { .. }

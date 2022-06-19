@@ -22,9 +22,9 @@ pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
       .tokens
       .iter()
       .next()
-      .map(|next_tok| -> bool { matches!(&next_tok.content, compare_val) })
+      // .map(|next_tok| -> bool { matches!(&next_tok.content, compare_val) })
     {
-      Some(true) => Ok((input.slice(1..), ())),
+      Some(tok) if tok.content == compare_val => Ok((input.slice(1..), ())),
       _other => {
         Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
           input,
@@ -341,7 +341,8 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
 /// Print detailed error with source pointers, and panic
 #[named]
 pub fn panicking_parser_error_reporter<'a, Out>(
-  input: ParserInput,
+  original_input: &str,
+  tokenstream_input: ParserInput,
   res: Result<(ParserInput<'a>, Out), nom::error::VerboseError<ParserInput<'a>>>,
 ) -> (ParserInput<'a>, Out) {
   match res {
@@ -352,7 +353,10 @@ pub fn panicking_parser_error_reporter<'a, Out>(
       (tail, out)
     }
     Err(e) => {
-      println!("Parse error: {}", error_report::ironclad_convert_error(input, e));
+      println!(
+        "Parse error: {}",
+        error_report::convert_token_stream_parser_error(original_input, tokenstream_input, e)
+      );
       panic!("{}: Parse error", function_name!())
     }
   }
@@ -414,6 +418,7 @@ pub(crate) fn print_tok_input(fn_name: &str, input: TokenizerInput) {
 }
 
 /// Checks whether `part` slice is a sub-slice of `outer` slice
+#[allow(dead_code)]
 pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
   let outer_beg = outer.as_ptr() as usize;
   let outer_end = outer_beg + outer.len();
@@ -422,11 +427,13 @@ pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
   part_beg >= outer_beg && part_end <= outer_end
 }
 
+#[allow(dead_code)]
 pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<ParserInput> {
   // TODO: impl newline token for preprocessor/attribute lines
   recognize(tuple((tok(TokenType::ParClose), tok(TokenType::Period))))(input)
 }
 
+#[allow(dead_code)]
 pub(crate) fn period_newline(input: ParserInput) -> ParserResult<ParserInput> {
   // TODO: impl newline token for preprocessor/attribute lines
   recognize(tok(TokenType::Period))(input)

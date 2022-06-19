@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypesAttr, FnDef,
   FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, TypeAttr, Var,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, NewType, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -232,7 +232,7 @@ impl AstNodeImpl {
     vars: Vec<String>,
     ty: Arc<ErlType>,
   ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, TypeAttr { name, vars, ty })
+    AstNodeImpl::construct_with_location(location, NewType { name, vars, ty })
   }
 
   /// Create a new `-import(modulename, [...]).` module attr.

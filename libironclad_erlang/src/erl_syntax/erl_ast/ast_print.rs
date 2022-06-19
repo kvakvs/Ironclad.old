@@ -3,8 +3,8 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, ExportTypesAttr,
   FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, Type, TypeAttr,
-  UnaryOp, Var, MFA,
+  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, NewType, TryCatch, Tuple, Type, UnaryOp,
+  Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -37,7 +37,7 @@ impl std::fmt::Display for AstNodeImpl {
         Pretty::display_square_list(imports, f)?;
         writeln!(f, ").")
       }
-      TypeAttr { name, vars, ty, .. } => {
+      NewType { name, vars, ty, .. } => {
         write!(f, "-type {}", name)?;
         Pretty::display_paren_list(vars, f)?;
         write!(f, " :: {}", ty)?;

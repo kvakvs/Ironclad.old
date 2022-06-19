@@ -4,7 +4,6 @@ use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Debug;
-use std::path::Path;
 use std::sync::{Arc, RwLock};
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
@@ -23,7 +22,7 @@ use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IcResult;
-use crate::project::compiler_opts::CompilerOpts;
+use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::ErlProject;
 use crate::source_file::{SourceFile, SourceFileImpl};
 use crate::typing::scope::Scope;
@@ -33,7 +32,7 @@ use crate::typing::scope::Scope;
 /// - Compiler options used to produce this module
 pub struct ErlModuleImpl {
   /// Options used to build this module. Possibly just a ref to the main project's options
-  pub compiler_options: Arc<CompilerOpts>,
+  pub compiler_options: CompilerOpts,
   /// Module name atom, as a string
   pub name: String,
   /// The file we're processing AND the file contents (owned by SourceFile)
@@ -49,6 +48,7 @@ pub struct ErlModuleImpl {
   pub errors: RefCell<Vec<ErlError>>,
 }
 
+/// Wraps module into runtime-lockable refcount
 pub type ErlModule = Arc<RwLock<ErlModuleImpl>>;
 
 impl Default for ErlModuleImpl {
@@ -60,7 +60,7 @@ impl Default for ErlModuleImpl {
       parser_scope: ParserScopeImpl::new_empty().into(),
       ast: AstNodeImpl::new_empty("dummy node for module root".to_string()),
       scope: Default::default(),
-      errors: RefCell::new(Vec::with_capacity(CompilerOpts::MAX_ERRORS_PER_MODULE * 110 / 100)),
+      errors: RefCell::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
 }
@@ -73,17 +73,18 @@ impl Debug for ErlModuleImpl {
 
 impl ErlModuleImpl {
   /// Create a new empty module
-  pub fn new(opt: Arc<CompilerOpts>, source_file: SourceFile) -> ErlModuleImpl {
-    Self {
+  pub fn new(opt: CompilerOpts, source_file: SourceFile) -> ErlModule {
+    RwLock::new(Self {
       compiler_options: opt,
       source_file,
       ..Default::default()
-    }
+    })
+    .into()
   }
 
   /// Generic tokenizer for any Nom entry point
   pub fn tokenize_helper<T>(
-    _project: ErlProject,
+    _project: &ErlProject,
     src_file: SourceFile,
     parse_fn: T,
   ) -> IcResult<Vec<Token>>
@@ -92,13 +93,6 @@ impl ErlModuleImpl {
   {
     let input = src_file.text.as_str();
     let forms = panicking_tokenizer_error_reporter(input, parse_fn(input).finish());
-
-    // assert!(
-    //   tail.trim().is_empty(),
-    //   "Not all input was consumed by tokenizer.\n\tTail: «{}»\n\tForms: {:?}",
-    //   tail,
-    //   forms
-    // );
 
     Ok(forms)
   }
@@ -118,25 +112,33 @@ impl ErlModuleImpl {
   /// Generic parse helper for any Nom entry point.
   /// Input comes as string in the `SourceFile`, the input is tokenized and then parsed.
   pub fn parse_helper<T>(
-    project: ErlProject,
+    project: &ErlProject,
     src_file: SourceFile,
     parse_fn: T,
+    compiler_options: Option<CompilerOpts>,
   ) -> IcResult<ErlModule>
   where
     T: Fn(ParserInput) -> ParserResult<AstNode>,
   {
-    let mut module: ErlModule = RwLock::new(ErlModuleImpl {
+    let mut module_impl = ErlModuleImpl {
       source_file: src_file.clone(),
       ..ErlModuleImpl::default()
-    })
-    .into();
+    };
+    if let Some(o) = compiler_options {
+      module_impl.compiler_options = o;
+    }
+    let module: ErlModule = RwLock::new(module_impl).into();
 
     let tok_stream1 = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
     let tok_stream2 = ErlModuleImpl::preprocess(&module, &tok_stream1)?;
 
     let (tail, forms) = {
-      let input = ParserInput::new(&src_file, &tok_stream2);
-      panicking_parser_error_reporter(input.clone(), parse_fn(input.clone()).finish())
+      let tokens_input = ParserInput::new(&src_file, &tok_stream2);
+      panicking_parser_error_reporter(
+        src_file.text.as_str(),
+        tokens_input.clone(),
+        parse_fn(tokens_input.clone()).finish(),
+      )
     };
 
     assert!(
@@ -147,14 +149,14 @@ impl ErlModuleImpl {
     );
 
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
-    if let Ok(w_module) = module.write() {
+    if let Ok(mut w_module) = module.write() {
       w_module.ast = forms;
     } else {
       panic!("Can't lock module for updating AST field")
     }
 
     // Scan AST and find FnDef nodes, update functions knowledge
-    Scope::update_from_ast(&module.scope, &module.ast);
+    // Scope::update_from_ast(&module.scope, &module.ast);
 
     Ok(module)
   }
@@ -162,40 +164,52 @@ impl ErlModuleImpl {
   /// Parses code fragment starting with "-module(...)." and containing some function definitions
   /// and the usual module stuff.
   pub fn from_module_source(
-    filename: &Path,
-    input: &str,
-    project: Option<ErlProject>,
+    project: &ErlProject,
+    source_file: &SourceFile,
+    compiler_options: Option<CompilerOpts>,
   ) -> IcResult<ErlModule> {
-    let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project.unwrap_or_default(), src_file, parse_module)
+    Self::parse_helper(project, source_file.clone(), parse_module, compiler_options)
   }
 
   /// Creates a module, where its AST comes from an expression
-  pub fn from_expr_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
-    let project = ErlProject::default();
-    let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project, src_file, parse_expr)
+  pub fn from_expr_source(
+    project: &ErlProject,
+    source_file: &SourceFile,
+    compiler_options: Option<CompilerOpts>,
+  ) -> IcResult<ErlModule> {
+    Self::parse_helper(project, source_file.clone(), parse_expr, compiler_options)
   }
 
   /// Creates a module, where its AST comes from a function
-  pub fn from_fun_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
-    let project = ErlProject::default();
-    let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project, src_file, parse_fndef)
+  pub fn from_fun_source(
+    project: &ErlProject,
+    source_file: &SourceFile,
+    compiler_options: Option<CompilerOpts>,
+  ) -> IcResult<ErlModule> {
+    Self::parse_helper(project, source_file.clone(), parse_fndef, compiler_options)
   }
 
   /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
-    let project = ErlProject::default();
-    let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project, src_file, ErlTypeParser::fn_spec_attr)
+  pub fn from_fun_spec_source(
+    project: &ErlProject,
+    source_file: &SourceFile,
+    compiler_options: Option<CompilerOpts>,
+  ) -> IcResult<ErlModule> {
+    Self::parse_helper(project, source_file.clone(), ErlTypeParser::fn_spec_attr, compiler_options)
   }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
-  pub fn from_type_source(filename: &Path, input: &str) -> IcResult<ErlModule> {
-    let project = ErlProject::default();
-    let src_file = SourceFileImpl::new(filename, input.to_string());
-    Self::parse_helper(project, src_file, ErlTypeParser::parse_type_node)
+  pub fn from_type_source(
+    project: &ErlProject,
+    source_file: &SourceFile,
+    compiler_options: Option<CompilerOpts>,
+  ) -> IcResult<ErlModule> {
+    Self::parse_helper(
+      project,
+      source_file.clone(),
+      ErlTypeParser::parse_type_node,
+      compiler_options,
+    )
   }
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
@@ -204,18 +218,31 @@ impl ErlModuleImpl {
     self.errors.borrow_mut().push(err);
     self.errors.borrow().len() < self.compiler_options.max_errors_per_module
   }
+}
 
-  // /// Updates `self.ast` with preprocessor nodes interpreted, and removed. All `?MACRO` values are
-  // /// interpreted and replaced with values.
-  // pub fn interpret_preprocessor_nodes(&mut self) -> IcResult<()> {
-  //   // let (mod_name, forms) = self.ast.as_module();
-  //   // let mut processed_forms = Vec::<AstNode>::default();
-  //   // for f in forms {
-  //   //   // Preprocessor nodes can only occur on top level of a module,
-  //   //   // but nodes which need substitutions of `?MACRO`s can occur anywhere.
-  //   //   interpret_preprocessor_node(self, f)?;
-  //   // }
-  //   // self.ast = processed_ast;
-  //   Ok(())
-  // }
+/// Read accessor
+pub fn erl_module_ast(m: &ErlModule) -> AstNode {
+  if let Ok(read_m) = m.read() {
+    read_m.ast.clone()
+  } else {
+    panic!("Can't lock module to access AST")
+  }
+}
+
+/// Read accessor
+pub fn erl_module_parser_scope(m: &ErlModule) -> ParserScope {
+  if let Ok(read_m) = m.read() {
+    read_m.parser_scope.clone()
+  } else {
+    panic!("Can't lock module to access parser scope")
+  }
+}
+
+/// Read accessor
+pub fn erl_module_scope(m: &ErlModule) -> Arc<RwLock<Scope>> {
+  if let Ok(read_m) = m.read() {
+    read_m.scope.clone()
+  } else {
+    panic!("Can't lock module to access module scope")
+  }
 }

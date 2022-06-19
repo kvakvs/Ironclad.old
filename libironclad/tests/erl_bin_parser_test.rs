@@ -3,11 +3,8 @@ extern crate function_name;
 extern crate libironclad;
 extern crate libironclad_erlang;
 
-use std::path::PathBuf;
-
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::erl_module::ErlModule;
 
 mod test_util;
 
@@ -15,25 +12,24 @@ mod test_util;
 #[test]
 fn parse_bin1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a basic binary");
-  let filename = PathBuf::from(function_name!());
 
   {
-    let src = "<<1, 2, 3>>";
-    let module = ErlModule::from_expr_source(&filename, src)?;
-    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
-    assert!(module.ast.is_binary());
+    let input1 = "<<1, 2, 3>>";
+    let ast1 = test_util::parse_expr(function_name!(), input1);
+    println!("{} From «{}» parsed: {:?}", function_name!(), input1, ast1);
+    assert!(ast1.is_binary());
   }
   {
-    let src = "<<X, B:3, (atom):V>>";
-    let module = ErlModule::from_expr_source(&filename, src)?;
-    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
-    assert!(module.ast.is_binary());
+    let input2 = "<<X, B:3, (atom):V>>";
+    let ast2 = test_util::parse_expr(function_name!(), input2);
+    println!("{} From «{}» parsed: {}", function_name!(), input2, ast2);
+    assert!(ast2.is_binary());
   }
   {
-    let src = "<<X/binary-big-unit:33>>";
-    let module = ErlModule::from_expr_source(&filename, src)?;
-    println!("{} From «{}» parsed: {}", function_name!(), src, module.ast);
-    assert!(module.ast.is_binary());
+    let input3 = "<<X/binary-big-unit:33>>";
+    let ast3 = test_util::parse_expr(function_name!(), input3);
+    println!("{} From «{}» parsed: {}", function_name!(), input3, ast3);
+    assert!(ast3.is_binary());
   }
   Ok(())
 }

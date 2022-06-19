@@ -3,6 +3,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
+use libironclad_erlang::project::erl_module::{erl_module_ast, erl_module_parser_scope};
 
 #[test]
 #[named]
@@ -63,9 +64,7 @@ false).
 -test_success().
 -endif().";
 
-  let module = test_util::parse_module0(function_name!(), input);
-  let nodes = module.ast.children().unwrap_or_default();
-
+  let nodes = test_util::parse_module_unwrap(function_name!(), input);
   assert_eq!(nodes.len(), 1, "Expect to only have 1 attribute: -test_success.");
   assert!(nodes[0].is_generic_attr("test_success"));
 }
@@ -94,11 +93,13 @@ fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
   let module = test_util::parse_module0(function_name!(), input);
-  let nodes = module.ast.children().unwrap_or_default();
+  let nodes = erl_module_ast(&module).children().unwrap_or_default();
   assert_eq!(nodes.len(), 1);
   assert!(nodes[0].is_empty_ast_node(), "expecting an empty node transformed from -define");
 
-  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
+  let pdef = erl_module_parser_scope(&module)
+    .get_value("BBB", 0)
+    .unwrap();
   assert_eq!(pdef.name, "BBB");
   assert_eq!(pdef.text, "[true)");
 }
@@ -112,7 +113,7 @@ fn parse_define_with_body_2_args() {
 -testsuccess.
 -endif().";
   let module = test_util::parse_module0(function_name!(), input);
-  let nodes = module.ast.children().unwrap_or_default();
+  let nodes = erl_module_ast(&module).children().unwrap_or_default();
 
   assert_eq!(nodes.len(), 2, "1 line for -define and 1 line for -testsuccess");
   assert!(nodes[0].is_empty_ast_node(), "define node must be transformed into Empty");
@@ -120,7 +121,7 @@ fn parse_define_with_body_2_args() {
   let (tag, _) = nodes[1].as_generic_attr();
   assert_eq!(tag, "testsuccess", "Expected a -testsuccess attribute for the test to pass");
 
-  assert!(module.parser_scope.is_defined("CCC"));
+  assert!(erl_module_parser_scope(&module).is_defined("CCC"));
 
   // let pp_node = nodes[0].as_preprocessor();
   // if let PreprocessorNodeType::Define { name, args, body, .. } = pp_node {
@@ -193,7 +194,9 @@ fn parse_define_varied_spacing() {
 fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
   let module = test_util::parse_module0(function_name!(), input);
-  let pdef = module.parser_scope.get_value("AAA", 2).unwrap();
+  let pdef = erl_module_parser_scope(&module)
+    .get_value("AAA", 2)
+    .unwrap();
   assert_eq!(pdef.text, "\"aaa\"");
   assert_eq!(pdef.args, vec!["X", "Y"]);
 }
@@ -216,7 +219,7 @@ fn test_macro_expansion_in_define() {
   let module =
     test_util::parse_module0(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
   // module.interpret_preprocessor_nodes().unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let nodes = erl_module_ast(&module).children().unwrap_or_default();
   assert_eq!(
     nodes.len(),
     2,
@@ -227,7 +230,8 @@ fn test_macro_expansion_in_define() {
   // let (_, _, body) = nodes[1].as_preprocessor_define();
   // assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
 
-  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
+  let p_scope = erl_module_parser_scope(&module);
+  let pdef = p_scope.get_value("BBB", 0).unwrap();
   assert_eq!(pdef.name, "BBB");
   assert_eq!(pdef.text, "bbb");
 }
@@ -238,8 +242,7 @@ fn test_macro_expansion_in_define() {
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
   let module = test_util::parse_module0(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
-  // module.interpret_preprocessor_nodes().unwrap();
-  let nodes = module.ast.children().unwrap_or_default();
+  let nodes = erl_module_ast(&module).children().unwrap_or_default();
   assert_eq!(nodes.len(), 2);
   let fndef = nodes[1].as_fn_def();
   assert_eq!(fndef.clauses.len(), 1);

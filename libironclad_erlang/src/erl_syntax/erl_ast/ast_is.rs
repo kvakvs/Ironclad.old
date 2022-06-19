@@ -27,6 +27,11 @@ impl AstNodeImpl {
     matches!(self.content, AstNodeType::Type { .. })
   }
 
+  /// Checks whether an ErlAst node is a new type alias definition
+  pub fn is_new_type(&self) -> bool {
+    matches!(self.content, AstNodeType::NewType { .. })
+  }
+
   /// Checks whether an ErlAst node is an atom (any atom)
   pub fn is_atom(&self) -> bool {
     match &self.content {

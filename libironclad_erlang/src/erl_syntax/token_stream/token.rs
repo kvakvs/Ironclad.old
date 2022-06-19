@@ -116,7 +116,22 @@ impl std::fmt::Display for Token {
       TokenType::MacroInvocation(m) => write!(f, "?{}", m),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Comment(c) => write!(f, "% {}", c),
-      TokenType::Newline => writeln!(f),
+      TokenType::Newline => write!(f, "␤"),
     }
   }
+}
+
+/// A temporary solution for displaying token streams without a pile of commas between each token
+pub fn format_tok_stream(tokens: &[Token], cut: usize) -> String {
+  tokens.iter().take(cut).map(|t| format!("{}", t)).collect()
+}
+
+/// A temporary solution for displaying token streams without a pile of commas between each token.
+/// Stops at newline or stream end.
+pub fn format_tok_line(tokens: &[Token]) -> String {
+  tokens
+    .iter()
+    .take_while(|&t| !t.is_newline())
+    .map(|t| format!("{}", t))
+    .collect()
 }

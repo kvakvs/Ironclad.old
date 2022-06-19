@@ -1,13 +1,15 @@
 //! Format parse errors
 
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::token_stream::token::{format_tok_line, format_tok_stream};
 use crate::erl_syntax::token_stream::token_array::TokLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 
 /// Transforms a `VerboseError` into a trace with input position information
-/// Copy from `nom::error::convert_error` to support token stream errors.
-pub fn ironclad_convert_error(
-  input: ParserInput,
+/// Copy from `nom::error::convert_error` to support token stream `&[Token]` errors.
+pub fn convert_token_stream_parser_error(
+  _original_input: &str,
+  tokens_input: ParserInput,
   e: nom::error::VerboseError<ParserInput>,
 ) -> String {
   // TODO: Same treatment for tokenizer errors, which also call nom's convert_error
@@ -17,9 +19,9 @@ pub fn ironclad_convert_error(
   let mut result = String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
-    let inp_offset = input.offset(substring);
+    let inp_offset = tokens_input.offset(substring);
 
-    if input.is_empty() {
+    if tokens_input.is_empty() {
       match kind {
         nom::error::VerboseErrorKind::Char(c) => {
           write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c)
@@ -32,7 +34,7 @@ pub fn ironclad_convert_error(
         }
       }
     } else {
-      let prefix = &input.tokens[..inp_offset];
+      let prefix = &tokens_input.tokens[..inp_offset];
 
       // Count the number of newlines in the first `offset` bytes of input
       let line_number = prefix
@@ -51,9 +53,9 @@ pub fn ironclad_convert_error(
         .unwrap_or(0);
 
       // Find the full line after that newline
-      let line = TokLinesIter::new(&input.tokens[line_begin..])
+      let line = TokLinesIter::new(&tokens_input.tokens[line_begin..])
         .next()
-        .unwrap_or(&input.tokens[line_begin..]);
+        .unwrap_or(&tokens_input.tokens[line_begin..]);
       // .trim_end();
 
       // The (1-indexed) column number is the offset of our substring into that line
@@ -64,14 +66,12 @@ pub fn ironclad_convert_error(
           if let Some(actual) = substring.tokens.iter().next() {
             write!(
               &mut result,
-              "{i}: at line {line_number}:\n\
-               {line:?}\n\
-               {caret:>column$}\n\
+              "{i}: at line {line_number}:{column}:\n\
+               {line}\n\
                expected '{expected}', found {actual}\n\n",
               i = i,
               line_number = line_number,
-              line = line,
-              caret = '^',
+              line = format_tok_line(line),
               column = column_number,
               expected = c,
               actual = actual,
@@ -79,14 +79,12 @@ pub fn ironclad_convert_error(
           } else {
             write!(
               &mut result,
-              "{i}: at line {line_number}:\n\
-               {line:?}\n\
-               {caret:>column$}\n\
+              "{i}: at line {line_number}:{column}:\n\
+               {line}\n\
                expected '{expected}', got end of input\n\n",
               i = i,
               line_number = line_number,
-              line = line,
-              caret = '^',
+              line = format_tok_line(line),
               column = column_number,
               expected = c,
             )
@@ -94,26 +92,22 @@ pub fn ironclad_convert_error(
         }
         nom::error::VerboseErrorKind::Context(s) => write!(
           &mut result,
-          "{i}: at line {line_number}, in {context}:\n\
-             {line:?}\n\
-             {caret:>column$}\n\n",
+          "{i}: at line {line_number}:{column}, in {context}:\n\
+           {line}\n",
           i = i,
           line_number = line_number,
-          context = s,
-          line = line,
-          caret = '^',
           column = column_number,
+          context = s,
+          line = format_tok_line(line),
         ),
         nom::error::VerboseErrorKind::Nom(e) => write!(
           &mut result,
-          "{i}: at line {line_number}, in {nom_err:?}:\n\
-             {line:?}\n\
-             {caret:>column$}\n\n",
+          "{i}: at line {line_number}:{column}, in {nom_err:?}:\n\
+           {line}\n",
           i = i,
           line_number = line_number,
           nom_err = e,
-          line = line,
-          caret = '^',
+          line = format_tok_line(line),
           column = column_number,
         ),
       }

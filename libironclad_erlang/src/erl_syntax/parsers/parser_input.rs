@@ -1,6 +1,6 @@
 //! Contains implementations required for custom nom input to work
 
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::source_file::SourceFile;
 use nom::Needed;
 use std::iter::Enumerate;
@@ -41,10 +41,22 @@ impl<'a> nom::Offset for ParserInput<'a> {
 
 impl<'a> ParserInput<'a> {
   /// Calculates offset for second inside `self`
-  pub(crate) fn offset_inside(&self, second: &[Token]) -> usize {
-    let fst = self.tokens.as_ptr();
-    let snd = second.as_ptr();
-    assert!(snd > fst);
+  pub(crate) fn offset_inside(&self, base: &[Token]) -> usize {
+    let snd = self.tokens.as_ptr();
+    let fst = base.as_ptr();
+
+    if cfg!(debug_assertions) && snd < fst {
+      let fst_cut: String = format_tok_stream(self.tokens, 30);
+      let snd_cut: String = format_tok_stream(base, 30);
+      assert!(
+        snd >= fst,
+        "snd {:x} must be >= fst {:x}\nfst = {:?}\nsnd = {:?}",
+        snd as usize,
+        fst as usize,
+        fst_cut,
+        snd_cut,
+      );
+    }
 
     (snd as usize - fst as usize) / size_of::<Token>()
   }

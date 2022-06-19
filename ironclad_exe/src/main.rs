@@ -10,15 +10,22 @@ use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::project::ErlProject;
 
-fn main_do() -> IcResult<()> {
-  // Test default project from ""
+/// Test default project created from "" empty config
+fn test_empty_config_project() -> IcResult<()> {
   let default_project: ErlProject = match ProjectConf::from_string("") {
     Ok(dp) => ErlProjectImpl::from(dp).into(),
     Err(e) => return Err(Box::new(e)),
   };
   println!("default {:?}", default_project);
+  Ok(())
+}
 
-  let mut project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
+fn main_do() -> IcResult<()> {
+  if cfg!(debug_assertions) {
+    test_empty_config_project()?;
+  }
+
+  let project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
     Ok(erlp) => ErlProjectImpl::from(erlp).into(),
     Err(e) => return Err(Box::new(e)),
   };
@@ -39,7 +46,7 @@ fn main_do() -> IcResult<()> {
   };
 
   // Parse all ERL files and their included includes
-  ErlParseStage::run(&mut project, file_cache).unwrap();
+  ErlParseStage::run(&project, file_cache).unwrap();
   Ok(())
 }
 

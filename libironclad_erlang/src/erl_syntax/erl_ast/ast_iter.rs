@@ -5,7 +5,7 @@ use ::function_name::named;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
   GenericAttr, IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit,
-  ModuleRoot, RecordDefinition, TryCatch, Tuple, Type, TypeAttr, UnaryOp, MFA,
+  ModuleRoot, NewType, RecordDefinition, TryCatch, Tuple, Type, UnaryOp, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
@@ -29,7 +29,7 @@ impl IterableAstNodeT for AstNodeImpl {
       | ExportAttr { .. }
       | ImportAttr { .. }
       | FnSpec { .. }
-      | TypeAttr { .. }
+      | NewType { .. }
       | GenericAttr { .. }
       | Lit { .. }
       | MFA { .. }

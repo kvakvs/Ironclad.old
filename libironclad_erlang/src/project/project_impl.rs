@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefinesMap};
 use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
-use crate::project::compiler_opts::CompilerOpts;
+use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::conf::ProjectConf;
 use crate::project::erl_module::ErlModule;
 use crate::project::input_opts::InputOpts;
@@ -48,7 +48,7 @@ impl ErlProjectImpl {
 
   /// Get a clone of project libironclad options
   /// TODO: special override options if user specifies extras as a module attribute
-  pub fn get_compiler_options_for(&self, path: &Path) -> Arc<CompilerOpts> {
+  pub fn get_compiler_options_for(&self, path: &Path) -> CompilerOpts {
     if let Ok(r_inputs) = self.inputs.read() {
       if let Some(per_file_opts) = r_inputs.compiler_opts_per_file.get(path) {
         // If found per-file settings, combine global with per-file
@@ -115,6 +115,7 @@ impl ErlProjectImpl {
     Ok(())
   }
 
+  #[allow(dead_code)]
   fn find_include_in(sample: &Path, try_dirs: &[String]) -> Option<PathBuf> {
     for dir in try_dirs {
       let try_path = Path::new(&dir).join(sample);
@@ -127,6 +128,7 @@ impl ErlProjectImpl {
   }
 
   /// Check include paths to find the file.
+  #[allow(dead_code)]
   pub(crate) fn find_include(
     &self,
     location: SourceLoc,
@@ -159,13 +161,13 @@ impl ErlProjectImpl {
   }
 
   /// Register a new module
-  pub fn register_new_module(&mut self, new_module: ErlModule) {}
+  pub fn register_new_module(&self, _module: ErlModule) {}
 }
 
 impl From<ProjectConf> for ErlProjectImpl {
   fn from(conf: ProjectConf) -> Self {
     let inputs = ErlProjectInputs {
-      compiler_opts: CompilerOpts::new_from_maybe_opts(conf.compiler_opts).into(),
+      compiler_opts: CompilerOptsImpl::new_from_maybe_opts(conf.compiler_opts).into(),
       compiler_opts_per_file: Default::default(),
       input_opts: InputOpts::from(conf.inputs),
       inputs: Vec::default(),

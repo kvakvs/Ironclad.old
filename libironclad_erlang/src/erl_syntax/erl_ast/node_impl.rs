@@ -63,7 +63,7 @@ pub enum AstNodeType {
   },
 
   /// `-type ATOM(ARG, ...) :: TYPE` attribute, defines a new type
-  TypeAttr {
+  NewType {
     /// Type name
     name: String,
     /// List of type variables

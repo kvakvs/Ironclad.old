@@ -14,7 +14,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, separated_pair, tuple};
+use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn parse_parentheses_no_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
@@ -65,7 +65,7 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<String> {
   context(
     "expected -module() attribute",
     cut(delimited(
-      tok_atom_of("module"),
+      preceded(tok(TokenType::Minus), tok_atom_of("module")),
       context(
         "the module name in a -module() attribute",
         cut(delimited(tok(TokenType::ParOpen), tok_atom, tok(TokenType::ParClose))),

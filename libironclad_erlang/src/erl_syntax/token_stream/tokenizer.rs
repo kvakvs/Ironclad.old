@@ -14,10 +14,10 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{anychar, char};
-use nom::combinator::{complete, cut, map, not, recognize};
+use nom::character::complete::{alphanumeric1, anychar, char};
+use nom::combinator::{complete, cut, map, not, peek, recognize};
 use nom::error::context;
-use nom::sequence::preceded;
+use nom::sequence::{preceded, terminated};
 use nom::Parser;
 
 #[inline]
@@ -62,7 +62,7 @@ fn symbol_doubleangleclose(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_doubleangleopen(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag(">>"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleOpen))(input)
+  map(tag("<<"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleOpen))(input)
 }
 
 #[inline]
@@ -455,44 +455,52 @@ fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
   })(input)
 }
 
+/// Matches a non-letter, use with `peek` to mark where word ends
+fn word_break<'a>(input: &str) -> TokensResult<&str> {
+  recognize(not(alphanumeric1))(input)
+}
+
 fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
-  alt((
+  terminated(
     alt((
-      keyword_after,
-      keyword_and,
-      keyword_andalso,
-      keyword_begin,
-      keyword_binaryand,
-      keyword_binarynot,
-      keyword_binaryor,
-      keyword_binaryshiftleft,
-      keyword_binaryshiftright,
+      alt((
+        keyword_after,
+        keyword_and,
+        keyword_andalso,
+        keyword_begin,
+        keyword_binaryand,
+        keyword_binarynot,
+        keyword_binaryor,
+        keyword_binaryshiftleft,
+        keyword_binaryshiftright,
+      )),
+      alt((
+        keyword_binaryxor,
+        keyword_case,
+        keyword_catch,
+        keyword_cond,
+        keyword_end,
+        keyword_fun,
+        keyword_if,
+        keyword_let,
+        keyword_integerdiv,
+      )),
+      alt((
+        keyword_maybe,
+        keyword_not,
+        keyword_of,
+        keyword_or,
+        keyword_orelse,
+        keyword_receive,
+        keyword_rem,
+        keyword_try,
+        keyword_when,
+      )),
+      keyword_xor,
+      keyword_else,
     )),
-    alt((
-      keyword_binaryxor,
-      keyword_case,
-      keyword_catch,
-      keyword_cond,
-      keyword_end,
-      keyword_fun,
-      keyword_if,
-      keyword_let,
-      keyword_integerdiv,
-    )),
-    alt((
-      keyword_maybe,
-      keyword_not,
-      keyword_of,
-      keyword_or,
-      keyword_orelse,
-      keyword_receive,
-      keyword_rem,
-      keyword_try,
-      keyword_when,
-    )),
-    keyword_xor,
-    keyword_else,
-  ))(input)
+    peek(word_break),
+  )(input)
 }
 
 /// Break module source into tokens

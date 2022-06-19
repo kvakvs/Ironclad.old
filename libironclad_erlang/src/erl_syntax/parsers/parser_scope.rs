@@ -118,6 +118,7 @@ impl ParserScopeImpl {
   }
 
   /// Check if name of arity exists in the scope
+  #[allow(dead_code)]
   pub(crate) fn is_defined_with_arity(&self, name: &str, arity: usize) -> bool {
     println!("Is defined {}/{}? self={:?}", name, arity, self);
     if let Ok(r_defines) = self.defines.read() {
@@ -130,6 +131,7 @@ impl ParserScopeImpl {
   }
 
   /// Clone self and insert a new macro definition
+  #[allow(dead_code)]
   pub(crate) fn define(&self, name: &str, args: &[String], text: &str) {
     let pp_def = PreprocessorDefineImpl::new(name.to_string(), args, text);
     if let Ok(mut w_defines) = self.defines.write() {
@@ -147,6 +149,7 @@ impl ParserScopeImpl {
     }
   }
 
+  #[allow(dead_code)]
   pub(crate) fn load_include(
     &self,
     location: SourceLoc,
@@ -177,7 +180,7 @@ impl ParserScopeImpl {
   #[allow(dead_code)]
   fn find_include_lib(
     &self,
-    _project: &ErlProject,
+    _project: &ErlProjectImpl,
     location: SourceLoc,
     path: &Path,
   ) -> IcResult<PathBuf> {

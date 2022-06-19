@@ -1,10 +1,11 @@
 //! Defines libironclad options for a file
 use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefinesMap};
 use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
+use std::sync::Arc;
 
 /// Compiler options for a file
 #[derive(Debug, Clone)]
-pub struct CompilerOpts {
+pub struct CompilerOptsImpl {
   /// If not specified, defaults to empty
   pub include_paths: Vec<String>,
 
@@ -16,13 +17,16 @@ pub struct CompilerOpts {
   pub max_errors_per_module: usize,
 }
 
-impl CompilerOpts {
+/// Wrap compiler options with refcounted box
+pub type CompilerOpts = Arc<CompilerOptsImpl>;
+
+impl CompilerOptsImpl {
   /// Default value for max errors limit. Will try to stop compilation when this count is reached.
   pub const MAX_ERRORS_PER_MODULE: usize = 20;
 
   /// Given self (read-only) and other opts (read-only) combine them into self+other
-  pub fn overlay(&self, other: &CompilerOpts) -> Self {
-    let mut result: CompilerOpts = self.clone();
+  pub fn overlay(&self, other: &CompilerOptsImpl) -> Self {
+    let mut result: CompilerOptsImpl = self.clone();
 
     // Overlay include paths
     for incl in other.include_paths.iter() {
@@ -54,12 +58,12 @@ impl CompilerOpts {
   pub(crate) fn new_from_maybe_opts(maybe_opts: Option<SerializableCompilerOpts>) -> Self {
     match maybe_opts {
       None => Self::default(),
-      Some(conf_val) => CompilerOpts::new_from_opts(conf_val),
+      Some(conf_val) => CompilerOptsImpl::new_from_opts(conf_val),
     }
   }
 }
 
-impl Default for CompilerOpts {
+impl Default for CompilerOptsImpl {
   fn default() -> Self {
     Self {
       include_paths: Default::default(),

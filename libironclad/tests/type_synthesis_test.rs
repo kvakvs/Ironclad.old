@@ -9,24 +9,24 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::erl_module::ErlModule;
+use libironclad_erlang::project::erl_module::erl_module_ast;
 use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_erlang::typing::scope::Scope;
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
-use std::path::PathBuf;
 
 #[named]
 #[test]
 fn synth_list_append() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
-  let filename = PathBuf::from(function_name!());
-  let parsed = ErlModule::from_expr_source(&filename, "[atom1] ++ [atom2]")?;
-  let expr_type = parsed.ast.synthesize(&parsed.scope)?;
+  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let parsed = test_util::parse_expr(function_name!(), "[atom1] ++ [atom2]");
+  let expr_type = parsed.synthesize(&scope1)?;
 
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed.ast, expr_type);
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed, expr_type);
 
-  assert!(parsed.ast.is_binop(ErlBinaryOp::ListAppend));
+  assert!(parsed.is_binop(ErlBinaryOp::ListAppend));
 
   // let op = parsed.ast.as_binop();
   assert!(
@@ -43,23 +43,21 @@ fn synth_list_append() -> IcResult<()> {
 fn synth_simplefun_division() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for simple expression");
 
-  let filename = PathBuf::from(function_name!());
-  let parsed = ErlModule::from_fun_source(&filename, "myfun(A) -> (A + 1) / 2.")?;
+  let nodes = test_util::parse_module_unwrap(function_name!(), "myfun(A) -> (A + 1) / 2.");
 
-  match &parsed.ast.content {
-    FnDef(fn_def) => {
-      // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
-      assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
-      assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
-      // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
-    }
-    other1 => test_util::fail_unexpected(other1),
+  if let FnDef(fn_def) = &nodes[0].content {
+    // assert_eq!(fn_def.clauses.len(), 1, "FunctionDef must have exact one clause");
+    assert_eq!(fn_def.funarity.arity, 1, "FnDef must have arity 1");
+    assert_eq!(fn_def.funarity.name, "myfun", "FnDef's name must be myfun");
+    // assert!(matches!(&fn_def.args[0], CoreAst::Var{..}), "FnDef's 1st arg must be a Var node");
+  } else {
+    panic!("FnDef was expected but received {:?}", nodes)
   }
-  println!("Parsed: {}", &parsed.ast);
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  let f_t = parsed.ast.synthesize(&parsed.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed.ast, f_t);
+  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let f_t = nodes[0].synthesize(&scope1)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), nodes[0], f_t);
 
   Ok(())
 }
@@ -69,10 +67,10 @@ fn synth_simplefun_division() -> IcResult<()> {
 fn synth_simplefun_addition() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
-  let filename = PathBuf::from(function_name!());
-  let module = ErlModule::from_fun_source(&filename, "myfun(A) -> A + 1.")?;
-  let synth_type = module.ast.synthesize(&module.scope)?;
-  println!("{}: Inferred {} 🡆 {}", function_name!(), &module.ast, synth_type);
+  let nodes = test_util::parse_module_unwrap(function_name!(), "myfun(A) -> A + 1.");
+  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let synth_type = nodes[0].synthesize(&scope1)?;
+  println!("{}: Inferred {} 🡆 {}", function_name!(), &nodes[0], synth_type);
 
   Ok(())
 }
@@ -136,28 +134,26 @@ fn synth_fun_call() -> IcResult<()> {
     function_name!(),
     "synthesize type for a fun which calls another fun with a sum",
   );
-  let filename = PathBuf::from(function_name!());
-
-  let code = format!(
+  let input = format!(
     "-module({}).
     add(A, B) -> A + B.
     main(A) -> add(A, 4).\n",
     function_name!()
   );
-  let module = ErlModule::from_module_source(&filename, &code, None)?;
+  let module = test_util::parse_module0(function_name!(), &input);
+  let ast = erl_module_ast(&module);
+  let scope1 = Scope::new_root_scope(function_name!().to_string());
   // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
-    let add_fn_ast =
-      AstNodeImpl::find_function_def(&module.ast, &MFArity::new_local("add", 2)).unwrap();
-    let add_fn_type = add_fn_ast.synthesize(&module.scope)?;
+    let add_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("add", 2)).unwrap();
+    let add_fn_type = add_fn_ast.synthesize(&scope1)?;
     println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
   }
 
   {
-    let main_fn_ast =
-      AstNodeImpl::find_function_def(&module.ast, &MFArity::new_local("main", 1)).unwrap();
-    let main_fn_type = main_fn_ast.synthesize(&module.scope)?;
+    let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
+    let main_fn_type = main_fn_ast.synthesize(&scope1)?;
     println!(
       "{}: Synthesized for main/1 {} 🡆 {}",
       function_name!(),
@@ -187,14 +183,14 @@ fn synth_multiple_clause_test() -> IcResult<()> {
     main(two) -> 222.",
     function_name!()
   );
-  let filename = PathBuf::from(function_name!());
-  let parsed = ErlModule::from_module_source(&filename, &source, None)?;
+  let module = test_util::parse_module0(function_name!(), &source);
+  let ast = erl_module_ast(&module);
+  let scope1 = Scope::new_root_scope(function_name!().to_string());
 
-  let main_fn_ast =
-    AstNodeImpl::find_function_def(&parsed.ast, &MFArity::new_local("main", 1)).unwrap();
+  let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_ty = main_fn_ast.synthesize(&parsed.scope)?;
+  let main_ty = main_fn_ast.synthesize(&scope1)?;
   println!("{}: Synthesized {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Assert that type is a two-clause function type
