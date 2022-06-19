@@ -9,7 +9,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::erl_module::erl_module_ast;
+use libironclad_erlang::project::module::erl_module_ast;
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_erlang::typing::scope::Scope;
 use libironclad_util::mfarity::MFArity;

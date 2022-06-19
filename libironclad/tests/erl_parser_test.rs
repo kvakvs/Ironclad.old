@@ -10,7 +10,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
-use libironclad_erlang::project::erl_module::{erl_module_ast, erl_module_scope};
+use libironclad_erlang::project::module::{erl_module_ast, erl_module_scope};
 
 mod test_util;
 

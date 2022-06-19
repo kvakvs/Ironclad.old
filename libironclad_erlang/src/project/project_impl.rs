@@ -4,8 +4,8 @@ use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefi
 use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::conf::ProjectConf;
-use crate::project::erl_module::ErlModule;
 use crate::project::input_opts::InputOpts;
+use crate::project::module::mod_impl::ErlModule;
 use crate::project::project_inputs::ErlProjectInputs;
 use crate::source_loc::SourceLoc;
 use std::collections::{HashMap, HashSet};

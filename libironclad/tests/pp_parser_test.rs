@@ -3,7 +3,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
-use libironclad_erlang::project::erl_module::{erl_module_ast, erl_module_parser_scope};
+use libironclad_erlang::project::module::{erl_module_ast, erl_module_parser_scope};
 
 #[test]
 #[named]

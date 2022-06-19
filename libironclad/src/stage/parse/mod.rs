@@ -2,7 +2,7 @@
 
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::file_cache::FileCache;
-use libironclad_erlang::project::erl_module::ErlModuleImpl;
+use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
 use libironclad_erlang::project::ErlProject;
 use libironclad_erlang::stats::time_stats::TimeStatsImpl;
 

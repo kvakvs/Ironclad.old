@@ -2,7 +2,8 @@
 
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
-use libironclad_erlang::project::erl_module::{erl_module_ast, ErlModule, ErlModuleImpl};
+use libironclad_erlang::project::module::erl_module_ast;
+use libironclad_erlang::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::typing::erl_type::ErlType;
