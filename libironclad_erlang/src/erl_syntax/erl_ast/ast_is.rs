@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::ErlBinaryOp;
-use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::literal::Literal;
 use std::ops::Deref;
 
@@ -17,19 +16,9 @@ impl AstNodeImpl {
     matches!(&self.content, AstNodeType::Empty { .. })
   }
 
-  /// Checks whether an ErlAst node is a function spec
-  pub fn is_fn_spec(&self) -> bool {
-    matches!(&self.content, AstNodeType::FnSpec { .. })
-  }
-
   /// Checks whether an ErlAst node is an Erlang Type
   pub fn is_type(&self) -> bool {
     matches!(self.content, AstNodeType::Type { .. })
-  }
-
-  /// Checks whether an ErlAst node is a new type alias definition
-  pub fn is_new_type(&self) -> bool {
-    matches!(self.content, AstNodeType::NewType { .. })
   }
 
   /// Checks whether an ErlAst node is an atom (any atom)
@@ -48,14 +37,6 @@ impl AstNodeImpl {
     }
   }
 
-  /// Checks whether an ErlAst node is a generic `-<IDENT>.` attribute and check the `IDENT`.
-  pub fn is_generic_attr(&self, check_tag: &str) -> bool {
-    match &self.content {
-      AstNodeType::GenericAttr { tag, .. } => tag == check_tag,
-      _ => false,
-    }
-  }
-
   /// Checks whether an ErlAst node is a Binary Op of given kind
   pub fn is_binop(&self, op: ErlBinaryOp) -> bool {
     matches!(&self.content, AstNodeType::BinaryOp {expr, ..} if expr.operator == op)
@@ -69,15 +50,5 @@ impl AstNodeImpl {
   /// Checks whether an ErlAst node is a Function Application (a call)
   pub fn is_application(&self) -> bool {
     matches!(&self.content, AstNodeType::Apply(_))
-  }
-
-  /// Checks whether an ErlAst node is a Preprocessor Warning with given text
-  pub fn is_preprocessor_warning(&self, text: &str) -> bool {
-    let pp_node = self.as_preprocessor();
-    if let PreprocessorNodeType::Warning(s) = pp_node {
-      s == text
-    } else {
-      panic!("Preprocessor::Warning node was expected, but found {}", pp_node)
-    }
   }
 }

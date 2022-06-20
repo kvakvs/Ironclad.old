@@ -5,9 +5,10 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::error::ic_error::IcResult;
+use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
-use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};
@@ -76,10 +77,11 @@ impl ErlBinaryOperatorExpr {
   pub(crate) fn synthesize_binop_type(
     &self,
     location: SourceLoc,
-    scope: &RwLock<Scope>,
+    module: &ErlModule,
+    scope: &Scope,
   ) -> IcResult<Arc<ErlType>> {
-    let left = self.left.synthesize(scope)?;
-    let right = self.right.synthesize(scope)?;
+    let left = self.left.synthesize(module, scope)?;
+    let right = self.right.synthesize(module, scope)?;
 
     match self.operator {
       ErlBinaryOp::Add | ErlBinaryOp::Sub | ErlBinaryOp::Mul => {
@@ -114,7 +116,7 @@ impl ErlBinaryOperatorExpr {
         // Type of -- will be left, probably some elements which should be missing, but how do we know?
         Ok(left)
       }
-      ErlBinaryOp::Comma => self.right.synthesize(scope),
+      ErlBinaryOp::Comma => self.right.synthesize(module, scope),
 
       other => {
         unimplemented!(
@@ -130,7 +132,7 @@ impl ErlBinaryOperatorExpr {
   #[allow(dead_code)]
   fn synthesize_list_append_op(
     location: SourceLoc,
-    scope: &RwLock<Scope>,
+    scope: &Scope,
     left: &Arc<ErlType>,
     right: &Arc<ErlType>,
   ) -> IcResult<Arc<ErlType>> {
@@ -166,7 +168,7 @@ impl ErlBinaryOperatorExpr {
   #[allow(dead_code)]
   fn synthesize_stronglist_append(
     location: SourceLoc,
-    _scope: &RwLock<Scope>,
+    _scope: &Scope,
     left: &Arc<ErlType>,
     left_elements: &[Arc<ErlType>],
     _left_tail: &Option<Arc<ErlType>>,
@@ -209,7 +211,7 @@ impl ErlBinaryOperatorExpr {
   #[allow(dead_code)]
   fn synthesize_list_of_t_append(
     location: SourceLoc,
-    _scope: &RwLock<Scope>,
+    _scope: &Scope,
     _left: &Arc<ErlType>,
     right: &Arc<ErlType>,
     left_elements: &Arc<ErlType>,

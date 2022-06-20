@@ -14,7 +14,6 @@ use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::erl_syntax::preprocessor::ast::PreprocessorNodeType;
 use crate::error::ic_error::IcResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -50,44 +49,6 @@ pub enum AstNodeType {
     forms: Vec<AstNode>,
   },
 
-  /// `-export([f/a, ......]).` attribute, defines exports
-  ExportAttr {
-    /// List of funarities (MFAs with module=None)
-    exports: Vec<MFArity>,
-  },
-
-  /// `-export_type([f/a, ......]).` attribute, defines exports for types
-  ExportTypesAttr {
-    /// List of typename/arities (MFAs with module=None)
-    exports: Vec<MFArity>,
-  },
-
-  /// `-type ATOM(ARG, ...) :: TYPE` attribute, defines a new type
-  NewType {
-    /// Type name
-    name: String,
-    /// List of type variables
-    vars: Vec<String>,
-    /// The defined new type
-    ty: Arc<ErlType>,
-  },
-
-  /// `-import([f/a, ......]).` attribute, defines imports
-  ImportAttr {
-    /// Module to import from
-    import_from: String,
-    /// List of funarities to import (MFAs with module=None)
-    imports: Vec<MFArity>,
-  },
-
-  /// A generic attribute `"-name" ... "."\n` extracted from the source, parsed at a later stage
-  GenericAttr {
-    /// Attr name atom, stored as string
-    tag: String,
-    /// Attr value (any expression)
-    term: Option<AstNode>,
-  },
-
   /// Defines a new function, with clauses, or an inline lambda (then name will be `None`).
   /// Each clause has same quantity of args (some AST nodes), bindable expressions,
   /// and a return type, initially Any.
@@ -98,14 +59,6 @@ pub enum AstNodeType {
   FnRef {
     /// Function name
     mfa: MFArity,
-  },
-
-  /// A function spec, written as `-spec myfun(...) -> <ret type> when ... <optional when>.`
-  FnSpec {
-    /// The function name and arity, module as None
-    funarity: MFArity,
-    /// Type for all function clauses
-    spec: Arc<ErlType>,
   },
 
   /// A temporary node wrapper for parsed types. TODO: Use more extensively in typespecs and maybe in the augmented syntax?
@@ -218,16 +171,6 @@ pub enum AstNodeType {
     /// Comma separated elements of a binary, with `:bit-widths` and `/type-specs`
     elements: Vec<BinaryElement>,
   },
-  /// A new record definition, created by `-record(name, {fields,...}).` attribute
-  RecordDefinition {
-    /// Record tag
-    tag: String,
-    /// Fields with optional initializers and optional type ascriptions
-    fields: Vec<RecordField>,
-  },
-
-  /// Preprocessor node types grouped
-  Preprocessor(PreprocessorNodeType),
 }
 
 impl AstNodeImpl {

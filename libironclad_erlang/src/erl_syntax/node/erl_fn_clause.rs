@@ -4,9 +4,10 @@ use std::fmt::Formatter;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
+use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::scope::Scope;
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
 use std::sync::{Arc, RwLock, Weak};
@@ -24,7 +25,7 @@ pub struct ErlFnClause {
   /// Guard expression, if exists
   pub guard_expr: Option<AstNode>,
   /// Function scope (variables and passed arguments)
-  pub scope: RwLock<Scope>,
+  pub scope: Scope,
 }
 
 impl ErlFnClause {
@@ -47,7 +48,7 @@ impl ErlFnClause {
       AstNodeImpl::extract_variables(arg, &mut variables).unwrap();
     }
 
-    let clause_scope = Scope::new(scope_name, Weak::new(), variables).into();
+    let clause_scope = ScopeImpl::new(scope_name, Weak::new(), variables).into();
 
     ErlFnClause { name, args, body, guard_expr, scope: clause_scope }
   }
@@ -61,7 +62,11 @@ impl ErlFnClause {
   /// Build `FnClauseType` from core function clause, together the clauses will form the full
   /// function type
   #[allow(dead_code)]
-  pub(crate) fn synthesize_clause_type(&self, scope: &RwLock<Scope>) -> IcResult<FnClauseType> {
+  pub(crate) fn synthesize_clause_type(
+    &self,
+    module: &ErlModule,
+    scope: &Scope,
+  ) -> IcResult<FnClauseType> {
     // Synthesizing return type using the inner function scope, with added args
     // let args_types: Vec<Typevar> = self.args.iter()
     //     .map(|arg| arg.synthesize(scope))
@@ -70,13 +75,13 @@ impl ErlFnClause {
     //     .collect();
     let mut args_types = Vec::new();
     for arg in &self.args {
-      let synth = arg.synthesize(scope)?;
+      let synth = arg.synthesize(module, scope)?;
       args_types.push(Typevar::from_erltype(&synth));
     }
 
     let synthesized_t = FnClauseType::new(
       args_types,
-      Typevar::from_erltype(&self.synthesize_clause_return_type(scope)?),
+      Typevar::from_erltype(&self.synthesize_clause_return_type(module, scope)?),
     );
     Ok(synthesized_t)
   }
@@ -85,9 +90,10 @@ impl ErlFnClause {
   #[allow(dead_code)]
   pub(crate) fn synthesize_clause_return_type(
     &self,
-    env: &RwLock<Scope>,
+    module: &ErlModule,
+    env: &Scope,
   ) -> IcResult<Arc<ErlType>> {
-    self.body.synthesize(env)
+    self.body.synthesize(module, env)
   }
 }
 

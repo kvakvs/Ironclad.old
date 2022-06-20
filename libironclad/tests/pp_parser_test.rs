@@ -3,7 +3,9 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
-use libironclad_erlang::project::module::{erl_module_ast, erl_module_parser_scope};
+use libironclad_erlang::project::module::{
+  erl_module_ast, erl_module_parser_scope, erl_module_root_scope,
+};
 
 #[test]
 #[named]
@@ -40,15 +42,15 @@ fn parse_if_branches() {
 -test_fail.
 -endif.
 -after_if().";
-  let nodes = test_util::parse_module_unwrap(function_name!(), input);
-  assert_eq!(
-    nodes.len(),
-    3,
-    "Expected to have 3 nodes: -before_if, -test_success, and -after_if"
-  );
-  assert!(nodes[0].is_generic_attr("before_if"));
-  assert!(nodes[1].is_generic_attr("test_success"));
-  assert!(nodes[2].is_generic_attr("after_if"));
+  let module = test_util::parse_module0(function_name!(), input);
+  let succ = erl_module_root_scope(&module)
+    .get_attr("test_success")
+    .unwrap();
+  assert_eq!(succ.len(), 1);
+
+  // assert!(nodes[0].is_generic_attr("before_if"));
+  // assert!(nodes[1].is_generic_attr("test_success"));
+  // assert!(nodes[2].is_generic_attr("after_if"));
 }
 
 #[test]
@@ -166,18 +168,12 @@ fn parse_include_varied_spacing_2() {
 
 fn parse_define_varied_spacing_do(function_name: &str, input: &str) {
   let input2 = format!("{}\n-ifdef(TEST).\n-testsuccess.\n-endif.", input);
-  let nodes = test_util::parse_module_unwrap(function_name, &input2);
+  let module = test_util::parse_module0(function_name, &input2);
 
-  assert_eq!(nodes.len(), 2);
-  assert!(nodes[0].is_empty_ast_node()); // define node transformed into empty
-
-  let (g_tag, g_val) = nodes[1].as_generic_attr();
-  assert_eq!(g_tag, "testsuccess");
-  assert!(g_val.is_none());
-  // let (name, args, body) = nodes[0].as_preprocessor_define();
-  // assert_eq!(name, match_macro);
-  // assert!(args.is_empty());
-  // assert_eq!(body, match_text);
+  let attrs = erl_module_root_scope(&module)
+    .get_attr("testsuccess")
+    .unwrap();
+  assert_eq!(attrs.len(), 1);
 }
 
 #[test]

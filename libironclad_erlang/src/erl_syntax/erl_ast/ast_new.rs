@@ -1,9 +1,8 @@
 //! Creation code for ErlAst
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, ExportAttr, ExportTypesAttr, FnDef,
-  FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, NewType, TryCatch, Tuple, Var,
+  Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, FnDef, IfStatement, List,
+  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -159,11 +158,6 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, lc_node)
   }
 
-  /// Create a new AST node for a function `-spec FN(ARG, ...) -> RETURN.`
-  pub(crate) fn new_fn_spec(location: SourceLoc, funarity: MFArity, spec: Arc<ErlType>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, FnSpec { funarity, spec })
-  }
-
   /// Create a new AST node for a list comprehension generator `Expr <- Expr`
   pub(crate) fn new_list_comprehension_generator(
     location: SourceLoc,
@@ -174,18 +168,18 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, lc_node)
   }
 
-  /// Takes preprocessor group nodes and unfolds them into flat list
-  fn flatten_forms(forms: Vec<AstNode>) -> Vec<AstNode> {
-    let mut result = Vec::new();
-    forms.into_iter().for_each(|n| {
-      if let AstNodeType::Preprocessor(_) = &n.content {
-        result.extend(n.as_preprocessor_group().iter().cloned())
-      } else {
-        result.push(n)
-      }
-    });
-    result
-  }
+  // /// Takes preprocessor group nodes and unfolds them into flat list
+  // fn flatten_forms(forms: Vec<AstNode>) -> Vec<AstNode> {
+  //   let mut result = Vec::new();
+  //   forms.into_iter().for_each(|n| {
+  //     if let AstNodeType::Preprocessor(_) = &n.content {
+  //       result.extend(n.as_preprocessor_group().iter().cloned())
+  //     } else {
+  //       result.push(n)
+  //     }
+  //   });
+  //   result
+  // }
 
   /// Create a new `-module(m).` module attr.
   pub(crate) fn new_module_forms(
@@ -193,55 +187,7 @@ impl AstNodeImpl {
     name: String,
     forms: Vec<AstNode>,
   ) -> AstNode {
-    AstNodeImpl::construct_with_location(
-      location,
-      ModuleRoot { name, forms: Self::flatten_forms(forms) },
-    )
-  }
-
-  /// Create a new `-TAG(TERM).` generic module attribute.
-  pub(crate) fn new_generic_attr(
-    location: SourceLoc,
-    tag: String,
-    term: Option<AstNode>,
-  ) -> AstNode {
-    match tag.as_str() {
-      "warning" | "error" | "include" | "include_lib" | "define" | "if" | "ifdef" | "ifndef"
-      | "else" | "endif" | "undef" => panic!(
-        "Trying to create -{}(). attribute as GenericAttr, there is a specific impl for that!",
-        tag
-      ),
-      _ => AstNodeImpl::construct_with_location(location, GenericAttr { tag, term }),
-    }
-  }
-
-  /// Create a new `-export([...]).` module attr.
-  pub(crate) fn new_export_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ExportAttr { exports })
-  }
-
-  /// Create a new `-export_type([...]).` module attr.
-  pub(crate) fn new_export_type_attr(location: SourceLoc, exports: Vec<MFArity>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ExportTypesAttr { exports })
-  }
-
-  /// Create a new `-type IDENT(ARG1, ...) :: TYPE.` module attr.
-  pub(crate) fn new_type_attr(
-    location: SourceLoc,
-    name: String,
-    vars: Vec<String>,
-    ty: Arc<ErlType>,
-  ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, NewType { name, vars, ty })
-  }
-
-  /// Create a new `-import(modulename, [...]).` module attr.
-  pub(crate) fn new_import_attr(
-    location: SourceLoc,
-    import_from: String,
-    imports: Vec<MFArity>,
-  ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ImportAttr { import_from, imports })
+    AstNodeImpl::construct_with_location(location, ModuleRoot { name, forms })
   }
 
   /// Create a new try-catch AST node
@@ -282,14 +228,5 @@ impl AstNodeImpl {
   /// Create a new binary expression
   pub(crate) fn new_binary_expr(location: SourceLoc, elements: Vec<BinaryElement>) -> AstNode {
     AstNodeImpl::construct_with_location(location, BinaryExpr { elements })
-  }
-
-  /// Create a new record definition from a `-record(name, {fields...}).` attribute
-  pub(crate) fn new_record_definition(
-    location: SourceLoc,
-    tag: String,
-    fields: Vec<RecordField>,
-  ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, AstNodeType::RecordDefinition { tag, fields })
   }
 }

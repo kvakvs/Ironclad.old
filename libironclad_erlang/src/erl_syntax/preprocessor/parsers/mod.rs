@@ -2,5 +2,7 @@
 
 pub mod def_undef;
 pub mod if_ifdef;
+pub mod parse_attr;
 pub mod parse_macro;
+pub mod parse_record;
 pub mod preprocessor;

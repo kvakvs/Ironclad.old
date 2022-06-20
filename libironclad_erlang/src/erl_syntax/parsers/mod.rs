@@ -3,9 +3,9 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::parse_attr::{module_start_attr, parse_module_attr};
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::parsers::parse_attr::{module_start_attr, parse_module_attr};
 use crate::source_loc::SourceLoc;
 use defs::VecAstParserResult;
 use nom::branch::alt;
@@ -17,7 +17,6 @@ use nom::sequence::pair;
 pub mod defs;
 pub mod error_report;
 pub mod misc;
-pub mod parse_attr;
 pub mod parse_binary;
 pub mod parse_case;
 pub mod parse_expr;
@@ -25,7 +24,6 @@ pub mod parse_expr_op;
 pub mod parse_fn;
 pub mod parse_if_stmt;
 pub mod parse_lit;
-pub mod parse_record;
 pub mod parse_try_catch;
 pub mod parse_type;
 pub mod parser_input;
@@ -34,7 +32,8 @@ pub mod parser_scope;
 
 /// Parses an attribute or a function def
 pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
-  alt((parse_module_attr, context("function definition", parse_fndef)))(input)
+  // Do not parse attributes and preprocessor here, it is done earlier in preprocess stage after tokenizer
+  context("function definition", parse_fndef)(input)
 }
 
 /// Parses 0 or more module forms (attrs and function defs)

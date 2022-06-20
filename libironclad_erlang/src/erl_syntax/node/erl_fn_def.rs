@@ -3,11 +3,12 @@ use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::error::ic_error::IcResult;
+use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
-use crate::typing::scope::Scope;
 use libironclad_util::mfarity::MFArity;
 use std::sync::{Arc, RwLock};
 
@@ -35,11 +36,15 @@ impl ErlFnDef {
 
   /// Produce `ErlType` for this function definition, with all clauses and their return types
   #[allow(dead_code)]
-  pub(crate) fn synthesize_function_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  pub(crate) fn synthesize_function_type(
+    &self,
+    module: &ErlModule,
+    _scope: &Scope,
+  ) -> IcResult<Arc<ErlType>> {
     let clauses_r: IcResult<Vec<FnClauseType>> = self
       .clauses
       .iter()
-      .map(|fnc| fnc.synthesize_clause_type(&fnc.scope))
+      .map(|fnc| fnc.synthesize_clause_type(module, &fnc.scope))
       .collect();
     let clauses = clauses_r?;
 
@@ -50,12 +55,16 @@ impl ErlFnDef {
 
   /// Produce a function return type, as union of all clauses returns
   #[allow(dead_code)]
-  pub(crate) fn synthesize_return_type(&self, _scope: &RwLock<Scope>) -> IcResult<Arc<ErlType>> {
+  pub(crate) fn synthesize_return_type(
+    &self,
+    module: &ErlModule,
+    _scope: &Scope,
+  ) -> IcResult<Arc<ErlType>> {
     // TODO: Filter out incompatible clauses
     let clauses_ret: IcResult<Vec<Arc<ErlType>>> = self
       .clauses
       .iter()
-      .map(|fnc| fnc.synthesize_clause_return_type(&fnc.scope))
+      .map(|fnc| fnc.synthesize_clause_return_type(module, &fnc.scope))
       .collect();
     let synthesized_t = ErlType::new_union(&clauses_ret?);
     Ok(synthesized_t)

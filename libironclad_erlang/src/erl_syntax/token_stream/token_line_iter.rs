@@ -4,19 +4,19 @@ use crate::erl_syntax::token_stream::token::Token;
 
 /// Iterate over token stream lines, by finding `Newline` tokens.
 /// Note: `Newline` tokens are removed in the preprocessor.
-pub(crate) struct TokLinesIter<'a> {
+pub(crate) struct TokenLinesIter<'a> {
   pub base: &'a [Token],
   pub pos: usize,
 }
 
-impl<'a> TokLinesIter<'a> {
+impl<'a> TokenLinesIter<'a> {
   /// Create a new lines iterator for token stream, searching for `Newline` tokens
   pub fn new(base: &'a [Token]) -> Self {
     Self { base, pos: 0 }
   }
 }
 
-impl<'a> Iterator for TokLinesIter<'a> {
+impl<'a> Iterator for TokenLinesIter<'a> {
   type Item = &'a [Token];
 
   fn next(&mut self) -> Option<Self::Item> {

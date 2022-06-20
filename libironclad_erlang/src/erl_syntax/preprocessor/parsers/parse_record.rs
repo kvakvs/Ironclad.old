@@ -8,6 +8,8 @@ use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom}
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
+use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
@@ -51,15 +53,17 @@ fn record_definition_fields(input: ParserInput) -> ParserResult<Vec<RecordField>
 }
 
 /// Parses inner contents of `-record( <INNER> ).`
-fn record_definition_inner(input: ParserInput) -> ParserResult<AstNode> {
+fn record_definition_inner(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     separated_pair(tok_atom, tok(TokenType::Comma), record_definition_fields),
-    |(atom, fields)| AstNodeImpl::new_record_definition(SourceLoc::new(&input), atom, fields),
+    |(atom, fields)| {
+      PreprocessorNodeImpl::new_record_definition(SourceLoc::new(&input), atom, fields)
+    },
   )(input.clone())
 }
 
 /// Parses a `-record(atom(), {field :: type()... }).` attribute.
-pub fn parse_record_def(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
   delimited(
     dash_atom("record"),
     context(

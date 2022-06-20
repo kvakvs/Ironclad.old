@@ -4,10 +4,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::error::ic_error::IcResult;
+use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_type::FnType;
-use crate::typing::scope::Scope;
 use crate::typing::type_error::TypeError;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
@@ -50,18 +51,22 @@ impl ErlApply {
   pub(crate) fn synthesize_application_type(
     &self,
     location: SourceLoc,
-    scope: &RwLock<Scope>,
+    module: &ErlModule,
+    scope: &Scope,
   ) -> IcResult<Arc<ErlType>> {
     // Synthesize target and check that it is a function type
-    let target_ty = self.target.synthesize(scope)?;
+    let target_ty = self.target.synthesize(module, scope)?;
     if !target_ty.is_function() {
       let msg = format!("Attempt to call a value which is not a function: {}", self.target);
       return ErlError::type_error(location, TypeError::NotAFunction { msg });
     }
 
     // Build argument type list and check every argument vs the target (the callee)
-    let arg_types_r: IcResult<Vec<Arc<ErlType>>> =
-      self.args.iter().map(|arg| arg.synthesize(scope)).collect();
+    let arg_types_r: IcResult<Vec<Arc<ErlType>>> = self
+      .args
+      .iter()
+      .map(|arg| arg.synthesize(module, scope))
+      .collect();
     let arg_types = arg_types_r?;
 
     match target_ty.deref() {

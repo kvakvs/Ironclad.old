@@ -10,8 +10,8 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::module::erl_module_ast;
+use libironclad_erlang::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use libironclad_erlang::typing::erl_type::ErlType;
-use libironclad_erlang::typing::scope::Scope;
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
 
@@ -20,7 +20,7 @@ use std::ops::Deref;
 fn synth_list_append() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
-  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let parsed = test_util::parse_expr(function_name!(), "[atom1] ++ [atom2]");
   let expr_type = parsed.synthesize(&scope1)?;
 
@@ -55,7 +55,7 @@ fn synth_simplefun_division() -> IcResult<()> {
   }
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
-  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let f_t = nodes[0].synthesize(&scope1)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), nodes[0], f_t);
 
@@ -68,7 +68,7 @@ fn synth_simplefun_addition() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let nodes = test_util::parse_module_unwrap(function_name!(), "myfun(A) -> A + 1.");
-  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let synth_type = nodes[0].synthesize(&scope1)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &nodes[0], synth_type);
 
@@ -142,7 +142,7 @@ fn synth_fun_call() -> IcResult<()> {
   );
   let module = test_util::parse_module0(function_name!(), &input);
   let ast = erl_module_ast(&module);
-  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
 
   {
@@ -185,7 +185,7 @@ fn synth_multiple_clause_test() -> IcResult<()> {
   );
   let module = test_util::parse_module0(function_name!(), &source);
   let ast = erl_module_ast(&module);
-  let scope1 = Scope::new_root_scope(function_name!().to_string());
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
 
   let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
 

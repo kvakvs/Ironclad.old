@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
-  bigcapacity_many0, macro_ident, varname, ws_before_mut, ws_mut,
+  bigcapacity_many0, parse_macro_ident, varname, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
@@ -248,7 +248,7 @@ fn tok_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn tok_macro_invocation(input: TokenizerInput) -> TokensResult<Token> {
-  map(preceded(char('?'), context("macro invocation", cut(macro_ident))), |m| {
+  map(preceded(char('?'), context("macro invocation", cut(parse_macro_ident))), |m| {
     Token::new(input.as_ptr(), TokenType::MacroInvocation(m))
   })(input)
 }

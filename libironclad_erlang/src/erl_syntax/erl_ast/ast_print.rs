@@ -1,10 +1,9 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, ExportTypesAttr,
-  FnDef, FnRef, FnSpec, GenericAttr, IfStatement, ImportAttr, List, ListComprehension,
-  ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, NewType, TryCatch, Tuple, Type, UnaryOp,
-  Var, MFA,
+  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, FnDef, FnRef, IfStatement, List,
+  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple,
+  Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -21,34 +20,6 @@ impl std::fmt::Display for AstNodeImpl {
           write!(f, "{}", form)?;
         }
         writeln!(f, "%%% end module",)
-      }
-      ExportAttr { exports, .. } => {
-        write!(f, "-export(")?;
-        Pretty::display_square_list(exports, f)?;
-        writeln!(f, ").")
-      }
-      ExportTypesAttr { exports, .. } => {
-        write!(f, "-export_type(")?;
-        Pretty::display_square_list(exports, f)?;
-        writeln!(f, ").")
-      }
-      ImportAttr { import_from, imports, .. } => {
-        write!(f, "-import({}, ", import_from)?;
-        Pretty::display_square_list(imports, f)?;
-        writeln!(f, ").")
-      }
-      NewType { name, vars, ty, .. } => {
-        write!(f, "-type {}", name)?;
-        Pretty::display_paren_list(vars, f)?;
-        write!(f, " :: {}", ty)?;
-        writeln!(f, ".")
-      }
-      GenericAttr { tag, term, .. } => {
-        if let Some(t) = term {
-          writeln!(f, "-{}({}).", tag, t)
-        } else {
-          writeln!(f, "-{}.", tag)
-        }
       }
       FnRef { mfa, .. } => write!(f, "fun {}", mfa),
       FnDef(erl_fndef) => {
@@ -91,11 +62,6 @@ impl std::fmt::Display for AstNodeImpl {
         write!(f, "]")
       }
       Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
-      FnSpec { funarity, spec, .. } => {
-        write!(f, "-spec {}", funarity.name)?;
-        Pretty::display_semicolon_separated(spec.as_fn_type().clauses(), f)?;
-        write!(f, ".")
-      }
       Type { ty, .. } => write!(f, "{}", ty),
       MapBuilder { members } => {
         write!(f, "#{{")?;
@@ -128,12 +94,6 @@ impl std::fmt::Display for AstNodeImpl {
         Pretty::display_comma_separated(elements, f)?;
         write!(f, ">>")
       }
-      AstNodeType::RecordDefinition { tag, fields } => {
-        write!(f, "-record({}, {{", tag)?;
-        Pretty::display_comma_separated(fields, f)?;
-        write!(f, "}}")
-      }
-      AstNodeType::Preprocessor(pp) => write!(f, "{}", pp),
     }
   }
 }

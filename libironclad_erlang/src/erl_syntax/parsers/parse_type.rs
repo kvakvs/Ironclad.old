@@ -7,6 +7,8 @@ use crate::erl_syntax::parsers::misc::{
   dash_atom, tok, tok_atom, tok_integer, tok_keyword, tok_var,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
+use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;
@@ -30,7 +32,7 @@ pub struct ErlTypeParser {}
 impl ErlTypeParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
-  pub fn fn_spec_attr(input: ParserInput) -> ParserResult<AstNode> {
+  pub fn fn_spec_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
     map(
       // all between -spec and .
       delimited(
@@ -52,7 +54,7 @@ impl ErlTypeParser {
         );
         let funarity = MFArity::new_local(&name, arity);
         let fntypespec = ErlType::new_fn_type(&clauses);
-        AstNodeImpl::new_fn_spec(SourceLoc::new(&input), funarity, fntypespec.into())
+        PreprocessorNodeImpl::new_fn_spec(SourceLoc::new(&input), funarity, fntypespec.into())
       },
     )(input.clone())
   }

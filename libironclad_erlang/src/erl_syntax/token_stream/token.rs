@@ -50,6 +50,11 @@ impl Token {
       _ => false,
     }
   }
+  /// Check whether the token is an atom
+  #[inline]
+  pub fn is_atom(&self) -> bool {
+    matches!(&self.content, TokenType::Atom(_))
+  }
 
   /// Check whether the token is a keyword of given value
   #[inline]
@@ -58,6 +63,12 @@ impl Token {
       TokenType::Keyword(kw) => kw == &sample,
       _ => false,
     }
+  }
+
+  /// Check whether the token is a given type token
+  #[inline]
+  pub fn is_tok(&self, tt: TokenType) -> bool {
+    matches!(&self.content, tt1 if *tt1 == tt)
   }
 }
 

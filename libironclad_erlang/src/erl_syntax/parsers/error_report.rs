@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token::format_tok_line;
-use crate::erl_syntax::token_stream::token_array::TokLinesIter;
+use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 
 /// Transforms a `VerboseError` into a trace with input position information
@@ -53,7 +53,7 @@ pub fn convert_token_stream_parser_error(
         .unwrap_or(0);
 
       // Find the full line after that newline
-      let line = TokLinesIter::new(&tokens_input.tokens[line_begin..])
+      let line = TokenLinesIter::new(&tokens_input.tokens[line_begin..])
         .next()
         .unwrap_or(&tokens_input.tokens[line_begin..]);
       // .trim_end();

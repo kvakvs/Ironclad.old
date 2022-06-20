@@ -5,9 +5,9 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use libironclad_erlang::typing::check::TypeCheck;
 use libironclad_erlang::typing::erl_type::ErlType;
-use libironclad_erlang::typing::scope::Scope;
 use std::ops::Deref;
 
 #[named]
@@ -16,9 +16,9 @@ fn typing_synth() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Synth");
 
   {
-    let scope1 = Scope::new_root_scope(function_name!().to_string());
+    let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
     let expr1 = test_util::parse_expr(function_name!(), "[3.14159265358979 , 2,atom]");
-    let synth_t1 = expr1.synthesize(&scope1)?;
+    let synth_t1 = expr1.synthesize(module, &scope1)?;
     println!("Synth list1: {}", &synth_t1);
 
     if let ErlType::StronglyTypedList { elements, tail } = synth_t1.deref() {
@@ -35,9 +35,9 @@ fn typing_synth() -> IcResult<()> {
   }
 
   {
-    let scope2 = Scope::new_root_scope(function_name!().to_string());
+    let scope2 = ScopeImpl::new_root_scope(function_name!().to_string());
     let expr2 = test_util::parse_expr(function_name!(), "{tuple_tag, 1.2, 3, \"hello\"}");
-    let synth_t2 = expr2.synthesize(&scope2)?;
+    let synth_t2 = expr2.synthesize(module, &scope2)?;
     println!("Synth tup1: {}", &synth_t2);
 
     if let ErlType::Tuple { elements } = synth_t2.deref() {
@@ -61,10 +61,10 @@ fn typing_synth() -> IcResult<()> {
 #[test]
 fn typing_expr_check_1() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.Atom");
-  let scope = Scope::new_root_scope(function_name!().to_string());
+  let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let expr = test_util::parse_expr(function_name!(), "hello");
   assert!(
-    TypeCheck::check(&scope, &expr, &ErlType::Atom)?,
+    TypeCheck::check(module, &scope, &expr, &ErlType::Atom)?,
     "Parsed atom 'hello' must be subtype of atom()"
   );
   Ok(())
@@ -76,13 +76,13 @@ fn typing_expr_check_1() -> IcResult<()> {
 fn typing_expr_check_noarg() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
 
-  let scope = Scope::new_root_scope(function_name!().to_string());
+  let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let nodes = test_util::parse_module_unwrap(function_name!(), "my_int_fun1() -> 10 + 20.");
   assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes);
 
   let match_ty = &ErlType::new_fn_type_of_any_args(0, &ErlType::integer());
   assert!(
-    TypeCheck::check(&scope, &nodes[0], match_ty)?,
+    TypeCheck::check(module, &scope, &nodes[0], match_ty)?,
     "my_int_fun1()'s return type must be compatible with integer()"
   );
   Ok(())
@@ -93,7 +93,7 @@ fn typing_expr_check_noarg() -> IcResult<()> {
 /// Create a fun with argument, which returns an integer(). See if its compatible with an integer().
 fn typing_check_int_arg_fn() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
-  let scope = Scope::new_root_scope(function_name!().to_string());
+  let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let nodes = test_util::parse_module_unwrap(function_name!(), "my_int_fun2(A) -> 10 + A.");
 
   assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes);
@@ -101,7 +101,7 @@ fn typing_check_int_arg_fn() -> IcResult<()> {
 
   let match_ty = &ErlType::new_fn_type_of_any_args(1, &ErlType::integer());
   assert!(
-    TypeCheck::check(&scope, &nodes[0], match_ty)?,
+    TypeCheck::check(module, &scope, &nodes[0], match_ty)?,
     "my_int_fun2()'s result type must be compatible with integer()"
   );
   Ok(())
@@ -112,7 +112,7 @@ fn typing_check_int_arg_fn() -> IcResult<()> {
 /// Create a fun which returns a tuple of `{any(), integer()}` and see if it checks against a tuple
 fn typing_expr_check_tuple1() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
-  let scope = Scope::new_root_scope(function_name!().to_string());
+  let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let nodes = test_util::parse_module_unwrap(function_name!(), "mytuple_fun(A) -> {A, 123}.");
 
   assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes[0]);
@@ -121,7 +121,7 @@ fn typing_expr_check_tuple1() -> IcResult<()> {
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
   let match_ty = &ErlType::new_fn_type_of_any_args(1, &expected_type);
   assert!(
-    TypeCheck::check(&scope, &nodes[0], match_ty)?,
+    TypeCheck::check(module, &scope, &nodes[0], match_ty)?,
     "Parsed mytuple_fun(A) result type must match {{any(), integer()}}"
   );
   Ok(())

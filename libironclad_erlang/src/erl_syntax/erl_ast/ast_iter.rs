@@ -1,14 +1,8 @@
 //! Contains iteration helpers for ErlAst
-use crate::erl_syntax::erl_ast::AstNode;
-use ::function_name::named;
-
-use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, ExportAttr, FnDef, FnSpec,
-  GenericAttr, IfStatement, ImportAttr, List, ListComprehension, ListComprehensionGenerator, Lit,
-  ModuleRoot, NewType, RecordDefinition, TryCatch, Tuple, Type, UnaryOp, MFA,
-};
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
+use ::function_name::named;
 
 /// A trait for AST nodes which can contain nested nodes
 pub trait IterableAstNodeT {
@@ -24,24 +18,17 @@ impl IterableAstNodeT for AstNodeImpl {
   #[named]
   fn children(&self) -> Option<Vec<AstNode>> {
     match &self.content {
-      RecordDefinition { .. }
-      | AstNodeType::Empty { .. }
-      | ExportAttr { .. }
-      | ImportAttr { .. }
-      | FnSpec { .. }
-      | NewType { .. }
-      | GenericAttr { .. }
-      | Lit { .. }
-      | MFA { .. }
-      | Type { .. }
-      | AstNodeType::Preprocessor { .. }
+      AstNodeType::Empty { .. }
+      | AstNodeType::Lit { .. }
+      | AstNodeType::MFA { .. }
+      | AstNodeType::Type { .. }
       | AstNodeType::Var { .. } => None,
 
-      ModuleRoot { forms: f, .. } => Some(f.to_vec()),
-      FnDef(fn_def) => fn_def.children(),
-      Apply(app) => app.children(),
+      AstNodeType::ModuleRoot { forms: f, .. } => Some(f.to_vec()),
+      AstNodeType::FnDef(fn_def) => fn_def.children(),
+      AstNodeType::Apply(app) => app.children(),
 
-      CaseStatement { expr, clauses, .. } => {
+      AstNodeType::CaseStatement { expr, clauses, .. } => {
         let mut r: Vec<AstNode> = vec![expr.clone()];
 
         for cc in clauses {
@@ -59,28 +46,30 @@ impl IterableAstNodeT for AstNodeImpl {
         }
       }
 
-      CClause(_loc, clause) => {
+      AstNodeType::CClause(_loc, clause) => {
         if let Some(g) = &clause.guard {
           Some(vec![clause.pattern.clone(), g.clone(), clause.body.clone()])
         } else {
           Some(vec![clause.pattern.clone(), clause.body.clone()])
         }
       }
-      BinaryOp { expr: binop_expr, .. } => {
+      AstNodeType::BinaryOp { expr: binop_expr, .. } => {
         Some(vec![binop_expr.left.clone(), binop_expr.right.clone()])
       }
-      UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
-      List { elements, .. } => Some(elements.to_vec()),
-      Tuple { elements, .. } => Some(elements.to_vec()),
+      AstNodeType::UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
+      AstNodeType::List { elements, .. } => Some(elements.to_vec()),
+      AstNodeType::Tuple { elements, .. } => Some(elements.to_vec()),
 
-      ListComprehension { expr, generators, .. } => {
+      AstNodeType::ListComprehension { expr, generators, .. } => {
         let mut result = vec![expr.clone()];
         result.extend(generators.iter().cloned());
         Some(result)
       }
-      ListComprehensionGenerator { left, right, .. } => Some(vec![left.clone(), right.clone()]),
+      AstNodeType::ListComprehensionGenerator { left, right, .. } => {
+        Some(vec![left.clone(), right.clone()])
+      }
 
-      TryCatch { body, of_branches, catch_clauses, .. } => {
+      AstNodeType::TryCatch { body, of_branches, catch_clauses, .. } => {
         let mut r: Vec<AstNode> = body.children().unwrap_or_default();
         // For all of-branches, extend the result with each branch
         if let Some(ofb) = of_branches {
@@ -101,7 +90,7 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(r)
         }
       }
-      CommaExpr { elements, .. } => {
+      AstNodeType::CommaExpr { elements, .. } => {
         let mut r = Vec::default();
         for e in elements.iter() {
           if let Some(c) = e.children() {
@@ -114,7 +103,7 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(r)
         }
       }
-      IfStatement { clauses, .. } => {
+      AstNodeType::IfStatement { clauses, .. } => {
         let mut r = Vec::default();
         for ifc in clauses.iter() {
           if let Some(c) = ifc.children() {
@@ -127,7 +116,7 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(r)
         }
       }
-      BinaryExpr { elements, .. } => {
+      AstNodeType::BinaryExpr { elements, .. } => {
         let mut r = Vec::default();
         for bel in elements.iter() {
           if let ValueWidth::Expr(expr_width) = &bel.width {

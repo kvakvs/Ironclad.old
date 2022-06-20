@@ -1,5 +1,6 @@
 //! Contains implementations required for custom nom input to work
 
+use crate::erl_syntax::parsers::parser_scope::ParserScope;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::source_file::SourceFile;
 use nom::Needed;
@@ -10,14 +11,18 @@ use std::slice::Iter;
 
 /// The nom-compatible token input
 #[derive(Debug, Clone)]
-pub struct ParserInput<'a> {
+pub struct ParserInputT<'a, ScopeType: Default> {
   /// Access to filename and source text, if value is defined
   pub source_file: Option<SourceFile>,
+  /// Scope for the parser to update/query
+  pub scope: ScopeType,
   /// The token stream
   pub tokens: &'a [Token],
 }
 
-impl<'a> nom::Offset for ParserInput<'a> {
+pub type ParserInput<'a> = ParserInputT<'a, Option<ParserScope>>;
+
+impl<'a, ScopeType: Default> nom::Offset for ParserInputT<'a, ScopeType> {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.tokens.as_ptr();
     let snd = second.tokens.as_ptr();
@@ -39,7 +44,7 @@ impl<'a> nom::Offset for ParserInput<'a> {
 // }
 //
 
-impl<'a> ParserInput<'a> {
+impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
   /// Calculates offset for second inside `self`
   pub(crate) fn offset_inside(&self, base: &[Token]) -> usize {
     let snd = self.tokens.as_ptr();
@@ -62,7 +67,20 @@ impl<'a> ParserInput<'a> {
   }
 
   pub(crate) fn new(source_file: &SourceFile, tokens: &'a [Token]) -> Self {
-    Self { source_file: Some(source_file.clone()), tokens }
+    Self {
+      source_file: Some(source_file.clone()),
+      scope: ScopeType::default(),
+      tokens,
+    }
+  }
+
+  /// Use when you only have slice
+  pub(crate) fn new_slice(tokens: &'a [Token]) -> Self {
+    Self {
+      source_file: None,
+      scope: ScopeType::default(),
+      tokens,
+    }
   }
 
   pub(crate) fn is_empty(&self) -> bool {
@@ -94,7 +112,11 @@ impl<'a> ParserInput<'a> {
   //
   /// Clone into a new custom parser input from a str slice. Assert that it belongs to the same input slice.
   pub(crate) fn clone_with_slice(&self, input: &'a [Token]) -> Self {
-    Self { source_file: None, tokens: input }
+    Self {
+      source_file: None,
+      tokens: input,
+      scope: ScopeType::default(),
+    }
   }
   //
   //   /// Build a new custom parser input from a loaded source file

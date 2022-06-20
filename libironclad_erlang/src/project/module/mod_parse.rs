@@ -109,14 +109,14 @@ impl ErlModuleImpl {
     Self::parse_helper(project, source_file.clone(), parse_fndef, compiler_options)
   }
 
-  /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
-  pub fn from_fun_spec_source(
-    project: &ErlProject,
-    source_file: &SourceFile,
-    compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule> {
-    Self::parse_helper(project, source_file.clone(), ErlTypeParser::fn_spec_attr, compiler_options)
-  }
+  // /// Creates a 'module', where its AST comes from a typespec source `-spec myfun(...) -> ...`
+  // pub fn from_fun_spec_source(
+  //   project: &ErlProject,
+  //   source_file: &SourceFile,
+  //   compiler_options: Option<CompilerOpts>,
+  // ) -> IcResult<ErlModule> {
+  //   Self::parse_helper(project, source_file.clone(), ErlTypeParser::fn_spec_attr, compiler_options)
+  // }
 
   /// Creates a 'module', where its AST comes from a type `integer() | 42`
   pub fn from_type_source(

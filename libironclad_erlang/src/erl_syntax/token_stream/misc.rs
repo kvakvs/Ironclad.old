@@ -1,10 +1,14 @@
 //! Tokenizer helpers
 
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::tok_input::{TokenizerError, TokenizerInput, TokensResult};
+use crate::erl_syntax::token_stream::token::Token;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, anychar, char};
 use nom::combinator::{eof, map, recognize, verify};
+use nom::error::ParseError;
 use nom::multi::{many0, many1, many_till};
 use nom::sequence::{delimited, pair, preceded};
 
@@ -94,7 +98,7 @@ pub(crate) fn parse_ident(input: TokenizerInput) -> TokensResult<String> {
 }
 
 /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-pub(crate) fn macro_ident(input: TokenizerInput) -> TokensResult<String> {
+pub(crate) fn parse_macro_ident(input: TokenizerInput) -> TokensResult<String> {
   map(
     ws_before_mut(recognize(pair(
       verify(anychar, |c: &char| c.is_alphabetic() || *c == '_'),
@@ -141,5 +145,22 @@ where
         }
       }
     }
+  }
+}
+
+/// Matches any token and returns it
+pub(crate) fn any_token(input: ParserInput) -> ParserResult<Token> {
+  use nom::{InputIter, InputLength, Slice};
+
+  let mut it = input.iter_indices();
+  match it.next() {
+    None => Err(nom::Err::Error(ErlParserError::from_error_kind(
+      input,
+      nom::error::ErrorKind::Eof,
+    ))),
+    Some((_, c)) => match it.next() {
+      None => Ok((input.slice(input.input_len()..), c)),
+      Some((idx, _)) => Ok((input.slice(idx..), c)),
+    },
   }
 }

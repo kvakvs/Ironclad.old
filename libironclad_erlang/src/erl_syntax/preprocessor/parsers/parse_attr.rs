@@ -4,9 +4,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom, tok_integer};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
-use crate::erl_syntax::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
+use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
+use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
@@ -36,7 +38,7 @@ fn parse_generic_attr_expr(input: ParserInput) -> ParserResult<Option<AstNode>> 
 /// Parses a generic `-TAG(TERM)."` attribute.
 /// Given a string, try and consume a generic attribute line starting with `-ident` and ending with
 /// a `"." NEWLINE`.
-pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       tok(TokenType::Minus),
@@ -47,14 +49,16 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<AstNode> {
       ),
       period_newline,
     ),
-    |(tag, term)| AstNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, term),
+    |(tag, term)| PreprocessorNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, term),
   )(input.clone())
 }
 
 /// Parses a generic `-TAG.` attribute, no parentheses, no expr.
-pub(crate) fn parse_generic_attr_no_parentheses(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_generic_attr_no_parentheses(
+  input: ParserInput,
+) -> ParserResult<PreprocessorNode> {
   map(delimited(tok(TokenType::Minus), tok_atom, period_newline), |tag| {
-    AstNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, None)
+    PreprocessorNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, None)
   })(input.clone())
 }
 
@@ -76,7 +80,7 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<String> {
 }
 
 /// Parses a `fun/arity` atom with an integer.
-pub fn parse_funarity(input: ParserInput) -> nom::IResult<ParserInput, MFArity, ErlParserError> {
+pub fn parse_funarity(input: ParserInput) -> ParserResult<MFArity> {
   map(
     tuple((tok_atom, tok(TokenType::Div), tok_integer)),
     |(name, _slash, erl_int)| {
@@ -87,9 +91,7 @@ pub fn parse_funarity(input: ParserInput) -> nom::IResult<ParserInput, MFArity, 
 }
 
 /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
-fn parse_square_funarity_list1(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, Vec<MFArity>, ErlParserError> {
+fn parse_square_funarity_list1(input: ParserInput) -> ParserResult<Vec<MFArity>> {
   delimited(
     tok(TokenType::SquareOpen),
     separated_list1(tok(TokenType::Comma), parse_funarity),
@@ -104,33 +106,33 @@ fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
 
 /// Parses an `-export([fn/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub(crate) fn export_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn export_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       dash_atom("export"),
       context("list of exports in an -export() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
-    |t| AstNodeImpl::new_export_attr(SourceLoc::new(&input), t),
+    |t| PreprocessorNodeImpl::new_export_attr(SourceLoc::new(&input), t),
   )(input.clone())
 }
 
 /// Parses an `-export_type([type/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       dash_atom("export_type"),
       context("list of exports in an -export_type() attribute", cut(parse_export_mfa_list)),
       period_newline,
     ),
-    |t| AstNodeImpl::new_export_type_attr(SourceLoc::new(&input), t),
+    |t| PreprocessorNodeImpl::new_export_type_attr(SourceLoc::new(&input), t),
   )(input.clone())
 }
 
 /// Parses an `-import(module [fn/arity, ...]).` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       dash_atom("import"),
@@ -144,14 +146,14 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<AstNode> {
       ),
       period_newline,
     ),
-    |(mod_name, imports)| AstNodeImpl::new_import_attr(SourceLoc::new(&input), mod_name, imports),
+    |(mod_name, imports)| {
+      PreprocessorNodeImpl::new_import_attr(SourceLoc::new(&input), mod_name, imports)
+    },
   )(input.clone())
 }
 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
-pub(crate) fn parse_parenthesized_list_of_vars(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, Vec<String>, ErlParserError> {
+pub(crate) fn parse_parenthesized_list_of_vars(input: ParserInput) -> ParserResult<Vec<String>> {
   delimited(
     tok(TokenType::ParOpen),
     cut(separated_list0(tok(TokenType::Comma), ErlTypeParser::parse_typevar_name)),
@@ -161,7 +163,7 @@ pub(crate) fn parse_parenthesized_list_of_vars(
 
 /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
+pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   // print_input("type_definition_attr", input);
   map(
     delimited(
@@ -178,14 +180,13 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<AstNode> {
       period_newline,
     ),
     |(type_name, type_args, _coloncolon, new_type)| {
-      AstNodeImpl::new_type_attr(SourceLoc::new(&input), type_name, type_args, new_type)
+      PreprocessorNodeImpl::new_type_attr(SourceLoc::new(&input), type_name, type_args, new_type)
     },
   )(input.clone())
 }
 
 /// Any module attribute goes here
-pub(crate) fn parse_module_attr(input: ParserInput) -> ParserResult<AstNode> {
-  // print_input("attr", input);
+pub(crate) fn parse_module_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   alt((
     parse_record_def,
     export_type_attr,

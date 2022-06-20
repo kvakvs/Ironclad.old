@@ -9,9 +9,10 @@ use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
+use crate::project::module::scope::root_scope::RootScope;
+use crate::project::module::scope::scope_impl::Scope;
 use crate::project::ErlProject;
 use crate::source_file::{SourceFile, SourceFileImpl};
-use crate::typing::scope::Scope;
 use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
@@ -32,8 +33,10 @@ pub struct ErlModuleImpl {
   pub parser_scope: ParserScope,
   /// AST tree of the module.
   pub ast: AstNode,
-  /// Module level scope, containing functions
-  pub scope: Arc<RwLock<Scope>>,
+  // /// Local level scope, containing variables
+  // pub scope: Scope,
+  /// Module-level scope with types, functions, and other global stuff
+  pub root_scope: RootScope,
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
   pub errors: RefCell<Vec<ErlError>>,
@@ -50,7 +53,7 @@ impl Default for ErlModuleImpl {
       source_file: Arc::new(SourceFileImpl::default()),
       parser_scope: ParserScopeImpl::new_empty().into(),
       ast: AstNodeImpl::new_empty("dummy node for module root".to_string()),
-      scope: Default::default(),
+      root_scope: Default::default(),
       errors: RefCell::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }

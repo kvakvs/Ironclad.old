@@ -6,7 +6,8 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 /// Gathers multiple errors and contexts together
 pub type ErlParserError<'a> = nom::error::VerboseError<ParserInput<'a>>;
 
-/// Generic return value from a Nom parser which takes a `ParserInput` and returns `Out`
+/// Generic return value from a Nom parser which takes a `ParserInput` and returns `Out`.
+/// Contains no scope field.
 pub type ParserResult<'a, Out> = nom::IResult<ParserInput<'a>, Out, ErlParserError<'a>>;
 
 /// Use when Nom's char is imported and this confuses the editor

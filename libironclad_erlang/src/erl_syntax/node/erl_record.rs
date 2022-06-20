@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 /// Record field has a name, optional initializer, and optional type ascription. Defined with
 /// `-record(name, {fields, ...}).` module attributes.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RecordField {
   /// Record field name atom, stored as string
   pub field_tag: String,

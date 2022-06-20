@@ -107,34 +107,22 @@ impl AstNodeImpl {
         Ok(())
       }
 
-      AstNodeType::RecordDefinition { .. }
-      | AstNodeType::Empty { .. }
-      | AstNodeType::BinaryOp { .. }
-      | AstNodeType::Lit { .. } => {
+      AstNodeType::Empty { .. } | AstNodeType::BinaryOp { .. } | AstNodeType::Lit { .. } => {
         Ok(()) // do nothing
       }
 
-      AstNodeType::FnSpec { .. }
-      | AstNodeType::Type { .. }
+      AstNodeType::Type { .. }
       | AstNodeType::MFA { .. }
-      | AstNodeType::ExportAttr { .. }
-      | AstNodeType::ExportTypesAttr { .. }
-      | AstNodeType::NewType { .. }
-      | AstNodeType::ImportAttr { .. }
       | AstNodeType::ModuleRoot { .. }
       | AstNodeType::FnRef { .. }
       | AstNodeType::FnDef(_)
       | AstNodeType::CClause(_, _)
       | AstNodeType::CaseStatement { .. }
       | AstNodeType::Apply(_)
-      | AstNodeType::UnaryOp { .. }
-      | AstNodeType::GenericAttr { .. } => ErlError::unacceptable(
+      | AstNodeType::UnaryOp { .. } => ErlError::unacceptable(
         node.location.clone(),
         format!("{}: is unacceptable as a function argument", node),
       ),
-      AstNodeType::Preprocessor(_) => {
-        panic!("Preprocessor nodes should be eliminated by the time you're extracting variables")
-      }
     }
   }
 }

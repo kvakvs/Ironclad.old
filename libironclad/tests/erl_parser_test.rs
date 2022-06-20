@@ -10,7 +10,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
-use libironclad_erlang::project::module::{erl_module_ast, erl_module_scope};
+use libironclad_erlang::project::module::{erl_module_ast, erl_module_root_scope};
 
 mod test_util;
 
@@ -236,7 +236,7 @@ fn parse_fn1() -> IcResult<()> {
   assert_eq!(fndef.clauses.len(), 1);
   assert_eq!(fndef.clauses[0].name, Some("f".to_string()));
 
-  let scope = erl_module_scope(&module);
+  let scope = erl_module_root_scope(&module);
 
   if let Ok(r_scope) = scope.read() {
     let func_count = r_scope.function_defs.len();
