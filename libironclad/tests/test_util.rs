@@ -23,7 +23,7 @@ pub fn start(n: &str, descr: &str) {
 
 /// Try parse a define macro where value contains another macro
 /// Returns `ErlModule`
-pub fn parse_module0(function_name: &str, input: &str) -> ErlModule {
+pub fn parse_module(function_name: &str, input: &str) -> ErlModule {
   let input = format!("-module({}).\n{}", function_name, input);
   let filename = PathBuf::from(function_name);
 
@@ -47,7 +47,7 @@ pub fn parse_module0(function_name: &str, input: &str) -> ErlModule {
 /// Try parse a define macro where value contains another macro
 /// Returns `ErlModule.ast.children()`
 pub fn parse_module_unwrap(function_name: &str, input: &str) -> Vec<AstNode> {
-  let module = parse_module0(function_name, input);
+  let module = parse_module(function_name, input);
 
   if let Ok(r_module) = module.clone().read() {
     r_module.ast.children().unwrap_or_default()

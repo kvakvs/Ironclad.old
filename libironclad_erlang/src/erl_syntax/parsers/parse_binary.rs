@@ -116,7 +116,7 @@ fn bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
       BinaryElement::new(
         SourceLoc::None,
         value,
-        bit_width.unwrap_or(ValueWidth::Default),
+        bit_width.unwrap_or(ValueWidth::DefaultWidth),
         type_specs.unwrap_or_default(),
       )
     },

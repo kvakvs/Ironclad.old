@@ -14,6 +14,7 @@ pub mod error;
 pub mod file_cache;
 pub mod literal;
 pub mod project;
+pub mod record_def;
 pub mod source_file;
 pub mod source_loc;
 pub mod stats;

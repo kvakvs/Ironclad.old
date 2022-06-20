@@ -3,26 +3,35 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::node::erl_record::RecordField;
 use crate::project::module::scope::mod_attr::ModuleAttributes;
+use crate::record_def::RecordDefinition;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
-use std::collections::HashMap;
+use libironclad_util::mfarity_set::MFAritySet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub struct RootScopeImpl {
   /// Contains definitions, added by `-spec` attribute
   function_specs: RwLock<HashMap<MFArity, Arc<ErlType>>>,
-
+  /// Contains `-type NAME() ...` definitions for new types
+  user_types: RwLock<HashMap<MFArity, Arc<ErlType>>>,
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
   function_defs: RwLock<HashMap<MFArity, AstNode>>,
-
+  /// Collection of record definitions
+  record_defs: RwLock<HashMap<String, Arc<RecordDefinition>>>,
   /// Types defined in the global module scope. Using typename/arity as key in type hierarchy
   typedefs: RwLock<HashMap<MFArity, Arc<ErlType>>>,
   /// Collection of all custom attributes coming in form of `- <TAG> ( <EXPR> ).` tag is key in this
   /// collection and not unique.
   attributes: RwLock<HashMap<String, Arc<ModuleAttributes>>>,
+  /// Exported function names and arities
+  pub exports: MFAritySet,
+  /// Imported function names keyed by the MFArity
+  pub imports: MFAritySet,
 }
 
 /// Alias type for `Arc<>`
@@ -32,9 +41,13 @@ impl Default for RootScopeImpl {
   fn default() -> Self {
     RootScopeImpl {
       function_specs: Default::default(),
+      user_types: Default::default(),
       function_defs: Default::default(),
+      record_defs: Default::default(),
       typedefs: Default::default(),
       attributes: Default::default(),
+      exports: MFAritySet::default(),
+      imports: MFAritySet::default(),
     }
   }
 }
@@ -67,7 +80,7 @@ impl RootScopeImpl {
   /// Retrieve named attributes
   pub fn get_attr(&self, attr_tag: &str) -> Option<Arc<ModuleAttributes>> {
     if let Ok(r_attrs) = self.attributes.read() {
-      r_attrs.get(&attr_tag.to_string()).map(|ma| ma.clone())
+      r_attrs.get(&attr_tag.to_string()).cloned()
     } else {
       panic!("Can't lock scope to read attributes")
     }
@@ -76,14 +89,32 @@ impl RootScopeImpl {
   /// Retrieve named function spec
   pub fn get_spec(&self, mfa: &MFArity) -> Option<Arc<ErlType>> {
     if let Ok(r_specs) = self.function_specs.read() {
-      r_specs.get(&mfa).map(|spec| spec.clone())
+      r_specs.get(&mfa).cloned()
     } else {
       panic!("Can't lock scope to lookup function specs")
     }
   }
 
+  /// Retrieve a user type (newtype) by name and arity
+  pub fn get_user_type(&self, typename_arity: &MFArity) -> Option<Arc<ErlType>> {
+    if let Ok(r_types) = self.user_types.read() {
+      r_types.get(&typename_arity).cloned()
+    } else {
+      panic!("Can't lock scope to lookup a user type")
+    }
+  }
+
+  /// Retrieve a record definition by name
+  pub fn get_record_def(&self, tag: &str) -> Option<Arc<RecordDefinition>> {
+    if let Ok(r_rdefs) = self.record_defs.read() {
+      r_rdefs.get(&tag.to_string()).cloned()
+    } else {
+      panic!("Can't lock scope to lookup a user type")
+    }
+  }
+
   /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub(crate) fn find_fn_ast(&self, mfa: &MFArity) -> Option<AstNode> {
+  pub fn get_fn(&self, mfa: &MFArity) -> Option<AstNode> {
     if let Ok(r_funs) = self.function_defs.read() {
       match r_funs.get(mfa) {
         Some(val) => {

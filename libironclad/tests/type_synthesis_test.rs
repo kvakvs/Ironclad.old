@@ -10,6 +10,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::module::erl_module_ast;
+use libironclad_erlang::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use libironclad_erlang::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use libironclad_erlang::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
@@ -20,9 +21,10 @@ use std::ops::Deref;
 fn synth_list_append() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
+  let module = ErlModuleImpl::new_default();
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let parsed = test_util::parse_expr(function_name!(), "[atom1] ++ [atom2]");
-  let expr_type = parsed.synthesize(&scope1)?;
+  let expr_type = parsed.synthesize(&module, &scope1)?;
 
   println!("{}: Inferred {} 🡆 {}", function_name!(), &parsed, expr_type);
 
@@ -55,8 +57,9 @@ fn synth_simplefun_division() -> IcResult<()> {
   }
 
   // let f_t = ErlType::final_type(module.unifier.infer_ast(ast.deref()));
+  let module = ErlModuleImpl::new_default();
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
-  let f_t = nodes[0].synthesize(&scope1)?;
+  let f_t = nodes[0].synthesize(&module, &scope1)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), nodes[0], f_t);
 
   Ok(())
@@ -67,9 +70,10 @@ fn synth_simplefun_division() -> IcResult<()> {
 fn synth_simplefun_addition() -> IcResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
+  let module = ErlModuleImpl::new_default();
   let nodes = test_util::parse_module_unwrap(function_name!(), "myfun(A) -> A + 1.");
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
-  let synth_type = nodes[0].synthesize(&scope1)?;
+  let synth_type = nodes[0].synthesize(&module, &scope1)?;
   println!("{}: Inferred {} 🡆 {}", function_name!(), &nodes[0], synth_type);
 
   Ok(())
@@ -129,7 +133,7 @@ fn synth_simplefun_addition() -> IcResult<()> {
 
 #[named]
 #[test]
-fn synth_fun_call() -> IcResult<()> {
+fn synth_fun_call1() -> IcResult<()> {
   test_util::start(
     function_name!(),
     "synthesize type for a fun which calls another fun with a sum",
@@ -140,33 +144,45 @@ fn synth_fun_call() -> IcResult<()> {
     main(A) -> add(A, 4).\n",
     function_name!()
   );
-  let module = test_util::parse_module0(function_name!(), &input);
+  let module = test_util::parse_module(function_name!(), &input);
   let ast = erl_module_ast(&module);
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
-  // println!("Parsing: «{}»\nAST: {}", code, &module.ast);
+  let add_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("add", 2)).unwrap();
+  let add_fn_type = add_fn_ast.synthesize(&module, &scope1)?;
+  println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
+  Ok(())
+}
 
-  {
-    let add_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("add", 2)).unwrap();
-    let add_fn_type = add_fn_ast.synthesize(&scope1)?;
-    println!("{}: Synthesized for add/2 {} 🡆 {}", function_name!(), add_fn_ast, add_fn_type);
-  }
-
-  {
-    let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
-    let main_fn_type = main_fn_ast.synthesize(&scope1)?;
-    println!(
-      "{}: Synthesized for main/1 {} 🡆 {}",
-      function_name!(),
-      main_fn_ast,
-      main_fn_type
-    );
-    // Expected: Main -> integer()
-    assert!(
-      ErlType::Number.is_subtype_of(&main_fn_type),
-      "For main/0 we expect synthesized type: fun(number()) -> number(); actual: {}",
-      main_fn_type
-    );
-  }
+#[named]
+#[test]
+fn synth_fun_call3() -> IcResult<()> {
+  test_util::start(
+    function_name!(),
+    "synthesize type for a fun which calls another fun with a sum",
+  );
+  let input = format!(
+    "-module({}).
+    add(A, B) -> A + B.
+    main(A) -> add(A, 4).\n",
+    function_name!()
+  );
+  let module = test_util::parse_module(function_name!(), &input);
+  let ast = erl_module_ast(&module);
+  let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
+  let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
+  let main_fn_type = main_fn_ast.synthesize(&module, &scope1)?;
+  println!(
+    "{}: Synthesized for main/1 {} 🡆 {}",
+    function_name!(),
+    main_fn_ast,
+    main_fn_type
+  );
+  // Expected: Main -> integer()
+  assert!(
+    ErlType::Number.is_subtype_of(&main_fn_type),
+    "For main/0 we expect synthesized type: fun(number()) -> number(); actual: {}",
+    main_fn_type
+  );
 
   Ok(())
 }
@@ -183,14 +199,14 @@ fn synth_multiple_clause_test() -> IcResult<()> {
     main(two) -> 222.",
     function_name!()
   );
-  let module = test_util::parse_module0(function_name!(), &source);
+  let module = test_util::parse_module(function_name!(), &source);
   let ast = erl_module_ast(&module);
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
 
   let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
 
   // let main_ty = ErlType::final_type(module.unifier.infer_ast(find_result2.deref()));
-  let main_ty = main_fn_ast.synthesize(&scope1)?;
+  let main_ty = main_fn_ast.synthesize(&module, &scope1)?;
   println!("{}: Synthesized {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Assert that type is a two-clause function type

@@ -24,7 +24,7 @@ impl AstNodeImpl {
         unreachable!("Should not be synthesizing type from AST node: Empty({})", comment)
       }
       FnDef(fndef) => fndef.synthesize_function_type(module, scope),
-      FnRef { mfa, .. } => match erl_module_root_scope(module).find_fn_ast(mfa) {
+      FnRef { mfa, .. } => match erl_module_root_scope(module).get_fn(mfa) {
         None => ErlError::local_function_not_found(
           self.location.clone(),
           mfa.clone(),

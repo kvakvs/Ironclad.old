@@ -66,7 +66,7 @@ impl CallableTarget {
       }
       let module = m.unwrap();
       if module.is_atom() {
-        return Self::new_mfa(MFArity::new(Some(module.as_atom().to_string()), f.as_atom(), a));
+        return Self::new_mfa(MFArity::new(module.as_atom(), f.as_atom(), a));
       }
       // rewrap module
       return CallableTarget::MFAExpression { module: Some(module), function: f, arity: a };

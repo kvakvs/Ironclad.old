@@ -66,6 +66,11 @@ impl Debug for ErlModuleImpl {
 }
 
 impl ErlModuleImpl {
+  /// Create an empty and wrap with `Arc<Rwlock<>>`
+  pub fn new_default() -> ErlModule {
+    RwLock::new(Self::default()).into()
+  }
+
   /// Create a new empty module
   pub fn new(opt: CompilerOpts, source_file: SourceFile) -> ErlModule {
     RwLock::new(Self {

@@ -7,10 +7,11 @@ use std::ops::Deref;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit};
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit, MFA};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_erlang::project::module::{erl_module_ast, erl_module_root_scope};
+use libironclad_util::mfarity::MFArity;
 
 mod test_util;
 
@@ -27,26 +28,34 @@ fn parse_empty_module() -> IcResult<()> {
 /// Try parse `-export([])` attr
 #[named]
 #[test]
-fn parse_export_attr() -> IcResult<()> {
+fn parse_export_attr1() -> IcResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
-  {
-    let input = "-export([name/123]).";
-    let nodes = test_util::parse_module_unwrap(function_name!(), input);
-    let pfna = nodes[0].as_export_attr();
-    assert_eq!(pfna[0].name, "name");
-    assert_eq!(pfna[0].arity, 123usize);
-  }
+  let input = "-export([name/123]).";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = erl_module_root_scope(&module);
+  assert_eq!(root_scope.exports.len(), 1);
+  assert!(root_scope
+    .exports
+    .contains(&MFArity::new_local("name", 123)));
+  Ok(())
+}
 
-  {
-    let input = "-export([module/2, format_error/1]).";
-    let nodes = test_util::parse_module_unwrap(function_name!(), &input);
-    assert_eq!(nodes.len(), 1);
-    let export_attr = nodes[0].as_export_attr();
-    assert_eq!(export_attr.len(), 2);
-    assert_eq!(export_attr[0].name, "module");
-    assert_eq!(export_attr[1].name, "format_error");
-  }
+#[named]
+#[test]
+fn parse_export_attr2() -> IcResult<()> {
+  test_util::start(function_name!(), "parse an export attr");
+  let input = "-export([module/2, format_error/1]).";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = erl_module_root_scope(&module);
+  assert_eq!(root_scope.exports.len(), 2);
+
+  assert!(root_scope
+    .exports
+    .contains(&MFArity::new_local("module", 2)));
+  assert!(root_scope
+    .exports
+    .contains(&MFArity::new_local("format_error", 1)));
   Ok(())
 }
 
@@ -56,16 +65,24 @@ fn parse_export_attr() -> IcResult<()> {
 fn parse_import_attr() -> IcResult<()> {
   test_util::start(function_name!(), "parse an import attr");
   let input = "-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n";
-  let nodes = test_util::parse_module_unwrap(function_name!(), input);
-  assert_eq!(nodes.len(), 1);
-  let (import_mod, import_attr) = nodes[0].as_import_attr();
-  assert_eq!(import_mod, "lists");
-  assert_eq!(import_attr.len(), 5);
-  assert_eq!(import_attr[0].name, "map");
-  assert_eq!(import_attr[1].name, "member");
-  assert_eq!(import_attr[2].name, "keymember");
-  assert_eq!(import_attr[3].name, "duplicate");
-  assert_eq!(import_attr[4].name, "splitwith");
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = erl_module_root_scope(&module);
+  assert_eq!(root_scope.imports.len(), 5);
+  assert!(root_scope
+    .imports
+    .contains(&MFArity::new("lists", "map", 2)));
+  assert!(root_scope
+    .imports
+    .contains(&MFArity::new("lists", "member", 2)));
+  assert!(root_scope
+    .imports
+    .contains(&MFArity::new("lists", "keymember", 3)));
+  assert!(root_scope
+    .imports
+    .contains(&MFArity::new("lists", "duplicate", 2)));
+  assert!(root_scope
+    .imports
+    .contains(&MFArity::new("lists", "splitwith", 2)));
   Ok(())
 }
 
@@ -91,7 +108,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
     "Parse a string with 2 function defs in it as module forms collection",
   );
   let input = "fn1(A, B) -> A + B.\n  fn2(A) ->\n fn1(A, 4).";
-  let _module = test_util::parse_module0(function_name!(), input);
+  let _module = test_util::parse_module(function_name!(), input);
   Ok(())
 }
 
@@ -228,7 +245,7 @@ fn parse_expr_hard_eq() -> IcResult<()> {
 #[test]
 fn parse_fn1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
-  let module = test_util::parse_module0(function_name!(), "f(A) -> atom123.");
+  let module = test_util::parse_module(function_name!(), "f(A) -> atom123.");
   let nodes = erl_module_ast(&module).children().unwrap_or_default();
   println!("Parse \"f(A) -> atom123.\": {}", nodes[0]);
 
@@ -236,15 +253,9 @@ fn parse_fn1() -> IcResult<()> {
   assert_eq!(fndef.clauses.len(), 1);
   assert_eq!(fndef.clauses[0].name, Some("f".to_string()));
 
-  let scope = erl_module_root_scope(&module);
+  let root_scope = erl_module_root_scope(&module);
+  let _fn = root_scope.get_fn(&MFArity::new_local("f", 1)).unwrap();
 
-  if let Ok(r_scope) = scope.read() {
-    let func_count = r_scope.function_defs.len();
-    assert_eq!(func_count, 1, "Module must have 1 function in its env");
-    // assert_eq!(module1.function_clauses.len(), 1, "Module must have 1 function clause in its env");
-  } else {
-    panic!("Can't lock module scope for inspection")
-  }
   Ok(())
 }
 
@@ -256,7 +267,7 @@ fn parse_fn_with_list_comprehension() -> IcResult<()> {
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
     Fs = [function(F) || F <- Fs0],
     {ok,{Mod,Exp,Attr,Fs,Lc}}.";
-  let module = test_util::parse_module0(function_name!(), source);
+  let module = test_util::parse_module(function_name!(), source);
   println!("Parsed result: {}", erl_module_ast(&module));
   Ok(())
 }
@@ -268,7 +279,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 
   {
     let input = "myfun() -> try ok except Class:Error -> ok end.";
-    let module = test_util::parse_module0(function_name!(), input);
+    let module = test_util::parse_module(function_name!(), input);
     println!("Parsed ExceptionPattern: {:?}", erl_module_ast(&module));
 
     // // TODO: Use panicking error reporter
@@ -280,7 +291,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 
   {
     let input = "myfun() -> try ok except Class:Error:Stack -> ok end.";
-    let module = test_util::parse_module0(function_name!(), input);
+    let module = test_util::parse_module(function_name!(), input);
     println!("Parsed ExceptionPattern: {:?}", erl_module_ast(&module));
 
     // // TODO: Use panicking error reporter
@@ -298,7 +309,7 @@ fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
   let input = "myfun() -> try ok except Class:Error:Stack when true -> ok end.";
-  let module = test_util::parse_module0(function_name!(), input);
+  let module = test_util::parse_module(function_name!(), input);
   println!("Parsed Catch clause: {:?}", erl_module_ast(&module));
   // // TODO: Use panicking error reporter
   // assert!(tail.is_empty(), "Could not parse exception pattern");
@@ -317,7 +328,7 @@ fn parse_fn_try_catch() -> IcResult<()> {
     try atom1, {function,Name,Arity,CLabel,Is}
     catch Class:Error:Stack -> erlang:raise(Class, Error, Stack), ok
     end.";
-  let module = test_util::parse_module0(function_name!(), source);
+  let module = test_util::parse_module(function_name!(), source);
   println!("Parsed result: {}", erl_module_ast(&module));
   Ok(())
 }
@@ -393,7 +404,7 @@ rename_instr({select_tuple_arity=I,Reg,Fail,{list,List}}) ->
 rename_instr(send) ->
     {call_ext,2,send};
 rename_instr(I) -> I.";
-  let module = test_util::parse_module0(function_name!(), src);
+  let module = test_util::parse_module(function_name!(), src);
   println!("{}: parsed {}", function_name!(), erl_module_ast(&module));
   Ok(())
 }
@@ -406,7 +417,7 @@ fn parse_fun_with_if() -> IcResult<()> {
     if D1 =:= S -> [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
         true -> [{get_hd,S,D1},{get_tl,S,D2}|rename_instrs(Is)]
     end.";
-  let module = test_util::parse_module0(function_name!(), src);
+  let module = test_util::parse_module(function_name!(), src);
   println!("{}: parsed {}", function_name!(), erl_module_ast(&module));
   Ok(())
 }
@@ -418,7 +429,7 @@ fn parse_fun_with_case() -> IcResult<()> {
   let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
         false -> Swap = beam_opcodes:opcode(swap, 2), beam_dict:opcode(Swap, Dict);
         true -> Dict end.";
-  let module = test_util::parse_module0(function_name!(), src);
+  let module = test_util::parse_module(function_name!(), src);
   println!("{}: parsed {}", function_name!(), erl_module_ast(&module));
 
   Ok(())
@@ -435,7 +446,7 @@ coalesce_consecutive_labels([I|Is], Replace, Acc) ->
 coalesce_consecutive_labels([], Replace, Acc) ->
     D = maps:from_list(Replace),
     beam_utils:replace_labels(Acc, [], D, fun(L) -> L end).";
-  let module = test_util::parse_module0(function_name!(), src);
+  let module = test_util::parse_module(function_name!(), src);
   println!("{}: parsed {}", function_name!(), erl_module_ast(&module));
 
   Ok(())
@@ -450,7 +461,7 @@ fn parse_fun_with_binary_match() -> IcResult<()> {
     Table = finalize_fun_table_2(Table0, Uniq, <<>>),
     <<\"FunT\",Keep/binary,Table/binary>>;
 finalize_fun_table_1(Chunk, _) -> Chunk.";
-  let _module = test_util::parse_module0(function_name!(), input);
+  let _module = test_util::parse_module(function_name!(), input);
   Ok(())
 }
 
@@ -464,7 +475,7 @@ build_form(Id, Chunks0) when byte_size(Id) =:= 4, is_list(Chunks0) ->
     Size = byte_size(Chunks),
     0 = Size rem 4,				% Assertion: correct padding?
     <<\"FOR1\",(Size+4):32,Id/binary,Chunks/binary>>.";
-  let _module = test_util::parse_module0(function_name!(), input);
+  let _module = test_util::parse_module(function_name!(), input);
   Ok(())
 }
 
@@ -584,9 +595,12 @@ fn parse_record_test() -> IcResult<()> {
 fn parse_record_with_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition as a part of a module");
   let input = format!("-module({}).\n-record(options, {{includes }}).\n", function_name!());
-  let nodes = test_util::parse_module_unwrap(function_name!(), &input);
-  assert_eq!(nodes.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
-  assert!(matches!(nodes[0].content, AstNodeType::RecordDefinition { .. }));
+  let module = test_util::parse_module(function_name!(), &input);
+  let root_scope = erl_module_root_scope(&module);
+  let _rec_def = root_scope.get_record_def("options").unwrap();
+
+  // assert_eq!(nodes.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
+  // assert!(matches!(nodes[0].content, AstNodeType::RecordDefinition { .. }));
   Ok(())
 }
 

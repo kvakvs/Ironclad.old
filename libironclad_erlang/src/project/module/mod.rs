@@ -10,6 +10,7 @@ use scope::scope_impl::Scope;
 pub mod mod_impl;
 pub mod mod_parse;
 pub mod mod_preprocess;
+pub mod mod_verify;
 pub mod scope;
 
 /// Read accessor

@@ -15,7 +15,7 @@ pub enum ValueWidth {
   /// Expression should resolve to an integer and will define bit width
   Expr(AstNode),
   /// Default is chosen by the libironclad automatically to fit the chosen value type
-  Default,
+  DefaultWidth,
 }
 
 /// Added to `BinaryTypeSpecifier` to define how to insert a value
@@ -119,7 +119,7 @@ impl std::fmt::Display for BinaryElement {
     match &self.width {
       ValueWidth::Literal(w) => write!(f, ":{}", w)?,
       ValueWidth::Expr(e) => write!(f, ":({})", e)?,
-      ValueWidth::Default => {}
+      ValueWidth::DefaultWidth => {}
     }
     if !self.type_specs.is_empty() {
       write!(f, "/")?;

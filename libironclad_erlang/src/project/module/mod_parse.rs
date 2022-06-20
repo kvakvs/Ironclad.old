@@ -48,6 +48,7 @@ impl ErlModuleImpl {
     // tokenize includes and paste in the token stream too
     //----------------------
     let tok_stream2 = ErlModuleImpl::preprocess(&module, &tok_stream1)?;
+    ErlModuleImpl::verify_integrity(&module)?;
 
     //----------------------
     // Stage 3 real parsing begins: tokens to AST

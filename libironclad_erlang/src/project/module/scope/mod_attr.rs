@@ -18,6 +18,12 @@ pub struct ModuleAttributes {
   pub collection: RwLock<Vec<ModuleAttribute>>,
 }
 
+impl Default for ModuleAttributes {
+  fn default() -> Self {
+    Self { collection: Default::default() }
+  }
+}
+
 impl ModuleAttributes {
   /// Retrieve collection length
   pub fn len(&self) -> usize {

@@ -161,7 +161,7 @@ impl ErlType {
     }
     // We were not able to find a basic type of that name and arity
     UserDefinedType {
-      name: MFArity::new(maybe_module, &type_name, args.len()),
+      name: MFArity::new_opt(maybe_module, &type_name, args.len()),
       args: args.to_vec(),
     }
     .into()
