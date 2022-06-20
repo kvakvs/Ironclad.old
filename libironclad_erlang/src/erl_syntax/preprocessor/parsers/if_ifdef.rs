@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_newline, tok, tok_atom, tok_atom_of, tok_keyword, tok_var,
+  dash_atom, period_eol, tok, tok_atom, tok_atom_of, tok_keyword, tok_var,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -63,7 +63,7 @@ pub fn if_condition(input: ParserInput) -> ParserResult<bool> {
     delimited(
       tok_keyword(Keyword::If),
       delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     // Builds a temporary If node with erl expression in it
     |expr| match expr.walk_boolean_litexpr() {
@@ -80,7 +80,7 @@ pub(crate) fn elif_directive(input: ParserInput) -> ParserResult<PreprocessorNod
     delimited(
       tok_atom_of("elif"),
       delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     |t| PreprocessorNodeImpl::new_elif(SourceLoc::new(&input), t),
   )(input.clone())
@@ -95,9 +95,9 @@ pub(crate) fn tok_macro_ident(input: ParserInput) -> ParserResult<String> {
 pub(crate) fn ifdef_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      dash_atom("ifdef"),
+      |i1| dash_atom(i1, "ifdef"),
       delimited(tok(TokenType::ParOpen), tok_macro_ident, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     |tag: String| PreprocessorNodeImpl::new_ifdef(SourceLoc::new(&input), tag),
   )(input.clone())
@@ -106,9 +106,9 @@ pub(crate) fn ifdef_directive(input: ParserInput) -> ParserResult<PreprocessorNo
 pub(crate) fn if_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      dash_atom("if"),
+      |i1| dash_atom(i1, "if"),
       delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     |expr: AstNode| PreprocessorNodeImpl::new_if(SourceLoc::new(&input), expr),
   )(input.clone())
@@ -144,7 +144,7 @@ pub(crate) fn ifndef_directive(input: ParserInput) -> ParserResult<PreprocessorN
     delimited(
       tok_atom_of("ifndef"),
       delimited(tok(TokenType::ParOpen), tok_macro_ident, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     |t: String| PreprocessorNodeImpl::new_ifndef(SourceLoc::new(&input), t),
   )(input.clone())
@@ -156,7 +156,7 @@ pub(crate) fn else_directive(input: ParserInput) -> ParserResult<PreprocessorNod
     delimited(
       tok_keyword(Keyword::Else),
       opt(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose))),
-      period_newline,
+      period_eol,
     ),
     |_opt| {
       PreprocessorNodeImpl::new_with_location(SourceLoc::new(&input), PreprocessorNodeType::Else)
@@ -170,7 +170,7 @@ fn maybe_empty_parens(input: ParserInput) -> ParserResult<ParserInput> {
 
 /// Parse a `-endif.`, return a temporary `Endif` node, which will not go into final `PpAst`
 pub(crate) fn endif_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
-  map(delimited(tok_atom_of("endif"), maybe_empty_parens, period_newline), |_opt| {
+  map(delimited(tok_atom_of("endif"), maybe_empty_parens, period_eol), |_opt| {
     PreprocessorNodeImpl::new_with_location(SourceLoc::new(&input), PreprocessorNodeType::Endif)
   })(input.clone())
 }

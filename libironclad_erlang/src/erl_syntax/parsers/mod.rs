@@ -3,9 +3,9 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::misc::tok_module_name;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::parse_attr::module_start_attr;
 use crate::source_loc::SourceLoc;
 use defs::VecAstParserResult;
 use nom::combinator::{complete, map};
@@ -43,7 +43,7 @@ pub fn parse_module_forms(input: ParserInput) -> VecAstParserResult {
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
   map(
-    pair(module_start_attr, parse_module_forms),
+    pair(tok_module_name, parse_module_forms),
     |(mod_name, forms): (String, Vec<AstNode>)| {
       AstNodeImpl::new_module_forms(SourceLoc::new(&input), mod_name, forms)
     },

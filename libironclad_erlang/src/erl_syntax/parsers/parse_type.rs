@@ -36,7 +36,7 @@ impl ErlTypeParser {
     map(
       // all between -spec and .
       delimited(
-        dash_atom("spec"),
+        |i1| dash_atom(i1, "spec"),
         tuple((
           context("Function name in a -spec() attribute", cut(tok_atom)),
           separated_list1(

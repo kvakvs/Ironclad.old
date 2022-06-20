@@ -21,8 +21,18 @@ impl ErlModuleImpl {
         // The line is a beginning of an attribute or a preprocessor definition or condition
         // These can only span one or more full lines, so we can work with lines iterator
         match parse_preproc_directive(ParserInput::new_slice(line)).finish() {
-          Ok((tail, out)) => println!("PARSED: {} TAIL=«{}»", out, format_tok_line(tail.tokens)),
-          Err(e) => println!("ERROR {:?}", e),
+          Ok((tail, ppnode)) => {
+            println!("PARSED: {} TAIL=«{}»", ppnode, format_tok_line(tail.tokens));
+            let pptok = Token::new(line[0].offset, TokenType::Preprocessor(ppnode));
+            result.push(pptok);
+          }
+          // no reaction on error
+          Err(_e) => {}
+          //   println!(
+          //   "ErlModule parsing a preprocessor or attribute line must always succeed\n\
+          //    ERROR {:?}",
+          //   e
+          // ),
         }
       } else {
         // copy the line contents
@@ -33,6 +43,10 @@ impl ErlModuleImpl {
     // TODO: Interpret -define/undef -if/ifdef/ifndef/else
     // TODO: Interpret -include and -include_lib
     // TODO: Parse and store other module attributes
+    println!("Preprocessor: resulting tokens:");
+    result.iter().for_each(|t| print!("{:?}", t));
+    println!();
+
     Ok(result)
   }
 }

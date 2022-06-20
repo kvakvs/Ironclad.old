@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom};
+use crate::erl_syntax::parsers::misc::{dash_atom, period_eol, tok, tok_atom};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -63,7 +63,7 @@ fn record_definition_inner(input: ParserInput) -> ParserResult<PreprocessorNode>
 /// Parses a `-record(atom(), {field :: type()... }).` attribute.
 pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
   delimited(
-    dash_atom("record"),
+    |i1| dash_atom(i1, "record"),
     context(
       "record definition in a -record() attribute",
       cut(delimited(
@@ -72,6 +72,6 @@ pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
         tok(TokenType::ParClose),
       )),
     ),
-    period_newline,
+    period_eol,
   )(input)
 }

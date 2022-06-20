@@ -218,4 +218,9 @@ impl PreprocessorNodeImpl {
   ) -> PreprocessorNode {
     Self::new_with_location(location, PreprocessorNodeType::FnSpec { funarity, spec })
   }
+
+  /// Create a new module start node
+  pub(crate) fn new_module_start(location: SourceLoc, module_name: String) -> PreprocessorNode {
+    Self::new_with_location(location, PreprocessorNodeType::ModuleName { name: module_name })
+  }
 }

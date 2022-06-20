@@ -2,13 +2,14 @@
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::tok_input::TokenizerInput;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
-use nom::combinator::recognize;
+use nom::combinator::{eof, map, recognize};
 use nom::error::{convert_error, ParseError};
 use nom::sequence::{pair, tuple};
 use nom::Slice;
@@ -49,22 +50,22 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
 }
 
 /// Matches a `<-> <atom>` pair
-pub fn dash_atom(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<()> {
-  // preceded(tok(TokenType::Minus), tok_atom_of(value))
-  use itertools::Itertools;
-
-  move |input: ParserInput| -> ParserResult<()> {
-    match input.tokens.iter().take(2).next_tuple() {
-      Some((
-        Token { content: TokenType::Minus, .. },
-        Token { content: TokenType::Atom(s), .. },
-      )) if s == value => Ok((input.slice(1..), ())),
-      _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-        input,
-        nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
-      ))),
-    }
-  }
+pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResult<'a, ()> {
+  map(pair(tok(TokenType::Minus), tok_atom_of(value)), |_| ())(input)
+  // use itertools::Itertools;
+  //
+  // move |input: ParserInput| -> ParserResult<()> {
+  //   match input.tokens.iter().take(2).next_tuple() {
+  //     Some((
+  //       Token { content: TokenType::Minus, .. },
+  //       Token { content: TokenType::Atom(s), .. },
+  //     )) if s == value => Ok((input.slice(1..), ())),
+  //     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+  //       input,
+  //       nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
+  //     ))),
+  //   }
+  // }
 }
 
 /// Recognizes one keyword of given keyword enum value
@@ -122,6 +123,20 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
       nom::error::ErrorKind::Fail, // TODO: new error VariableExpected
     ))),
   }
+}
+
+/// Recognizes one `-module(NAME).` attribute`
+pub fn tok_module_name(input: ParserInput) -> ParserResult<String> {
+  if let Some(Token { content: TokenType::Preprocessor(pp_node), .. }) = input.tokens.iter().next()
+  {
+    if let PreprocessorNodeType::ModuleName { name } = &pp_node.content {
+      return Ok((input.slice(1..), name.clone()));
+    }
+  }
+  Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
+    input,
+    nom::error::ErrorKind::Fail, // TODO: new error ModuleName -module() was expected
+  )))
 }
 
 /// Recognizes one float token, returns the value.
@@ -455,7 +470,7 @@ pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<Par
   )))(input)
 }
 
-#[allow(dead_code)]
-pub(crate) fn period_newline(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(pair(tok(TokenType::Period), tok(TokenType::Newline)))(input)
+/// Match `. <EOF>` that serves as an end marker for parsing split lines as preprocessor directives.
+pub(crate) fn period_eol(input: ParserInput) -> ParserResult<ParserInput> {
+  recognize(pair(tok(TokenType::Period), eof))(input)
 }

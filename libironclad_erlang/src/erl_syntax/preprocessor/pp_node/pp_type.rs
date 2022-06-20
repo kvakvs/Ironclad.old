@@ -11,7 +11,10 @@ use std::sync::Arc;
 /// Preprocessor data nodes, are produced during the `ErlModule::preprocess` stage.
 /// They are not stored anywhere in the final AST.
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub enum PreprocessorNodeType {
+  /// Opens a module
+  ModuleName { name: String },
   /// Specific directive: -include("path").
   Include(String),
   /// Specific directive: -include_lib("path").

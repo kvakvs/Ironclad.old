@@ -92,6 +92,7 @@ impl std::fmt::Display for PreprocessorNodeImpl {
         Pretty::display_semicolon_separated(spec.as_fn_type().clauses(), f)?;
         write!(f, ".")
       }
+      PreprocessorNodeType::ModuleName { name, .. } => write!(f, "-module({}).", name),
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }

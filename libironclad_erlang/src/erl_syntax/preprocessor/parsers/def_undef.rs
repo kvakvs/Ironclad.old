@@ -1,9 +1,7 @@
 //! Parse helpers for `-define`/`-undef` preprocessor
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  dash_atom, parenthesis_period_newline, period_newline, tok,
-};
+use crate::erl_syntax::parsers::misc::{dash_atom, parenthesis_period_newline, period_eol, tok};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::if_ifdef::tok_macro_ident;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::comma_sep_macro_idents;
@@ -76,7 +74,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<Prep
 /// Parse a `-define(NAME)` or `-define(NAME, VALUE)` or `-define(NAME(ARGS,...), VALUE)`
 pub(crate) fn define_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   preceded(
-    dash_atom("define"),
+    |i1| dash_atom(i1, "define"),
     alt((
       context(
         "-define directive with no args and no body",
@@ -95,9 +93,9 @@ pub(crate) fn define_directive(input: ParserInput) -> ParserResult<PreprocessorN
 pub(crate) fn undef_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      dash_atom("undef"),
+      |i1| dash_atom(i1, "undef"),
       delimited(tok(TokenType::ParOpen), tok_macro_ident, tok(TokenType::ParClose)),
-      period_newline,
+      period_eol,
     ),
     |ident: String| PreprocessorNodeImpl::new_undef(SourceLoc::new(&input), ident),
   )(input.clone())
