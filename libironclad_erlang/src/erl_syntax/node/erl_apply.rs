@@ -13,7 +13,7 @@ use crate::typing::type_error::TypeError;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
 use std::ops::Deref;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 /// AST node which contains a function call
 pub struct ErlApply {

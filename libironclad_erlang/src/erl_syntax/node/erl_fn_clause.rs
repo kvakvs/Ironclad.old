@@ -10,7 +10,7 @@ use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, Weak};
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.

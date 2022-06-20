@@ -72,7 +72,12 @@ pub enum PreprocessorNodeType {
   /// -ifndef(...). is translated into `IfdefBlock`
   Ifndef(String),
   /// A generic attribute with tag and one optional value `- <TAG> ( <VALUE> ).`
-  Attr { tag: String, term: Option<AstNode> },
+  Attr {
+    /// Attribute tag in `- <TAG> ().`
+    tag: String,
+    /// Constant expression value inside parentheses for `-TAG( EXPR )`
+    term: Option<AstNode>,
+  },
   /// List of exported FunArities for local functions
   Export {
     /// The contents of `-export([...]).`

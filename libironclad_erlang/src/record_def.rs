@@ -1,8 +1,6 @@
 //! Record definition container
 
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::typing::erl_type::ErlType;
-use std::sync::Arc;
 
 /// Describes a record defined in a module
 #[derive(Debug)]

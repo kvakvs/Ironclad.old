@@ -1,7 +1,6 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
-use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom, tok_integer};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;

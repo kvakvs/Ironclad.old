@@ -1,14 +1,8 @@
 //! Scope for module
 
-use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::project::module::scope::mod_attr::{ModuleAttribute, ModuleAttributes};
 use crate::typing::erl_type::ErlType;
-use libironclad_util::mfarity::MFArity;
 use std::collections::HashMap;
-use std::fmt::Formatter;
 use std::sync::{Arc, RwLock, Weak};
 
 /// Contains identifiers known in the current scope.

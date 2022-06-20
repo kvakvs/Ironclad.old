@@ -12,7 +12,7 @@ use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 impl AstNodeImpl {
   /// From AST subtree, create a type which we believe it will have, narrowest possible.

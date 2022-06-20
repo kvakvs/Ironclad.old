@@ -20,6 +20,7 @@ pub struct ParserInputT<'a, ScopeType: Default> {
   pub tokens: &'a [Token],
 }
 
+/// Wrapper for parser input with parser scope
 pub type ParserInput<'a> = ParserInputT<'a, Option<ParserScope>>;
 
 impl<'a, ScopeType: Default> nom::Offset for ParserInputT<'a, ScopeType> {

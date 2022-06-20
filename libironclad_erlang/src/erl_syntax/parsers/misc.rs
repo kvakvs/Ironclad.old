@@ -24,7 +24,7 @@ pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
       .next()
       // .map(|next_tok| -> bool { matches!(&next_tok.content, compare_val) })
     {
-      Some(tok) if tok.content == compare_val => Ok((input.slice(1..), ())),
+      Some(tok) if tok.content.is_same_type(&compare_val) => Ok((input.slice(1..), ())),
       _other => {
         Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
           input,

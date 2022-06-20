@@ -7,7 +7,6 @@ use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::ErlType;
 use crate::typing::type_error::TypeError;
-use std::sync::{Arc, RwLock};
 
 /// Contains type checking code
 pub struct TypeCheck {}

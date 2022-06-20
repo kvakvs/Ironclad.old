@@ -1,5 +1,6 @@
 //! Type tags for tokens
 
+use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::typing::erl_integer::ErlInteger;
@@ -8,7 +9,7 @@ use std::sync::Arc;
 /// Temporary token_stream marking tokens of interest while parsing the AST tree. Must not be present in
 /// the final AST produced by the parser.
 #[allow(missing_docs)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum TokenType {
   /// Temporary token, removed during preprocessing.
   Newline,
@@ -75,4 +76,13 @@ pub enum TokenType {
   Integer(ErlInteger),
   Float(f64),
   MacroInvocation(String),
+  /// Something that was parsed like `- <NAME> ( SOMETHING... ) .`
+  Preprocessor(PreprocessorNode),
+}
+
+impl TokenType {
+  /// Compares only enum variants ignoring the content
+  pub fn is_same_type(&self, other: &Self) -> bool {
+    std::mem::discriminant(self) == std::mem::discriminant(other)
+  }
 }

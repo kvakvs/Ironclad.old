@@ -1,7 +1,5 @@
 //! Record syntax parser support
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{dash_atom, period_newline, tok, tok_atom};

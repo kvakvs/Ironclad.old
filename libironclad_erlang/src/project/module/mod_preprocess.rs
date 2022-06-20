@@ -1,6 +1,5 @@
 //! Preprocessing support for `ErlModule`
 
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::parse_preproc_directive;
 use crate::erl_syntax::token_stream::token::{format_tok_line, Token};

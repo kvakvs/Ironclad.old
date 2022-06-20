@@ -1,8 +1,6 @@
 //! Groups type definitions shared by all preprocessor parse modules
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{period_newline, tok, tok_atom_of, tok_string};
-use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
 use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
@@ -12,20 +10,13 @@ use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
 use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_module_attr;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, anychar};
-use nom::combinator::{cut, map, recognize, verify};
+use nom::combinator::map;
 use nom::error::context;
-use nom::multi::{many0, separated_list0};
-use nom::sequence::{delimited, pair, tuple};
-use nom::IResult;
-use std::ops::Deref;
-use std::path::PathBuf;
+use nom::multi::separated_list0;
+use nom::sequence::delimited;
 
 /// Parse a `Macroident1, Macroident2, ...` into a list
 pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {

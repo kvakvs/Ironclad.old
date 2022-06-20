@@ -6,7 +6,6 @@ use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::literal::Literal;
 use crate::typing::erl_type::ErlType;
-use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
 use std::sync::Arc;
 

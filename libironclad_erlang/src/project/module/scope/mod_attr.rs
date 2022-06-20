@@ -15,6 +15,7 @@ pub struct ModuleAttribute {
 /// Module attributes are non-unique and grouped together by name.
 #[derive(Debug)]
 pub struct ModuleAttributes {
+  /// Array of module attributes sharing same name
   pub collection: RwLock<Vec<ModuleAttribute>>,
 }
 

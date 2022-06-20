@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
-use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::format_tok_stream;
 use ::function_name::named;
 use libironclad_util::pretty::Pretty;

@@ -6,8 +6,7 @@ use std::ops::Deref;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit, MFA};
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit};
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_erlang::project::module::{erl_module_ast, erl_module_root_scope};

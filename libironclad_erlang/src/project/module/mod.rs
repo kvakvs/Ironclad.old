@@ -1,11 +1,9 @@
 //! Defines an Erlang module ready to be compiled
 use crate::erl_syntax::erl_ast::AstNode;
 use mod_impl::ErlModule;
-use std::sync::{Arc, RwLock};
 
 use crate::erl_syntax::parsers::parser_scope::ParserScope;
 use crate::project::module::scope::root_scope::RootScope;
-use scope::scope_impl::Scope;
 
 pub mod mod_impl;
 pub mod mod_parse;

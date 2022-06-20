@@ -3,15 +3,15 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::node::erl_record::RecordField;
 use crate::project::module::scope::mod_attr::ModuleAttributes;
 use crate::record_def::RecordDefinition;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::mfarity_set::MFAritySet;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+/// Implements module root scope, stuff available directly from the module root
 #[derive(Debug)]
 pub struct RootScopeImpl {
   /// Contains definitions, added by `-spec` attribute
@@ -23,8 +23,6 @@ pub struct RootScopeImpl {
   function_defs: RwLock<HashMap<MFArity, AstNode>>,
   /// Collection of record definitions
   record_defs: RwLock<HashMap<String, Arc<RecordDefinition>>>,
-  /// Types defined in the global module scope. Using typename/arity as key in type hierarchy
-  typedefs: RwLock<HashMap<MFArity, Arc<ErlType>>>,
   /// Collection of all custom attributes coming in form of `- <TAG> ( <EXPR> ).` tag is key in this
   /// collection and not unique.
   attributes: RwLock<HashMap<String, Arc<ModuleAttributes>>>,
@@ -44,7 +42,6 @@ impl Default for RootScopeImpl {
       user_types: Default::default(),
       function_defs: Default::default(),
       record_defs: Default::default(),
-      typedefs: Default::default(),
       attributes: Default::default(),
       exports: MFAritySet::default(),
       imports: MFAritySet::default(),

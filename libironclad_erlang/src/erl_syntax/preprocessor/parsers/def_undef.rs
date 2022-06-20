@@ -1,10 +1,8 @@
 //! Parse helpers for `-define`/`-undef` preprocessor
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, parenthesis_period_newline, period_newline, tok, tok_atom, tok_atom_of,
+  dash_atom, parenthesis_period_newline, period_newline, tok,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::if_ifdef::tok_macro_ident;
@@ -15,7 +13,6 @@ use crate::erl_syntax::token_stream::misc::any_token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::character::complete::anychar;
 use nom::combinator::{map, opt};
 use nom::error::context;
 use nom::multi::many_till;

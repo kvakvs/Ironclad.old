@@ -11,7 +11,6 @@ use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
-use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::error::ic_error::IcResult;

@@ -8,7 +8,7 @@ use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Formatter;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 /// A callable target (without application or args) to use in `ErlApply`.
 #[derive(Debug, Clone)]

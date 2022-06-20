@@ -68,7 +68,7 @@ impl Token {
   /// Check whether the token is a given type token
   #[inline]
   pub fn is_tok(&self, tt: TokenType) -> bool {
-    matches!(&self.content, tt1 if *tt1 == tt)
+    self.content.is_same_type(&tt)
   }
 }
 
@@ -128,6 +128,7 @@ impl std::fmt::Display for Token {
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Comment(c) => write!(f, "% {}", c),
       TokenType::Newline => write!(f, "<Newline>"),
+      TokenType::Preprocessor(pp) => write!(f, "{}", pp),
     }
   }
 }

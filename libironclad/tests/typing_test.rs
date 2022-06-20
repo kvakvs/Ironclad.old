@@ -5,9 +5,9 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::project::module::erl_module_ast;
 use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
-use libironclad_erlang::project::module::scope::scope_impl::{Scope, ScopeImpl};
-use libironclad_erlang::project::module::{erl_module_ast, erl_module_root_scope};
+use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::check::TypeCheck;
 use libironclad_erlang::typing::erl_type::ErlType;
 use std::ops::Deref;
@@ -85,7 +85,7 @@ fn typing_expr_check_noarg() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
 
   let module = test_util::parse_module(function_name!(), "my_int_fun1() -> 10 + 20.");
-  let root_scope = erl_module_root_scope(&module);
+  // let root_scope = erl_module_root_scope(&module);
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let match_ty = &ErlType::new_fn_type_of_any_args(0, &ErlType::integer());
   let ast = erl_module_ast(&module);

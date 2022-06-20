@@ -17,14 +17,11 @@ use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
-use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
-use std::sync::Arc;
 
 impl AstNodeImpl {
   /// Generic constructor no location

@@ -4,10 +4,8 @@ extern crate libironclad_erlang;
 mod test_util;
 
 use ::function_name::named;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::{erl_module_parser_scope, erl_module_root_scope};
-use libironclad_erlang::typing::erl_type::ErlType;
+use libironclad_erlang::project::module::erl_module_root_scope;
 use libironclad_util::mfarity::MFArity;
 
 #[named]
@@ -179,7 +177,7 @@ fn parse_spec_test() {
 
   let input = "-spec module(beam_asm:module_code(), [compile:option()]) ->
                     {'ok',beam_utils:module_code()}.";
-  let module = test_util::parse_module(function_name!(), input);
+  let _module = test_util::parse_module(function_name!(), input);
   // assert!(matches!(nodes[0].content, AstNodeType::FnSpec { .. }));
 }
 
