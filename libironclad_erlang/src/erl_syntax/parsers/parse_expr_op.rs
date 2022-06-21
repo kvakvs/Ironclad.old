@@ -33,7 +33,7 @@ pub(crate) fn unop_negative(input: ParserInput) -> UnaryOpParserResult {
 }
 
 pub(crate) fn binop_floatdiv(input: ParserInput) -> BinaryOpParserResult {
-  map(tok(TokenType::EqualSymbol), |_| ErlBinaryOp::Div)(input)
+  map(tok(TokenType::Div), |_| ErlBinaryOp::Div)(input)
 }
 
 pub(crate) fn binop_intdiv(input: ParserInput) -> BinaryOpParserResult {

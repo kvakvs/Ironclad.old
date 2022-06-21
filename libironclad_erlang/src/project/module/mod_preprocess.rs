@@ -1,39 +1,97 @@
 //! Preprocessing support for `ErlModule`
 
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
+use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::erl_error::ErlError;
+use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::parse_preproc_directive;
+use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
+use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::{format_tok_line, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::source_loc::SourceLoc;
+use ::function_name::named;
 use nom::Finish;
 
 impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
-  pub fn preprocess(_module: &ErlModule, tokens: &[Token]) -> IcResult<Vec<Token>> {
+  #[named]
+  pub fn preprocess(
+    original_input: &str,
+    module: &ErlModule,
+    tokens: &[Token],
+  ) -> IcResult<Vec<Token>> {
     let mut result: Vec<Token> = Vec::with_capacity(tokens.len());
     let mut itr = TokenLinesIter::new(tokens);
+    let mut too_many_errors: bool = false;
 
     while let Some(line) = itr.next() {
+      if too_many_errors {
+        break;
+      }
+
       if line.len() > 2 && line[0].is_tok(TokenType::Minus) && line[1].is_atom() {
         // The line is a beginning of an attribute or a preprocessor definition or condition
         // These can only span one or more full lines, so we can work with lines iterator
-        match parse_preproc_directive(ParserInput::new_slice(line)).finish() {
-          Ok((tail, ppnode)) => {
-            println!("PARSED: {} TAIL=«{}»", ppnode, format_tok_line(tail.tokens));
-            let pptok = Token::new(line[0].offset, TokenType::Preprocessor(ppnode));
-            result.push(pptok);
+        println!("Next line: {:?}", &line);
+        let parser_input = ParserInput::new_slice(line);
+
+        let (tail, ppnode) = panicking_parser_error_reporter(
+          original_input,
+          parser_input.clone(),
+          parse_preproc_directive(parser_input).finish(),
+        );
+        assert!(tail.is_empty());
+        // println!("Parsed -<ident> line into {:?}", &ppnode);
+
+        match &ppnode.content {
+          PreprocessorNodeType::ModuleName { name } => {
+            ErlModuleImpl::set_name(module, name.as_str())
           }
-          // no reaction on error
-          Err(_e) => {}
-          //   println!(
-          //   "ErlModule parsing a preprocessor or attribute line must always succeed\n\
-          //    ERROR {:?}",
-          //   e
-          // ),
+          PreprocessorNodeType::Include(_) => {}
+          PreprocessorNodeType::IncludeLib(_) => {}
+          PreprocessorNodeType::Define { .. } => {}
+          PreprocessorNodeType::Undef(_) => {}
+          PreprocessorNodeType::Error(_) => {}
+          PreprocessorNodeType::Warning(_) => {}
+          PreprocessorNodeType::IncludedFile { .. } => {}
+          PreprocessorNodeType::Attr { tag, term } => module.root_scope.add_attr(tag, term.clone()),
+          PreprocessorNodeType::Export { .. } => {}
+          PreprocessorNodeType::ExportType { .. } => {}
+          PreprocessorNodeType::Import { .. } => {}
+          PreprocessorNodeType::NewType { .. } => {}
+          PreprocessorNodeType::RecordDefinition { .. } => {}
+          PreprocessorNodeType::FnSpec { .. } => {}
+
+          PreprocessorNodeType::If(_) => {}
+          PreprocessorNodeType::ElseIf(_) => {}
+          PreprocessorNodeType::Ifdef(_) => {}
+          PreprocessorNodeType::Ifndef(_) => {}
+          PreprocessorNodeType::IfdefBlock { .. } => {}
+          PreprocessorNodeType::IfBlock { .. } => {}
+          PreprocessorNodeType::Else => {
+            too_many_errors = too_many_errors
+              || module.add_error(ErlError::preprocessor_error(
+                SourceLoc::unimplemented(file!(), function_name!()),
+                "Unexpected preprocessor -else.".to_string(),
+              ))
+          }
+          PreprocessorNodeType::Endif => {
+            too_many_errors = too_many_errors
+              || module.add_error(ErlError::preprocessor_error(
+                SourceLoc::unimplemented(file!(), function_name!()),
+                "Unexpected preprocessor -endif.".to_string(),
+              ))
+          }
         }
+
+        // let pptok = Token::new(line[0].offset, TokenType::Preprocessor(ppnode));
+        // result.push(pptok);
       } else {
         // copy the line contents
         result.extend(line.iter().cloned())

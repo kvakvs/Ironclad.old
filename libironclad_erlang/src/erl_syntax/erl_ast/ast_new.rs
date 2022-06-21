@@ -179,12 +179,8 @@ impl AstNodeImpl {
   // }
 
   /// Create a new `-module(m).` module attr.
-  pub(crate) fn new_module_forms(
-    location: SourceLoc,
-    name: String,
-    forms: Vec<AstNode>,
-  ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, ModuleRoot { name, forms })
+  pub(crate) fn new_module_forms(forms: Vec<AstNode>) -> AstNode {
+    AstNodeImpl::construct_without_location(ModuleRoot { forms })
   }
 
   /// Create a new try-catch AST node

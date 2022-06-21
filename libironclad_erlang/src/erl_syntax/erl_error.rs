@@ -115,11 +115,15 @@ impl ErlError {
 
   /// Creates an "preprocessor" error, even though there isn't preprocessor and we do preprocessor
   /// directives inline with the other bits of Erlang source.
+  #[inline]
+  pub(crate) fn preprocessor_error(loc: SourceLoc, msg: String) -> Self {
+    ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::PreprocessorError, loc, msg)
+  }
+
   #[allow(dead_code)]
-  pub(crate) fn preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
-    let new_err =
-      ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::PreprocessorError, loc, msg);
-    Err(Box::new(new_err))
+  #[inline]
+  pub(crate) fn return_preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+    Err(Box::new(Self::preprocessor_error(loc, msg)))
   }
 
   /// Creates a "Variable Not Found" error

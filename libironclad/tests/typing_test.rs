@@ -5,7 +5,6 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::erl_module_ast;
 use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::check::TypeCheck;
@@ -85,10 +84,10 @@ fn typing_expr_check_noarg() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
 
   let module = test_util::parse_module(function_name!(), "my_int_fun1() -> 10 + 20.");
-  // let root_scope = erl_module_root_scope(&module);
+  // let root_scope = module.root_scope;
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let match_ty = &ErlType::new_fn_type_of_any_args(0, &ErlType::integer());
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope1, &ast, match_ty)?,
     "my_int_fun1()'s return type must be compatible with integer()"
@@ -106,7 +105,7 @@ fn typing_check_int_arg_fn() -> IcResult<()> {
   // assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
   let match_ty = &ErlType::new_fn_type_of_any_args(1, &ErlType::integer());
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
     "my_int_fun2()'s result type must be compatible with integer()"
@@ -125,7 +124,7 @@ fn typing_expr_check_tuple1() -> IcResult<()> {
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
   let expected_type = ErlType::new_tuple(&vec![ErlType::any(), ErlType::integer()]);
   let match_ty = &ErlType::new_fn_type_of_any_args(1, &expected_type);
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
     "Parsed mytuple_fun(A) result type must match {{any(), integer()}}"

@@ -9,7 +9,14 @@ pub struct ModuleAttribute {
   /// The tag (multiple attributes per tag are allowed)
   pub tag: String,
   /// The contents
-  pub expr: AstNode,
+  pub expr: Option<AstNode>,
+}
+
+impl ModuleAttribute {
+  /// Create a new
+  pub fn new(tag: String, expr: Option<AstNode>) -> Self {
+    Self { tag, expr }
+  }
 }
 
 /// Module attributes are non-unique and grouped together by name.
@@ -32,6 +39,15 @@ impl ModuleAttributes {
       r_collection.len()
     } else {
       panic!("Can't lock module attributes named group for length check")
+    }
+  }
+
+  /// Append an element
+  pub fn push(&self, tag: String, expr: Option<AstNode>) {
+    if let Ok(mut w_collection) = self.collection.write() {
+      w_collection.push(ModuleAttribute::new(tag, expr))
+    } else {
+      panic!("Can't lock module attributes named group to insert")
     }
   }
 }

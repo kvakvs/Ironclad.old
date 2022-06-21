@@ -13,7 +13,7 @@ use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
 use crate::source_file::{SourceFile, SourceFileImpl};
 use nom::Finish;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
@@ -25,58 +25,58 @@ pub struct ErlModuleImpl {
   /// Options used to build this module. Possibly just a ref to the main project's options
   pub compiler_options: CompilerOpts,
   /// Module name atom, as a string
-  pub name: String,
+  pub name: RefCell<String>,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: SourceFile,
   /// Stores state of preprocessor defines during parse, and then final state after parse (useful for testing)
   pub parser_scope: ParserScope,
   /// AST tree of the module.
-  pub ast: AstNode,
+  pub ast: RefCell<AstNode>,
   // /// Local level scope, containing variables
   // pub scope: Scope,
   /// Module-level scope with types, functions, and other global stuff
   pub root_scope: RootScope,
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
-  pub errors: RefCell<Vec<ErlError>>,
+  pub errors: RwLock<Vec<ErlError>>,
 }
 
 /// Wraps module into runtime-lockable refcount
-pub type ErlModule = Arc<RwLock<ErlModuleImpl>>;
+pub type ErlModule = Arc<ErlModuleImpl>;
 
 impl Default for ErlModuleImpl {
   fn default() -> Self {
     Self {
       compiler_options: Default::default(),
-      name: "".to_string(),
+      name: RefCell::new(String::default()),
       source_file: Arc::new(SourceFileImpl::default()),
       parser_scope: ParserScopeImpl::new_empty().into(),
-      ast: AstNodeImpl::new_empty("dummy node for module root".to_string()),
+      ast: RefCell::new(AstNodeImpl::new_empty("dummy node for module root".to_string())),
       root_scope: Default::default(),
-      errors: RefCell::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),
+      errors: RwLock::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),
     }
   }
 }
 
 impl Debug for ErlModuleImpl {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "ErlModule({})", self.name)
+    write!(f, "ErlModule({})", self.name.borrow())
   }
 }
 
 impl ErlModuleImpl {
   /// Create an empty and wrap with `Arc<Rwlock<>>`
   pub fn new_default() -> ErlModule {
-    RwLock::new(Self::default()).into()
+    Self::default().into()
   }
 
   /// Create a new empty module
   pub fn new(opt: CompilerOpts, source_file: SourceFile) -> ErlModule {
-    RwLock::new(Self {
+    Self {
       compiler_options: opt,
       source_file,
       ..Default::default()
-    })
+    }
     .into()
   }
 
@@ -98,7 +98,15 @@ impl ErlModuleImpl {
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
   pub fn add_error(&self, err: ErlError) -> bool {
-    self.errors.borrow_mut().push(err);
-    self.errors.borrow().len() < self.compiler_options.max_errors_per_module
+    if let Ok(mut w_errors) = self.errors.write() {
+      w_errors.push(err);
+      w_errors.len() < self.compiler_options.max_errors_per_module
+    } else {
+      panic!("Can't lock module errors for appending")
+    }
+  }
+
+  pub fn set_name(&self, name: &str) {
+    self.name.replace(name.to_string());
   }
 }

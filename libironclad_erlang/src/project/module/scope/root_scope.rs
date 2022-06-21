@@ -83,6 +83,18 @@ impl RootScopeImpl {
     }
   }
 
+  /// Add a named attribute
+  pub fn add_attr(&self, attr_tag: &str, term: Option<AstNode>) {
+    let row = self.get_attr(attr_tag).unwrap_or_default();
+    row.push(attr_tag.to_string(), term);
+
+    if let Ok(mut w_attrs) = self.attributes.write() {
+      w_attrs.insert(attr_tag.to_string(), row);
+    } else {
+      panic!("Can't lock scope to add an attribute")
+    }
+  }
+
   /// Retrieve named function spec
   pub fn get_spec(&self, mfa: &MFArity) -> Option<Arc<ErlType>> {
     if let Ok(r_specs) = self.function_specs.read() {

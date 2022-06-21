@@ -5,7 +5,6 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::erl_module_root_scope;
 use libironclad_util::mfarity::MFArity;
 
 #[named]
@@ -28,7 +27,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
   let module = test_util::parse_module(function_name!(), input);
-  let attrs = erl_module_root_scope(&module).get_attr("fgsfds").unwrap();
+  let attrs = module.root_scope.get_attr("fgsfds").unwrap();
   assert_eq!(attrs.len(), 1);
   Ok(())
 }
@@ -37,8 +36,10 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
 #[test]
 fn fn_generic_attr_parse2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
-  let input = "- bbbggg (ababagalamaga()) .  ";
-  let _module = test_util::parse_module(function_name!(), input);
+  let input = "- bbbggg (ababagalamaga) .  ";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = module.root_scope.clone();
+  assert!(root_scope.get_attr("bbbggg").is_some());
   Ok(())
 }
 
@@ -49,7 +50,7 @@ fn fn_typespec_parse_1() -> IcResult<()> {
 
   let input = format!("-spec {}(A :: integer()) -> any().", function_name!());
   let module = test_util::parse_module(function_name!(), &input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let _spec = root_scope
     .get_spec(&MFArity::new_local(function_name!(), 1))
     .unwrap();
@@ -78,7 +79,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   let input =
     format!("-spec {}(A :: integer()) -> any(); (B :: atom()) -> tuple().", function_name!());
   let module = test_util::parse_module(function_name!(), &input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let _spec = root_scope
     .get_spec(&MFArity::new_local(function_name!(), 1))
     .unwrap();
@@ -116,7 +117,7 @@ fn fn_typespec_parse_when() -> IcResult<()> {
   //   "Return type of the function spec must be tuple, but got {}",
   //   t0
   // );
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let spec = root_scope
     .get_spec(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
@@ -146,7 +147,7 @@ fn fn_typespec_parse_union() -> IcResult<()> {
     function_name!()
   );
   let module = test_util::parse_module(function_name!(), &input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let _spec = root_scope
     .get_spec(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
@@ -187,7 +188,7 @@ fn parse_int_range_test() {
   test_util::start(function_name!(), "Parse an integer range");
   let input = "-type reg_num() :: 0 .. 1023.";
   let module = test_util::parse_module(function_name!(), input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let _type = root_scope
     .get_user_type(&MFArity::new_local("reg_num", 0))
     .unwrap();

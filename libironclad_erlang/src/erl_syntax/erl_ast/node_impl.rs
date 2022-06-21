@@ -42,8 +42,6 @@ pub enum AstNodeType {
 
   /// Forms list, root of a module
   ModuleRoot {
-    /// Name from `-module(name).` attribute
-    name: String,
     /// Vector of module forms
     forms: Vec<AstNode>,
   },

@@ -3,9 +3,6 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::{
-  erl_module_ast, erl_module_parser_scope, erl_module_root_scope,
-};
 
 #[test]
 #[named]
@@ -43,9 +40,7 @@ fn parse_if_branches() {
 -endif.
 -after_if().";
   let module = test_util::parse_module(function_name!(), input);
-  let succ = erl_module_root_scope(&module)
-    .get_attr("test_success")
-    .unwrap();
+  let succ = module.root_scope.get_attr("test_success").unwrap();
   assert_eq!(succ.len(), 1);
 
   // assert!(nodes[0].is_generic_attr("before_if"));
@@ -69,7 +64,7 @@ false).
   let module = test_util::parse_module(function_name!(), input);
   // assert_eq!(nodes.len(), 1, "Expect to only have 1 attribute: -test_success.");
   // assert!(nodes[0].is_generic_attr("test_success"));
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let success = root_scope.get_attr("test_success").unwrap_or_default();
   assert_eq!(success.len(), 1);
   Ok(())
@@ -84,12 +79,10 @@ fn parse_define_ident_only() {
 -test_success.
 -endif.";
   let module = test_util::parse_module(function_name!(), input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let success = root_scope.get_attr("test_success").unwrap_or_default();
   assert_eq!(success.len(), 1);
-
-  let parser_scope = erl_module_parser_scope(&module);
-  assert!(parser_scope.is_defined("AAA"));
+  assert!(module.parser_scope.is_defined("AAA"));
 }
 
 #[test]
@@ -98,13 +91,12 @@ fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
   let module = test_util::parse_module(function_name!(), input);
-  let nodes = erl_module_ast(&module).children().unwrap_or_default();
+  let ast = module.ast.borrow().clone();
+  let nodes = ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 1);
   assert!(nodes[0].is_empty_ast_node(), "expecting an empty node transformed from -define");
 
-  let pdef = erl_module_parser_scope(&module)
-    .get_value("BBB", 0)
-    .unwrap();
+  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
   assert_eq!(pdef.name, "BBB");
   assert_eq!(pdef.text, "[true)");
 }
@@ -118,11 +110,11 @@ fn parse_define_with_body_2_args() {
 -test_success.
 -endif().";
   let module = test_util::parse_module(function_name!(), input);
-  let root_scope = erl_module_root_scope(&module);
+  let root_scope = module.root_scope.clone();
   let success = root_scope.get_attr("test_success").unwrap_or_default();
   assert_eq!(success.len(), 1);
 
-  let parser_scope = erl_module_parser_scope(&module);
+  let parser_scope = module.parser_scope.clone();
   assert!(parser_scope.is_defined("CCC"));
 }
 
@@ -153,9 +145,7 @@ fn parse_define_varied_spacing_do(function_name: &str, input: &str) {
   let input2 = format!("{}\n-ifdef(TEST).\n-testsuccess.\n-endif.", input);
   let module = test_util::parse_module(function_name, &input2);
 
-  let attrs = erl_module_root_scope(&module)
-    .get_attr("testsuccess")
-    .unwrap();
+  let attrs = module.root_scope.get_attr("testsuccess").unwrap();
   assert_eq!(attrs.len(), 1);
 }
 
@@ -173,9 +163,7 @@ fn parse_define_varied_spacing() {
 fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
   let module = test_util::parse_module(function_name!(), input);
-  let pdef = erl_module_parser_scope(&module)
-    .get_value("AAA", 2)
-    .unwrap();
+  let pdef = module.parser_scope.get_value("AAA", 2).unwrap();
   assert_eq!(pdef.text, "\"aaa\"");
   assert_eq!(pdef.args, vec!["X", "Y"]);
 }
@@ -196,8 +184,8 @@ fn test_define_with_dquotes() {
 fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
-  // module.interpret_preprocessor_nodes().unwrap();
-  let nodes = erl_module_ast(&module).children().unwrap_or_default();
+  let ast = module.ast.borrow().clone();
+  let nodes = ast.children().unwrap_or_default();
   assert_eq!(
     nodes.len(),
     2,
@@ -208,7 +196,7 @@ fn test_macro_expansion_in_define() {
   // let (_, _, body) = nodes[1].as_preprocessor_define();
   // assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
 
-  let p_scope = erl_module_parser_scope(&module);
+  let p_scope = module.parser_scope.clone();
   let pdef = p_scope.get_value("BBB", 0).unwrap();
   assert_eq!(pdef.name, "BBB");
   assert_eq!(pdef.text, "bbb");
@@ -220,7 +208,8 @@ fn test_macro_expansion_in_define() {
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
-  let nodes = erl_module_ast(&module).children().unwrap_or_default();
+  let ast = module.ast.borrow().clone();
+  let nodes = ast.children().unwrap_or_default();
   assert_eq!(nodes.len(), 2);
   let fndef = nodes[1].as_fn_def();
   assert_eq!(fndef.clauses.len(), 1);

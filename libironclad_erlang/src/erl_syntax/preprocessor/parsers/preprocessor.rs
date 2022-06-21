@@ -9,7 +9,7 @@ use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
   elif_directive, else_directive, endif_directive, if_directive, ifdef_directive, ifndef_directive,
   tok_macro_ident,
 };
-use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_module_attr;
+use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token_type::TokenType;
@@ -101,7 +101,7 @@ fn warning_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
 pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   context(
     "expected -module() attribute",
-    cut(delimited(
+    delimited(
       |i1| dash_atom(i1, "module"),
       context(
         "the module name in a -module() attribute",
@@ -111,7 +111,7 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<Preprocessor
         ),
       ),
       period_eol,
-    )),
+    ),
   )(input.clone())
 }
 
@@ -135,6 +135,6 @@ pub(crate) fn parse_preproc_directive(input: ParserInput) -> ParserResult<Prepro
     context("'-error()' directive", error_directive),
     context("'-include_lib()' directive", include_lib_directive),
     context("'-include()' directive", include_directive),
-    parse_module_attr,
+    parse_any_module_attr,
   ))(input)
 }

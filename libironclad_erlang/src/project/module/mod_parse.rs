@@ -1,5 +1,6 @@
 //! Parsing impl for `ErlModule`
 
+use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
@@ -14,6 +15,7 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
 use crate::source_file::SourceFile;
+use crate::source_loc::SourceLoc;
 use nom::Finish;
 use std::sync::RwLock;
 
@@ -36,7 +38,7 @@ impl ErlModuleImpl {
     if let Some(o) = compiler_options {
       module_impl.compiler_options = o;
     }
-    let module: ErlModule = RwLock::new(module_impl).into();
+    let module: ErlModule = module_impl.into();
 
     //----------------------
     // Stage 1 tokenize the input
@@ -47,13 +49,15 @@ impl ErlModuleImpl {
     // Stage 2 preprocessor: handle ifdefs, defines, includes etc
     // tokenize includes and paste in the token stream too
     //----------------------
-    let tok_stream2 = ErlModuleImpl::preprocess(&module, &tok_stream1)?;
+    let tok_stream2 = ErlModuleImpl::preprocess(src_file.text.as_str(), &module, &tok_stream1)?;
     ErlModuleImpl::verify_integrity(&module)?;
 
     //----------------------
     // Stage 3 real parsing begins: tokens to AST
     //----------------------
-    let (tail, forms) = {
+    let (tail, forms) = if tok_stream2.is_empty() {
+      (ParserInput::new_slice(&tok_stream2), AstNodeImpl::new_module_forms(vec![]))
+    } else {
       let tokens_input = ParserInput::new(&src_file, &tok_stream2);
       panicking_parser_error_reporter(
         src_file.text.as_str(),
@@ -70,11 +74,7 @@ impl ErlModuleImpl {
     );
 
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
-    if let Ok(mut w_module) = module.write() {
-      w_module.ast = forms;
-    } else {
-      panic!("Can't lock module for updating AST field")
-    }
+    module.ast.replace(forms);
 
     // Scan AST and find FnDef nodes, update functions knowledge
     // Scope::update_from_ast(&module.scope, &module.ast);

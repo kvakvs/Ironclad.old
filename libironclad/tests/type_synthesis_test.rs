@@ -9,7 +9,6 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::erl_module_ast;
 use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::erl_type::ErlType;
@@ -145,7 +144,7 @@ fn synth_fun_call1() -> IcResult<()> {
     function_name!()
   );
   let module = test_util::parse_module(function_name!(), &input);
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let add_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("add", 2)).unwrap();
   let add_fn_type = add_fn_ast.synthesize(&module, &scope1)?;
@@ -167,7 +166,7 @@ fn synth_fun_call3() -> IcResult<()> {
     function_name!()
   );
   let module = test_util::parse_module(function_name!(), &input);
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
   let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();
   let main_fn_type = main_fn_ast.synthesize(&module, &scope1)?;
@@ -200,7 +199,7 @@ fn synth_multiple_clause_test() -> IcResult<()> {
     function_name!()
   );
   let module = test_util::parse_module(function_name!(), &source);
-  let ast = erl_module_ast(&module);
+  let ast = module.ast.borrow().clone();
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
 
   let main_fn_ast = AstNodeImpl::find_function_def(&ast, &MFArity::new_local("main", 1)).unwrap();

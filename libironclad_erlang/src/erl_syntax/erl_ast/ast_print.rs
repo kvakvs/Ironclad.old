@@ -14,8 +14,8 @@ impl std::fmt::Display for AstNodeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match &self.content {
       AstNodeType::Empty { comment } => writeln!(f, "%% {}", comment),
-      ModuleRoot { forms, name } => {
-        writeln!(f, "-module({}).", name)?;
+      ModuleRoot { forms } => {
+        writeln!(f, "-module(...).")?;
         for form in forms.iter() {
           write!(f, "{}", form)?;
         }

@@ -32,6 +32,7 @@ impl<'a> Iterator for TokenLinesIter<'a> {
         return Some(result);
       }
     }
+
     // return everything that's remaining
     let all_result = &self.base[self.pos..];
     self.pos = self.base.len();

@@ -18,12 +18,12 @@ use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, separated_pair, tuple};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
-fn parse_parentheses_no_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
+fn attr_body_empty_parens(input: ParserInput) -> ParserResult<Option<AstNode>> {
   map(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose)), |_| None)(input)
 }
 
 /// Parse a `( EXPR )` for a generic attribute `-<atom> ( EXPR ).`
-fn parse_generic_attr_expr(input: ParserInput) -> ParserResult<Option<AstNode>> {
+fn attr_body_expr_in_parens(input: ParserInput) -> ParserResult<Option<AstNode>> {
   map(
     delimited(
       tok(TokenType::ParOpen),
@@ -43,8 +43,8 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
       tok(TokenType::Minus),
       pair(
         tok_atom,
-        // Expr in parentheses
-        alt((parse_parentheses_no_expr, parse_generic_attr_expr)),
+        // Expr in parentheses or nothing
+        alt((attr_body_empty_parens, attr_body_expr_in_parens)),
       ),
       period_eol,
     ),
@@ -168,7 +168,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode
 }
 
 /// Any module attribute goes here
-pub(crate) fn parse_module_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
+pub(crate) fn parse_any_module_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   alt((
     parse_record_def,
     export_type_attr,

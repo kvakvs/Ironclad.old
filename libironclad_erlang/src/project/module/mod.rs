@@ -11,29 +11,32 @@ pub mod mod_preprocess;
 pub mod mod_verify;
 pub mod scope;
 
-/// Read accessor
-pub fn erl_module_ast(m: &ErlModule) -> AstNode {
-  if let Ok(read_m) = m.read() {
-    read_m.ast.clone()
-  } else {
-    panic!("Can't lock module to access AST")
-  }
-}
+// /// Read accessor
+// pub fn erl_module_ast(m: &ErlModule) -> AstNode {
+//   m.ast.borrow().clone()
+//   // if let Ok(read_m) = m.read() {
+//   //   read_m.ast.clone()
+//   // } else {
+//   //   panic!("Can't lock module to access AST")
+//   // }
+// }
 
-/// Read accessor
-pub fn erl_module_parser_scope(m: &ErlModule) -> ParserScope {
-  if let Ok(read_m) = m.read() {
-    read_m.parser_scope.clone()
-  } else {
-    panic!("Can't lock module to access parser scope")
-  }
-}
+// /// Read accessor
+// pub fn erl_module_parser_scope(m: &ErlModule) -> ParserScope {
+//   m.parser_scope.clone()
+//   // if let Ok(read_m) = m.read() {
+//   //   read_m.parser_scope.clone()
+//   // } else {
+//   //   panic!("Can't lock module to access parser scope")
+//   // }
+// }
 
-/// Read accessor
-pub fn erl_module_root_scope(m: &ErlModule) -> RootScope {
-  if let Ok(read_m) = m.read() {
-    read_m.root_scope.clone()
-  } else {
-    panic!("Can't lock module to access module scope")
-  }
-}
+// /// Read accessor
+// pub fn erl_module_root_scope(m: &ErlModule) -> RootScope {
+//   m.root_scope.clone()
+//   // if let Ok(read_m) = m.read() {
+//   //   read_m.root_scope.clone()
+//   // } else {
+//   //   panic!("Can't lock module to access module scope")
+//   // }
+// }
