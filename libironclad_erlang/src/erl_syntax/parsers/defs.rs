@@ -1,9 +1,7 @@
 //! Definitions for parser
 
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-
-/// Gathers multiple errors and contexts together
-pub type ErlParserError<'a> = nom::error::VerboseError<ParserInput<'a>>;
 
 /// Generic return value from a Nom parser which takes a `ParserInput` and returns `Out`.
 /// Contains no scope field.

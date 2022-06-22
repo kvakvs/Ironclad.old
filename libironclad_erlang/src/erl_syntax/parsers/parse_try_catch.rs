@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_colon, tok_keyword_catch, tok_keyword_end, tok_keyword_of, tok_keyword_try,
   tok_keyword_when, tok_semicolon,
@@ -13,6 +13,7 @@ use crate::erl_syntax::parsers::parse_case::parse_case_clause;
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
 };
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;

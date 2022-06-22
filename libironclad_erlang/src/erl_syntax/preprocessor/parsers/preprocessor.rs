@@ -1,8 +1,7 @@
 //! Groups type definitions shared by all preprocessor parse modules
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open,
-  tok_string, ws_before,
+  dash_atom, period_eol, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open, tok_string,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
@@ -13,7 +12,6 @@ use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
 use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map};

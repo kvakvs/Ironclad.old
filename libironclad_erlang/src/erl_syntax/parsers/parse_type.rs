@@ -2,12 +2,13 @@
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, tok, tok_atom, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open,
   tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon,
   tok_square_close, tok_square_open, tok_var,
 };
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;

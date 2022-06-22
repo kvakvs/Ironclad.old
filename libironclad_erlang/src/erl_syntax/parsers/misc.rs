@@ -1,6 +1,7 @@
 //! Helper functions for Nom parsing
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::token_stream::keyword::Keyword;
@@ -10,7 +11,7 @@ use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::combinator::{eof, map, recognize};
-use nom::error::{convert_error, ParseError};
+use nom::error::convert_error;
 use nom::multi::many0;
 use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
@@ -28,10 +29,7 @@ pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
     {
       Some(tok) if tok.content.is_same_type(&compare_val) => Ok((input.slice(1..), ())),
       _other => {
-        Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-          input,
-          nom::error::ErrorKind::Fail, // TODO: new error TokenExpected
-        )))
+        Err(nom::Err::Error(ErlParserError::token_expected(input, compare_val.clone())))
       }
     }
   }
@@ -42,10 +40,7 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
       Some(tok) if tok.is_atom_of(value) => Ok((input.slice(1..), ())),
-      _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-        input,
-        nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
-      ))),
+      _other => Err(nom::Err::Error(ErlParserError::atom_expected(input, value))),
     }
   }
 }
@@ -61,10 +56,7 @@ pub fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
       Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),
-      _ => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-        input,
-        nom::error::ErrorKind::Fail, // TODO: new error KeywordExpected(s)
-      ))),
+      _ => Err(nom::Err::Error(ErlParserError::keyword_expected(input, k))),
     }
   }
 }
@@ -78,10 +70,7 @@ pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
 fn tok_integer_1(input: ParserInput) -> ParserResult<ErlInteger> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Integer(i), .. }) => Ok((input.slice(1..), i.clone())),
-    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-      input,
-      nom::error::ErrorKind::Fail, // TODO: new error IntegerExpected
-    ))),
+    _other => Err(nom::Err::Error(ErlParserError::integer_literal_expected(input))),
   }
 }
 
@@ -94,10 +83,7 @@ pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
 fn tok_atom_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),
-    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-      input,
-      nom::error::ErrorKind::Fail, // TODO: new error AnyAtomExpected
-    ))),
+    _other => Err(nom::Err::Error(ErlParserError::any_atom_expected(input))),
   }
 }
 
@@ -109,10 +95,7 @@ pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
 fn tok_string_1(input: ParserInput) -> ParserResult<Arc<String>> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Str(s), .. }) => Ok((input.slice(1..), s.clone())),
-    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-      input,
-      nom::error::ErrorKind::Fail, // TODO: new error StringExpected
-    ))),
+    _other => Err(nom::Err::Error(ErlParserError::string_literal_expected(input))),
   }
 }
 
@@ -125,10 +108,7 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
 fn tok_var_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
-    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-      input,
-      nom::error::ErrorKind::Fail, // TODO: new error VariableExpected
-    ))),
+    _other => Err(nom::Err::Error(ErlParserError::variable_expected(input))),
   }
 }
 
@@ -140,10 +120,7 @@ pub fn tok_module_name_attr(input: ParserInput) -> ParserResult<String> {
       return Ok((input.slice(1..), name.clone()));
     }
   }
-  Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-    input,
-    nom::error::ErrorKind::Fail, // TODO: new error ModuleName -module() was expected
-  )))
+  Err(nom::Err::Error(ErlParserError::module_start_attribute_expected(input)))
 }
 
 /// Recognizes one float token, returns the value.
@@ -155,10 +132,7 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
 fn tok_float_1(input: ParserInput) -> ParserResult<f64> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), *f)),
-    _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-      input,
-      nom::error::ErrorKind::Fail, // TODO: new error FloatExpected
-    ))),
+    _other => Err(nom::Err::Error(ErlParserError::float_literal_expected(input))),
   }
 }
 
@@ -218,7 +192,7 @@ where
 pub fn panicking_parser_error_reporter<'a, Out>(
   original_input: &str,
   tokenstream_input: ParserInput,
-  res: Result<(ParserInput<'a>, Out), nom::error::VerboseError<ParserInput<'a>>>,
+  res: Result<(ParserInput<'a>, Out), ErlParserError>,
 ) -> (ParserInput<'a>, Out) {
   match res {
     Ok((tail, out)) => {

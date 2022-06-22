@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_left_arrow,
   tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
@@ -29,6 +29,7 @@ use crate::erl_syntax::parsers::parse_fn::parse_lambda;
 use crate::erl_syntax::parsers::parse_if_stmt::parse_if_statement;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;

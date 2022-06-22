@@ -21,6 +21,7 @@ pub mod parse_if_stmt;
 pub mod parse_lit;
 pub mod parse_try_catch;
 pub mod parse_type;
+pub mod parser_error;
 pub mod parser_input;
 pub mod parser_input_slice;
 pub mod parser_scope;

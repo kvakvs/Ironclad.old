@@ -603,7 +603,7 @@ fn parse_record_test() -> IcResult<()> {
 #[test]
 fn parse_record_with_module() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition as a part of a module");
-  let input = "-record(options, {{includes }}).\n";
+  let input = "-record(options, {includes }).\n";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
   let _rec_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
