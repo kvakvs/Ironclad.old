@@ -9,8 +9,7 @@ use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::rw_hashmap::RwHashMap;
 use libironclad_util::rw_mfarity_set::RwHashSet;
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 /// Implements module root scope, stuff available directly from the module root
 #[derive(Debug)]

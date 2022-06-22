@@ -70,6 +70,29 @@ impl Token {
   pub fn is_tok(&self, tt: TokenType) -> bool {
     self.content.is_same_type(&tt)
   }
+
+  /// Check whether the token array ends with given token types
+  pub fn ends_with(tokens: &[Token], ttypes: &[TokenType]) -> bool {
+    if ttypes.len() > tokens.len() {
+      return false;
+    }
+    let mut it_tokens = tokens.iter().rev();
+    let mut it_ttypes = ttypes.iter().rev();
+    loop {
+      match (it_tokens.next(), it_ttypes.next()) {
+        (Some(to), Some(ty)) => {
+          // If enum type doesn't match, return false
+          if std::mem::discriminant(&to.content) != std::mem::discriminant(ty) {
+            return false;
+          }
+        }
+        // End of types, but not end of input
+        (_, None) => return true,
+        // End of input but not end of types (this is also an error)
+        (None, _) => unreachable!(),
+      }
+    }
+  }
 }
 
 impl std::fmt::Debug for Token {

@@ -1,6 +1,5 @@
 //! Definitions for parser
 
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 
 /// Gathers multiple errors and contexts together

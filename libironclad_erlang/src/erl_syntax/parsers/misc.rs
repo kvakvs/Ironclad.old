@@ -472,5 +472,5 @@ pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<Par
 
 /// Match `. <EOF>` that serves as an end marker for parsing split lines as preprocessor directives.
 pub(crate) fn period_eol(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(pair(tok(TokenType::Period), eof))(input)
+  recognize(tuple((tok(TokenType::Period), tok(TokenType::Newline), eof)))(input)
 }

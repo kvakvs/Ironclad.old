@@ -10,6 +10,7 @@ use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
 use ::function_name::named;
 use nom::Finish;
@@ -27,7 +28,7 @@ impl ErlModuleImpl {
     let mut itr = TokenLinesIter::new(tokens);
     let mut too_many_errors: bool = false;
 
-    while let Some(line) = itr.next() {
+    while let Some(mut line) = itr.next() {
       if too_many_errors {
         break;
       }
@@ -35,6 +36,16 @@ impl ErlModuleImpl {
       if line.len() > 2 && line[0].is_tok(TokenType::Minus) && line[1].is_atom() {
         // The line is a beginning of an attribute or a preprocessor definition or condition
         // These can only span one or more full lines, so we can work with lines iterator
+
+        // Expand the line slice till we find the terminator symbol `period + end of line`
+        while !Token::ends_with(line, &[TokenType::Period, TokenType::Newline]) {
+          if let Some(expanded) = itr.expand_till_next_line() {
+            line = expanded;
+            break; // found end terminator
+          } else {
+            break; // end of input
+          }
+        }
         println!("Next line: {:?}", &line);
         let parser_input = ParserInput::new_slice(line);
 
@@ -71,7 +82,10 @@ impl ErlModuleImpl {
             })
           }
           PreprocessorNodeType::NewType { .. } => {}
-          PreprocessorNodeType::RecordDefinition { .. } => {}
+          PreprocessorNodeType::NewRecord { tag, fields } => {
+            let r_def = RecordDefinition { tag: tag.clone(), fields: fields.clone() }.into();
+            module.root_scope.record_defs.add(tag.clone(), r_def)
+          }
           PreprocessorNodeType::FnSpec { .. } => {}
 
           PreprocessorNodeType::If(_) => {}

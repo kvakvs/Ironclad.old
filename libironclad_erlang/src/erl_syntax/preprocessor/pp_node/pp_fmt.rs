@@ -82,7 +82,7 @@ impl std::fmt::Display for PreprocessorNodeImpl {
         write!(f, " :: {}", ty)?;
         writeln!(f, ".")
       }
-      PreprocessorNodeType::RecordDefinition { tag, fields } => {
+      PreprocessorNodeType::NewRecord { tag, fields } => {
         write!(f, "-record({}, {{", tag)?;
         Pretty::display_comma_separated(fields.iter(), f)?;
         write!(f, "}}")

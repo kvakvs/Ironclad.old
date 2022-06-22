@@ -61,7 +61,7 @@ impl<KeyType: Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
 
   /// Retrieve an item
   pub fn get(&self, key: &KeyType) -> Option<ValType> {
-    if let Ok(mut r_collection) = self.collection.read() {
+    if let Ok(r_collection) = self.collection.read() {
       r_collection.get(key).cloned()
     } else {
       panic!("Can't lock RwHashMap to insert a new one")

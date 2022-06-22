@@ -108,7 +108,7 @@ pub enum PreprocessorNodeType {
     ty: Arc<ErlType>,
   },
   /// A new record definition, created by `-record(name, {fields,...}).` attribute
-  RecordDefinition {
+  NewRecord {
     /// Record tag
     tag: String,
     /// Fields with optional initializers and optional type ascriptions

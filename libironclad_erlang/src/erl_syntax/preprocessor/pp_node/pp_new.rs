@@ -207,7 +207,7 @@ impl PreprocessorNodeImpl {
     tag: String,
     fields: Vec<RecordField>,
   ) -> PreprocessorNode {
-    Self::new_with_location(location, PreprocessorNodeType::RecordDefinition { tag, fields })
+    Self::new_with_location(location, PreprocessorNodeType::NewRecord { tag, fields })
   }
 
   /// Create a new AST node for a function `-spec FN(ARG, ...) -> RETURN.`
