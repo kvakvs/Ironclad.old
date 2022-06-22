@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use std::sync::RwLock;
 
 /// Storage for one `- <NAME> ( <EXPR> )` module attribute
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ModuleAttribute {
   /// The tag (multiple attributes per tag are allowed)
   pub tag: String,
@@ -39,6 +39,15 @@ impl ModuleAttributes {
       r_collection.len()
     } else {
       panic!("Can't lock module attributes named group for length check")
+    }
+  }
+
+  /// Retrieve one element
+  pub fn get(&self, index: usize) -> ModuleAttribute {
+    if let Ok(r_collection) = self.collection.read() {
+      r_collection[index].clone()
+    } else {
+      panic!("Can't lock module attributes named group to retrieve an attribute")
     }
   }
 

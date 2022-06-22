@@ -15,9 +15,7 @@ use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
 use crate::source_file::SourceFile;
-use crate::source_loc::SourceLoc;
 use nom::Finish;
-use std::sync::RwLock;
 
 impl ErlModuleImpl {
   /// Generic parse helper for any Nom entry point.

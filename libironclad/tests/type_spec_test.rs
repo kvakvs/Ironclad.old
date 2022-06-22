@@ -27,8 +27,9 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
   let module = test_util::parse_module(function_name!(), input);
-  let attrs = module.root_scope.get_attr("fgsfds").unwrap();
-  assert_eq!(attrs.len(), 1);
+  let fgsattr = module.root_scope.get_attr("fgsfds");
+  assert!(fgsattr.is_some());
+  assert_eq!(fgsattr.unwrap().len(), 1);
   Ok(())
 }
 
@@ -39,7 +40,13 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
   let input = "- bbbggg (ababagalamaga) .  ";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
-  assert!(root_scope.get_attr("bbbggg").is_some());
+  let attr_collection = root_scope.get_attr("bbbggg").unwrap();
+  assert_eq!(attr_collection.len(), 1);
+  assert!(attr_collection
+    .get(0)
+    .expr
+    .unwrap()
+    .is_atom_of("ababagalamaga"));
   Ok(())
 }
 

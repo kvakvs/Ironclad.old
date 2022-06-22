@@ -3,15 +3,12 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::tok_module_name;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::source_loc::SourceLoc;
 use defs::VecAstParserResult;
 use nom::combinator::{complete, map};
 use nom::error::context;
 use nom::multi::many0;
-use nom::sequence::pair;
 
 pub mod defs;
 pub mod error_report;

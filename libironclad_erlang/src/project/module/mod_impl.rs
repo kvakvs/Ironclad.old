@@ -13,7 +13,7 @@ use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
 use crate::source_file::{SourceFile, SourceFileImpl};
 use nom::Finish;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
@@ -106,7 +106,9 @@ impl ErlModuleImpl {
     }
   }
 
+  /// Update the module name when we learn it from -module() attribute
   pub fn set_name(&self, name: &str) {
+    assert!(self.name.borrow().is_empty()); // can only update once
     self.name.replace(name.to_string());
   }
 }
