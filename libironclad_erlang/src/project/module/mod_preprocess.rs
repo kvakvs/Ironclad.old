@@ -58,7 +58,9 @@ impl ErlModuleImpl {
           PreprocessorNodeType::Warning(_) => {}
           PreprocessorNodeType::IncludedFile { .. } => {}
           PreprocessorNodeType::Attr { tag, term } => module.root_scope.add_attr(tag, term.clone()),
-          PreprocessorNodeType::Export { .. } => {}
+          PreprocessorNodeType::Export { fun_arities } => fun_arities
+            .iter()
+            .for_each(|fun_arity| module.root_scope.exports.add(fun_arity.clone())),
           PreprocessorNodeType::ExportType { .. } => {}
           PreprocessorNodeType::Import { .. } => {}
           PreprocessorNodeType::NewType { .. } => {}
