@@ -43,7 +43,7 @@ impl<KeyType: Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
 
   /// Check whether an item exists
   pub fn contains(&self, key: &KeyType) -> bool {
-    if let Ok(mut w_collection) = self.collection.write() {
+    if let Ok(w_collection) = self.collection.write() {
       w_collection.contains_key(key)
     } else {
       panic!("Can't lock RwHashMap for reading")

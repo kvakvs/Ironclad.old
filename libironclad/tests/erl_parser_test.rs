@@ -590,7 +590,11 @@ fn sample_record_input() -> &'static str {
 fn parse_record_test() -> IcResult<()> {
   test_util::start(function_name!(), "parse a record definition");
   let input = sample_record_input();
-  let _nodes = test_util::parse_module_unwrap(function_name!(), input);
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = module.root_scope.clone();
+  let record_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
+  assert_eq!(record_def.tag, "options");
+  assert_eq!(record_def.fields.len(), 10);
   Ok(())
 }
 
@@ -602,7 +606,7 @@ fn parse_record_with_module() -> IcResult<()> {
   let input = format!("-module({}).\n-record(options, {{includes }}).\n", function_name!());
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
-  let _rec_def = root_scope.get_record_def("options").unwrap();
+  let _rec_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
 
   // assert_eq!(nodes.len(), 1); // -module() {} is the root node, and -record() node is inside its '.forms'
   // assert!(matches!(nodes[0].content, AstNodeType::RecordDefinition { .. }));

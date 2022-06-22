@@ -40,7 +40,11 @@ fn parse_if_branches() {
 -endif.
 -after_if().";
   let module = test_util::parse_module(function_name!(), input);
-  let succ = module.root_scope.get_attr("test_success").unwrap();
+  let succ = module
+    .root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap();
   assert_eq!(succ.len(), 1);
 
   // assert!(nodes[0].is_generic_attr("before_if"));
@@ -65,7 +69,10 @@ false).
   // assert_eq!(nodes.len(), 1, "Expect to only have 1 attribute: -test_success.");
   // assert!(nodes[0].is_generic_attr("test_success"));
   let root_scope = module.root_scope.clone();
-  let success = root_scope.get_attr("test_success").unwrap_or_default();
+  let success = root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap_or_default();
   assert_eq!(success.len(), 1);
   Ok(())
 }
@@ -80,7 +87,10 @@ fn parse_define_ident_only() {
 -endif.";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
-  let success = root_scope.get_attr("test_success").unwrap_or_default();
+  let success = root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap_or_default();
   assert_eq!(success.len(), 1);
   assert!(module.parser_scope.is_defined("AAA"));
 }
@@ -111,7 +121,10 @@ fn parse_define_with_body_2_args() {
 -endif().";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
-  let success = root_scope.get_attr("test_success").unwrap_or_default();
+  let success = root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap_or_default();
   assert_eq!(success.len(), 1);
 
   let parser_scope = module.parser_scope.clone();
@@ -145,7 +158,11 @@ fn parse_define_varied_spacing_do(function_name: &str, input: &str) {
   let input2 = format!("{}\n-ifdef(TEST).\n-testsuccess.\n-endif.", input);
   let module = test_util::parse_module(function_name, &input2);
 
-  let attrs = module.root_scope.get_attr("testsuccess").unwrap();
+  let attrs = module
+    .root_scope
+    .attributes
+    .get(&"testsuccess".to_string())
+    .unwrap();
   assert_eq!(attrs.len(), 1);
 }
 

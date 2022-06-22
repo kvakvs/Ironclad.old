@@ -27,7 +27,7 @@ fn fn_generic_attr_parse1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
   let module = test_util::parse_module(function_name!(), input);
-  let fgsattr = module.root_scope.get_attr("fgsfds");
+  let fgsattr = module.root_scope.attributes.get(&"fgsfds".to_string());
   assert!(fgsattr.is_some());
   assert_eq!(fgsattr.unwrap().len(), 1);
   Ok(())
@@ -40,7 +40,7 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
   let input = "- bbbggg (ababagalamaga) .  ";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
-  let attr_collection = root_scope.get_attr("bbbggg").unwrap();
+  let attr_collection = root_scope.attributes.get(&"bbbggg".to_string()).unwrap();
   assert_eq!(attr_collection.len(), 1);
   assert!(attr_collection
     .get(0)
@@ -59,7 +59,8 @@ fn fn_typespec_parse_1() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
   let _spec = root_scope
-    .get_spec(&MFArity::new_local(function_name!(), 1))
+    .function_specs
+    .get(&MFArity::new_local(function_name!(), 1))
     .unwrap();
 
   // if let AstNodeType::FnSpec { funarity, spec, .. } = &nodes[0].content {
@@ -88,7 +89,8 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
   let _spec = root_scope
-    .get_spec(&MFArity::new_local(function_name!(), 1))
+    .function_specs
+    .get(&MFArity::new_local(function_name!(), 1))
     .unwrap();
 
   // if let AstNodeType::FnSpec { funarity, spec, .. } = &nodes[0].content {
@@ -126,7 +128,8 @@ fn fn_typespec_parse_when() -> IcResult<()> {
   // );
   let root_scope = module.root_scope.clone();
   let spec = root_scope
-    .get_spec(&MFArity::new_local(&function_name!(), 1))
+    .function_specs
+    .get(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
   println!("Spec found: {}", spec);
 
@@ -156,7 +159,8 @@ fn fn_typespec_parse_union() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
   let _spec = root_scope
-    .get_spec(&MFArity::new_local(&function_name!(), 1))
+    .function_specs
+    .get(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
   // assert!(nodes[0].is_fn_spec());
   // TODO: Check that the spec parsed contains the unions as written
@@ -197,6 +201,7 @@ fn parse_int_range_test() {
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
   let _type = root_scope
-    .get_user_type(&MFArity::new_local("reg_num", 0))
+    .user_types
+    .get(&MFArity::new_local("reg_num", 0))
     .unwrap();
 }
