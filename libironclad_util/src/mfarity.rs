@@ -33,6 +33,15 @@ impl MFArity {
     }
   }
 
+  /// Creates a clone from local, substituting the module name
+  pub fn clone_with_module(&self, module: &str) -> Self {
+    MFArity {
+      module: Some(module.to_string()),
+      name: self.name.clone(),
+      arity: self.arity,
+    }
+  }
+
   /// Creates a new funarity, cloning the name
   pub fn new_opt(module: Option<String>, function: &str, arity: usize) -> Self {
     MFArity { module, name: String::from(function), arity }

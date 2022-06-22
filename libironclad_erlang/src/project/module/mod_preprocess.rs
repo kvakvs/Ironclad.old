@@ -62,7 +62,14 @@ impl ErlModuleImpl {
             .iter()
             .for_each(|fun_arity| module.root_scope.exports.add(fun_arity.clone())),
           PreprocessorNodeType::ExportType { .. } => {}
-          PreprocessorNodeType::Import { .. } => {}
+          PreprocessorNodeType::Import { module: module_name, fun_arities } => {
+            fun_arities.iter().for_each(|fun_arity| {
+              module
+                .root_scope
+                .imports
+                .add(fun_arity.clone_with_module(module_name.as_str()))
+            })
+          }
           PreprocessorNodeType::NewType { .. } => {}
           PreprocessorNodeType::RecordDefinition { .. } => {}
           PreprocessorNodeType::FnSpec { .. } => {}
