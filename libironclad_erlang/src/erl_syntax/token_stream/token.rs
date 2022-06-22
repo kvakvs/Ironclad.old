@@ -105,7 +105,7 @@ impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self.content {
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
-      TokenType::Bar => write!(f, "|"),
+      TokenType::VerticalBar => write!(f, "|"),
       TokenType::BarBar => write!(f, "||"),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Colon => write!(f, ":"),

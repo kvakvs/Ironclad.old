@@ -72,7 +72,7 @@ fn symbol_barbar(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_bar(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('|'), |_| Token::new(input.as_ptr(), TokenType::Bar))(input)
+  map(char('|'), |_| Token::new(input.as_ptr(), TokenType::VerticalBar))(input)
 }
 
 #[inline]

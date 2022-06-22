@@ -3,7 +3,9 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_case_clause::ErlCaseClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
+use crate::erl_syntax::parsers::misc::{
+  tok, tok_keyword_case, tok_keyword_end, tok_keyword_of, tok_keyword_when, tok_semicolon,
+};
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_expr, parse_matchexpr, EXPR_STYLE_FULL,
 };
@@ -24,7 +26,7 @@ pub(crate) fn parse_case_clause(
     tuple((
       parse_matchexpr,
       opt(preceded(
-        tok_keyword(Keyword::When),
+        tok_keyword_when,
         context("case clause guard expression", cut(parse_expr)),
       )),
       // The body after ->
@@ -48,17 +50,14 @@ pub(crate) fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> 
   // let (input, _) = ws_before(tag("case".into()))(input)?;
 
   preceded(
-    tok_keyword(Keyword::Case),
+    tok_keyword_case,
     context(
       "case block",
       cut(map(
         tuple((
-          terminated(parse_expr, tok_keyword(Keyword::Of)),
-          separated_list1(
-            tok(TokenType::Semicolon),
-            context("case block clause", cut(parse_case_clause)),
-          ),
-          tok_keyword(Keyword::End),
+          terminated(parse_expr, tok_keyword_of),
+          separated_list1(tok_semicolon, context("case block clause", cut(parse_case_clause))),
+          tok_keyword_end,
         )),
         |(expr, clauses, _end0)| {
           AstNodeImpl::new_case_statement(SourceLoc::new(&input), expr, clauses)

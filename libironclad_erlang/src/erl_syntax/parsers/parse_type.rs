@@ -4,7 +4,9 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, tok, tok_atom, tok_integer, tok_keyword, tok_var,
+  dash_atom, tok, tok_atom, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open,
+  tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon,
+  tok_square_close, tok_square_open, tok_var,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -40,7 +42,7 @@ impl ErlTypeParser {
         tuple((
           context("Function name in a -spec() attribute", cut(tok_atom)),
           separated_list1(
-            tok(TokenType::Semicolon),
+            tok_semicolon,
             context("Function clause in a -spec() attribute", cut(Self::parse_fn_spec_fnclause)),
           ),
         )),
@@ -139,7 +141,7 @@ impl ErlTypeParser {
   pub(crate) fn parse_parenthesized_arg_spec_list(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    delimited(tok(TokenType::ParOpen), Self::comma_sep_typeargs0, tok(TokenType::ParClose))(input)
+    delimited(tok_par_open, Self::comma_sep_typeargs0, tok_par_close)(input)
   }
 
   /// Parse a `when` clause where unspecced typevars can be given types, like:
@@ -147,7 +149,7 @@ impl ErlTypeParser {
   pub(crate) fn parse_when_expr_for_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
-    preceded(tok_keyword(Keyword::When), Self::parse_comma_sep_typeargs1)(input)
+    preceded(tok_keyword_when, Self::parse_comma_sep_typeargs1)(input)
   }
 
   /// Parse only capitalized type variable name
@@ -175,7 +177,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     separated_list0(
-      tok(TokenType::Comma),
+      tok_comma,
       context("parsing items of a typeargs0_list", Self::alt_typevar_or_type),
     )(input)
   }
@@ -186,7 +188,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Vec<Typevar>, ErlParserError> {
     separated_list1(
-      tok(TokenType::Comma),
+      tok_comma,
       context("parsing items of a typeargs1_list", Self::alt_typevar_or_type),
     )(input)
   }
@@ -195,7 +197,7 @@ impl ErlTypeParser {
   fn parse_type_modulename_colon(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, String, ErlParserError> {
-    terminated(tok_atom, tok(TokenType::Colon))(input)
+    terminated(tok_atom, tok_colon)(input)
   }
 
   /// Parse a user defined type with `name()` and 0 or more typevar args.
@@ -206,9 +208,9 @@ impl ErlTypeParser {
         opt(Self::parse_type_modulename_colon),
         tok_atom,
         delimited(
-          tok(TokenType::ParOpen),
+          tok_par_open,
           context("type arguments for a user-defined type", Self::comma_sep_typeargs0),
-          tok(TokenType::ParClose),
+          tok_par_close,
         ),
       )),
       |(maybe_module, type_name, elements)| ErlType::from_name(maybe_module, type_name, &elements),
@@ -218,10 +220,7 @@ impl ErlTypeParser {
   /// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
   fn record_ref(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
-      preceded(
-        tok(TokenType::Hash),
-        pair(tok_atom, pair(tok(TokenType::CurlyOpen), tok(TokenType::CurlyClose))),
-      ),
+      preceded(tok_hash, pair(tok_atom, pair(tok_curly_open, tok_curly_close))),
       |(tag, (_, _))| ErlType::new_record_ref(tag),
     )(input)
   }
@@ -230,9 +229,9 @@ impl ErlTypeParser {
   fn type_of_list(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        tok(TokenType::SquareOpen),
+        tok_square_open,
         context("type arguments for a list() type", Self::comma_sep_typeargs0),
-        tok(TokenType::SquareClose),
+        tok_square_close,
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -245,9 +244,9 @@ impl ErlTypeParser {
   fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        tok(TokenType::CurlyOpen),
+        tok_curly_open,
         context("a tuple() type", Self::comma_sep_typeargs0),
-        tok(TokenType::CurlyClose),
+        tok_curly_close,
       ),
       |elements| {
         let typevar_types = Typevar::vec_of_typevars_into_types(elements);
@@ -274,19 +273,18 @@ impl ErlTypeParser {
 
   /// Parses a comma separated list of map field types
   fn comma_sep_map_members0(input: ParserInput) -> ParserResult<Vec<MapMemberType>> {
-    separated_list0(
-      tok(TokenType::Comma),
-      context("parsing member types of a map type", Self::map_member_type),
-    )(input)
+    separated_list0(tok_comma, context("parsing member types of a map type", Self::map_member_type))(
+      input,
+    )
   }
 
   /// Parse a map of types, returns a map-type
   fn type_of_map(input: ParserInput) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
     map(
       delimited(
-        pair(tok(TokenType::Hash), tok(TokenType::CurlyOpen)),
+        pair(tok_hash, tok_curly_open),
         context("a map() type", Self::comma_sep_map_members0),
-        tok(TokenType::CurlyClose),
+        tok_curly_close,
       ),
       ErlType::new_map,
     )(input)
@@ -342,7 +340,7 @@ impl ErlTypeParser {
   pub(crate) fn parse_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(separated_list1(tok(TokenType::Bar), Self::parse_nonunion_type), |types| {
+    map(separated_list1(tok_bar, Self::parse_nonunion_type), |types| {
       ErlType::new_union(&types)
     })(input)
   }

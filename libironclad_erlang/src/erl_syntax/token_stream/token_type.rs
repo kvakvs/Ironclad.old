@@ -62,7 +62,7 @@ pub enum TokenType {
   /// `>>` closing a binary
   DoubleAngleClose,
   Hash,
-  Bar,
+  VerticalBar,
   BarBar,
   /// A parsed string token_stream between `" TEXT "`
   Str(Arc<String>),

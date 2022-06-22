@@ -4,7 +4,9 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{tok, tok_atom, tok_keyword};
+use crate::erl_syntax::parsers::misc::{
+  tok, tok_atom, tok_keyword_end, tok_keyword_fun, tok_keyword_when, tok_minus, tok_semicolon,
+};
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
   EXPR_STYLE_MATCHEXPR,
@@ -53,10 +55,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       // Optional: when <guard>
       context(
         "`when` expression of a function clause",
-        opt(preceded(
-          tok_keyword(Keyword::When),
-          context("function's guard", cut(parse_guardexpr)),
-        )),
+        opt(preceded(tok_keyword_when, context("function's guard", cut(parse_guardexpr)))),
       ),
       preceded(
         tok(TokenType::RightArr),
@@ -104,9 +103,9 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       // does not begin with - (that would be a mis-parsed attribute)
-      not(peek(tok(TokenType::Minus))),
+      not(peek(tok_minus)),
       separated_list1(
-        tok(TokenType::Semicolon),
+        tok_semicolon,
         // if parse fails under here, will show this context message in error
         context("function clause of a function definition", parse_fnclause::<true>),
       ),
@@ -121,10 +120,10 @@ pub(crate) fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
   // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
   map(
     preceded(
-      tok_keyword(Keyword::Fun),
+      tok_keyword_fun,
       terminated(
-        context("", separated_list1(tok(TokenType::Semicolon), parse_fnclause::<false>)),
-        tok_keyword(Keyword::End),
+        context("", separated_list1(tok_semicolon, parse_fnclause::<false>)),
+        tok_keyword_end,
       ),
     ),
     |t| _construct_fndef(SourceLoc::new(&input), t),

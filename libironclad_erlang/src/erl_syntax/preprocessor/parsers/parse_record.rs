@@ -2,7 +2,10 @@
 
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{dash_atom, period_eol, tok, tok_atom};
+use crate::erl_syntax::parsers::misc::{
+  dash_atom, period_eol, tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_par_close,
+  tok_par_open,
+};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -41,19 +44,19 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
 /// Parses inner fields list of `-record(atom, { <FIELDS> } ).`
 fn record_definition_fields(input: ParserInput) -> ParserResult<Vec<RecordField>> {
   delimited(
-    tok(TokenType::CurlyOpen),
+    tok_curly_open,
     separated_list0(
-      tok(TokenType::Comma),
+      tok_comma,
       context("record definition field", cut(record_definition_one_field)),
     ),
-    tok(TokenType::CurlyClose),
+    tok_curly_close,
   )(input)
 }
 
 /// Parses inner contents of `-record( <INNER> ).`
 fn record_definition_inner(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
-    separated_pair(tok_atom, tok(TokenType::Comma), record_definition_fields),
+    separated_pair(tok_atom, tok_comma, record_definition_fields),
     |(atom, fields)| {
       PreprocessorNodeImpl::new_record_definition(SourceLoc::new(&input), atom, fields)
     },
@@ -66,11 +69,7 @@ pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
     |i1| dash_atom(i1, "record"),
     context(
       "record definition in a -record() attribute",
-      cut(delimited(
-        tok(TokenType::ParOpen),
-        record_definition_inner,
-        tok(TokenType::ParClose),
-      )),
+      cut(delimited(tok_par_open, record_definition_inner, tok_par_close)),
     ),
     period_eol,
   )(input)

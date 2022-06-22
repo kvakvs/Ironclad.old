@@ -6,7 +6,10 @@ use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok, tok_atom_of, tok_integer, tok_var};
+use crate::erl_syntax::parsers::misc::{
+  tok, tok_atom_of, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
+  tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_var,
+};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -26,7 +29,7 @@ fn bin_element_value(input: ParserInput) -> ParserResult<AstNode> {
   alt((
     map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(&input), &v)),
     parse_erl_literal,
-    delimited(tok(TokenType::ParOpen), parse_expr, tok(TokenType::ParClose)),
+    delimited(tok_par_open, parse_expr, tok_par_close),
   ))(input.clone())
 }
 
@@ -81,7 +84,7 @@ fn bin_element_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpeci
 
 fn bin_element_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {
   map(
-    preceded(terminated(tok_atom_of("unit"), tok(TokenType::Colon)), tok_integer),
+    preceded(terminated(tok_atom_of("unit"), tok_colon), tok_integer),
     |i: ErlInteger| TypeSpecifier::Unit(i.as_usize().unwrap_or_default()),
   )(input)
 }
@@ -97,10 +100,7 @@ fn bin_element_type_spec(input: ParserInput) -> ParserResult<TypeSpecifier> {
 
 /// Parse a `-` separated list of typespecs
 fn bin_type_specs(input: ParserInput) -> ParserResult<Vec<TypeSpecifier>> {
-  preceded(
-    tok(TokenType::Div),
-    separated_list1(tok(TokenType::Minus), bin_element_type_spec),
-  )(input)
+  preceded(tok_forward_slash, separated_list1(tok_minus, bin_element_type_spec))(input)
 }
 
 /// Parse one comma-separated element of a binary: number, variable, an expression,
@@ -109,7 +109,7 @@ fn bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
   map(
     tuple((
       bin_element_value,
-      opt(preceded(tok(TokenType::Colon), bin_element_width)),
+      opt(preceded(tok_colon, bin_element_width)),
       opt(bin_type_specs),
     )),
     |(value, bit_width, type_specs)| {
@@ -126,15 +126,15 @@ fn bin_element(input: ParserInput) -> ParserResult<BinaryElement> {
 /// Parse a binary or binary builder expression
 pub(crate) fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    tok(TokenType::DoubleAngleOpen),
+    tok_double_angle_open,
     context(
       "binary expression",
       cut(terminated(
         map(
-          separated_list0(tok(TokenType::Comma), context("binary expression element", bin_element)),
+          separated_list0(tok_comma, context("binary expression element", bin_element)),
           |bin_exprs| AstNodeImpl::new_binary_expr(SourceLoc::new(&input), bin_exprs),
         ),
-        tok(TokenType::DoubleAngleClose),
+        tok_double_angle_close,
       )),
     ),
   )(input.clone())

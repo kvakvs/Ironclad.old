@@ -58,9 +58,9 @@
 // /// Parse a parenthesized list of exprs `( EXPR1, ... )`
 // fn macro_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
 //   delimited(
-//     tok(TokenType::ParOpen),
-//     separated_list0(tok(TokenType::Comma), parse_expr),
-//     tok(TokenType::ParClose),
+//     tok_par_open,
+//     separated_list0(tok_comma, parse_expr),
+//     tok_par_close,
 //   )(input)
 // }
 //

@@ -1,7 +1,8 @@
 //! Groups type definitions shared by all preprocessor parse modules
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok, tok_atom, tok_atom_of, tok_string,
+  dash_atom, period_eol, tok, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open,
+  tok_string, ws_before,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
@@ -22,25 +23,14 @@ use nom::sequence::delimited;
 
 /// Parse a `Macroident1, Macroident2, ...` into a list
 pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<String>> {
-  separated_list0(tok(TokenType::Comma), tok_macro_ident)(input)
+  separated_list0(tok_comma, tok_macro_ident)(input)
 }
-
-// /// Parse an identifier, starting with a letter and also can be containing numbers and underscoress
-// pub(crate) fn macro_ident(input: ParserInput) -> ParserResult<String> {
-//   map(
-//     recognize(pair(
-//       verify(anychar, |c: Token| c.is_alphabetic() || *c == '_'),
-//       many0(alt((alphanumeric1, tag("_".into())))),
-//     )),
-//     |pi| pi.to_string(),
-//   )(input)
-// }
 
 /// Parse a `-include(STRING)`
 fn include_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   match delimited(
     tok_atom_of("include"),
-    delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
+    delimited(tok_par_open, tok_string, tok_par_close),
     period_eol,
   )(input.clone())
   {
@@ -64,7 +54,7 @@ fn include_lib_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       tok_atom_of("include_lib"),
-      delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
+      delimited(tok_par_open, tok_string, tok_par_close),
       period_eol,
     ),
     |t| PreprocessorNodeImpl::new_include_lib(SourceLoc::new(&input), t.as_str().to_string()),
@@ -76,7 +66,7 @@ fn error_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       tok_atom_of("error"),
-      delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
+      delimited(tok_par_open, tok_string, tok_par_close),
       period_eol,
     ),
     |t| PreprocessorNodeImpl::new_error(SourceLoc::new(&input), t.as_str().to_string()),
@@ -88,7 +78,7 @@ fn warning_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       tok_atom_of("warning"),
-      delimited(tok(TokenType::ParOpen), tok_string, tok(TokenType::ParClose)),
+      delimited(tok_par_open, tok_string, tok_par_close),
       period_eol,
     ),
     |t| PreprocessorNodeImpl::new_warning(SourceLoc::new(&input), t.as_str().to_string()),
@@ -105,10 +95,9 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<Preprocessor
       |i1| dash_atom(i1, "module"),
       context(
         "the module name in a -module() attribute",
-        map(
-          cut(delimited(tok(TokenType::ParOpen), tok_atom, tok(TokenType::ParClose))),
-          |modname: String| PreprocessorNodeImpl::new_module_start(SourceLoc::new(&input), modname),
-        ),
+        map(cut(delimited(tok_par_open, tok_atom, tok_par_close)), |modname: String| {
+          PreprocessorNodeImpl::new_module_start(SourceLoc::new(&input), modname)
+        }),
       ),
       period_eol,
     ),

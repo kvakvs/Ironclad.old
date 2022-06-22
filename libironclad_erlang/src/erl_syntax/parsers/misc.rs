@@ -1,5 +1,5 @@
 //! Helper functions for Nom parsing
-use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
@@ -11,7 +11,8 @@ use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::combinator::{eof, map, recognize};
 use nom::error::{convert_error, ParseError};
-use nom::sequence::{pair, tuple};
+use nom::multi::many0;
+use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
 use std::sync::Arc;
 
@@ -51,25 +52,12 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
 
 /// Matches a `<-> <atom>` pair
 pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResult<'a, ()> {
-  map(pair(tok(TokenType::Minus), tok_atom_of(value)), |_| ())(input)
-  // use itertools::Itertools;
-  //
-  // move |input: ParserInput| -> ParserResult<()> {
-  //   match input.tokens.iter().take(2).next_tuple() {
-  //     Some((
-  //       Token { content: TokenType::Minus, .. },
-  //       Token { content: TokenType::Atom(s), .. },
-  //     )) if s == value => Ok((input.slice(1..), ())),
-  //     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
-  //       input,
-  //       nom::error::ErrorKind::Fail, // TODO: new error AtomExpected(s)
-  //     ))),
-  //   }
-  // }
+  map(pair(tok_minus, tok_atom_of(value)), |_| ())(input)
 }
 
 /// Recognizes one keyword of given keyword enum value
-pub fn tok_keyword(k: Keyword) -> impl Fn(ParserInput) -> ParserResult<()> {
+/// Use `tok_keyword_<name>` to match with possible whitespace
+pub fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
       Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),
@@ -82,7 +70,12 @@ pub fn tok_keyword(k: Keyword) -> impl Fn(ParserInput) -> ParserResult<()> {
 }
 
 /// Recognizes one integer token, returns the integer.
+#[inline]
 pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
+  ws_before(tok_integer_1)(input)
+}
+
+fn tok_integer_1(input: ParserInput) -> ParserResult<ErlInteger> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Integer(i), .. }) => Ok((input.slice(1..), i.clone())),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
@@ -93,7 +86,12 @@ pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
 }
 
 /// Recognizes one atom token, returns the string.
+#[inline]
 pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
+  ws_before(tok_atom_1)(input)
+}
+
+fn tok_atom_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
@@ -105,6 +103,10 @@ pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
 
 /// Recognizes one str token, returns the string.
 pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
+  ws_before(tok_string_1)(input)
+}
+
+fn tok_string_1(input: ParserInput) -> ParserResult<Arc<String>> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Str(s), .. }) => Ok((input.slice(1..), s.clone())),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
@@ -115,7 +117,12 @@ pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
 }
 
 /// Recognizes one variable name token, returns the string.
+#[inline]
 pub fn tok_var(input: ParserInput) -> ParserResult<String> {
+  ws_before(tok_var_1)(input)
+}
+
+fn tok_var_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
@@ -126,7 +133,7 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
 }
 
 /// Recognizes one `-module(NAME).` attribute`
-pub fn tok_module_name(input: ParserInput) -> ParserResult<String> {
+pub fn tok_module_name_attr(input: ParserInput) -> ParserResult<String> {
   if let Some(Token { content: TokenType::Preprocessor(pp_node), .. }) = input.tokens.iter().next()
   {
     if let PreprocessorNodeType::ModuleName { name } = &pp_node.content {
@@ -140,7 +147,12 @@ pub fn tok_module_name(input: ParserInput) -> ParserResult<String> {
 }
 
 /// Recognizes one float token, returns the value.
+#[inline]
 pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
+  ws_before(tok_float_1)(input)
+}
+
+fn tok_float_1(input: ParserInput) -> ParserResult<f64> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), *f)),
     _other => Err(nom::Err::Error(nom::error::VerboseError::from_error_kind(
@@ -150,24 +162,22 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
   }
 }
 
-// /// Recognizes 0 or more whitespaces and line comments
-// fn spaces_or_comments0<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(many0(alt((multispace1, parse_line_comment))))(input)
-// }
+/// Tokens in the token stream, which are considered as whitespace.
+#[inline]
+fn erl_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+  recognize(tok(TokenType::Newline))(input)
+}
 
-// /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
-// /// whitespace, returning the output of `inner`.
-// pub(crate) fn ws_before<'a, InnerFn: 'a, Out>(
-//   inner: InnerFn,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
-// where
-//   InnerFn: Fn(ParserInput<'a>) -> ParserResult<Out>,
-// {
-//   preceded::<ParserInput<'a>, ParserInput<'a>, Out, ErlParserError, _, InnerFn>(
-//     spaces_or_comments0,
-//     inner,
-//   )
-// }
+/// A combinator that takes a parser `inner` and produces a parser that also consumes leading
+/// whitespace, returning the output of `inner`.
+pub(crate) fn ws_before<'a, InnerFn: 'a, Out>(
+  inner: InnerFn,
+) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
+where
+  InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
+{
+  preceded(many0(erl_whitespace), inner)
+}
 
 // /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 // /// whitespace, returning the output of `inner`.
@@ -177,7 +187,7 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
 // where
 //   InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
 // {
-//   preceded(spaces_or_comments0, inner)
+//   preceded(many0(erl_whitespace), inner)
 // }
 
 // /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -201,175 +211,6 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
 //   InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
 // {
 //   delimited(spaces_or_comments0, inner, multispace0)
-// }
-
-// /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-// pub(crate) fn parse_ident(input: ParserInput) -> ParserResult<String> {
-//   map(
-//     ws_before_mut(recognize(pair(
-//       verify(anychar, |c: &char| c.is_alphabetic() && c.is_lowercase()),
-//       many0(alt((alphanumeric1, tag("_".into())))),
-//     ))),
-//     |result| result.to_string(),
-//   )(input)
-// }
-
-// /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-// pub(crate) fn parse_varname(input: ParserInput) -> ParserResult<String> {
-//   map(
-//     recognize(pair(
-//       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
-//       verify(anychar, |c: &char| c.is_uppercase() || *c == '_'),
-//       many0(alt((alphanumeric1, tag("_".into())))),
-//     )),
-//     |result: ParserInput| result.to_string(),
-//   )(input)
-// }
-
-// fn parse_int_unsigned_body(input: ParserInput) -> ParserResult<ParserInput> {
-//   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
-// }
-
-// /// Matches + or -
-// fn parse_sign(input: ParserInput) -> ParserResult<ParserInput> {
-//   recognize(alt((char('-'), char('+'))))(input)
-// }
-
-// /// Parse a decimal integer
-// fn parse_int_decimal(input: ParserInput) -> ParserResult<ErlInteger> {
-//   map(
-//     ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
-//     |num| {
-//       ErlInteger::new_from_string(num.as_str())
-//         .unwrap_or_else(|| panic!("Can't parse {} as integer", num))
-//     },
-//   )(input)
-// }
-
-// /// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
-// /// From Nom examples
-// pub(crate) fn parse_int(input: ParserInput) -> ParserResult<ErlInteger> {
-//   parse_int_decimal(input)
-// }
-
-// /// Parse a float with possibly scientific notation. Output is a string.
-// /// From Nom examples
-// pub(crate) fn parse_float<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   alt((
-//     // Case one: .42
-//     recognize(tuple((
-//       tok(TokenType::Period),
-//       tok_integer,
-//       opt(tuple((one_of("eE"), opt(one_of("+-")), tok_integer))),
-//     ))),
-//     // Case two: 42e42 and 42.42e42
-//     recognize(tuple((
-//       tok_integer,
-//       opt(preceded(tok(TokenType::Period), tok_integer)),
-//       one_of("eE"),
-//       opt(one_of("+-")),
-//       tok_integer,
-//     ))),
-//     // Case three: 42. (disallowed because end of function is also period) and 42.42
-//     recognize(tuple((parse_int, char('.'), parse_int))),
-//   ))(input)
-// }
-
-// /// Recognizes newline or end of input
-// pub(crate) fn newline_or_eof<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(preceded(
-//     many0(alt((char(' '), char('\t')))),
-//     alt((tag("\r\n".into()), tag("\r".into()), tag("\n".into()), eof)),
-//   ))(input)
-// }
-//
-// /// Matches an opening parenthesis "(" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn par_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('(')))(input)
-// }
-//
-// /// Matches a closing parenthesis ")" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn par_close_tag(input: ParserInput) -> ParserResult<ParserInput> {
-//   recognize(ws_before(char(')')))(input)
-// }
-//
-// /// Matches an opening curly bracket "{" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn curly_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('{')))(input)
-// }
-//
-// /// Matches a closing curly bracket "}" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn curly_close_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('}')))(input)
-// }
-//
-// /// Matches an opening square bracket "[" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn square_open_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('[')))(input)
-// }
-//
-// /// Matches a closing square bracket "]" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn square_close_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char(']')))(input)
-// }
-//
-// /// Matches a comma "," with 0+ whitespace before
-// #[inline]
-// pub(crate) fn comma_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char(',')))(input)
-// }
-//
-// /// Matches a hash symbol `"#"` with 0+ whitespace before
-// #[inline]
-// pub(crate) fn hash_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('#')))(input)
-// }
-//
-// /// Matches a period "." with 0+ whitespace before
-// #[inline]
-// pub(crate) fn period_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('.')))(input)
-// }
-//
-// /// Recognizes end of a directive or module attribute in `-<attr> ... "." <newline>`
-// #[inline]
-// pub(crate) fn period_newline_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   ws_before_mut(recognize(pair(period_tag, newline_or_eof)))(input)
-// }
-//
-// /// Matches a semicolon ";" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn semicolon_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char(';')))(input)
-// }
-//
-// /// Matches a double colon "::" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn colon_colon_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(tag("::".into())))(input)
-// }
-//
-// /// Matches a double dot (double period) ".." with 0+ whitespace before
-// #[inline]
-// pub(crate) fn dot_dot_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(tag("..".into())))(input)
-// }
-//
-// /// Matches an equals sign "=" with 0+ whitespace before
-// #[inline]
-// pub(crate) fn equals_tag<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(ws_before(char('=')))(input)
-// }
-//
-// /// Recognizes `% text <newline>` consuming text
-// pub(crate) fn parse_line_comment<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(pair(many1(char('%')), many_till(anychar, newline_or_eof)))(input)
 // }
 
 /// Print detailed error with source pointers, and panic
@@ -418,26 +259,6 @@ pub fn panicking_tokenizer_error_reporter<'a, Out>(
   }
 }
 
-// /// Returns a new parser which recognizes a `<spaces> "-" <spaces> <tag>` and returns it as
-// /// a `&str` slice (*recognizes*, i.e. returns with all whitespace included)
-// pub(crate) fn match_dash_tag<'a>(
-//   t: ParserInput<'a>,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(pair(ws_before(char('-')), match_word(t)))
-// }
-
-// /// Matches a non-letter, use with `peek` to mark where word ends
-// pub(crate) fn word_break<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(not(alphanumeric1))(input)
-// }
-
-// /// Matches a tag which is followed by a non-letter (word break)
-// pub(crate) fn match_word<'a>(
-//   t: ParserInput<'a>,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-//   recognize(terminated(ws_before(tag(t)), peek(word_break)))
-// }
-
 /// Print function location and trimmed input, for debugging
 #[allow(dead_code)]
 pub(crate) fn print_input(fn_name: &str, input: ParserInput) {
@@ -461,16 +282,163 @@ pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
   part_beg >= outer_beg && part_end <= outer_end
 }
 
-#[allow(dead_code)]
+/// Recognize the macro end marker `) . \n <EOF>` as we trim the lines before feeding them into the
+/// macro parser, there will be an EOF.
 pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(tuple((
-    tok(TokenType::ParClose),
-    tok(TokenType::Period),
-    tok(TokenType::Newline),
-  )))(input)
+  recognize(tuple((tok_par_close, tok(TokenType::Period), tok(TokenType::Newline), eof)))(input)
 }
 
 /// Match `. <EOF>` that serves as an end marker for parsing split lines as preprocessor directives.
 pub(crate) fn period_eol(input: ParserInput) -> ParserResult<ParserInput> {
   recognize(tuple((tok(TokenType::Period), tok(TokenType::Newline), eof)))(input)
+}
+
+/// Matches a `-` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_minus(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Minus)), |_| ())(input)
+}
+
+/// Matches a `(` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_par_open(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::ParOpen)), |_| ())(input)
+}
+
+/// Matches a `)` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_par_close(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::ParClose)), |_| ())(input)
+}
+
+/// Matches a `{` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_curly_open(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::CurlyOpen)), |_| ())(input)
+}
+
+/// Matches a `}` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_curly_close(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::CurlyClose)), |_| ())(input)
+}
+
+/// Matches a `<<` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_double_angle_open(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::DoubleAngleOpen)), |_| ())(input)
+}
+
+/// Matches a `>>` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_double_angle_close(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::DoubleAngleClose)), |_| ())(input)
+}
+
+/// Matches a `#` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_hash(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Hash)), |_| ())(input)
+}
+
+/// Matches a `/` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_forward_slash(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Div)), |_| ())(input)
+}
+
+/// Matches a `,` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_comma(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Comma)), |_| ())(input)
+}
+
+/// Matches a `;` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_semicolon(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Semicolon)), |_| ())(input)
+}
+
+/// Matches a `:` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_colon(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Colon)), |_| ())(input)
+}
+
+/// Matches a `|` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_bar(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::VerticalBar)), |_| ())(input)
+}
+
+/// Matches a `[` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_square_open(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::SquareOpen)), |_| ())(input)
+}
+
+/// Matches a `]` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_square_close(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::SquareClose)), |_| ())(input)
+}
+
+/// Matches a `<-` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_left_arrow(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::LeftArr)), |_| ())(input)
+}
+
+/// Matches a `when` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_when(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::When)), |_| ())(input)
+}
+
+/// Matches a `case` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_case(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Case)), |_| ())(input)
+}
+
+/// Matches a `of` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_of(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Of)), |_| ())(input)
+}
+
+/// Matches a `if` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_if(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::If)), |_| ())(input)
+}
+
+/// Matches a `end` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_end(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::End)), |_| ())(input)
+}
+
+/// Matches a `fun` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_fun(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Fun)), |_| ())(input)
+}
+
+/// Matches a `catch` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_catch(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Catch)), |_| ())(input)
+}
+
+/// Matches a `try` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_try(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Try)), |_| ())(input)
+}
+
+/// Matches a `else` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_else(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Else)), |_| ())(input)
 }

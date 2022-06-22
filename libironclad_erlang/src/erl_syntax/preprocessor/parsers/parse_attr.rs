@@ -1,7 +1,10 @@
 //! Use nom parser to parse a generic module attribute from a wall of text.
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{dash_atom, period_eol, tok, tok_atom, tok_integer};
+use crate::erl_syntax::parsers::misc::{
+  dash_atom, period_eol, tok, tok_atom, tok_comma, tok_forward_slash, tok_integer, tok_minus,
+  tok_par_close, tok_par_open, tok_square_close, tok_square_open,
+};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -19,16 +22,16 @@ use nom::sequence::{delimited, pair, separated_pair, tuple};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn attr_body_empty_parens(input: ParserInput) -> ParserResult<Option<AstNode>> {
-  map(pair(tok(TokenType::ParOpen), tok(TokenType::ParClose)), |_| None)(input)
+  map(pair(tok_par_open, tok_par_close), |_| None)(input)
 }
 
 /// Parse a `( EXPR )` for a generic attribute `-<atom> ( EXPR ).`
 fn attr_body_expr_in_parens(input: ParserInput) -> ParserResult<Option<AstNode>> {
   map(
     delimited(
-      tok(TokenType::ParOpen),
+      tok_par_open,
       context("an expression inside a custom -<name>() attribute", cut(parse_expr)),
-      tok(TokenType::ParClose),
+      tok_par_close,
     ),
     Option::Some,
   )(input)
@@ -40,7 +43,7 @@ fn attr_body_expr_in_parens(input: ParserInput) -> ParserResult<Option<AstNode>>
 pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      tok(TokenType::Minus),
+      tok_minus,
       pair(
         tok_atom,
         // Expr in parentheses or nothing
@@ -56,34 +59,27 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 pub(crate) fn parse_generic_attr_no_parentheses(
   input: ParserInput,
 ) -> ParserResult<PreprocessorNode> {
-  map(delimited(tok(TokenType::Minus), tok_atom, period_eol), |tag| {
+  map(delimited(tok_minus, tok_atom, period_eol), |tag| {
     PreprocessorNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, None)
   })(input.clone())
 }
 
 /// Parses a `fun/arity` atom with an integer.
 pub fn parse_funarity(input: ParserInput) -> ParserResult<MFArity> {
-  map(
-    tuple((tok_atom, tok(TokenType::Div), tok_integer)),
-    |(name, _slash, erl_int)| {
-      let arity = erl_int.as_usize().unwrap_or_default();
-      MFArity::new_local_from_string(name, arity)
-    },
-  )(input)
+  map(tuple((tok_atom, tok_forward_slash, tok_integer)), |(name, _slash, erl_int)| {
+    let arity = erl_int.as_usize().unwrap_or_default();
+    MFArity::new_local_from_string(name, arity)
+  })(input)
 }
 
 /// Parse a `fun/arity, ...` comma-separated list, at least 1 element long
 fn parse_square_funarity_list1(input: ParserInput) -> ParserResult<Vec<MFArity>> {
-  delimited(
-    tok(TokenType::SquareOpen),
-    separated_list1(tok(TokenType::Comma), parse_funarity),
-    tok(TokenType::SquareClose),
-  )(input)
+  delimited(tok_square_open, separated_list1(tok_comma, parse_funarity), tok_square_close)(input)
 }
 
 /// Parses a list of mfarities: `( MFA/1, MFA/2, ... )` for export attr
 fn parse_export_mfa_list(input: ParserInput) -> ParserResult<Vec<MFArity>> {
-  delimited(tok(TokenType::ParOpen), parse_square_funarity_list1, tok(TokenType::ParClose))(input)
+  delimited(tok_par_open, parse_square_funarity_list1, tok_par_close)(input)
 }
 
 /// Parses an `-export([fn/arity, ...]).` attribute.
@@ -121,9 +117,9 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
       context(
         "list of imports in an -import() attribute",
         cut(delimited(
-          tok(TokenType::ParOpen),
-          separated_pair(tok_atom, tok(TokenType::Comma), parse_square_funarity_list1),
-          tok(TokenType::ParClose),
+          tok_par_open,
+          separated_pair(tok_atom, tok_comma, parse_square_funarity_list1),
+          tok_par_close,
         )),
       ),
       period_eol,
@@ -137,9 +133,9 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
 pub(crate) fn parse_parenthesized_list_of_vars(input: ParserInput) -> ParserResult<Vec<String>> {
   delimited(
-    tok(TokenType::ParOpen),
-    cut(separated_list0(tok(TokenType::Comma), ErlTypeParser::parse_typevar_name)),
-    tok(TokenType::ParClose),
+    tok_par_open,
+    cut(separated_list0(tok_comma, ErlTypeParser::parse_typevar_name)),
+    tok_par_close,
   )(input)
 }
 

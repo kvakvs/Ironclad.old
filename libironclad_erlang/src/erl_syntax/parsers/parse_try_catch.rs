@@ -5,7 +5,10 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
+use crate::erl_syntax::parsers::misc::{
+  tok, tok_colon, tok_keyword_catch, tok_keyword_end, tok_keyword_of, tok_keyword_try,
+  tok_keyword_when, tok_semicolon,
+};
 use crate::erl_syntax::parsers::parse_case::parse_case_clause;
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
@@ -26,8 +29,8 @@ pub fn parse_exception_pattern(
   map(
     tuple((
       parse_matchexpr,
-      preceded(tok(TokenType::Colon), parse_matchexpr),
-      opt(preceded(tok(TokenType::Colon), parse_matchexpr)),
+      preceded(tok_colon, parse_matchexpr),
+      opt(preceded(tok_colon, parse_matchexpr)),
     )),
     |(class_pattern, err_pattern, stack_pattern)| {
       ExceptionPattern::new(class_pattern, err_pattern, stack_pattern)
@@ -44,7 +47,7 @@ pub fn parse_catch_clause(
       // Class:Error:Stacktrace
       parse_exception_pattern,
       // when <Expression>
-      opt(preceded(tok_keyword(Keyword::When), parse_guardexpr)),
+      opt(preceded(tok_keyword_when, parse_guardexpr)),
       // -> Expression
       preceded(tok(TokenType::RightArr), parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
     )),
@@ -67,15 +70,15 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
       ),
       // Optional OF followed by match clauses
       opt(preceded(
-        tok_keyword(Keyword::Of),
+        tok_keyword_of,
         context("try block: 'of' clauses", cut(many1(parse_case_clause))),
       )),
       // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
       preceded(
-        tok_keyword(Keyword::Catch),
+        tok_keyword_catch,
         context(
           "try block: 'catch' clauses",
-          cut(separated_list1(tok(TokenType::Semicolon), parse_catch_clause)),
+          cut(separated_list1(tok_semicolon, parse_catch_clause)),
         ),
       ),
     )),
@@ -94,10 +97,10 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
 /// Parses a `try-catch` or a `try-of-catch` block
 pub(crate) fn parse_try_catch(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    tok_keyword(Keyword::Try),
+    tok_keyword_try,
     context(
       "try-catch or try-of block",
-      cut(terminated(parse_try_catch_inner, tok_keyword(Keyword::End))),
+      cut(terminated(parse_try_catch_inner, tok_keyword_end)),
     ),
   )(input)
 }

@@ -11,7 +11,10 @@ use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{tok, tok_var};
+use crate::erl_syntax::parsers::misc::{
+  tok, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_left_arrow,
+  tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
+};
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
 use crate::erl_syntax::parsers::parse_expr_op::{
@@ -66,19 +69,19 @@ pub fn parse_parenthesized_list_of_exprs<const STYLE: usize>(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
   delimited(
-    tok(TokenType::ParOpen),
+    tok_par_open,
     context("function application arguments", cut(parse_comma_sep_exprs0::<STYLE>)),
-    tok(TokenType::ParClose),
+    tok_par_close,
   )(input)
 }
 
 fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
     tuple((
-      tok(TokenType::SquareOpen),
+      tok_square_open,
       parse_comma_sep_exprs0::<STYLE>,
-      opt(preceded(tok(TokenType::Bar), parse_expr_prec13::<STYLE>)),
-      tok(TokenType::SquareClose),
+      opt(preceded(tok_bar, parse_expr_prec13::<STYLE>)),
+      tok_square_close,
     )),
     |(_open, elements, maybe_tail, _close)| {
       AstNodeImpl::new_list(SourceLoc::new(&input), elements, maybe_tail)
@@ -88,7 +91,7 @@ fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<A
 
 /// Parses a `Expr <- Expr` generator
 pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
-  map(separated_pair(parse_expr, tok(TokenType::LeftArr), parse_expr), |(a, b)| {
+  map(separated_pair(parse_expr, tok_left_arrow, parse_expr), |(a, b)| {
     AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&input), a, b)
   })(input.clone())
 }
@@ -98,7 +101,7 @@ pub fn parse_list_comprehension_exprs_and_generators(
   input: ParserInput,
 ) -> ParserResult<Vec<AstNode>> {
   separated_list0(
-    tok(TokenType::Comma),
+    tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
     alt((parse_expr, parse_list_comprehension_generator)),
   )(input)
@@ -121,21 +124,13 @@ fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
-  delimited(
-    tok(TokenType::SquareOpen),
-    parse_list_comprehension_1,
-    tok(TokenType::SquareClose),
-  )(input)
+  delimited(tok_square_open, parse_list_comprehension_1, tok_square_close)(input)
 }
 
 /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
 fn parse_tuple_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
-    delimited(
-      tok(TokenType::CurlyOpen),
-      parse_comma_sep_exprs0::<STYLE>,
-      tok(TokenType::CurlyClose),
-    ),
+    delimited(tok_curly_open, parse_comma_sep_exprs0::<STYLE>, tok_curly_close),
     |elements| AstNodeImpl::new_tuple(SourceLoc::new(&input), elements),
   )(input.clone())
 }
@@ -157,9 +152,9 @@ fn map_builder_member<const STYLE: usize>(input: ParserInput) -> ParserResult<Ma
 fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
-      pair(tok(TokenType::Hash), tok(TokenType::CurlyOpen)),
-      separated_list0(tok(TokenType::Comma), map_builder_member::<STYLE>),
-      tok(TokenType::CurlyClose),
+      pair(tok_hash, tok_curly_open),
+      separated_list0(tok_comma, map_builder_member::<STYLE>),
+      tok_curly_close,
     ),
     |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), members),
   )(input.clone())
@@ -170,7 +165,7 @@ pub fn parse_comma_sep_exprs0<const STYLE: usize>(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
   separated_list0(
-    tok(TokenType::Comma),
+    tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
     parse_expr_prec13::<STYLE>,
   )(input)
@@ -181,14 +176,14 @@ pub fn parse_comma_sep_exprs1<const STYLE: usize>(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
   separated_list1(
-    tok(TokenType::Comma),
+    tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
     parse_expr_prec13::<STYLE>,
   )(input)
 }
 
 fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  delimited(tok(TokenType::ParOpen), parse_expr_prec13::<STYLE>, tok(TokenType::ParClose))(input)
+  delimited(tok_par_open, parse_expr_prec13::<STYLE>, tok_par_close)(input)
 }
 
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
@@ -246,7 +241,7 @@ fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
       opt(
         // A pair: optional second expr for function name, and mandatory args
         pair(
-          opt(preceded(tok(TokenType::Colon), parse_expr_prec_primary::<STYLE>)),
+          opt(preceded(tok_colon, parse_expr_prec_primary::<STYLE>)),
           parse_parenthesized_list_of_exprs::<STYLE>,
         ),
       ),
@@ -272,6 +267,7 @@ fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 }
 
 // TODO: Precedence 2: # (record access operator)
+#[inline]
 fn parse_expr_prec02<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_prec01::<STYLE>(input)
 }

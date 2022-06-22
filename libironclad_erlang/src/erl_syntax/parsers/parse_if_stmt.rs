@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
-use crate::erl_syntax::parsers::misc::{tok, tok_keyword};
+use crate::erl_syntax::parsers::misc::{tok, tok_keyword_end, tok_keyword_if, tok_semicolon};
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
@@ -18,16 +18,13 @@ use nom::{combinator::cut, error::context};
 /// Parses `if COND -> EXPR; ... end`
 pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    tok_keyword(Keyword::If),
+    tok_keyword_if,
     context(
       "if block",
       cut(map(
         terminated(
-          separated_list1(
-            tok(TokenType::Semicolon),
-            context("if block clause", cut(parse_if_clause)),
-          ),
-          tok_keyword(Keyword::End),
+          separated_list1(tok_semicolon, context("if block clause", cut(parse_if_clause))),
+          tok_keyword_end,
         ),
         |clauses| AstNodeImpl::new_if_statement(SourceLoc::new(&input), clauses),
       )),

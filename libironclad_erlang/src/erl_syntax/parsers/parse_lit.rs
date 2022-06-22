@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string};
+use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string, ws_before};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -49,5 +49,10 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Read a literal value from input string
 pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
-  alt((parse_float_to_ast, parse_int_to_ast, parse_atom_to_ast, parse_string_to_ast))(input)
+  ws_before(alt((
+    parse_float_to_ast,
+    parse_int_to_ast,
+    parse_atom_to_ast,
+    parse_string_to_ast,
+  )))(input)
 }
