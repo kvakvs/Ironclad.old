@@ -1,6 +1,5 @@
 //! Collection of MFArity which is lockable
 
-use crate::mfarity::MFArity;
 use crate::pretty::Pretty;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};

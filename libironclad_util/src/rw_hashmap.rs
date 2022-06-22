@@ -1,6 +1,5 @@
 //! Collection of MFArity which is lockable
 
-use crate::mfarity::MFArity;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
@@ -15,7 +14,7 @@ pub struct RwHashMap<KeyType, ValType> {
 
 impl<KeyType: Display, ValType: Display> Display for RwHashMap<KeyType, ValType> {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    if let Ok(mut r_collection) = self.collection.read() {
+    if let Ok(r_collection) = self.collection.read() {
       for (k, v) in r_collection.iter() {
         writeln!(f, "{} = {}; ", k, v)?;
       }

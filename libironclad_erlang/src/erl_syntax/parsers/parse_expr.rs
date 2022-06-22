@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult, VecAstParserResult};
+use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
 use crate::erl_syntax::parsers::misc::{tok, tok_var};
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
@@ -94,7 +94,9 @@ pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<As
 }
 
 /// Parses mix of generators and conditions for a list comprehension
-pub fn parse_list_comprehension_exprs_and_generators(input: ParserInput) -> VecAstParserResult {
+pub fn parse_list_comprehension_exprs_and_generators(
+  input: ParserInput,
+) -> ParserResult<Vec<AstNode>> {
   separated_list0(
     tok(TokenType::Comma),
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon

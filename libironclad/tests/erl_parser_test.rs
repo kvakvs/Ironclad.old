@@ -270,7 +270,10 @@ fn parse_fn_with_list_comprehension() -> IcResult<()> {
     Fs = [function(F) || F <- Fs0],
     {ok,{Mod,Exp,Attr,Fs,Lc}}.";
   let module = test_util::parse_module(function_name!(), source);
-  println!("Parsed result: {}", module.ast.borrow());
+  let root_scope = module.root_scope.clone();
+  assert!(root_scope
+    .function_defs
+    .contains(&MFArity::new_local("module", 5)));
   Ok(())
 }
 

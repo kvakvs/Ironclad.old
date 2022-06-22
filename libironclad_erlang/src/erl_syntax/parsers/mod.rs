@@ -5,7 +5,6 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use defs::VecAstParserResult;
 use nom::combinator::{complete, map};
 use nom::error::context;
 use nom::multi::many0;
@@ -33,8 +32,8 @@ pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode>
 }
 
 /// Parses 0 or more module forms (attrs and function defs)
-pub fn parse_module_forms(input: ParserInput) -> VecAstParserResult {
-  many0(complete(parse_one_module_form))(input)
+pub fn parse_module_forms(input: ParserInput) -> ParserResult<Vec<AstNode>> {
+  complete(many0(parse_one_module_form))(input)
 }
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
