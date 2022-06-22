@@ -17,10 +17,10 @@ impl std::fmt::Display for ErlType {
       ErlType::Integer => write!(f, "integer()"),
       ErlType::IntegerRange { from, to } => write!(f, "{}..{}", from, to),
       ErlType::AnyTuple => write!(f, "tuple()"),
-      ErlType::Tuple { elements } => Pretty::display_curly_list(elements, f),
+      ErlType::Tuple { elements } => Pretty::display_curly_list(elements.iter(), f),
       ErlType::Record { tag, fields } => {
         write!(f, "#{}", tag)?;
-        Pretty::display_curly_list(fields, f)
+        Pretty::display_curly_list(fields.iter(), f)
       }
       ErlType::AnyList => write!(f, "list()"),
       ErlType::List { elements, tail } => match tail {
@@ -30,12 +30,12 @@ impl std::fmt::Display for ErlType {
       ErlType::StronglyTypedList { elements, tail } => match tail {
         Some(t) => {
           write!(f, "strong_list(")?;
-          Pretty::display_comma_separated(elements, f)?;
+          Pretty::display_comma_separated(elements.iter(), f)?;
           write!(f, " | {})", t)
         }
         None => {
           write!(f, "strong_list")?;
-          Pretty::display_paren_list(elements, f)
+          Pretty::display_paren_list(elements.iter(), f)
         }
       },
       ErlType::Nil => write!(f, "[]"),
@@ -46,7 +46,7 @@ impl std::fmt::Display for ErlType {
       ErlType::AnyFn => write!(f, "function()"),
       ErlType::Fn(fntype) => {
         write!(f, "fun ")?;
-        Pretty::display_semicolon_separated(fntype.clauses(), f)
+        Pretty::display_semicolon_separated(fntype.clauses().iter(), f)
       }
       ErlType::FnRef { fun } => write!(f, "fun {}", fun),
       ErlType::Lambda => write!(f, "function()"),
@@ -55,10 +55,10 @@ impl std::fmt::Display for ErlType {
       ErlType::Port => write!(f, "port()"),
       ErlType::RecordRef { tag } => write!(f, "#{}{{}}", tag),
       ErlType::Singleton { val } => write!(f, "{}", val),
-      ErlType::Union(u) => Pretty::display_separated(&u.types, "|", f),
+      ErlType::Union(u) => Pretty::display_separated(u.types.iter(), "|", f),
       ErlType::UserDefinedType { name, args } => {
         write!(f, "{}", name)?;
-        Pretty::display_paren_list(args, f)
+        Pretty::display_paren_list(args.iter(), f)
       }
       ErlType::Typevar(tv) => write!(f, "{}", tv),
     }

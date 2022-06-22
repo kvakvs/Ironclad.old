@@ -18,7 +18,7 @@ pub struct FnClauseType {
 
 impl std::fmt::Display for FnClauseType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    Pretty::display_paren_list(&self.args, f)?;
+    Pretty::display_paren_list(self.args.iter(), f)?;
     write!(f, " -> {}", self.ret_type)
   }
 }

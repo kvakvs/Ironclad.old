@@ -22,7 +22,7 @@ pub type PreprocessorDefine = Arc<PreprocessorDefineImpl>;
 impl std::fmt::Debug for PreprocessorDefineImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "-define({}", &self.name)?;
-    Pretty::display_paren_list(&self.args, f)?;
+    Pretty::display_paren_list(self.args.iter(), f)?;
     write!(f, ", {})", &self.text)
   }
 }

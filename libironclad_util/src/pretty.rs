@@ -1,20 +1,23 @@
 //! Display helpers for printing stuff
 
+use std::fmt::{Display, Formatter};
+
 /// Groups up the code for pretty printing containers and other stuff
 pub struct Pretty {}
 
 impl Pretty {
   /// Print <'sep' separated list of something>
-  pub fn display_separated<T>(
-    elems: &[T],
+  pub fn display_separated<'a, Iter, T>(
+    elems_iter: Iter,
     sep: &str,
-    f: &mut std::fmt::Formatter,
+    f: &mut Formatter,
   ) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
     let mut first = true;
-    for entry in elems.iter() {
+    for entry in elems_iter {
       if first {
         first = false;
       } else {
@@ -26,56 +29,64 @@ impl Pretty {
   }
 
   /// Print <comma, separated, list, of something>
-  pub fn display_comma_separated<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
+  pub fn display_comma_separated<'a, Iter, T>(
+    elems_iter: Iter,
+    f: &mut Formatter,
+  ) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
-    Pretty::display_separated(elems, ", ", f)
+    Pretty::display_separated(elems_iter, ", ", f)
   }
 
   /// Print <semicolon; separated; list; of something>
-  pub fn display_semicolon_separated<T>(
-    elems: &[T],
-    f: &mut std::fmt::Formatter,
+  pub fn display_semicolon_separated<'a, Iter, T>(
+    elems_iter: Iter,
+    f: &mut Formatter,
   ) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
-    Pretty::display_separated(elems, "; ", f)
+    Pretty::display_separated(elems_iter, "; ", f)
   }
 
   /// Print \[ <comma separated something> \]
-  pub fn display_square_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
+  pub fn display_square_list<'a, Iter, T>(elems_iter: Iter, f: &mut Formatter) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
     write!(f, "[")?;
-    Pretty::display_comma_separated(elems, f)?;
+    Pretty::display_comma_separated(elems_iter, f)?;
     write!(f, "]")
   }
 
   /// Print ( <comma separated something> )
-  pub fn display_paren_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
+  pub fn display_paren_list<'a, Iter, T>(elems_iter: Iter, f: &mut Formatter) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
     write!(f, "(")?;
-    Pretty::display_comma_separated(elems, f)?;
+    Pretty::display_comma_separated(elems_iter, f)?;
     write!(f, ")")
   }
 
   /// Print { <comma separated something> }
-  pub fn display_curly_list<T>(elems: &[T], f: &mut std::fmt::Formatter) -> std::fmt::Result
+  pub fn display_curly_list<'a, Iter, T>(elems_iter: Iter, f: &mut Formatter) -> std::fmt::Result
   where
-    T: std::fmt::Display,
+    Iter: Iterator<Item = &'a T>,
+    T: Display + 'a,
   {
     write!(f, "{{")?;
-    Pretty::display_comma_separated(elems, f)?;
+    Pretty::display_comma_separated(elems_iter, f)?;
     write!(f, "}}")
   }
 
   /// Display a `\" {text} \"` with special characters quoted.
-  pub fn doublequot_string(f: &mut std::fmt::Formatter, s: &str) -> std::fmt::Result {
+  pub fn doublequot_string(f: &mut Formatter, s: &str) -> std::fmt::Result {
     write!(f, "\"")?;
     for (_i, ch) in s.chars().enumerate() {
       match ch {
@@ -87,7 +98,7 @@ impl Pretty {
   }
 
   /// Display a `\' {text} \'` with special characters quoted.
-  pub fn singlequot_string(f: &mut std::fmt::Formatter, s: &str) -> std::fmt::Result {
+  pub fn singlequot_string(f: &mut Formatter, s: &str) -> std::fmt::Result {
     write!(f, "\'")?;
     for (_i, ch) in s.chars().enumerate() {
       match ch {

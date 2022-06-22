@@ -8,7 +8,7 @@ use crate::record_def::RecordDefinition;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::rw_hashmap::RwHashMap;
-use libironclad_util::rw_mfarity_set::RwMFAritySet;
+use libironclad_util::rw_mfarity_set::RwHashSet;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -21,16 +21,16 @@ pub struct RootScopeImpl {
   user_types: RwHashMap<MFArity, Arc<ErlType>>,
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
-  function_defs: RwHashMap<MFArity, AstNode>,
+  pub function_defs: RwHashMap<MFArity, AstNode>,
   /// Collection of record definitions
   record_defs: RwHashMap<String, Arc<RecordDefinition>>,
   /// Collection of all custom attributes coming in form of `- <TAG> ( <EXPR> ).` tag is key in this
   /// collection and not unique.
   attributes: RwHashMap<String, Arc<ModuleAttributes>>,
   /// Exported function names and arities
-  pub exports: RwMFAritySet,
+  pub exports: RwHashSet<MFArity>,
   /// Imported function names keyed by the MFArity
-  pub imports: RwMFAritySet,
+  pub imports: RwHashSet<MFArity>,
 }
 
 /// Alias type for `Arc<>`
@@ -44,33 +44,26 @@ impl Default for RootScopeImpl {
       function_defs: RwHashMap::default(),
       record_defs: RwHashMap::default(),
       attributes: RwHashMap::default(),
-      exports: RwMFAritySet::default(),
-      imports: RwMFAritySet::default(),
+      exports: RwHashSet::default(),
+      imports: RwHashSet::default(),
     }
   }
 }
 
 impl std::fmt::Display for RootScopeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let attrs_fmt = if let Ok(r_attrs) = self.attributes.collection.read() {
-      r_attrs
-        .iter()
-        .map(|(key, a)| format!("{}={:?}", key, a))
-        .collect::<Vec<String>>()
-        .join(", ")
-    } else {
-      panic!("Can't lock Scope to print vars")
-    };
-    let funs_fmt = if let Ok(r_funs) = self.function_defs.collection.read() {
-      r_funs
-        .iter()
-        .map(|fnc| format!("{}", fnc.0))
-        .collect::<Vec<String>>()
-        .join(", ")
-    } else {
-      panic!("Can't lock Scope to print funs")
-    };
-    write!(f, "RootScope{{ funs [{}], attrs [{}] }}", funs_fmt, attrs_fmt)
+    write!(
+      f,
+      "RootScope[ function_specs={function_specs}; user_types={user_types}; function_defs={function_defs}; \
+      record_defs={record_defs}; attributes={attributes}; exports={exports}; imports={imports} ]",
+      function_specs = self.function_specs,
+      user_types = self.user_types,
+      function_defs = self.function_defs,
+      record_defs = self.record_defs,
+      attributes = self.attributes,
+      exports = self.exports,
+      imports = self.imports
+    )
   }
 }
 
@@ -123,22 +116,22 @@ impl RootScopeImpl {
     }
   }
 
-  /// Attempt to find a function in the scope, or delegate to the parent scope
-  pub fn get_fn(&self, mfa: &MFArity) -> Option<AstNode> {
-    if let Ok(r_funs) = self.function_defs.collection.read() {
-      match r_funs.get(mfa) {
-        Some(val) => {
-          if val.is_fn_def() {
-            return Some(val.clone());
-          }
-          panic!("Only FnDef AST nodes must be stored in module scope")
-        }
-        None => None,
-      }
-    } else {
-      panic!("Can't lock RootScope functions for lookup")
-    }
-  }
+  // /// Attempt to find a function in the scope, or delegate to the parent scope
+  // pub fn get_fn(&self, mfa: &MFArity) -> Option<AstNode> {
+  //   if let Ok(r_funs) = self.function_defs.collection.read() {
+  //     match r_funs.get(mfa) {
+  //       Some(val) => {
+  //         if val.is_fn_def() {
+  //           return Some(val.clone());
+  //         }
+  //         panic!("Only FnDef AST nodes must be stored in module scope")
+  //       }
+  //       None => None,
+  //     }
+  //   } else {
+  //     panic!("Can't lock RootScope functions for lookup")
+  //   }
+  // }
 
   /// Add a function by MFA and its type
   pub(crate) fn add_fn(&self, mfa: &MFArity, ast: AstNode) {

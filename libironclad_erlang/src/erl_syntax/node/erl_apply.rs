@@ -26,7 +26,7 @@ pub struct ErlApply {
 impl std::fmt::Display for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}(", self.target)?;
-    Pretty::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(self.args.iter(), f)?;
     write!(f, ")")
   }
 }
@@ -34,7 +34,7 @@ impl std::fmt::Display for ErlApply {
 impl std::fmt::Debug for ErlApply {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(f, "apply({}, (", self.target)?;
-    Pretty::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(self.args.iter(), f)?;
     write!(f, "))")
   }
 }

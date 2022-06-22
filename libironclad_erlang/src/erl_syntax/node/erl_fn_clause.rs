@@ -107,7 +107,7 @@ impl std::fmt::Display for ErlFnClause {
         .clone()
         .unwrap_or_else(|| "$unnamed-lambda".to_string())
     )?;
-    Pretty::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(self.args.iter(), f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
       write!(f, "when {} ", *gexpr)?;
@@ -126,7 +126,7 @@ impl std::fmt::Debug for ErlFnClause {
         .clone()
         .unwrap_or_else(|| "$unnamed-lambda".to_string())
     )?;
-    Pretty::display_comma_separated(&self.args, f)?;
+    Pretty::display_comma_separated(self.args.iter(), f)?;
     write!(f, ") ")?;
     if let Some(gexpr) = &self.guard_expr {
       write!(f, "when {:?} ", *gexpr)?;

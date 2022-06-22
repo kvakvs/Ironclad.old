@@ -37,7 +37,7 @@ impl std::fmt::Display for AstNodeImpl {
       Apply(app) => write!(f, "{}", app),
       CaseStatement { expr, clauses, .. } => {
         write!(f, "case {} of", expr)?;
-        Pretty::display_semicolon_separated(clauses, f)?;
+        Pretty::display_semicolon_separated(clauses.iter(), f)?;
         writeln!(f, "end")
       }
       Lit { value: lit, .. } => write!(f, "{}", lit),
@@ -52,25 +52,25 @@ impl std::fmt::Display for AstNodeImpl {
         None => write!(f, "(fun {}/{})", mfa.name, mfa.arity),
         Some(m) => write!(f, "(fun {}:{}/{})", m, mfa.name, mfa.arity),
       },
-      CommaExpr { elements, .. } => Pretty::display_comma_separated(elements, f),
+      CommaExpr { elements, .. } => Pretty::display_comma_separated(elements.iter(), f),
       List { elements, tail: maybe_tail, .. } => {
         write!(f, "[")?;
-        Pretty::display_comma_separated(elements, f)?;
+        Pretty::display_comma_separated(elements.iter(), f)?;
         if let Some(tail) = maybe_tail {
           write!(f, " | {}", tail)?;
         }
         write!(f, "]")
       }
-      Tuple { elements, .. } => Pretty::display_curly_list(elements, f),
+      Tuple { elements, .. } => Pretty::display_curly_list(elements.iter(), f),
       Type { ty, .. } => write!(f, "{}", ty),
       MapBuilder { members } => {
         write!(f, "#{{")?;
-        Pretty::display_comma_separated(members, f)?;
+        Pretty::display_comma_separated(members.iter(), f)?;
         write!(f, "}}")
       }
       ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;
-        Pretty::display_comma_separated(generators, f)?;
+        Pretty::display_comma_separated(generators.iter(), f)?;
         write!(f, "]")
       }
       ListComprehensionGenerator { left, right, .. } => {
@@ -80,18 +80,18 @@ impl std::fmt::Display for AstNodeImpl {
         write!(f, "try {}", body)?;
         if let Some(ofb) = of_branches {
           write!(f, "of")?;
-          Pretty::display_semicolon_separated(ofb, f)?;
+          Pretty::display_semicolon_separated(ofb.iter(), f)?;
         }
-        Pretty::display_semicolon_separated(catch_clauses, f)
+        Pretty::display_semicolon_separated(catch_clauses.iter(), f)
       }
       IfStatement { clauses, .. } => {
         write!(f, "if ")?;
-        Pretty::display_semicolon_separated(clauses, f)?;
+        Pretty::display_semicolon_separated(clauses.iter(), f)?;
         write!(f, " end")
       }
       BinaryExpr { elements, .. } => {
         write!(f, "<<")?;
-        Pretty::display_comma_separated(elements, f)?;
+        Pretty::display_comma_separated(elements.iter(), f)?;
         write!(f, ">>")
       }
     }
@@ -105,10 +105,10 @@ impl std::fmt::Display for Literal {
       Literal::Float(flt) => write!(f, "{}", flt),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => write!(f, "{}", b),
-      Literal::List { elements, .. } => Pretty::display_square_list(elements, f),
+      Literal::List { elements, .. } => Pretty::display_square_list(elements.iter(), f),
       Literal::Nil => write!(f, "[]"),
       Literal::String(s) => write!(f, "\"{}\"", s),
-      Literal::Tuple(t) => Pretty::display_curly_list(t, f),
+      Literal::Tuple(t) => Pretty::display_curly_list(t.iter(), f),
     }
   }
 }

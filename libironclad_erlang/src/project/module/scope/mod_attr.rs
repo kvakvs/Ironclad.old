@@ -1,6 +1,8 @@
 //! Module attributes collection
 
 use crate::erl_syntax::erl_ast::AstNode;
+use libironclad_util::pretty::Pretty;
+use std::fmt::Formatter;
 use std::sync::RwLock;
 
 /// Storage for one `- <NAME> ( <EXPR> )` module attribute
@@ -26,6 +28,25 @@ pub struct ModuleAttributes {
   pub collection: RwLock<Vec<ModuleAttribute>>,
 }
 
+impl std::fmt::Display for ModuleAttributes {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    if let Ok(r_collection) = self.collection.read() {
+      Pretty::display_square_list(r_collection.iter(), f)
+    } else {
+      panic!("Can't lock ModuleAttributes for printing")
+    }
+  }
+}
+
+impl std::fmt::Display for ModuleAttribute {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match &self.expr {
+      Some(expr1) => write!(f, "{tag}={expr}", tag = self.tag, expr = expr1),
+      None => write!(f, "{tag}", tag = self.tag),
+    }
+  }
+}
+
 impl Default for ModuleAttributes {
   fn default() -> Self {
     Self { collection: Default::default() }
@@ -38,7 +59,7 @@ impl ModuleAttributes {
     if let Ok(r_collection) = self.collection.read() {
       r_collection.len()
     } else {
-      panic!("Can't lock module attributes named group for length check")
+      panic!("Can't lock ModuleAttributes for length check")
     }
   }
 
@@ -47,7 +68,7 @@ impl ModuleAttributes {
     if let Ok(r_collection) = self.collection.read() {
       r_collection[index].clone()
     } else {
-      panic!("Can't lock module attributes named group to retrieve an attribute")
+      panic!("Can't lock ModuleAttributes to retrieve an attribute")
     }
   }
 
@@ -56,7 +77,7 @@ impl ModuleAttributes {
     if let Ok(mut w_collection) = self.collection.write() {
       w_collection.push(ModuleAttribute::new(tag, expr))
     } else {
-      panic!("Can't lock module attributes named group to insert")
+      panic!("Can't lock ModuleAttributes to insert")
     }
   }
 }

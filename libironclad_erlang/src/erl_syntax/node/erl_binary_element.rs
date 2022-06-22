@@ -123,7 +123,7 @@ impl std::fmt::Display for BinaryElement {
     }
     if !self.type_specs.is_empty() {
       write!(f, "/")?;
-      Pretty::display_separated(&self.type_specs, "-", f)?;
+      Pretty::display_separated(self.type_specs.iter(), "-", f)?;
     }
     Ok(())
   }
