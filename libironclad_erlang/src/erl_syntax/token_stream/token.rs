@@ -114,7 +114,7 @@ impl std::fmt::Display for Token {
       TokenType::Comment(c) => write!(f, "% {}", c),
       TokenType::CurlyClose => write!(f, "}}"),
       TokenType::CurlyOpen => write!(f, "{{"),
-      TokenType::Div => write!(f, "/"),
+      TokenType::ForwardSlash => write!(f, "/"),
       TokenType::DoubleAngleClose => write!(f, ">>"),
       TokenType::DoubleAngleOpen => write!(f, "<<"),
       TokenType::EqualEqual => write!(f, "=="),

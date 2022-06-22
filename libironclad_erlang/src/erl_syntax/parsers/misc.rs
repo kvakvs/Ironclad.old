@@ -1,5 +1,5 @@
 //! Helper functions for Nom parsing
-use crate::erl_syntax::parsers::defs::{ErlParserError, ParserResult};
+use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
@@ -344,7 +344,7 @@ pub(crate) fn tok_hash(input: ParserInput) -> ParserResult<()> {
 /// Matches a `/` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_forward_slash(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Div)), |_| ())(input)
+  map(ws_before(tok(TokenType::ForwardSlash)), |_| ())(input)
 }
 
 /// Matches a `,` token with possibly a newline before it

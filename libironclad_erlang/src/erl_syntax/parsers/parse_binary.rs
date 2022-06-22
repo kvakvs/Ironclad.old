@@ -7,13 +7,12 @@ use crate::erl_syntax::node::erl_binary_element::{
 };
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom_of, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
+  tok_atom_of, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
   tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_var,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;

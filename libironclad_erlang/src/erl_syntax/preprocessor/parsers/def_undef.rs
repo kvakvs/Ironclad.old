@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, parenthesis_period_newline, period_eol, tok, tok_comma, tok_par_close, tok_par_open,
+  dash_atom, parenthesis_period_newline, period_eol, tok_comma, tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::if_ifdef::tok_macro_ident;
@@ -10,7 +10,6 @@ use crate::erl_syntax::preprocessor::parsers::preprocessor::comma_sep_macro_iden
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::misc::any_token;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{map, opt};

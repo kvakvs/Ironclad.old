@@ -12,7 +12,6 @@ use crate::erl_syntax::parsers::parse_expr::{
   EXPR_STYLE_MATCHEXPR,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;

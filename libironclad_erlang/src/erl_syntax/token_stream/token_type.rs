@@ -13,27 +13,41 @@ use std::sync::Arc;
 pub enum TokenType {
   /// Temporary token, removed during preprocessing.
   Newline,
+  /// `,` a comma
   Comma,
+  /// `;` a semicolon
   Semicolon,
+  /// `:` a colon
   Colon,
+  /// `::` a double colon
   ColonColon,
+  /// `.` a period symbol
   Period,
+  /// `..` a double period symbol
   PeriodPeriod,
+  /// `+` a plus sign
   Plus,
+  /// `-` a minus sign
   Minus,
-  /// Float division `/`
-  Div,
+  /// Float division `/` forward slash symbol
+  ForwardSlash,
   /// Multiplication `*`
   Mul,
   /// `++` append list
   ListAppend,
   /// `--` set operation on list `A -- B`
   ListSubtract,
+  /// `==` double equal sign
   EqualEqual,
+  /// `/=` not equal sign
   NotEq,
+  /// `=<` less than or equal to
   LessThanEq,
+  /// `<` less than, opening angle bracket
   LessThan,
+  /// `>=` greater than or equal to
   GreaterEq,
+  /// `>` greater than, closing angle bracket
   GreaterThan,
   /// `==` exact equality with type
   HardEq,
@@ -51,30 +65,45 @@ pub enum TokenType {
   LeftArr,
   /// A send operation `!`
   Send,
+  /// `(` opening parenthesis
   ParOpen,
+  /// `)` closing parenthesis
   ParClose,
+  /// `[` opening square bracket
   SquareOpen,
+  /// `]` closing square bracket
   SquareClose,
+  /// `{` opening curly brace
   CurlyOpen,
+  /// `}` closing curly brace
   CurlyClose,
   /// `<<` opening a binary
   DoubleAngleOpen,
   /// `>>` closing a binary
   DoubleAngleClose,
+  /// `#` a hash symbol
   Hash,
+  /// `|` a pipe symbol
   VerticalBar,
+  /// `||` a double pipe symbol
   BarBar,
   /// A parsed string token_stream between `" TEXT "`
   Str(Arc<String>),
+  /// `% text` a line comment block
   Comment(Arc<String>),
   /// A `$`-prefixed any character
   Character(Char),
   /// A parsed atom token_stream either lowercase `atom` or quoted between `' TEXT '`
   Atom(String),
+  /// A variable name starting with `_` or a capital letter
   Variable(String),
+  /// A reserved Erlang keyword
   Keyword(Keyword),
+  /// A small or big integer (no sign)
   Integer(ErlInteger),
+  /// A floating point number
   Float(f64),
+  /// A macro invocation `?MACRO`; arguments are not included in this token but follow it
   MacroInvocation(String),
   /// Something that was parsed like `- <NAME> ( SOMETHING... ) .`
   Preprocessor(PreprocessorNode),

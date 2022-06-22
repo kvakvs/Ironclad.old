@@ -4,8 +4,8 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok, tok_atom, tok_atom_of, tok_keyword_else, tok_keyword_if,
-  tok_par_close, tok_par_open, tok_var, ws_before,
+  dash_atom, period_eol, tok_atom, tok_atom_of, tok_keyword_else, tok_keyword_if, tok_par_close,
+  tok_par_open, tok_var,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;

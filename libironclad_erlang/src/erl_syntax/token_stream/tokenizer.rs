@@ -52,7 +52,9 @@ fn symbol_curlyopen(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_div(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('/').and(not(char('='))), |_| Token::new(input.as_ptr(), TokenType::Div))(input)
+  map(char('/').and(not(char('='))), |_| {
+    Token::new(input.as_ptr(), TokenType::ForwardSlash)
+  })(input)
 }
 
 #[inline]

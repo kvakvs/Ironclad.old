@@ -108,7 +108,14 @@ impl ErlModuleImpl {
 
   /// Update the module name when we learn it from -module() attribute
   pub fn set_name(&self, name: &str) {
-    assert!(self.name.borrow().is_empty()); // can only update once
+    if cfg!(debug_assertions) {
+      let self_name = self.name.borrow();
+      assert!(
+        self_name.is_empty(),
+        "Only one -module() attribute per module is allowed, the name is already set to {}",
+        self_name
+      );
+    }
     self.name.replace(name.to_string());
   }
 }
