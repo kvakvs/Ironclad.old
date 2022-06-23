@@ -38,10 +38,9 @@ impl ErlModuleImpl {
         // These can only span one or more full lines, so we can work with lines iterator
 
         // Expand the line slice till we find the terminator symbol `period + end of line`
-        while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) {
+        while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) && !itr.eof() {
           if let Some(expanded) = itr.expand_till_next_line() {
             line = expanded;
-            break; // found end terminator
           } else {
             break; // end of input
           }

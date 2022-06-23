@@ -71,7 +71,8 @@ impl<'a> TokenLinesIter<'a> {
     let scan_start = self.pos + self.slice_len;
     for i in scan_start..self.base.len() {
       if self.base[i].is_eol() {
-        self.slice_len = self.slice_len + i - scan_start;
+        // Add 1 to include the newline
+        self.slice_len = self.slice_len + i - scan_start + 1;
         return Some(self.build_slice());
       }
     }
