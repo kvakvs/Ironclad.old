@@ -12,6 +12,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_list_comprehension;
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
+use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_util::mfarity::MFArity;
@@ -285,7 +286,7 @@ fn parse_fn1() -> IcResult<()> {
   assert_eq!(fndef.clauses[0].name, Some("f".to_string()));
 
   let root_scope = module.root_scope.clone();
-  let fnf = root_scope.function_defs.get(&MFArity::new_local("f", 1));
+  let fnf = root_scope.fn_defs.get(&MFArity::new_local("f", 1));
   assert!(fnf.is_some(), "Function f/1 not found");
 
   Ok(())
@@ -302,7 +303,7 @@ fn parse_fn_with_list_comprehension() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), source);
   let root_scope = module.root_scope.clone();
   assert!(root_scope
-    .function_defs
+    .fn_defs
     .contains(&MFArity::new_local("module", 5)));
   Ok(())
 }
@@ -607,6 +608,26 @@ fn sample_record_input() -> &'static str {
 						% use in erl_compile.erl).
 	  cwd	      :: file:filename()	% Current working directory for erlc.
 	 }).\n"
+}
+
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_record_raw_parser_invocation() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition (raw parser invocation)");
+  let input = sample_record_input();
+  let tokens = test_util::tokenize(input);
+  let p_input = ParserInput::new_slice(&tokens);
+  let (_tail, _pnode) = panicking_parser_error_reporter(
+    input,
+    p_input.clone(),
+    parse_record_def(p_input.clone()).finish(),
+  );
+  // let root_scope = module.root_scope.clone();
+  // let record_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
+  // assert_eq!(record_def.tag, "options");
+  // assert_eq!(record_def.fields.len(), 10);
+  Ok(())
 }
 
 /// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`

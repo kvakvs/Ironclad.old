@@ -5,12 +5,14 @@ use crate::erl_syntax::parsers::misc::{
   tok_string,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
-use crate::erl_syntax::preprocessor::parsers::if_ifdef::{
+use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
+use crate::erl_syntax::preprocessor::parsers::parse_def_undef::{
+  define_directive, undef_directive,
+};
+use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::{
   elif_directive, else_directive, endif_directive, if_directive, ifdef_directive, ifndef_directive,
   tok_macro_ident,
 };
-use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::source_loc::SourceLoc;

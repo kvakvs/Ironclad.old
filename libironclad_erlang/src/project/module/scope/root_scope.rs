@@ -15,12 +15,12 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct RootScopeImpl {
   /// Contains definitions, added by `-spec` attribute
-  pub function_specs: RwHashMap<MFArity, Arc<ErlType>>,
+  pub fn_specs: RwHashMap<MFArity, Arc<ErlType>>,
   /// Contains `-type NAME() ...` definitions for new types
   pub user_types: RwHashMap<MFArity, Arc<ErlType>>,
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
-  pub function_defs: RwHashMap<MFArity, AstNode>,
+  pub fn_defs: RwHashMap<MFArity, AstNode>,
   /// Collection of record definitions
   pub record_defs: RwHashMap<String, Arc<RecordDefinition>>,
   /// Collection of all custom attributes coming in form of `- <TAG> ( <EXPR> ).` tag is key in this
@@ -28,6 +28,8 @@ pub struct RootScopeImpl {
   pub attributes: RwHashMap<String, Arc<ModuleAttributes>>,
   /// Exported function names and arities
   pub exports: RwHashSet<MFArity>,
+  /// Types and arities created in this module and available for export
+  pub exported_types: RwHashSet<MFArity>,
   /// Imported function names keyed by the MFArity
   pub imports: RwHashSet<MFArity>,
 }
@@ -38,12 +40,13 @@ pub type RootScope = Arc<RootScopeImpl>;
 impl Default for RootScopeImpl {
   fn default() -> Self {
     RootScopeImpl {
-      function_specs: RwHashMap::default(),
+      fn_specs: RwHashMap::default(),
       user_types: RwHashMap::default(),
-      function_defs: RwHashMap::default(),
+      fn_defs: RwHashMap::default(),
       record_defs: RwHashMap::default(),
       attributes: RwHashMap::default(),
       exports: RwHashSet::default(),
+      exported_types: RwHashSet::default(),
       imports: RwHashSet::default(),
     }
   }
@@ -55,9 +58,9 @@ impl std::fmt::Display for RootScopeImpl {
       f,
       "RootScope[ function_specs={function_specs}; user_types={user_types}; function_defs={function_defs}; \
       record_defs={record_defs}; attributes={attributes}; exports={exports}; imports={imports} ]",
-      function_specs = self.function_specs,
+      function_specs = self.fn_specs,
       user_types = self.user_types,
-      function_defs = self.function_defs,
+      function_defs = self.fn_defs,
       record_defs = self.record_defs,
       attributes = self.attributes,
       exports = self.exports,
@@ -83,7 +86,7 @@ impl RootScopeImpl {
   /// Recursive descend into AST saving FnDef nodes
   pub fn update_from_ast(&self, ast: &AstNode) {
     if let AstNodeType::FnDef(fndef) = &ast.content {
-      self.function_defs.add(fndef.funarity.clone(), ast.clone());
+      self.fn_defs.add(fndef.funarity.clone(), ast.clone());
     }
 
     if let Some(children) = ast.children() {

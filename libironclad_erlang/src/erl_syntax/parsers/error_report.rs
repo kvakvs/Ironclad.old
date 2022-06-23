@@ -17,6 +17,7 @@ pub fn convert_token_stream_parser_error(
   use nom::Offset;
   use std::fmt::Write;
 
+  const FORMAT_LIMIT: usize = 200;
   let mut result = String::new();
 
   for (i, (substring, kind)) in err.errors.iter().enumerate() {
@@ -66,60 +67,60 @@ pub fn convert_token_stream_parser_error(
       match kind {
         ErlParserErrorKind::Char(c) => {
           if let Some(actual) = substring.tokens.iter().next() {
-            write!(
+            writeln!(
               &mut result,
-              "{i}: at line {line_number}:{column}:\n\
-               {line}\n\
-               expected '{expected}', found {actual}\n\n",
+              "expected '{expected}', found {actual}
+    {i}: at line {line_number}:{column}:
+    {line}",
               i = i,
               line_number = line_number,
-              line = format_tok_stream(line, 50),
+              line = format_tok_stream(line, FORMAT_LIMIT),
               column = column_number,
               expected = c,
               actual = actual,
             )
           } else {
-            write!(
+            writeln!(
               &mut result,
-              "{i}: at line {line_number}:{column}:\n\
-               {line}\n\
-               expected '{expected}', got end of input\n\n",
+              "expected '{expected}', got end of input
+    {i}: at line {line_number}:{column}:
+    {line}",
               i = i,
               line_number = line_number,
-              line = format_tok_stream(line, 50),
+              line = format_tok_stream(line, FORMAT_LIMIT),
               column = column_number,
               expected = c,
             )
           }
         }
-        ErlParserErrorKind::Context(s) => write!(
+        ErlParserErrorKind::Context(s) => writeln!(
           &mut result,
-          "{i}: at line {line_number}:{column}, in {context}:\n\
-           {line}\n",
+          "    {i}: at line {line_number}:{column}, in {context}:\n\
+    {line}",
           i = i,
           line_number = line_number,
           column = column_number,
           context = s,
-          line = format_tok_stream(line, 50),
+          line = format_tok_stream(line, FORMAT_LIMIT),
         ),
-        ErlParserErrorKind::Nom(e) => write!(
+        ErlParserErrorKind::Nom(e) => writeln!(
           &mut result,
-          "{i}: at line {line_number}:{column}, in {nom_err:?}:\n\
-           {line}\n",
+          "    {i}: at line {line_number}:{column}, in {nom_err:?}:
+    {line}",
           i = i,
           line_number = line_number,
           nom_err = e,
-          line = format_tok_stream(line, 50),
+          line = format_tok_stream(line, FORMAT_LIMIT),
           column = column_number,
         ),
         _ => writeln!(
           &mut result,
-          "{i}: at line {line_number}:{column}:\n\
-          {line}\n\
-          {kind}",
+          "{kind}
+    {i}: at line {line_number}:{column}:
+    {line}",
           i = i,
           column = column_number,
-          line = format_tok_stream(line, 50),
+          line = format_tok_stream(line, FORMAT_LIMIT),
           line_number = line_number,
           kind = kind
         ),

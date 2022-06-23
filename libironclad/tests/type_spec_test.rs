@@ -58,10 +58,14 @@ fn fn_typespec_parse_1() -> IcResult<()> {
   let input = format!("-spec {}(A :: integer()) -> any().", function_name!());
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
-  let _spec = root_scope
-    .function_specs
-    .get(&MFArity::new_local(function_name!(), 1))
-    .unwrap();
+  let fn_spec = root_scope
+    .fn_specs
+    .get(&MFArity::new_local(function_name!(), 1));
+  assert!(
+    fn_spec.is_some(),
+    "Function spec for {}/1 not found in the root scope",
+    function_name!()
+  );
 
   // if let AstNodeType::FnSpec { funarity, spec, .. } = &nodes[0].content {
   //   assert_eq!(
@@ -89,7 +93,7 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
   let _spec = root_scope
-    .function_specs
+    .fn_specs
     .get(&MFArity::new_local(function_name!(), 1))
     .unwrap();
 
@@ -128,7 +132,7 @@ fn fn_typespec_parse_when() -> IcResult<()> {
   // );
   let root_scope = module.root_scope.clone();
   let spec = root_scope
-    .function_specs
+    .fn_specs
     .get(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
   println!("Spec found: {}", spec);
@@ -159,7 +163,7 @@ fn fn_typespec_parse_union() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), &input);
   let root_scope = module.root_scope.clone();
   let _spec = root_scope
-    .function_specs
+    .fn_specs
     .get(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
   // assert!(nodes[0].is_fn_spec());

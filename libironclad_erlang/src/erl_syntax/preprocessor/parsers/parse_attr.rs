@@ -171,7 +171,7 @@ pub(crate) fn parse_any_module_attr(input: ParserInput) -> ParserResult<Preproce
     export_attr,
     import_attr,
     type_definition_attr,
-    ErlTypeParser::fn_spec_attr,
+    ErlTypeParser::parse_fn_spec,
     // Generic parser will try consume any `-IDENT(EXPR).`
     parse_generic_attr,
     parse_generic_attr_no_parentheses,

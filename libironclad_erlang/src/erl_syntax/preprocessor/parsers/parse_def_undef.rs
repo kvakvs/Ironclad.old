@@ -5,8 +5,8 @@ use crate::erl_syntax::parsers::misc::{
   dash_atom, parenthesis_period_eol_eof, period_eol_eof, tok_comma, tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::if_ifdef::tok_macro_ident;
-use crate::erl_syntax::preprocessor::parsers::preprocessor::comma_sep_macro_idents;
+use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::tok_macro_ident;
+use crate::erl_syntax::preprocessor::parsers::parse_pp::comma_sep_macro_idents;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::misc::any_token;

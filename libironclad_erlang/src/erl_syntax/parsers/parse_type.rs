@@ -34,16 +34,16 @@ pub struct ErlTypeParser {}
 impl ErlTypeParser {
   /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
-  pub fn fn_spec_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
+  pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
     map(
       // all between -spec and .
       delimited(
         |i1| dash_atom(i1, "spec"),
         tuple((
-          context("Function name in a -spec() attribute", cut(tok_atom)),
+          context("function name in a -spec() attribute", cut(tok_atom)),
           separated_list1(
             tok_semicolon,
-            context("Function clause in a -spec() attribute", cut(Self::parse_fn_spec_fnclause)),
+            context("function clause in a -spec() attribute", cut(Self::parse_fn_spec_fnclause)),
           ),
         )),
         tok(TokenType::Period), // TODO: Check for newline smh? Newline token?
@@ -72,13 +72,13 @@ impl ErlTypeParser {
         // Args list (list of type variables with some types possibly)
         context(
           "arguments list in a function clause spec",
-          Self::parse_parenthesized_arg_spec_list,
+          cut(Self::parse_parenthesized_arg_spec_list),
         ),
         tok(TokenType::RightArr),
         // Return type for fn clause
         context(
           "return type in function clause spec",
-          alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar)),
+          cut(alt((Self::parse_typevar_with_opt_type, Self::parse_type_as_typevar))),
         ),
         // Optional: when <comma separated list of typevariables given types>
         context("when expression for typespec", opt(Self::parse_when_expr_for_type)),

@@ -296,8 +296,8 @@ fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
       symbol_barbar,      // ||
       symbol_bar,         // |
       symbol_semicolon,   // ;
-      symbol_colon,       // :
       symbol_coloncolon,  // ::
+      symbol_colon,       // :
       symbol_send,        // !
       symbol_squareclose, // ]
       symbol_squareopen,  // [
