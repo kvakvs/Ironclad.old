@@ -54,13 +54,13 @@ impl std::fmt::Display for ErlType {
       ErlType::Reference => write!(f, "reference()"),
       ErlType::Port => write!(f, "port()"),
       ErlType::RecordRef { tag } => write!(f, "#{}{{}}", tag),
-      ErlType::Singleton { val } => write!(f, "{}", val),
+      ErlType::Singleton { val } => val.fmt(f),
       ErlType::Union(u) => Pretty::display_separated(u.types.iter(), "|", f),
       ErlType::UserDefinedType { name, args } => {
-        write!(f, "{}", name)?;
+        name.fmt(f)?;
         Pretty::display_paren_list(args.iter(), f)
       }
-      ErlType::Typevar(tv) => write!(f, "{}", tv),
+      ErlType::Typevar(tv) => tv.fmt(f),
     }
   }
 }

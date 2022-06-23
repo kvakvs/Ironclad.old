@@ -21,9 +21,9 @@ impl Pretty {
       if first {
         first = false;
       } else {
-        write!(f, "{}", sep)?;
+        sep.fmt(f)?;
       }
-      write!(f, "{}", entry)?;
+      entry.fmt(f)?;
     }
     Ok(())
   }
@@ -91,7 +91,7 @@ impl Pretty {
     for (_i, ch) in s.chars().enumerate() {
       match ch {
         '\"' | '\\' => write!(f, "\\{}", ch)?,
-        _ => write!(f, "{}", ch)?,
+        _ => ch.fmt(f)?,
       }
     }
     write!(f, "\"")
@@ -103,7 +103,7 @@ impl Pretty {
     for (_i, ch) in s.chars().enumerate() {
       match ch {
         '\'' | '\\' => write!(f, "\\{}", ch)?,
-        _ => write!(f, "{}", ch)?,
+        _ => ch.fmt(f)?,
       }
     }
     write!(f, "\'")

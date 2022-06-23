@@ -25,9 +25,9 @@ impl std::fmt::Display for PreprocessorStatsImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     writeln!(f, "========================")?;
     writeln!(f, "Preprocessor stage stats")?;
-    write!(f, "{}", self.io.read().unwrap())?;
+    self.io.read().unwrap().fmt(f)?;
     write!(f, "FILE {}", self.file_cache.read().unwrap())?;
     write!(f, "PARSED AST {}", self.ast_cache.read().unwrap())?;
-    write!(f, "{}", self.time.read().unwrap())
+    self.time.read().unwrap().fmt(f)
   }
 }

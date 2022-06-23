@@ -53,7 +53,7 @@ impl ErlInteger {
 impl std::fmt::Display for ErlInteger {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      Small(small) => write!(f, "{}", small),
+      Small(small) => small.fmt(f),
       Big(big) => write!(f, "↑{}", big),
     }
   }

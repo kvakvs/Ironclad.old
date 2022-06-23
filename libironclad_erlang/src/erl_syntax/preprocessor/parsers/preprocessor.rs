@@ -1,7 +1,8 @@
 //! Groups type definitions shared by all preprocessor parse modules
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open, tok_string,
+  dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open,
+  tok_string,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::def_undef::{define_directive, undef_directive};
@@ -29,7 +30,7 @@ fn include_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   match delimited(
     tok_atom_of("include"),
     delimited(tok_par_open, tok_string, tok_par_close),
-    period_eol,
+    period_eol_eof,
   )(input.clone())
   {
     Ok((input2, path)) => {
@@ -53,7 +54,7 @@ fn include_lib_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
     delimited(
       tok_atom_of("include_lib"),
       delimited(tok_par_open, tok_string, tok_par_close),
-      period_eol,
+      period_eol_eof,
     ),
     |t| PreprocessorNodeImpl::new_include_lib(SourceLoc::new(&input), t.as_str().to_string()),
   )(input.clone())
@@ -65,7 +66,7 @@ fn error_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
     delimited(
       tok_atom_of("error"),
       delimited(tok_par_open, tok_string, tok_par_close),
-      period_eol,
+      period_eol_eof,
     ),
     |t| PreprocessorNodeImpl::new_error(SourceLoc::new(&input), t.as_str().to_string()),
   )(input.clone())
@@ -77,7 +78,7 @@ fn warning_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
     delimited(
       tok_atom_of("warning"),
       delimited(tok_par_open, tok_string, tok_par_close),
-      period_eol,
+      period_eol_eof,
     ),
     |t| PreprocessorNodeImpl::new_warning(SourceLoc::new(&input), t.as_str().to_string()),
   )(input.clone())
@@ -97,7 +98,7 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<Preprocessor
           PreprocessorNodeImpl::new_module_start(SourceLoc::new(&input), modname)
         }),
       ),
-      period_eol,
+      period_eol_eof,
     ),
   )(input.clone())
 }

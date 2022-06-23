@@ -3,8 +3,8 @@
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_par_close,
-  tok_par_open,
+  dash_atom, period_eol_eof, tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open,
+  tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
@@ -71,6 +71,6 @@ pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
       "record definition in a -record() attribute",
       cut(delimited(tok_par_open, record_definition_inner, tok_par_close)),
     ),
-    period_eol,
+    period_eol_eof,
   )(input)
 }

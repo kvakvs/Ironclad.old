@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use libironclad_util::pretty::Pretty;
 
 /// Token represents basic elements of source code
 #[derive(Clone)]
@@ -36,10 +35,10 @@ impl Token {
     }
   }
 
-  /// Check whether the token is a newline token (temporary till preprocessing stage)
+  /// Check whether the token is a newline token
   #[inline]
-  pub fn is_newline(&self) -> bool {
-    matches!(self.content, TokenType::Newline)
+  pub fn is_eol(&self) -> bool {
+    matches!(self.content, TokenType::EOL)
   }
 
   /// Check whether the token is an atom of given value
@@ -97,7 +96,7 @@ impl Token {
 
 impl std::fmt::Debug for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self)
+    write!(f, "Token[{:?}]", self.content)
   }
 }
 
@@ -114,10 +113,10 @@ pub fn format_tok_stream(tokens: &[Token], cut: usize) -> String {
 
 /// A temporary solution for displaying token streams without a pile of commas between each token.
 /// Stops at newline or stream end.
-pub fn format_tok_line(tokens: &[Token]) -> String {
+pub fn format_tok_till_eol(tokens: &[Token]) -> String {
   tokens
     .iter()
-    .take_while(|&t| !t.is_newline())
+    .take_while(|&t| !t.is_eol())
     .map(|t| format!("{}", t))
     .collect()
 }

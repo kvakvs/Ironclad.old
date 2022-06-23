@@ -3,17 +3,18 @@
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use nom::error::{ErrorKind, VerboseErrorKind};
-use std::fmt::{Debug, Display, Formatter, Pointer};
+use nom::error::ErrorKind;
+use std::fmt::{Debug, Display, Formatter};
 
 /// Produced by failing parsers
 #[derive(Debug, Clone)]
 pub enum ErlParserErrorKind {
   /// A standard Nom error wrapped
   Nom(ErrorKind),
-  /// A verbose Nom error wrapped
-  #[deprecated = "Copy implementation from VerboseError properly"]
-  NomVerbose(VerboseErrorKind),
+  /// Added by `context()` parser combinator
+  Context(&'static str),
+  /// Added by `char()` parser combinator
+  Char(char),
   /// Need an atom of specific value
   AtomExpected(String),
   /// Any atom
@@ -43,7 +44,12 @@ pub struct ErlParserError<'a> {
   pub errors: Vec<(ParserInput<'a>, ErlParserErrorKind)>,
 }
 
-impl<'a> nom::error::ContextError<ParserInput<'a>> for ErlParserError<'a> {}
+impl<'a> nom::error::ContextError<ParserInput<'a>> for ErlParserError<'a> {
+  fn add_context(input: ParserInput<'a>, ctx: &'static str, mut other: Self) -> Self {
+    other.errors.push((input, ErlParserErrorKind::Context(ctx)));
+    other
+  }
+}
 
 impl<'a> nom::error::ParseError<ParserInput<'a>> for ErlParserError<'a> {
   fn from_error_kind(input: ParserInput<'a>, kind: ErrorKind) -> Self {
@@ -55,6 +61,10 @@ impl<'a> nom::error::ParseError<ParserInput<'a>> for ErlParserError<'a> {
   fn append(input: ParserInput<'a>, kind: ErrorKind, mut other: Self) -> Self {
     other.errors.push((input, ErlParserErrorKind::Nom(kind)));
     other
+  }
+
+  fn from_char(input: ParserInput<'a>, c: char) -> Self {
+    ErlParserError { errors: vec![(input, ErlParserErrorKind::Char(c))] }
   }
 }
 
@@ -136,7 +146,6 @@ impl Display for ErlParserErrorKind {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       ErlParserErrorKind::Nom(e) => e.fmt(f),
-      ErlParserErrorKind::NomVerbose(ev) => ev.fmt(f),
       ErlParserErrorKind::AtomExpected(a) => write!(f, "Atom expected: {}", a),
       ErlParserErrorKind::AnyAtomExpected => write!(f, "Atom expected"),
       ErlParserErrorKind::KeywordExpected(k) => write!(f, "Keyword expected: {}", k),
@@ -148,6 +157,7 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::ModuleStartAttributeExpected => {
         write!(f, "Module start attribute -module(NAME) expected")
       }
+      _ => unimplemented!("Don't know how to format {:?}", self),
     }
   }
 }

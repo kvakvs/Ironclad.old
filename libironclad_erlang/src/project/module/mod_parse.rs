@@ -9,6 +9,8 @@ use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
@@ -41,7 +43,13 @@ impl ErlModuleImpl {
     //----------------------
     // Stage 1 tokenize the input
     //----------------------
-    let tok_stream1 = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+    let mut tok_stream1 =
+      ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+
+    // Inject a mandatory EOL if the stream doesn't end with one
+    if !Token::ends_with(&tok_stream1, &[TokenType::EOL]) {
+      tok_stream1.push(Token::new(0 as *const u8, TokenType::EOL));
+    }
 
     //----------------------
     // Stage 2 preprocessor: handle ifdefs, defines, includes etc
@@ -64,11 +72,12 @@ impl ErlModuleImpl {
       )
     };
 
-    assert!(
-      tail.is_empty(),
-      "Not all input was consumed by parse.\n\tTail: «{:?}»\n\tForms: {}",
-      tail,
-      forms
+    let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
+    assert_eq!(
+      trim_tail,
+      0,
+      "Not all input was consumed by parse.\n\tTail: «{}»",
+      format_tok_stream(&tail.tokens, 50),
     );
 
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile

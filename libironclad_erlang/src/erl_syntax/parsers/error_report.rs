@@ -2,14 +2,13 @@
 
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::format_tok_line;
+use crate::erl_syntax::token_stream::token::format_tok_till_eol;
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use ::function_name::named;
 
 /// Transforms a `VerboseError` into a trace with input position information
 /// Copy from `nom::error::convert_error` to support token stream `&[Token]` errors.
-#[named]
 pub fn convert_token_stream_parser_error(
   _original_input: &str,
   tokens_input: ParserInput,
@@ -26,16 +25,16 @@ pub fn convert_token_stream_parser_error(
 
     if tokens_input.is_empty() {
       match kind {
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Char(c)) => {
-          write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c)
+        ErlParserErrorKind::Char(c) => {
+          writeln!(&mut result, "{}: expected '{}', got empty input", i, c)
         }
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Context(s)) => {
-          write!(&mut result, "{}: in {}, got empty input\n\n", i, s)
+        ErlParserErrorKind::Context(s) => {
+          writeln!(&mut result, "{}: in {}, got empty input", i, s)
         }
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Nom(e)) => {
-          write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e)
+        ErlParserErrorKind::Nom(e) => {
+          writeln!(&mut result, "{}: in {:?}, got empty input", i, e)
         }
-        _ => writeln!(&mut result, "{}", kind),
+        _ => writeln!(&mut result, "{}: {}, got empty input", i, kind),
       }
     } else {
       let prefix = &tokens_input.tokens[..inp_offset];
@@ -43,7 +42,7 @@ pub fn convert_token_stream_parser_error(
       // Count the number of newlines in the first `offset` bytes of input
       let line_number = prefix
         .iter()
-        .filter(|&b| matches!(b.content, TokenType::Newline))
+        .filter(|&b| matches!(b.content, TokenType::EOL))
         .count()
         + 1;
 
@@ -52,7 +51,7 @@ pub fn convert_token_stream_parser_error(
       let line_begin = prefix
         .iter()
         .rev()
-        .position(|b| matches!(b.content, TokenType::Newline))
+        .position(|b| matches!(b.content, TokenType::EOL))
         .map(|pos| inp_offset - pos)
         .unwrap_or(0);
 
@@ -66,7 +65,7 @@ pub fn convert_token_stream_parser_error(
       let column_number: usize = substring.offset_inside(line) + 1;
 
       match kind {
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Char(c)) => {
+        ErlParserErrorKind::Char(c) => {
           if let Some(actual) = substring.tokens.iter().next() {
             write!(
               &mut result,
@@ -75,7 +74,7 @@ pub fn convert_token_stream_parser_error(
                expected '{expected}', found {actual}\n\n",
               i = i,
               line_number = line_number,
-              line = format_tok_line(line),
+              line = format_tok_till_eol(line),
               column = column_number,
               expected = c,
               actual = actual,
@@ -88,13 +87,13 @@ pub fn convert_token_stream_parser_error(
                expected '{expected}', got end of input\n\n",
               i = i,
               line_number = line_number,
-              line = format_tok_line(line),
+              line = format_tok_till_eol(line),
               column = column_number,
               expected = c,
             )
           }
         }
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Context(s)) => write!(
+        ErlParserErrorKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}:{column}, in {context}:\n\
            {line}\n",
@@ -102,19 +101,29 @@ pub fn convert_token_stream_parser_error(
           line_number = line_number,
           column = column_number,
           context = s,
-          line = format_tok_line(line),
+          line = format_tok_till_eol(line),
         ),
-        ErlParserErrorKind::NomVerbose(nom::error::VerboseErrorKind::Nom(e)) => write!(
+        ErlParserErrorKind::Nom(e) => write!(
           &mut result,
           "{i}: at line {line_number}:{column}, in {nom_err:?}:\n\
            {line}\n",
           i = i,
           line_number = line_number,
           nom_err = e,
-          line = format_tok_line(line),
+          line = format_tok_till_eol(line),
           column = column_number,
         ),
-        _ => writeln!(&mut result, "{}", kind),
+        _ => writeln!(
+          &mut result,
+          "{i}: at line {line_number}:{column}:\n\
+          {line}\n\
+          {kind}",
+          i = i,
+          column = column_number,
+          line = format_tok_till_eol(line),
+          line_number = line_number,
+          kind = kind
+        ),
       }
     }
     // Because `write!` to a `String` is infallible, this `unwrap` is fine.

@@ -17,7 +17,7 @@ impl std::fmt::Display for AstNodeImpl {
       ModuleRoot { forms } => {
         writeln!(f, "-module(...).")?;
         for form in forms.iter() {
-          write!(f, "{}", form)?;
+          form.fmt(f)?;
         }
         writeln!(f, "%%% end module",)
       }
@@ -33,14 +33,14 @@ impl std::fmt::Display for AstNodeImpl {
         Some(g) => write!(f, "{} when {} -> {}", clause.pattern, g, clause.body),
         None => write!(f, "{} -> {}", clause.pattern, clause.body),
       },
-      Var(var) => write!(f, "{}", var.name),
-      Apply(app) => write!(f, "{}", app),
+      Var(var) => var.name.fmt(f),
+      Apply(app) => app.fmt(f),
       CaseStatement { expr, clauses, .. } => {
         write!(f, "case {} of", expr)?;
         Pretty::display_semicolon_separated(clauses.iter(), f)?;
         writeln!(f, "end")
       }
-      Lit { value: lit, .. } => write!(f, "{}", lit),
+      Lit { value: lit, .. } => lit.fmt(f),
 
       BinaryOp { expr: binop_expr, .. } => {
         write!(f, "({} {} {})", binop_expr.left, binop_expr.operator, binop_expr.right)
@@ -62,7 +62,7 @@ impl std::fmt::Display for AstNodeImpl {
         write!(f, "]")
       }
       Tuple { elements, .. } => Pretty::display_curly_list(elements.iter(), f),
-      Type { ty, .. } => write!(f, "{}", ty),
+      Type { ty, .. } => ty.fmt(f),
       MapBuilder { members } => {
         write!(f, "#{{")?;
         Pretty::display_comma_separated(members.iter(), f)?;
@@ -101,10 +101,10 @@ impl std::fmt::Display for AstNodeImpl {
 impl std::fmt::Display for Literal {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      Literal::Integer(i) => write!(f, "{}", i),
-      Literal::Float(flt) => write!(f, "{}", flt),
+      Literal::Integer(i) => i.fmt(f),
+      Literal::Float(flt) => flt.fmt(f),
       Literal::Atom(a) => write!(f, "'{}'", a),
-      Literal::Bool(b) => write!(f, "{}", b),
+      Literal::Bool(b) => b.fmt(f),
       Literal::List { elements, .. } => Pretty::display_square_list(elements.iter(), f),
       Literal::Nil => write!(f, "[]"),
       Literal::String(s) => write!(f, "\"{}\"", s),

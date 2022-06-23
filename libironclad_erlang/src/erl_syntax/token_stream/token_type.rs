@@ -13,7 +13,7 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub enum TokenType {
   /// Line ending
-  Newline,
+  EOL,
   /// `,` a comma
   Comma,
   /// `;` a semicolon
@@ -121,7 +121,6 @@ impl std::fmt::Display for TokenType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self {
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
-      TokenType::VerticalBar => write!(f, "|"),
       TokenType::BarBar => write!(f, "||"),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Colon => write!(f, ":"),
@@ -130,19 +129,19 @@ impl std::fmt::Display for TokenType {
       TokenType::Comment(c) => write!(f, "% {}", c),
       TokenType::CurlyClose => write!(f, "}}"),
       TokenType::CurlyOpen => write!(f, "{{"),
-      TokenType::ForwardSlash => write!(f, "/"),
       TokenType::DoubleAngleClose => write!(f, ">>"),
       TokenType::DoubleAngleOpen => write!(f, "<<"),
       TokenType::EqualEqual => write!(f, "=="),
       TokenType::EqualSymbol => write!(f, "="),
-      TokenType::Float(flt) => write!(f, "{}", flt),
+      TokenType::Float(flt) => flt.fmt(f),
+      TokenType::ForwardSlash => write!(f, "/"),
       TokenType::GreaterEq => write!(f, ">="),
       TokenType::GreaterThan => write!(f, ">"),
       TokenType::HardEq => write!(f, "=:="),
       TokenType::HardNotEq => write!(f, "=/="),
       TokenType::Hash => write!(f, "#"),
-      TokenType::Integer(i) => write!(f, "{}", i),
-      TokenType::Keyword(kw) => write!(f, "{}", kw),
+      TokenType::Integer(i) => i.fmt(f),
+      TokenType::Keyword(kw) => kw.fmt(f),
       TokenType::LeftArr => write!(f, "<-"),
       TokenType::LeftDoubleArr => write!(f, "<="),
       TokenType::LessThan => write!(f, "<"),
@@ -152,14 +151,14 @@ impl std::fmt::Display for TokenType {
       TokenType::MacroInvocation(m) => write!(f, "?{}", m),
       TokenType::Minus => write!(f, "-"),
       TokenType::Mul => write!(f, "*"),
-      TokenType::Newline => write!(f, "<Newline>"),
+      TokenType::EOL => write!(f, "↵"),
       TokenType::NotEq => write!(f, "/="),
       TokenType::ParClose => write!(f, ")"),
       TokenType::ParOpen => write!(f, "("),
       TokenType::Period => write!(f, "."),
       TokenType::PeriodPeriod => write!(f, ".."),
       TokenType::Plus => write!(f, "+"),
-      TokenType::Preprocessor(pp) => write!(f, "{}", pp),
+      TokenType::Preprocessor(pp) => pp.fmt(f),
       TokenType::RightArr => write!(f, "->"),
       TokenType::RightDoubleArr => write!(f, "=>"),
       TokenType::Semicolon => write!(f, ";"),
@@ -167,7 +166,8 @@ impl std::fmt::Display for TokenType {
       TokenType::SquareClose => write!(f, "]"),
       TokenType::SquareOpen => write!(f, "["),
       TokenType::Str(s) => Pretty::doublequot_string(f, s),
-      TokenType::Variable(v) => write!(f, "{}", v),
+      TokenType::Variable(v) => v.fmt(f),
+      TokenType::VerticalBar => write!(f, "|"),
     }
   }
 }

@@ -33,8 +33,8 @@ impl<'a> Iterator for TokenLinesIter<'a> {
 
     // Find next newline and return up to it
     for i in self.pos..self.base.len() {
-      if self.base[i].is_newline() {
-        // Found a newline
+      if self.base[i].is_eol() {
+        // Found a newline, +1 to include it
         let result = &self.base[self.pos..i + 1];
         self.slice_len = result.len();
         return Some(result);
@@ -70,7 +70,7 @@ impl<'a> TokenLinesIter<'a> {
     // Scan tokens after pos till we find a newline
     let scan_start = self.pos + self.slice_len;
     for i in scan_start..self.base.len() {
-      if self.base[i].is_newline() {
+      if self.base[i].is_eol() {
         self.slice_len = self.slice_len + i - scan_start;
         return Some(self.build_slice());
       }

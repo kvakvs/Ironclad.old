@@ -2,7 +2,7 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol, tok, tok_atom, tok_comma, tok_forward_slash, tok_integer, tok_minus,
+  dash_atom, period_eol_eof, tok, tok_atom, tok_comma, tok_forward_slash, tok_integer, tok_minus,
   tok_par_close, tok_par_open, tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
@@ -49,7 +49,7 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
         // Expr in parentheses or nothing
         alt((attr_body_empty_parens, attr_body_expr_in_parens)),
       ),
-      period_eol,
+      period_eol_eof,
     ),
     |(tag, term)| PreprocessorNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, term),
   )(input.clone())
@@ -59,7 +59,7 @@ pub fn parse_generic_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 pub(crate) fn parse_generic_attr_no_parentheses(
   input: ParserInput,
 ) -> ParserResult<PreprocessorNode> {
-  map(delimited(tok_minus, tok_atom, period_eol), |tag| {
+  map(delimited(tok_minus, tok_atom, period_eol_eof), |tag| {
     PreprocessorNodeImpl::new_generic_attr(SourceLoc::new(&input), tag, None)
   })(input.clone())
 }
@@ -89,7 +89,7 @@ pub(crate) fn export_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
     delimited(
       |i1| dash_atom(i1, "export"),
       context("list of exports in an -export() attribute", cut(parse_export_mfa_list)),
-      period_eol,
+      period_eol_eof,
     ),
     |t| PreprocessorNodeImpl::new_export_attr(SourceLoc::new(&input), t),
   )(input.clone())
@@ -102,7 +102,7 @@ pub(crate) fn export_type_attr(input: ParserInput) -> ParserResult<PreprocessorN
     delimited(
       |i1| dash_atom(i1, "export_type"),
       context("list of exports in an -export_type() attribute", cut(parse_export_mfa_list)),
-      period_eol,
+      period_eol_eof,
     ),
     |t| PreprocessorNodeImpl::new_export_type_attr(SourceLoc::new(&input), t),
   )(input.clone())
@@ -122,7 +122,7 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
           tok_par_close,
         )),
       ),
-      period_eol,
+      period_eol_eof,
     ),
     |(mod_name, imports)| {
       PreprocessorNodeImpl::new_import_attr(SourceLoc::new(&input), mod_name, imports)
@@ -155,7 +155,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode
         tok(TokenType::ColonColon),
         context("type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
       )),
-      period_eol,
+      period_eol_eof,
     ),
     |(type_name, type_args, _coloncolon, new_type)| {
       PreprocessorNodeImpl::new_type_attr(SourceLoc::new(&input), type_name, type_args, new_type)

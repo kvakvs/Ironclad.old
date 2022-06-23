@@ -6,7 +6,7 @@ use crate::error::ic_error_trait::IcErrorT;
 
 impl std::fmt::Debug for IroncladError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self)
+    write!(f, "IroncladError[{}]", self)
   }
 }
 
@@ -26,9 +26,9 @@ impl std::fmt::Display for IroncladError {
         writeln!(f, "file: {} while {}", file.to_string_lossy(), while_verb)
       }
       IcErrorCategory::Io(ioerr) => writeln!(f, "{}", ioerr),
-      IcErrorCategory::Glob(gerr) => write!(f, "{}", gerr),
-      IcErrorCategory::GlobPattern(gperr) => write!(f, "{}", gperr),
-      IcErrorCategory::Config(cfgerr) => write!(f, "{}", cfgerr),
+      IcErrorCategory::Glob(gerr) => gerr.fmt(f),
+      IcErrorCategory::GlobPattern(gperr) => gperr.fmt(f),
+      IcErrorCategory::Config(cfgerr) => cfgerr.fmt(f),
       IcErrorCategory::Preprocessor
       | IcErrorCategory::PreprocessorParse
       | IcErrorCategory::ParserInternal

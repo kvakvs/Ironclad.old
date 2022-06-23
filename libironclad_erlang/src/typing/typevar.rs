@@ -78,6 +78,6 @@ impl std::fmt::Display for Typevar {
       Some(n) => write!(f, "{} :: ", n)?,
       None => {}
     }
-    write!(f, "{}", self.ty)
+    self.ty.fmt(f)
   }
 }

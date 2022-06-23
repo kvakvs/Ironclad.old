@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, format_tok_till_eol, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;
@@ -38,7 +38,7 @@ impl ErlModuleImpl {
         // These can only span one or more full lines, so we can work with lines iterator
 
         // Expand the line slice till we find the terminator symbol `period + end of line`
-        while !Token::ends_with(line, &[TokenType::Period, TokenType::Newline]) {
+        while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) {
           if let Some(expanded) = itr.expand_till_next_line() {
             line = expanded;
             break; // found end terminator
@@ -46,7 +46,7 @@ impl ErlModuleImpl {
             break; // end of input
           }
         }
-        println!("Next line: {:?}", &line);
+        println!("Next line: {}", format_tok_stream(line, 50));
         let parser_input = ParserInput::new_slice(line);
 
         let (tail, ppnode) = panicking_parser_error_reporter(
@@ -122,7 +122,7 @@ impl ErlModuleImpl {
     // TODO: Interpret -include and -include_lib
     // TODO: Parse and store other module attributes
     println!("Preprocessor: resulting tokens:");
-    result.iter().for_each(|t| print!("{:?}", t));
+    result.iter().for_each(|t| print!("{}", t));
     println!();
 
     Ok(result)

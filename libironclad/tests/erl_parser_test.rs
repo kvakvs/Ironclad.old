@@ -422,8 +422,7 @@ fn parse_fun_with_if() -> IcResult<()> {
     if D1 =:= S -> [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
         true -> [{get_hd,S,D1},{get_tl,S,D2}|rename_instrs(Is)]
     end.";
-  let module = test_util::parse_module(function_name!(), src);
-  println!("{}: parsed {}", function_name!(), module.ast.borrow());
+  let _module = test_util::parse_module(function_name!(), src);
   Ok(())
 }
 
@@ -434,9 +433,7 @@ fn parse_fun_with_case() -> IcResult<()> {
   let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
         false -> Swap = beam_opcodes:opcode(swap, 2), beam_dict:opcode(Swap, Dict);
         true -> Dict end.";
-  let module = test_util::parse_module(function_name!(), src);
-  println!("{}: parsed {}", function_name!(), module.ast.borrow());
-
+  let _module = test_util::parse_module(function_name!(), src);
   Ok(())
 }
 
@@ -451,9 +448,7 @@ coalesce_consecutive_labels([I|Is], Replace, Acc) ->
 coalesce_consecutive_labels([], Replace, Acc) ->
     D = maps:from_list(Replace),
     beam_utils:replace_labels(Acc, [], D, fun(L) -> L end).";
-  let module = test_util::parse_module(function_name!(), src);
-  println!("{}: parsed {}", function_name!(), module.ast.borrow());
-
+  let _module = test_util::parse_module(function_name!(), src);
   Ok(())
 }
 

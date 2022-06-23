@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, parenthesis_period_newline, period_eol, tok_comma, tok_par_close, tok_par_open,
+  dash_atom, parenthesis_period_eol_eof, period_eol_eof, tok_comma, tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::if_ifdef::tok_macro_ident;
@@ -35,7 +35,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<Prep
       opt(delimited(tok_par_open, comma_sep_macro_idents, tok_par_close)),
       tok_comma,
       // Followed by a body
-      many_till(any_token, parenthesis_period_newline),
+      many_till(any_token, parenthesis_period_eol_eof),
     )),
     |(ident, args, _comma, (body, _term))| {
       let args1 = args.unwrap_or_default();
@@ -75,7 +75,7 @@ pub(crate) fn define_directive(input: ParserInput) -> ParserResult<PreprocessorN
     alt((
       context(
         "-define directive with no args and no body",
-        delimited(tok_par_open, define_no_args_no_body, parenthesis_period_newline),
+        delimited(tok_par_open, define_no_args_no_body, parenthesis_period_eol_eof),
       ),
       // `define_with_args_body_and_terminator` will consume end delimiter
       context(
@@ -92,7 +92,7 @@ pub(crate) fn undef_directive(input: ParserInput) -> ParserResult<PreprocessorNo
     delimited(
       |i1| dash_atom(i1, "undef"),
       delimited(tok_par_open, tok_macro_ident, tok_par_close),
-      period_eol,
+      period_eol_eof,
     ),
     |ident: String| PreprocessorNodeImpl::new_undef(SourceLoc::new(&input), ident),
   )(input.clone())

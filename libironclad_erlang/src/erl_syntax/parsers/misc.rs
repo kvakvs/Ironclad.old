@@ -6,12 +6,12 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::tok_input::TokenizerInput;
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::combinator::{eof, map, recognize};
-use nom::error::convert_error;
+use nom::error::{context, convert_error};
 use nom::multi::many0;
 use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
@@ -139,7 +139,7 @@ fn tok_float_1(input: ParserInput) -> ParserResult<f64> {
 /// Tokens in the token stream, which are considered as whitespace.
 #[inline]
 fn erl_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
-  recognize(tok(TokenType::Newline))(input)
+  recognize(tok(TokenType::EOL))(input)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
@@ -196,8 +196,12 @@ pub fn panicking_parser_error_reporter<'a, Out>(
 ) -> (ParserInput<'a>, Out) {
   match res {
     Ok((tail, out)) => {
-      if !tail.is_empty() {
-        panic!("Parser: Not all input was consumed: tail=«{:?}»", tail)
+      let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
+      if trim_tail != 0 {
+        panic!(
+          "Parser: Not all input was consumed: tail=«{}»",
+          format_tok_stream(tail.tokens, 50)
+        )
       }
       (tail, out)
     }
@@ -258,13 +262,19 @@ pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
 
 /// Recognize the macro end marker `) . \n <EOF>` as we trim the lines before feeding them into the
 /// macro parser, there will be an EOF.
-pub(crate) fn parenthesis_period_newline(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(tuple((tok_par_close, tok(TokenType::Period), tok(TokenType::Newline), eof)))(input)
+pub(crate) fn parenthesis_period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
+  context(
+    "preprocessor directive or a module attribute: ') . <Newline>' expected",
+    recognize(tuple((tok_par_close, tok(TokenType::Period), tok(TokenType::EOL), eof))),
+  )(input)
 }
 
 /// Match `. <EOF>` that serves as an end marker for parsing split lines as preprocessor directives.
-pub(crate) fn period_eol(input: ParserInput) -> ParserResult<ParserInput> {
-  recognize(tuple((tok(TokenType::Period), tok(TokenType::Newline), eof)))(input)
+pub(crate) fn period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
+  context(
+    "preprocessor directive or a module attribute: '. <Newline>' expected",
+    recognize(tuple((ws_before(tok(TokenType::Period)), tok(TokenType::EOL), eof))),
+  )(input)
 }
 
 /// Matches a `-` token with possibly a newline before it

@@ -32,10 +32,10 @@ pub enum CallableTarget {
 impl std::fmt::Display for CallableTarget {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      CallableTarget::Expr(expr) => write!(f, "{}", expr),
+      CallableTarget::Expr(expr) => expr.fmt(f),
       CallableTarget::MFArity(mfa) => match &mfa.module {
         Some(m) => write!(f, "{}:{}", m, mfa.name),
-        None => write!(f, "{}", mfa.name),
+        None => mfa.name.fmt(f),
       },
       CallableTarget::MFAExpression { module, function, .. } => match module {
         Some(m) => write!(f, "({}):({})", m, function),

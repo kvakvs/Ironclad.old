@@ -453,7 +453,7 @@ fn keyword_xor(input: TokenizerInput) -> TokensResult<Token> {
 #[inline]
 fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
   map(alt((tag("\r\n"), tag("\n"), tag("\r"))), |_| {
-    Token::new(input.as_ptr(), TokenType::Newline)
+    Token::new(input.as_ptr(), TokenType::EOL)
   })(input)
 }
 

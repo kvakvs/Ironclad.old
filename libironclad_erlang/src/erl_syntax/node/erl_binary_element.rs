@@ -115,7 +115,7 @@ impl BinaryElement {
 
 impl std::fmt::Display for BinaryElement {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.value)?;
+    self.value.fmt(f)?;
     match &self.width {
       ValueWidth::Literal(w) => write!(f, ":{}", w)?,
       ValueWidth::Expr(e) => write!(f, ":({})", e)?,

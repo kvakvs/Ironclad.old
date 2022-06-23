@@ -19,7 +19,7 @@ pub struct RecordField {
 
 impl std::fmt::Display for RecordField {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.field_tag)?;
+    "{}".fmt(f)?;
     if let Some(init) = &self.initializer {
       write!(f, " = {}", init)?;
     }

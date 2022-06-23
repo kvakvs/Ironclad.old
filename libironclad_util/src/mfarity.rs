@@ -50,7 +50,7 @@ impl MFArity {
 
 impl std::fmt::Debug for MFArity {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self)
+    write!(f, "MFA[{}]", self)
   }
 }
 
