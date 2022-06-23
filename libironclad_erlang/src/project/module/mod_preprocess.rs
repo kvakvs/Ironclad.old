@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::preprocessor::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
-use crate::erl_syntax::token_stream::token::{format_tok_stream, format_tok_till_eol, Token};
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;

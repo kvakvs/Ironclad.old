@@ -253,10 +253,8 @@ fn parse_fn1() -> IcResult<()> {
   assert_eq!(fndef.clauses[0].name, Some("f".to_string()));
 
   let root_scope = module.root_scope.clone();
-  let _fn = root_scope
-    .function_defs
-    .get(&MFArity::new_local("f", 1))
-    .unwrap();
+  let fnf = root_scope.function_defs.get(&MFArity::new_local("f", 1));
+  assert!(fnf.is_some(), "Function f/1 not found");
 
   Ok(())
 }
