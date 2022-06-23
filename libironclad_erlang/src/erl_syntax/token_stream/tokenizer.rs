@@ -69,7 +69,7 @@ fn symbol_doubleangleopen(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_barbar(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("||"), |_| Token::new(input.as_ptr(), TokenType::BarBar))(input)
+  map(tag("||"), |_| Token::new(input.as_ptr(), TokenType::DoubleVerticalBar))(input)
 }
 
 #[inline]

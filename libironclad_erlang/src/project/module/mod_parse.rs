@@ -81,10 +81,10 @@ impl ErlModuleImpl {
     );
 
     // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
-    module.ast.replace(forms);
+    module.ast.replace(forms.clone());
 
     // Scan AST and find FnDef nodes, update functions knowledge
-    // Scope::update_from_ast(&module.scope, &module.ast);
+    module.root_scope.update_from_ast(&forms);
 
     Ok(module)
   }

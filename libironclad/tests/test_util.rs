@@ -3,9 +3,11 @@
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
+use libironclad_erlang::erl_syntax::token_stream::token::Token;
+use libironclad_erlang::erl_syntax::token_stream::tokenizer::tokenize_source;
 use libironclad_erlang::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
-use libironclad_erlang::source_file::SourceFileImpl;
+use libironclad_erlang::source_file::{SourceFile, SourceFileImpl};
 use libironclad_erlang::typing::erl_type::ErlType;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -42,6 +44,12 @@ pub fn parse_module(function_name: &str, input: &str) -> ErlModule {
   // assert_eq!(mod_name, function_name);
 
   module
+}
+
+pub fn tokenize(input: &str) -> Vec<Token> {
+  let project = Arc::new(ErlProjectImpl::default());
+  let src_file = SourceFileImpl::new(&PathBuf::from("test"), input.to_string());
+  ErlModuleImpl::tokenize_helper(&project, src_file.clone(), tokenize_source).unwrap()
 }
 
 /// Try parse a define macro where value contains another macro

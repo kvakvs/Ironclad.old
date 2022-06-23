@@ -13,11 +13,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 impl PreprocessorNodeImpl {
-  /// Generic constructor no location
-  #[inline]
-  pub(crate) fn new_without_location(content: PreprocessorNodeType) -> PreprocessorNode {
-    Self { location: SourceLoc::None, content }.into()
-  }
+  // /// Generic constructor no location
+  // #[inline]
+  // pub(crate) fn new_without_location(content: PreprocessorNodeType) -> PreprocessorNode {
+  //   Self { location: SourceLoc::None, content }.into()
+  // }
 
   /// Generic constructor + location
   #[inline]

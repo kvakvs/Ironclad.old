@@ -81,7 +81,7 @@ impl RootScopeImpl {
   }
 
   /// Recursive descend into AST saving FnDef nodes
-  pub fn update_from_ast(&mut self, ast: &AstNode) {
+  pub fn update_from_ast(&self, ast: &AstNode) {
     if let AstNodeType::FnDef(fndef) = &ast.content {
       self.function_defs.add(fndef.funarity.clone(), ast.clone());
     }

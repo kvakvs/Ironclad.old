@@ -76,7 +76,7 @@ impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
   }
 
   /// Use when you only have slice
-  pub(crate) fn new_slice(tokens: &'a [Token]) -> Self {
+  pub fn new_slice(tokens: &'a [Token]) -> Self {
     Self {
       source_file: None,
       scope: ScopeType::default(),

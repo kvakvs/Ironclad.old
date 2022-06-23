@@ -4,9 +4,9 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, tok, tok_atom, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open,
-  tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon,
-  tok_square_close, tok_square_open, tok_var,
+  dash_atom, tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_hash,
+  tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon, tok_square_close,
+  tok_square_open, tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -340,7 +340,7 @@ impl ErlTypeParser {
   pub(crate) fn parse_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, Arc<ErlType>, ErlParserError> {
-    map(separated_list1(tok_bar, Self::parse_nonunion_type), |types| {
+    map(separated_list1(tok_vertical_bar, Self::parse_nonunion_type), |types| {
       ErlType::new_union(&types)
     })(input)
   }

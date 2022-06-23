@@ -6,10 +6,16 @@ use std::ops::Deref;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{Apply, BinaryOp, Lit};
+use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
+  Apply, BinaryOp, ListComprehension, Lit,
+};
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::parse_expr::{parse_expr, parse_list_comprehension};
+use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_util::mfarity::MFArity;
+use nom::Finish;
 
 mod test_util;
 
@@ -195,8 +201,34 @@ fn parse_expr_longer() -> IcResult<()> {
 fn parse_expr_2() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a math expr with some spaces");
   let expr = test_util::parse_expr(function_name!(), "(A +1)/ 2");
-  println!("Parse \"(A+1)/2\": {}", expr);
   assert!(matches!(&expr.content, BinaryOp { .. }));
+  Ok(())
+}
+
+/// Try parse an expression with list comprehension
+#[named]
+#[test]
+fn parse_expr_lc1() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse an expr with list comprehension");
+  let input = " [F || F <- Fs0]";
+  let tokens = test_util::tokenize(input);
+  let p_input = ParserInput::new_slice(&tokens);
+  let (tail, expr) = panicking_parser_error_reporter(
+    input,
+    p_input.clone(),
+    parse_list_comprehension(p_input.clone()).finish(),
+  );
+  assert!(matches!(&expr.content, ListComprehension { .. }));
+  Ok(())
+}
+
+/// Try parse an expression with list comprehension
+#[named]
+#[test]
+fn parse_expr_lc2() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse an expr with list comprehension");
+  let expr = test_util::parse_expr(function_name!(), " [function(F) || F <- Fs0]");
+  assert!(matches!(&expr.content, ListComprehension { .. }));
   Ok(())
 }
 

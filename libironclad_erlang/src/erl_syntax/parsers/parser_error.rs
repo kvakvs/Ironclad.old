@@ -149,7 +149,9 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::AtomExpected(a) => write!(f, "Atom expected: {}", a),
       ErlParserErrorKind::AnyAtomExpected => write!(f, "Atom expected"),
       ErlParserErrorKind::KeywordExpected(k) => write!(f, "Keyword expected: {}", k),
-      ErlParserErrorKind::TokenExpected(tt) => write!(f, "Token expected: {}", tt),
+      ErlParserErrorKind::TokenExpected(tt) => {
+        write!(f, "Token expected: {} ({})", tt, tt.as_explanation_str())
+      }
       ErlParserErrorKind::IntegerLiteralExpected => write!(f, "An integer literal expected"),
       ErlParserErrorKind::FloatLiteralExpected => write!(f, "A float literal expected"),
       ErlParserErrorKind::StringLiteralExpected => write!(f, "A string literal expected"),

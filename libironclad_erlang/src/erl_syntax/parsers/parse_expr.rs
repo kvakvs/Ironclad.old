@@ -12,8 +12,9 @@ use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_bar, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_left_arrow,
-  tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
+  tok, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_vertical_bar, tok_hash,
+  tok_left_arrow, tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
+  tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
@@ -48,18 +49,17 @@ pub const EXPR_STYLE_GUARD: usize = 1;
 /// Match expression: comma, semicolon not allowed, function calls not allowed, etc...
 pub const EXPR_STYLE_MATCHEXPR: usize = 2;
 
-/// Parse a function call (application of args to a callable value)
-#[allow(dead_code)]
-fn parse_apply(input: ParserInput) -> ParserResult<AstNode> {
-  // Application consists of a callable expression, "(", list of args, and ")"
-  map(
-    tuple((parse_expr, parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>)),
-    |(expr, args)| {
-      let target = CallableTarget::new_expr(expr);
-      AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
-    },
-  )(input.clone())
-}
+// /// Parse a function call (application of args to a callable value)
+// fn parse_fn_application(input: ParserInput) -> ParserResult<AstNode> {
+//   // Application consists of a callable expression, "(", list of args, and ")"
+//   map(
+//     tuple((parse_expr, parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>)),
+//     |(expr, args)| {
+//       let target = CallableTarget::new_expr(expr);
+//       AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
+//     },
+//   )(input.clone())
+// }
 
 fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_var, |n| AstNodeImpl::construct_without_location(Var(ErlVar::new(&n))))(input)
@@ -81,7 +81,7 @@ fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<A
     tuple((
       tok_square_open,
       parse_comma_sep_exprs0::<STYLE>,
-      opt(preceded(tok_bar, parse_expr_prec13::<STYLE>)),
+      opt(preceded(tok_vertical_bar, parse_expr_prec13::<STYLE>)),
       tok_square_close,
     )),
     |(_open, elements, maybe_tail, _close)| {
@@ -101,7 +101,7 @@ pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<As
 pub fn parse_list_comprehension_exprs_and_generators(
   input: ParserInput,
 ) -> ParserResult<Vec<AstNode>> {
-  separated_list0(
+  separated_list1(
     tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
     alt((parse_expr, parse_list_comprehension_generator)),
@@ -111,21 +111,25 @@ pub fn parse_list_comprehension_exprs_and_generators(
 fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
   map(
     separated_pair(
-      parse_expr,
-      tok(TokenType::BarBar),
+      context("list comprehension output expression", parse_expr),
+      tok_double_vertical_bar,
       context(
         "list comprehension generators",
         cut(parse_list_comprehension_exprs_and_generators),
       ),
     ),
-    |(expr, generators)| {
+    |(expr, generators): (AstNode, Vec<AstNode>)| -> AstNode {
       AstNodeImpl::new_list_comprehension(SourceLoc::new(&input), expr, generators)
     },
   )(input.clone())
 }
 
-fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
-  delimited(tok_square_open, parse_list_comprehension_1, tok_square_close)(input)
+/// Public for testing. Parses a list comprehension syntax `[ OUTPUT | GENERATORS ]`
+pub fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
+  context(
+    "list comprehension",
+    delimited(tok_square_open, parse_list_comprehension_1, tok_square_close),
+  )(input)
 }
 
 /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
@@ -448,9 +452,30 @@ fn parse_expr_prec13<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
   }
 }
 
-/// Parse an expression. Expression can also be a block which produces a value.
+// /// Parse an expression. Expression can also be a block which produces a value.
+// pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
+//   context("expression", parse_expr_prec13::<{ EXPR_STYLE_FULL }>)(input)
+// }
+
+/// Parse an expression OR a function application which is essentially `EXPR ( EXPRS... )`.
 pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
-  context("expression", parse_expr_prec13::<{ EXPR_STYLE_FULL }>)(input)
+  map(
+    context(
+      "expression",
+      pair(
+        parse_expr_prec13::<{ EXPR_STYLE_FULL }>,
+        opt(parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>),
+      ),
+    ),
+    |(expr, maybe_args): (AstNode, Option<Vec<AstNode>>)| -> AstNode {
+      if let Some(args) = maybe_args {
+        let target = CallableTarget::new_expr(expr);
+        AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
+      } else {
+        expr
+      }
+    },
+  )(input.clone())
 }
 
 /// Parse a guard expression.

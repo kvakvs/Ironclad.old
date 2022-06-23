@@ -17,20 +17,18 @@ use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
 use std::sync::Arc;
 
+#[inline]
+fn void_fn<T>(_in: T) -> () {
+  ()
+}
+
 /// Recognizes one token of a given tokentype, the tokentype fields are ignored.
 /// *Complete version*: Will return an error if there's not enough input data.
 pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
-    match input
-      .tokens
-      .iter()
-      .next()
-      // .map(|next_tok| -> bool { matches!(&next_tok.content, compare_val) })
-    {
+    match input.tokens.iter().next() {
       Some(tok) if tok.content.is_same_type(&compare_val) => Ok((input.slice(1..), ())),
-      _other => {
-        Err(nom::Err::Error(ErlParserError::token_expected(input, compare_val.clone())))
-      }
+      _other => Err(nom::Err::Error(ErlParserError::token_expected(input, compare_val.clone()))),
     }
   }
 }
@@ -47,7 +45,7 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
 
 /// Matches a `<-> <atom>` pair
 pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResult<'a, ()> {
-  map(pair(tok_minus, tok_atom_of(value)), |_| ())(input)
+  map(pair(tok_minus, tok_atom_of(value)), void_fn)(input)
 }
 
 /// Recognizes one keyword of given keyword enum value
@@ -280,149 +278,155 @@ pub(crate) fn period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
 /// Matches a `-` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_minus(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Minus)), |_| ())(input)
+  map(ws_before(tok(TokenType::Minus)), void_fn)(input)
 }
 
 /// Matches a `(` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_par_open(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::ParOpen)), |_| ())(input)
+  map(ws_before(tok(TokenType::ParOpen)), void_fn)(input)
 }
 
 /// Matches a `)` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_par_close(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::ParClose)), |_| ())(input)
+  map(ws_before(tok(TokenType::ParClose)), void_fn)(input)
 }
 
 /// Matches a `{` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_curly_open(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::CurlyOpen)), |_| ())(input)
+  map(ws_before(tok(TokenType::CurlyOpen)), void_fn)(input)
 }
 
 /// Matches a `}` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_curly_close(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::CurlyClose)), |_| ())(input)
+  map(ws_before(tok(TokenType::CurlyClose)), void_fn)(input)
 }
 
 /// Matches a `<<` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_double_angle_open(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::DoubleAngleOpen)), |_| ())(input)
+  map(ws_before(tok(TokenType::DoubleAngleOpen)), void_fn)(input)
 }
 
 /// Matches a `>>` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_double_angle_close(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::DoubleAngleClose)), |_| ())(input)
+  map(ws_before(tok(TokenType::DoubleAngleClose)), void_fn)(input)
 }
 
 /// Matches a `#` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_hash(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Hash)), |_| ())(input)
+  map(ws_before(tok(TokenType::Hash)), void_fn)(input)
 }
 
 /// Matches a `/` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_forward_slash(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::ForwardSlash)), |_| ())(input)
+  map(ws_before(tok(TokenType::ForwardSlash)), void_fn)(input)
 }
 
 /// Matches a `,` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_comma(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Comma)), |_| ())(input)
+  map(ws_before(tok(TokenType::Comma)), void_fn)(input)
 }
 
 /// Matches a `;` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_semicolon(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Semicolon)), |_| ())(input)
+  map(ws_before(tok(TokenType::Semicolon)), void_fn)(input)
 }
 
 /// Matches a `:` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_colon(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::Colon)), |_| ())(input)
+  map(ws_before(tok(TokenType::Colon)), void_fn)(input)
 }
 
 /// Matches a `|` token with possibly a newline before it
 #[inline]
-pub(crate) fn tok_bar(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::VerticalBar)), |_| ())(input)
+pub(crate) fn tok_vertical_bar(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::VerticalBar)), void_fn)(input)
+}
+
+/// Matches a `||` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_double_vertical_bar(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::DoubleVerticalBar)), void_fn)(input)
 }
 
 /// Matches a `[` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_square_open(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::SquareOpen)), |_| ())(input)
+  map(ws_before(tok(TokenType::SquareOpen)), void_fn)(input)
 }
 
 /// Matches a `]` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_square_close(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::SquareClose)), |_| ())(input)
+  map(ws_before(tok(TokenType::SquareClose)), void_fn)(input)
 }
 
 /// Matches a `<-` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_left_arrow(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok(TokenType::LeftArr)), |_| ())(input)
+  map(ws_before(tok(TokenType::LeftArr)), void_fn)(input)
 }
 
 /// Matches a `when` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_when(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::When)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::When)), void_fn)(input)
 }
 
 /// Matches a `case` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_case(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Case)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Case)), void_fn)(input)
 }
 
 /// Matches a `of` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_of(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Of)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Of)), void_fn)(input)
 }
 
 /// Matches a `if` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_if(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::If)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::If)), void_fn)(input)
 }
 
 /// Matches a `end` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_end(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::End)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::End)), void_fn)(input)
 }
 
 /// Matches a `fun` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_fun(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Fun)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Fun)), void_fn)(input)
 }
 
 /// Matches a `catch` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_catch(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Catch)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Catch)), void_fn)(input)
 }
 
 /// Matches a `try` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_try(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Try)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Try)), void_fn)(input)
 }
 
 /// Matches a `else` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_else(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Else)), |_| ())(input)
+  map(ws_before(tok_keyword(Keyword::Else)), void_fn)(input)
 }

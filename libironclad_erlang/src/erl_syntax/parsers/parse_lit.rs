@@ -11,6 +11,7 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::map;
+use nom::error::context;
 
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_string, |s| {
@@ -49,10 +50,13 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Read a literal value from input string
 pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
-  ws_before(alt((
-    parse_float_to_ast,
-    parse_int_to_ast,
-    parse_atom_to_ast,
-    parse_string_to_ast,
-  )))(input)
+  context(
+    "literal",
+    ws_before(alt((
+      parse_float_to_ast,
+      parse_int_to_ast,
+      parse_atom_to_ast,
+      parse_string_to_ast,
+    ))),
+  )(input)
 }

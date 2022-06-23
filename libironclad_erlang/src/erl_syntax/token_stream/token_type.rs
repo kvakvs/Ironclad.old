@@ -87,7 +87,7 @@ pub enum TokenType {
   /// `|` a pipe symbol
   VerticalBar,
   /// `||` a double pipe symbol
-  BarBar,
+  DoubleVerticalBar,
   /// A parsed string token_stream between `" TEXT "`
   Str(Arc<String>),
   /// `% text` a line comment block
@@ -115,13 +115,66 @@ impl TokenType {
   pub fn is_same_type(&self, other: &Self) -> bool {
     std::mem::discriminant(self) == std::mem::discriminant(other)
   }
+
+  pub fn as_explanation_str(&self) -> &'static str {
+    match self {
+      TokenType::EOL => "end of line",
+      TokenType::Comma => "comma",
+      TokenType::Semicolon => "semicolon",
+      TokenType::Colon => "colon",
+      TokenType::ColonColon => "double colon",
+      TokenType::Period => "period",
+      TokenType::PeriodPeriod => "double period",
+      TokenType::Plus => "plus",
+      TokenType::Minus => "minus",
+      TokenType::ForwardSlash => "forward slash",
+      TokenType::Mul => "asterisk",
+      TokenType::ListAppend => "double plus",
+      TokenType::ListSubtract => "double minus",
+      TokenType::EqualEqual => "double equal",
+      TokenType::NotEq => "not equal",
+      TokenType::LessThanEq => "less than or equal to",
+      TokenType::LessThan => "less than / closing angle bracket",
+      TokenType::GreaterEq => "greater than or equal to",
+      TokenType::GreaterThan => "greater than / opening angle bracket",
+      TokenType::HardEq => "exactly equal",
+      TokenType::HardNotEq => "exactly not equal",
+      TokenType::EqualSymbol => "equals",
+      TokenType::RightDoubleArr => "double right arrow",
+      TokenType::RightArr => "right arrow",
+      TokenType::LeftDoubleArr => "double left arrow",
+      TokenType::LeftArr => "left arrow",
+      TokenType::Send => "exclamation mark",
+      TokenType::ParOpen => "opening parenthesis",
+      TokenType::ParClose => "closing parenthesis",
+      TokenType::SquareOpen => "opening square bracket",
+      TokenType::SquareClose => "closing square bracket",
+      TokenType::CurlyOpen => "opening curly brace",
+      TokenType::CurlyClose => "closing curly brace",
+      TokenType::DoubleAngleOpen => "double opening angle bracket",
+      TokenType::DoubleAngleClose => "double closing angle bracket",
+      TokenType::Hash => "hash symbol",
+      TokenType::VerticalBar => "vertical bar",
+      TokenType::DoubleVerticalBar => "double vertical bar",
+      TokenType::Str(_) => "a string literal",
+      TokenType::Comment(_) => "a comment",
+      TokenType::Character(_) => "a character literal",
+      TokenType::Atom(_) => "an atom literal",
+      TokenType::Variable(_) => "a variable",
+      TokenType::Keyword(_) => "a keyword",
+      TokenType::Integer(_) => "an integer literal",
+      TokenType::Float(_) => "a floating point literal",
+      TokenType::MacroInvocation(_) => "a macro invocation",
+      TokenType::Preprocessor(_) => "a preprocessor directive",
+    }
+  }
 }
 
 impl std::fmt::Display for TokenType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self {
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
-      TokenType::BarBar => write!(f, "∥"),
+      TokenType::DoubleVerticalBar => write!(f, "∥"),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Colon => write!(f, ":"),
       TokenType::ColonColon => write!(f, "∷"),
@@ -140,8 +193,8 @@ impl std::fmt::Display for TokenType {
       TokenType::HardEq => write!(f, "≡"),
       TokenType::HardNotEq => write!(f, "≢"),
       TokenType::Hash => write!(f, "#"),
-      TokenType::Integer(i) => i.fmt(f),
-      TokenType::Keyword(kw) => kw.fmt(f),
+      TokenType::Integer(i) => write!(f, " {}", i),
+      TokenType::Keyword(kw) => write!(f, " {}", kw),
       TokenType::LeftArr => write!(f, "←"),
       TokenType::LeftDoubleArr => write!(f, "⇐"),
       TokenType::LessThan => write!(f, "<"),

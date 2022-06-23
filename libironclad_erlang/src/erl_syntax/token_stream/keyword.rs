@@ -35,38 +35,45 @@ pub enum Keyword {
   Xor,
 }
 
+impl Keyword {
+  /// Stringify the keyword
+  pub fn to_str(&self) -> &'static str {
+    match self {
+      Keyword::IntegerDiv => "div",
+      Keyword::Rem => "rem",
+      Keyword::Not => "not",
+      Keyword::Or => "or",
+      Keyword::Xor => "xor",
+      Keyword::And => "and",
+      Keyword::BinaryNot => "bnot",
+      Keyword::BinaryAnd => "band",
+      Keyword::BinaryOr => "bor",
+      Keyword::BinaryXor => "bxor",
+      Keyword::BinaryShiftLeft => "bsl",
+      Keyword::BinaryShiftRight => "bsr",
+      Keyword::AndAlso => "andalso",
+      Keyword::OrElse => "orelse",
+      Keyword::Catch => "catch",
+      Keyword::After => "after",
+      Keyword::Begin => "begin",
+      Keyword::Case => "case",
+      Keyword::Cond => "cond",
+      Keyword::Else => "else",
+      Keyword::End => "end",
+      Keyword::Fun => "fun",
+      Keyword::If => "if",
+      Keyword::Let => "let",
+      Keyword::Maybe => "maybe",
+      Keyword::Of => "of",
+      Keyword::Receive => "receive",
+      Keyword::Try => "try",
+      Keyword::When => "when",
+    }
+  }
+}
+
 impl std::fmt::Display for Keyword {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Keyword::IntegerDiv => write!(f, "div"),
-      Keyword::Rem => write!(f, "rem"),
-      Keyword::Not => write!(f, "not"),
-      Keyword::Or => write!(f, "or"),
-      Keyword::Xor => write!(f, "xor"),
-      Keyword::And => write!(f, "and"),
-      Keyword::BinaryNot => write!(f, "bnot"),
-      Keyword::BinaryAnd => write!(f, "band"),
-      Keyword::BinaryOr => write!(f, "bor"),
-      Keyword::BinaryXor => write!(f, "bxor"),
-      Keyword::BinaryShiftLeft => write!(f, "bsl"),
-      Keyword::BinaryShiftRight => write!(f, "bsr"),
-      Keyword::AndAlso => write!(f, "andalso"),
-      Keyword::OrElse => write!(f, "orelse"),
-      Keyword::Catch => write!(f, "catch"),
-      Keyword::After => write!(f, "after"),
-      Keyword::Begin => write!(f, "begin"),
-      Keyword::Case => write!(f, "case"),
-      Keyword::Cond => write!(f, "cond"),
-      Keyword::Else => write!(f, "else"),
-      Keyword::End => write!(f, "end"),
-      Keyword::Fun => write!(f, "fun"),
-      Keyword::If => write!(f, "if"),
-      Keyword::Let => write!(f, "let"),
-      Keyword::Maybe => write!(f, "maybe"),
-      Keyword::Of => write!(f, "of"),
-      Keyword::Receive => write!(f, "receive"),
-      Keyword::Try => write!(f, "try"),
-      Keyword::When => write!(f, "when"),
-    }
+    self.to_str().fmt(f)
   }
 }
