@@ -10,7 +10,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryOp, ListComprehension, Lit,
 };
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::parsers::parse_expr::{parse_expr, parse_list_comprehension};
+use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_list_comprehension;
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
@@ -210,10 +210,10 @@ fn parse_expr_2() -> IcResult<()> {
 #[test]
 fn parse_expr_lc1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an expr with list comprehension");
-  let input = " [F || F <- Fs0]";
+  let input = "[F || F <- Fs0 ] \n";
   let tokens = test_util::tokenize(input);
   let p_input = ParserInput::new_slice(&tokens);
-  let (tail, expr) = panicking_parser_error_reporter(
+  let (_tail, expr) = panicking_parser_error_reporter(
     input,
     p_input.clone(),
     parse_list_comprehension(p_input.clone()).finish(),
@@ -343,7 +343,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 fn parse_try_catch_clause() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
-  let input = "myfun() -> try ok except Class:Error:Stack when true -> ok end.";
+  let input = "myfun() -> try ok catch Class:Error:Stack when true -> ok end.";
   let module = test_util::parse_module(function_name!(), input);
   println!("Parsed Catch clause: {:?}", module.ast.borrow());
   // // TODO: Use panicking error reporter

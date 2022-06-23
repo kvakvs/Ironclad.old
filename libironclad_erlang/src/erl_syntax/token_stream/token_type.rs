@@ -116,6 +116,7 @@ impl TokenType {
     std::mem::discriminant(self) == std::mem::discriminant(other)
   }
 
+  /// Explain the token type as text
   pub fn as_explanation_str(&self) -> &'static str {
     match self {
       TokenType::EOL => "end of line",

@@ -104,7 +104,7 @@ pub fn parse_list_comprehension_exprs_and_generators(
   separated_list1(
     tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-    alt((parse_expr, parse_list_comprehension_generator)),
+    alt((parse_list_comprehension_generator, parse_expr)),
   )(input)
 }
 
@@ -203,12 +203,12 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_case_statement,
         parse_binary,
         parenthesized_expr::<STYLE>,
-        parse_list_comprehension,
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
         map_builder_of_exprs::<STYLE>,
         parse_var,
         parse_erl_literal,
+        parse_list_comprehension,
       )),
     )(input),
     EXPR_STYLE_MATCHEXPR => context(

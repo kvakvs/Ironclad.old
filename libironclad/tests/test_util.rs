@@ -7,7 +7,7 @@ use libironclad_erlang::erl_syntax::token_stream::token::Token;
 use libironclad_erlang::erl_syntax::token_stream::tokenizer::tokenize_source;
 use libironclad_erlang::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
-use libironclad_erlang::source_file::{SourceFile, SourceFileImpl};
+use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::typing::erl_type::ErlType;
 use std::path::PathBuf;
 use std::sync::Arc;

@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::format_tok_till_eol;
+use crate::erl_syntax::token_stream::token::format_tok_stream;
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 
@@ -73,7 +73,7 @@ pub fn convert_token_stream_parser_error(
                expected '{expected}', found {actual}\n\n",
               i = i,
               line_number = line_number,
-              line = format_tok_till_eol(line),
+              line = format_tok_stream(line, 50),
               column = column_number,
               expected = c,
               actual = actual,
@@ -86,7 +86,7 @@ pub fn convert_token_stream_parser_error(
                expected '{expected}', got end of input\n\n",
               i = i,
               line_number = line_number,
-              line = format_tok_till_eol(line),
+              line = format_tok_stream(line, 50),
               column = column_number,
               expected = c,
             )
@@ -100,7 +100,7 @@ pub fn convert_token_stream_parser_error(
           line_number = line_number,
           column = column_number,
           context = s,
-          line = format_tok_till_eol(line),
+          line = format_tok_stream(line, 50),
         ),
         ErlParserErrorKind::Nom(e) => write!(
           &mut result,
@@ -109,7 +109,7 @@ pub fn convert_token_stream_parser_error(
           i = i,
           line_number = line_number,
           nom_err = e,
-          line = format_tok_till_eol(line),
+          line = format_tok_stream(line, 50),
           column = column_number,
         ),
         _ => writeln!(
@@ -119,7 +119,7 @@ pub fn convert_token_stream_parser_error(
           {kind}",
           i = i,
           column = column_number,
-          line = format_tok_till_eol(line),
+          line = format_tok_stream(line, 50),
           line_number = line_number,
           kind = kind
         ),

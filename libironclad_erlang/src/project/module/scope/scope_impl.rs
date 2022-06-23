@@ -105,6 +105,7 @@ impl ScopeImpl {
   }
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
+  #[allow(dead_code)]
   pub(crate) fn retrieve_var_from(&self, var: &ErlVar) -> Option<Arc<ErlType>> {
     if let Ok(r_vars) = self.variables.read() {
       match r_vars.get(&var.name) {

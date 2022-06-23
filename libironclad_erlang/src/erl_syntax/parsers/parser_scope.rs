@@ -149,6 +149,7 @@ impl ParserScopeImpl {
     }
   }
 
+  #[allow(dead_code)]
   pub(crate) fn load_include(
     &self,
     location: SourceLoc,

@@ -155,7 +155,7 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::IntegerLiteralExpected => write!(f, "An integer literal expected"),
       ErlParserErrorKind::FloatLiteralExpected => write!(f, "A float literal expected"),
       ErlParserErrorKind::StringLiteralExpected => write!(f, "A string literal expected"),
-      ErlParserErrorKind::VariableExpected => write!(f, "A variable expected"),
+      ErlParserErrorKind::VariableExpected => write!(f, "A variable name expected"),
       ErlParserErrorKind::ModuleStartAttributeExpected => {
         write!(f, "Module start attribute -module(NAME) expected")
       }

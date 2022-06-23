@@ -30,6 +30,7 @@ impl PreprocessorNodeImpl {
 
   /// Create new nested included file AST node
   #[inline]
+  #[allow(dead_code)]
   pub(crate) fn new_included_file(
     location: SourceLoc,
     file: &Path,
