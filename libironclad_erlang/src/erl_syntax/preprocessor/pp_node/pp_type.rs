@@ -8,7 +8,7 @@ use libironclad_util::mfarity::MFArity;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-/// Preprocessor data nodes, are produced during the `ErlModule::preprocess` stage.
+/// Preprocessor data nodes, are produced during the `ErlModule::stage_preprocess` stage.
 /// They are not stored anywhere in the final AST.
 #[derive(Debug, Clone)]
 #[allow(missing_docs)]

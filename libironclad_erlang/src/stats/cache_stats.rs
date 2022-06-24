@@ -3,7 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 /// Stats for caches
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct CacheStatsImpl {
   /// How many times cache request ended with a hit
   pub hits: usize,

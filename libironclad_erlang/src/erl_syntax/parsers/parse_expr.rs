@@ -195,7 +195,7 @@ fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<As
 fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   match STYLE {
     EXPR_STYLE_FULL => context(
-      "parse expression (highest precedence)",
+      "stage_parse expression (highest precedence)",
       alt((
         parse_lambda,
         parse_try_catch,
@@ -212,7 +212,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       )),
     )(input),
     EXPR_STYLE_MATCHEXPR => context(
-      "parse match expression (highest precedence)",
+      "stage_parse match expression (highest precedence)",
       alt((
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
@@ -223,7 +223,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       )),
     )(input),
     EXPR_STYLE_GUARD => context(
-      "parse guard expression (highest precedence)",
+      "stage_parse guard expression (highest precedence)",
       alt((parenthesized_expr::<STYLE>, parse_var, parse_erl_literal)),
     )(input),
     _ => panic!("STYLE={} not implemented in parse_expr", STYLE),
@@ -401,16 +401,16 @@ fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 }
 
 /// Precedence 11: Catch operator, then continue to higher precedences
-/// This is also entry point to parse expression when you don't want to recognize comma and semicolon
+/// This is also entry point to stage_parse expression when you don't want to recognize comma and semicolon
 fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  // Try parse (catch Expr) otherwise try next precedence level
+  // Try stage_parse (catch Expr) otherwise try next precedence level
   map(pair(unop_catch, parse_expr_prec10::<STYLE>), |(catch_op, expr)| {
     ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), catch_op, expr)
   })(input.clone())
   .or_else(|_err| parse_expr_prec10::<STYLE>(input.clone()))
 }
 
-// /// Public entry point to parse expression that cannot include comma or semicolon
+// /// Public entry point to stage_parse expression that cannot include comma or semicolon
 // #[inline]
 // pub fn parse_expr_no_comma_no_semi(input: ParserInput) -> ParserResult<AstNode> {
 //   Self::parse_expr_prec11(input)

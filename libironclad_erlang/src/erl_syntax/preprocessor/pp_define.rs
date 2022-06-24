@@ -1,6 +1,7 @@
 //! Preprocessor definition, sometimes with args
 
 use crate::erl_syntax::preprocessor::pp_name_arity::NameArity;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use libironclad_util::pretty::Pretty;
 use std::sync::Arc;
 
@@ -13,7 +14,7 @@ pub struct PreprocessorDefineImpl {
   /// Arg names for the macro like `-define(MACRO(ARG1, ARG2, ...)...)`
   pub args: Vec<String>,
   /// The substitution, if provided, otherwise the symbol just evaluates as true in ifdefs and ifs
-  pub text: String,
+  pub tokens: Vec<Token>,
 }
 
 /// Wrapper for `Arc<>`
@@ -23,21 +24,21 @@ impl std::fmt::Debug for PreprocessorDefineImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "-define({}", &self.name)?;
     Pretty::display_paren_list(self.args.iter(), f)?;
-    write!(f, ", {})", &self.text)
+    write!(f, ", {})", format_tok_stream(&self.tokens, self.tokens.len()))
   }
 }
 
 impl PreprocessorDefineImpl {
   /// Create a new empty preprocessor definition without body and args
-  pub(crate) fn new(name: String, args: &[String], text: &str) -> PreprocessorDefine {
-    Self { name, args: args.into(), text: text.to_string() }.into()
+  pub(crate) fn new(name: String, args: &[String], tokens: &[Token]) -> PreprocessorDefine {
+    Self { name, args: args.into(), tokens: tokens.into() }.into()
   }
 
   /// Given NAME=VALUE or NAME style option, convert it into a record in preprocessor definition
   /// symbols table. This will be passed then to preprocessor parser.
   pub(crate) fn new_from_command_line(key_value: &str) -> PreprocessorDefine {
     println!("TODO: new preproc-define from: {}", key_value);
-    Self::new(key_value.to_string(), &Vec::default(), "")
+    Self::new(key_value.to_string(), &Vec::default(), &[])
   }
 
   /// Return the name/arity pair for this macro

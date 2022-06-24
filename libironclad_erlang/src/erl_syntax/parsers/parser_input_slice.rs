@@ -16,7 +16,7 @@
 //   pub input_len: usize,
 //   /// The read position for Nom parsers
 //   pub read_pos: usize,
-//   /// Forming a readonly list of parse history
+//   /// Forming a readonly list of stage_parse history
 //   pub prev: Option<Arc<ParserInputSlice>>,
 // }
 

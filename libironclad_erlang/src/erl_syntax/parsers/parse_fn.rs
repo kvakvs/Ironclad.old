@@ -106,7 +106,7 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
       not(peek(tok_minus)),
       separated_list1(
         tok_semicolon,
-        // if parse fails under here, will show this context message in error
+        // if stage_parse fails under here, will show this context message in error
         context("function clause of a function definition", parse_fnclause::<true>),
       ),
       tok(TokenType::Period),

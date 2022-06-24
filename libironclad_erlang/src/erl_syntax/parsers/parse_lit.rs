@@ -41,7 +41,7 @@ fn parse_float_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_integer, |i: ErlInteger| {
     let lit_node = Lit {
-      // TODO: Can parsed integer create a parse error?
+      // TODO: Can parsed integer create a stage_parse error?
       value: Literal::Integer(i).into(),
     };
     AstNodeImpl::construct_with_location(SourceLoc::new(&input), lit_node)

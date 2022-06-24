@@ -6,6 +6,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::erl_syntax::preprocessor::pp_define::{PreprocessorDefine, PreprocessorDefineImpl};
 use crate::erl_syntax::preprocessor::pp_name_arity::NameArity;
+use crate::erl_syntax::token_stream::token::Token;
 use crate::error::ic_error::{IcResult, IroncladError};
 use crate::error::ic_error_trait::IcError;
 use crate::file_cache::FileCache;
@@ -21,6 +22,7 @@ pub type PreprocessorDefinesMap = HashMap<NameArity, PreprocessorDefine>;
 /// defines added `-define` and removed `-undef`.
 /// This is mutated as we descend into module AST and meet more `-define/undef` directives and
 /// include more files.
+#[deprecated = "merged with RootScope"]
 pub struct ParserScopeImpl {
   /// Available macros
   pub defines: RwLock<PreprocessorDefinesMap>,
@@ -31,6 +33,7 @@ pub struct ParserScopeImpl {
 }
 
 /// Wrapped with `Arc<>` for convenience.
+#[deprecated]
 pub type ParserScope = Arc<ParserScopeImpl>;
 
 impl Clone for ParserScopeImpl {
@@ -132,8 +135,8 @@ impl ParserScopeImpl {
 
   /// Clone self and insert a new macro definition
   #[allow(dead_code)]
-  pub(crate) fn define(&self, name: &str, args: &[String], text: &str) {
-    let pp_def = PreprocessorDefineImpl::new(name.to_string(), args, text);
+  pub(crate) fn define(&self, name: &str, args: &[String], tokens: &[Token]) {
+    let pp_def = PreprocessorDefineImpl::new(name.to_string(), args, tokens);
     if let Ok(mut w_defines) = self.defines.write() {
       w_defines.insert(pp_def.get_name_arity(), pp_def);
     }

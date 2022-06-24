@@ -4,6 +4,7 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_preproc_directive;
+use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
@@ -13,6 +14,7 @@ use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
 use ::function_name::named;
+use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 
 impl ErlModuleImpl {
@@ -65,7 +67,11 @@ impl ErlModuleImpl {
           }
           PreprocessorNodeType::Include(_) => {}
           PreprocessorNodeType::IncludeLib(_) => {}
-          PreprocessorNodeType::Define { .. } => {}
+          PreprocessorNodeType::Define { name, args, body } => {
+            let key = MFArity::new_local(name.as_str(), args.len());
+            let ppdef = PreprocessorDefineImpl::new(name.clone(), &args, &body);
+            module.root_scope.defines.add(key, ppdef)
+          }
           PreprocessorNodeType::Undef(_) => {}
           PreprocessorNodeType::Error(_) => {}
           PreprocessorNodeType::Warning(_) => {}
@@ -85,7 +91,10 @@ impl ErlModuleImpl {
                 .add(fun_arity.clone_with_module(module_name.as_str()))
             })
           }
-          PreprocessorNodeType::NewType { .. } => {}
+          PreprocessorNodeType::NewType { name, vars, ty } => {
+            let key = MFArity::new_local(name.as_str(), vars.len());
+            module.root_scope.user_types.add(key, ty.clone())
+          }
           PreprocessorNodeType::NewRecord { tag, fields } => {
             let r_def = RecordDefinition { tag: tag.clone(), fields: fields.clone() }.into();
             module.root_scope.record_defs.add(tag.clone(), r_def)

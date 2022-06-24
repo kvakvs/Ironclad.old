@@ -3,7 +3,11 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
+use crate::file_cache::FileCache;
 use crate::project::module::scope::mod_attr::ModuleAttributes;
+use crate::project::project_impl::ErlProjectImpl;
+use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
@@ -14,6 +18,12 @@ use std::sync::Arc;
 /// Implements module root scope, stuff available directly from the module root
 #[derive(Debug)]
 pub struct RootScopeImpl {
+  /// Available macros
+  pub defines: RwHashMap<MFArity, PreprocessorDefine>,
+  /// Access to the file loader
+  pub file_cache: FileCache,
+  /// Access to the project (compiler options, inputs global and per file etc)
+  pub project: ErlProject,
   /// Contains definitions, added by `-spec` attribute
   pub fn_specs: RwHashMap<MFArity, Arc<ErlType>>,
   /// Contains `-type NAME() ...` definitions for new types
@@ -40,6 +50,9 @@ pub type RootScope = Arc<RootScopeImpl>;
 impl Default for RootScopeImpl {
   fn default() -> Self {
     RootScopeImpl {
+      defines: Default::default(),
+      file_cache: FileCache::default(),
+      project: ErlProjectImpl::default().into(),
       fn_specs: RwHashMap::default(),
       user_types: RwHashMap::default(),
       fn_defs: RwHashMap::default(),

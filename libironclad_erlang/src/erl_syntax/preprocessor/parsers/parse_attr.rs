@@ -1,4 +1,4 @@
-//! Use nom parser to parse a generic module attribute from a wall of text.
+//! Use nom parser to stage_parse a generic module attribute from a wall of text.
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{

@@ -111,6 +111,11 @@ pub enum TokenType {
 }
 
 impl TokenType {
+  /// Create a new wrapped TokenType::Str(text)
+  pub fn new_str(text: &str) -> Self {
+    TokenType::Str(text.to_string().into())
+  }
+
   /// Compares only enum variants ignoring the content
   pub fn is_same_type(&self, other: &Self) -> bool {
     std::mem::discriminant(self) == std::mem::discriminant(other)

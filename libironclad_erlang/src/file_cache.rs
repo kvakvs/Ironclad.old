@@ -9,8 +9,8 @@ use crate::stats::io_stats::IOStats;
 use std::sync::{Arc, RwLock};
 
 /// Contains loaded files ready for parsing by the preprocessor.
-/// More files will be added in preprocess stage, as include directives are parsed
-#[derive(Default)]
+/// More files will be added in stage_preprocess stage, as include directives are parsed
+#[derive(Debug, Default)]
 pub struct FileCacheImpl {
   /// File contents stored here
   pub all_files: BTreeMap<PathBuf, SourceFile>,
@@ -81,7 +81,7 @@ impl FileCacheImpl {
   }
 
   /// As source file text is read only, we replace.
-  /// The parse trees referring the the old source file will retain their Arc<> to the old version
+  /// The stage_parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
     let new_source_file = SourceFileImpl::new(file_name, new_text);
     self

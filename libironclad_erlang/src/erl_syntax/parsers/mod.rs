@@ -28,7 +28,7 @@ pub mod parser_scope;
 
 /// Parses an attribute or a function def
 pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {
-  // Do not parse attributes and preprocessor here, it is done earlier in preprocess stage after tokenizer
+  // Do not stage_parse attributes and preprocessor here, it is done earlier in stage_preprocess stage after tokenizer
   context("function definition", parse_fndef)(input)
 }
 

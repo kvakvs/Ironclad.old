@@ -20,7 +20,7 @@ use std::sync::{Arc, RwLock};
 /// Preprocessor state for 1 file with AST cache, macro definitions, etc
 #[deprecated = "Not used atm"]
 pub struct PreprocessFile {
-  /// For headers included more than once, parse them and cache here for reinterpretation as needed
+  /// For headers included more than once, stage_parse them and cache here for reinterpretation as needed
   ast_cache: Arc<RwLock<PpAstCache>>,
 
   file_cache: FileCache,
@@ -30,7 +30,7 @@ pub struct PreprocessFile {
 }
 
 impl PreprocessFile {
-  /// Create a preprocess state struct for processing a file.
+  /// Create a stage_preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub(crate) fn new(
     ast_cache: &Arc<RwLock<PpAstCache>>,
@@ -103,7 +103,7 @@ impl PreprocessFile {
   //   let (tail, ast) = panicking_parser_error_reporter(input, parser(input).finish());
   //   assert!(
   //     tail.trim().is_empty(),
-  //     "Preprocessor: Not all input was consumed by parse.\n\tTail: «{}»\n\tAst: {}",
+  //     "Preprocessor: Not all input was consumed by stage_parse.\n\tTail: «{}»\n\tAst: {}",
   //     tail,
   //     ast
   //   );
@@ -128,7 +128,7 @@ impl PreprocessFile {
       }
     };
 
-    // If cached, try get it, otherwise parse and save
+    // If cached, try get it, otherwise stage_parse and save
     let ast_tree =
       self.parse_file_helper(&mut stats.ast_cache, &contents, PreprocessorParser::module)?;
 
@@ -307,7 +307,7 @@ impl PreprocessFile {
     Ok(())
   }
 
-  /// Interpret parsed attributes/preprocess directives from top to bottom
+  /// Interpret parsed attributes/stage_preprocess directives from top to bottom
   /// - Exclude ifdef/if/ifndef sections where the condition check fails
   /// - Load include files and paste them where include directive was found. Continue interpretation.
   /// - Substitute macros.

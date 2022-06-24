@@ -20,7 +20,7 @@ use crate::source_file::SourceFile;
 use nom::Finish;
 
 impl ErlModuleImpl {
-  /// Generic parse helper for any Nom entry point.
+  /// Generic stage_parse helper for any Nom entry point.
   /// Input comes as string in the `SourceFile`, the input is tokenized and then parsed.
   pub fn parse_helper<T>(
     project: &ErlProject,
@@ -76,11 +76,11 @@ impl ErlModuleImpl {
     assert_eq!(
       trim_tail,
       0,
-      "Not all input was consumed by parse.\n\tTail: «{}»",
+      "Not all input was consumed by stage_parse.\n\tTail: «{}»",
       format_tok_stream(&tail.tokens, 50),
     );
 
-    // TODO: This assignment below should be happening earlier before parse, as parse can refer to the SourceFile
+    // TODO: This assignment below should be happening earlier before stage_parse, as stage_parse can refer to the SourceFile
     module.ast.replace(forms.clone());
 
     // Scan AST and find FnDef nodes, update functions knowledge

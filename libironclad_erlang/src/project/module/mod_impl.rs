@@ -28,7 +28,7 @@ pub struct ErlModuleImpl {
   pub name: RefCell<String>,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: SourceFile,
-  /// Stores state of preprocessor defines during parse, and then final state after parse (useful for testing)
+  /// Stores state of preprocessor defines during stage_parse, and then final state after stage_parse (useful for testing)
   pub parser_scope: ParserScope,
   /// AST tree of the module.
   pub ast: RefCell<AstNode>,

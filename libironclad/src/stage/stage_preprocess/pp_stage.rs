@@ -2,7 +2,7 @@
 //! Preprocessor stage shared state for all files
 
 use crate::project::ErlProject;
-use crate::stage::preprocess::pp_stage_file::PreprocessFile;
+use crate::stage::stage_preprocess::pp_stage_file::PreprocessFile;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::file_cache::FileCache;
 use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
@@ -18,7 +18,7 @@ pub struct PreprocessStage {
 }
 
 impl PreprocessStage {
-  /// Create a preprocess state struct for processing a file.
+  /// Create a stage_preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
   pub(crate) fn new() -> Self {
     Self { stats: PreprocessorStats::new() }
@@ -26,8 +26,8 @@ impl PreprocessStage {
 
   /// Stage 1 - Preprocessor stage
   /// ----------------------------
-  /// * Preparse loaded ERL files ignoring the syntax only paying attention to preprocess tokens.
-  /// * Preparse include files AST and paste preprocess AST into include locations.
+  /// * Preparse loaded ERL files ignoring the syntax only paying attention to stage_preprocess tokens.
+  /// * Preparse include files AST and paste stage_preprocess AST into include locations.
   /// * Drop AST branches covered by the conditional compile directives.
   ///
   /// Side effects: Updates file contents cache
@@ -55,7 +55,7 @@ impl PreprocessStage {
       .collect();
 
     for path in erl_files.iter() {
-      // For all input files, run preprocess parse and interpret the preprocess directives
+      // For all input files, run stage_preprocess stage_parse and interpret the stage_preprocess directives
       // Loaded and parsed HRL files are cached to be inserted into every include location
       // Create starting scope (from project settings and command line)
       let starting_scope = project.get_preprocessor_scope(path);

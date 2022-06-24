@@ -1,4 +1,4 @@
-//! Format parse errors
+//! Format stage_parse errors
 
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;

@@ -3,7 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 /// Counts files and bytes read and written
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct IOStatsImpl {
   /// Files read count
   pub files_read: usize,

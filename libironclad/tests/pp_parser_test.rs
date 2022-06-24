@@ -2,11 +2,13 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
+use libironclad_erlang::erl_syntax::token_stream::token::Token;
+use libironclad_erlang::erl_syntax::token_stream::token_type::TokenType;
 use libironclad_erlang::error::ic_error::IcResult;
 
 #[test]
 #[named]
-/// Try parse a simple pp directive -if(true).
+/// Try stage_parse a simple pp directive -if(true).
 fn test_fragment_if_true() {
   test_util::start(function_name!(), "Parse -if(true) directive");
 
@@ -18,7 +20,7 @@ fn test_fragment_if_true() {
 #[test]
 #[named]
 #[should_panic]
-/// Try parse a simple pp directive -if(3). and expect a panic
+/// Try stage_parse a simple pp directive -if(3). and expect a panic
 fn test_fragment_if_3() {
   test_util::start(function_name!(), "Parse -if(3) directive for a panic");
   let input = "-if(3).
@@ -108,7 +110,9 @@ fn parse_define_with_body_no_args() {
 
   let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
   assert_eq!(pdef.name, "BBB");
-  assert_eq!(pdef.text, "[true)");
+  assert!(pdef.tokens[0].is_tok(TokenType::SquareOpen));
+  assert!(pdef.tokens[1].is_tok(TokenType::Atom("true".to_string())));
+  assert!(pdef.tokens[2].is_tok(TokenType::ParClose));
 }
 
 #[test]
@@ -181,7 +185,7 @@ fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
   let module = test_util::parse_module(function_name!(), input);
   let pdef = module.parser_scope.get_value("AAA", 2).unwrap();
-  assert_eq!(pdef.text, "\"aaa\"");
+  assert!(pdef.tokens[0].is_tok(TokenType::new_str("aaa")));
   assert_eq!(pdef.args, vec!["X", "Y"]);
 }
 
@@ -197,7 +201,7 @@ fn test_define_with_dquotes() {
 
 #[test]
 #[named]
-/// Try parse a define macro where value contains another macro
+/// Try stage_parse a define macro where value contains another macro
 fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
@@ -206,7 +210,7 @@ fn test_macro_expansion_in_define() {
   assert_eq!(
     nodes.len(),
     2,
-    "Must parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
+    "Must stage_parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
   );
   assert!(nodes[0].is_empty_ast_node());
   assert!(nodes[1].is_empty_ast_node());
@@ -216,12 +220,12 @@ fn test_macro_expansion_in_define() {
   let p_scope = module.parser_scope.clone();
   let pdef = p_scope.get_value("BBB", 0).unwrap();
   assert_eq!(pdef.name, "BBB");
-  assert_eq!(pdef.text, "bbb");
+  assert!(pdef.tokens[0].is_tok(TokenType::new_str("bbb")));
 }
 
 #[test]
 #[named]
-/// Try parse an expression with a macro
+/// Try stage_parse an expression with a macro
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
@@ -241,7 +245,7 @@ fn test_ast_macro() {
     function_name!(),
     "(1) Substitute from macro completes the syntax and makes it parseable",
   );
-  // TODO: This will not parse till the method of macro substitution is changed
+  // TODO: This will not stage_parse till the method of macro substitution is changed
   let input = "-define(M1, A:B:C ->).
 myfunction1() ->
   try test
@@ -258,7 +262,7 @@ fn test_ast_macro_with_keyword() {
     function_name!(),
     "(2) Substitute from macro completes the syntax and makes it parseable",
   );
-  // TODO: This will not parse till the method of macro substitution is changed
+  // TODO: This will not stage_parse till the method of macro substitution is changed
   let input = "-define(M2, end.).
 myfunction2() ->
   begin ok ?M2";

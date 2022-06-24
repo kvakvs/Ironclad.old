@@ -3,8 +3,8 @@ extern crate libironclad_erlang;
 
 use std::process::exit;
 
-use libironclad::stage::file_preload::FilePreloadStage;
-use libironclad::stage::parse::ErlParseStage;
+use libironclad::stage::stage_parse::ErlParseStage;
+use libironclad::stage::stage_preload::FilePreloadStage;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
