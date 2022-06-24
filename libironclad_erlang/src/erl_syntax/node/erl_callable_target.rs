@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Formatter;
 use std::sync::Arc;
@@ -76,7 +76,7 @@ impl CallableTarget {
 
   /// Create a type for this callable target
   #[allow(dead_code)]
-  pub(crate) fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<Arc<ErlType>> {
+  pub(crate) fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<ErlType> {
     match self {
       CallableTarget::Expr(e) => e.synthesize(module, scope),
       CallableTarget::MFArity(_) => todo!("synthesize for mfarity callable target"),

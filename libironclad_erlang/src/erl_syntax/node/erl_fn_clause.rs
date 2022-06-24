@@ -6,7 +6,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
@@ -92,7 +92,7 @@ impl ErlFnClause {
     &self,
     module: &ErlModule,
     env: &Scope,
-  ) -> IcResult<Arc<ErlType>> {
+  ) -> IcResult<ErlType> {
     self.body.synthesize(module, env)
   }
 }

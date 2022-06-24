@@ -9,7 +9,7 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use ::function_name::named;
 use std::sync::Arc;
 
@@ -17,7 +17,7 @@ impl AstNodeImpl {
   /// From AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
   #[named]
-  pub fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<Arc<ErlType>> {
+  pub fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<ErlType> {
     match &self.content {
       AstNodeType::Empty { comment } => {
         unreachable!("Should not be synthesizing type from AST node: Empty({})", comment)
@@ -45,7 +45,7 @@ impl AstNodeImpl {
           panic!("{}: Can't find variable in the env: {}", function_name!(), v.name);
         }
       }
-      Lit { value, .. } => Ok(ErlType::new_singleton(value)),
+      Lit { value, .. } => Ok(ErlTypeImpl::new_singleton(value)),
       BinaryOp { expr, .. } => expr.synthesize_binop_type(self.location.clone(), module, scope),
       List { elements, tail, .. } => Self::synthesize_list_type(module, scope, elements, tail),
       Tuple { elements, .. } => Self::synthesize_tuple_type(module, scope, elements),
@@ -60,13 +60,13 @@ impl AstNodeImpl {
     scope: &Scope,
     elements: &[AstNode],
     tail: &Option<AstNode>,
-  ) -> IcResult<Arc<ErlType>> {
-    let elements: IcResult<Vec<Arc<ErlType>>> = elements
+  ) -> IcResult<ErlType> {
+    let elements: IcResult<Vec<ErlType>> = elements
       .iter()
       .map(|el| el.synthesize(module, scope))
       .collect();
 
-    let synthesized_t = ErlType::StronglyTypedList {
+    let synthesized_t = ErlTypeImpl::StronglyTypedList {
       elements: elements?,
       tail: match tail {
         None => None,
@@ -84,11 +84,11 @@ impl AstNodeImpl {
     module: &ErlModule,
     scope: &Scope,
     elements: &[AstNode],
-  ) -> IcResult<Arc<ErlType>> {
-    let elements: IcResult<Vec<Arc<ErlType>>> = elements
+  ) -> IcResult<ErlType> {
+    let elements: IcResult<Vec<ErlType>> = elements
       .iter()
       .map(|el| el.synthesize(module, scope))
       .collect();
-    Ok(ErlType::Tuple { elements: elements? }.into())
+    Ok(ErlTypeImpl::Tuple { elements: elements? }.into())
   }
 }

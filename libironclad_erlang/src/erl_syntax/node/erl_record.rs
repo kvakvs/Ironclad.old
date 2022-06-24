@@ -1,7 +1,7 @@
 //! Record definition: Fields
 
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::fmt::Formatter;
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ pub struct RecordField {
   /// Optional initializer for construction of the record
   pub initializer: Option<AstNode>,
   /// Optional type ascription
-  pub type_ascription: Option<Arc<ErlType>>,
+  pub type_ascription: Option<ErlType>,
 }
 
 impl std::fmt::Display for RecordField {

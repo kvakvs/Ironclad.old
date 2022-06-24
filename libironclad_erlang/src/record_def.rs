@@ -12,7 +12,7 @@ pub struct RecordDefinition {
   /// The fields
   pub fields: Vec<RecordField>,
   // /// The synthesized type
-  // pub ty: Arc<ErlType>,
+  // pub ty: ErlType,
 }
 
 impl std::fmt::Display for RecordDefinition {

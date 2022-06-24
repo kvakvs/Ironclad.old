@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::sync::Arc;
 
 /// An Erlang literal, a value fully known at compile time
@@ -94,23 +94,23 @@ impl Literal {
   }
 
   /// Synthesizes a type of this literal
-  pub(crate) fn synthesize_type(&self) -> Arc<ErlType> {
+  pub(crate) fn synthesize_type(&self) -> ErlType {
     match self {
-      Literal::Integer(_) => ErlType::integer(),
-      Literal::Float(_) => ErlType::float(),
-      Literal::Atom(_) => ErlType::atom(),
-      Literal::Bool(_) => ErlType::boolean(),
+      Literal::Integer(_) => ErlTypeImpl::integer(),
+      Literal::Float(_) => ErlTypeImpl::float(),
+      Literal::Atom(_) => ErlTypeImpl::atom(),
+      Literal::Bool(_) => ErlTypeImpl::boolean(),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
       Literal::String(_) | Literal::Nil | Literal::List { .. } => {
         // List type is union of all element types
         // ErlType::List(ErlType::union_of_literal_types(elements)).into()
-        ErlType::any_list()
+        ErlTypeImpl::any_list()
       }
       Literal::Tuple(items) => {
         let element_types = items.iter().map(|it| it.synthesize_type()).collect();
-        ErlType::Tuple { elements: element_types }.into()
+        ErlTypeImpl::Tuple { elements: element_types }.into()
       } // other => unimplemented!("Don't know how to synthesize type for {}", other),
     }
   }

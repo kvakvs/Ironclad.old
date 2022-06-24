@@ -7,7 +7,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_type::FnType;
 use crate::typing::type_error::TypeError;
 use libironclad_util::pretty::Pretty;
@@ -53,7 +53,7 @@ impl ErlApply {
     location: SourceLoc,
     module: &ErlModule,
     scope: &Scope,
-  ) -> IcResult<Arc<ErlType>> {
+  ) -> IcResult<ErlType> {
     // Synthesize target and check that it is a function type
     let target_ty = self.target.synthesize(module, scope)?;
     if !target_ty.is_function() {
@@ -62,7 +62,7 @@ impl ErlApply {
     }
 
     // Build argument type list and check every argument vs the target (the callee)
-    let arg_types_r: IcResult<Vec<Arc<ErlType>>> = self
+    let arg_types_r: IcResult<Vec<ErlType>> = self
       .args
       .iter()
       .map(|arg| arg.synthesize(module, scope))
@@ -70,15 +70,15 @@ impl ErlApply {
     let arg_types = arg_types_r?;
 
     match target_ty.deref() {
-      ErlType::Atom => unimplemented!("Callable is a local module function"),
-      ErlType::Tuple { .. } => unimplemented!("Callable is a tuple"),
+      ErlTypeImpl::Atom => unimplemented!("Callable is a local module function"),
+      ErlTypeImpl::Tuple { .. } => unimplemented!("Callable is a tuple"),
 
       // AnyFn is always callable and always returns any, for we do not know better
-      ErlType::AnyFn => Ok(ErlType::any()),
+      ErlTypeImpl::AnyFn => Ok(ErlTypeImpl::any()),
 
-      ErlType::Fn(fn_type) => self.synthesize_call_to_fn(location, fn_type, &arg_types),
-      ErlType::FnRef { .. } => unimplemented!("Callable is a fun reference"),
-      ErlType::Lambda => unimplemented!("Callable is a lambda"),
+      ErlTypeImpl::Fn(fn_type) => self.synthesize_call_to_fn(location, fn_type, &arg_types),
+      ErlTypeImpl::FnRef { .. } => unimplemented!("Callable is a fun reference"),
+      ErlTypeImpl::Lambda => unimplemented!("Callable is a lambda"),
 
       other => {
         let msg = format!("Attempt to call a non-function: {}", other);
@@ -94,8 +94,8 @@ impl ErlApply {
     &self,
     location: SourceLoc,
     fn_type: &FnType,
-    arg_types: &[Arc<ErlType>],
-  ) -> IcResult<Arc<ErlType>> {
+    arg_types: &[ErlType],
+  ) -> IcResult<ErlType> {
     if self.args.len() != fn_type.arity() {
       let msg = format!(
         "Attempt to call a function with wrong number of arguments: expected {}, got {}",
@@ -119,12 +119,12 @@ impl ErlApply {
       return ErlError::type_error(location, TypeError::BadArguments { msg });
     }
     // Return type only from compatible clauses
-    let ret_types: Vec<Arc<ErlType>> = compatible_clauses
+    let ret_types: Vec<ErlType> = compatible_clauses
       .iter()
       .map(|fc| fc.ret_ty())
       .cloned()
       .collect();
-    Ok(ErlType::new_union(&ret_types))
+    Ok(ErlTypeImpl::new_union(&ret_types))
   }
 }
 

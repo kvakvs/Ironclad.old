@@ -68,7 +68,7 @@ pub fn parse_expr(function_name: &str, input: &str) -> AstNode {
   ast_b.clone()
 }
 
-pub fn parse_type(function_name: &str, input: &str) -> Arc<ErlType> {
+pub fn parse_type(function_name: &str, input: &str) -> ErlType {
   let project = ErlProjectImpl::default().into();
   let source_file = SourceFileImpl::new(&PathBuf::from(function_name), input.to_string());
   let module = ErlModuleImpl::from_type_source(&project, &source_file, None).unwrap();

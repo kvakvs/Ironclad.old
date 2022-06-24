@@ -16,7 +16,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
@@ -82,7 +82,7 @@ fn on_import(state: &mut PreprocessState, module_name: &str, fun_arities: &[MFAr
   })
 }
 
-fn on_new_type(state: &mut PreprocessState, name: &str, vars: &[String], ty: Arc<ErlType>) {
+fn on_new_type(state: &mut PreprocessState, name: &str, vars: &[String], ty: ErlType) {
   let key = MFArity::new_local(name, vars.len());
   state.module.root_scope.user_types.add(key, ty.clone())
 }
@@ -96,7 +96,7 @@ fn on_new_record(state: &mut PreprocessState, tag: &str, fields: &[RecordField])
     .add(tag.to_string(), r_def)
 }
 
-fn on_fn_spec(state: &mut PreprocessState, funarity: &MFArity, spec: &Arc<ErlType>) {
+fn on_fn_spec(state: &mut PreprocessState, funarity: &MFArity, spec: &ErlType) {
   state
     .module
     .root_scope

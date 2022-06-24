@@ -6,7 +6,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use libironclad_util::mfarity::MFArity;
@@ -40,7 +40,7 @@ impl ErlFnDef {
     &self,
     module: &ErlModule,
     _scope: &Scope,
-  ) -> IcResult<Arc<ErlType>> {
+  ) -> IcResult<ErlType> {
     let clauses_r: IcResult<Vec<FnClauseType>> = self
       .clauses
       .iter()
@@ -49,7 +49,7 @@ impl ErlFnDef {
     let clauses = clauses_r?;
 
     let fn_type = FnType::new(self.funarity.arity, &clauses);
-    let synthesized_t = ErlType::Fn(fn_type.into()).into();
+    let synthesized_t = ErlTypeImpl::Fn(fn_type.into()).into();
     Ok(synthesized_t)
   }
 
@@ -59,14 +59,14 @@ impl ErlFnDef {
     &self,
     module: &ErlModule,
     _scope: &Scope,
-  ) -> IcResult<Arc<ErlType>> {
+  ) -> IcResult<ErlType> {
     // TODO: Filter out incompatible clauses
-    let clauses_ret: IcResult<Vec<Arc<ErlType>>> = self
+    let clauses_ret: IcResult<Vec<ErlType>> = self
       .clauses
       .iter()
       .map(|fnc| fnc.synthesize_clause_return_type(module, &fnc.scope))
       .collect();
-    let synthesized_t = ErlType::new_union(&clauses_ret?);
+    let synthesized_t = ErlTypeImpl::new_union(&clauses_ret?);
     Ok(synthesized_t)
   }
 }

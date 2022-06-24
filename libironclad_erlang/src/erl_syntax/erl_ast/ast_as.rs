@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::literal::Literal;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -19,7 +19,7 @@ impl AstNodeImpl {
   }
 
   /// Unwrap self as erltype
-  pub fn as_type(&self) -> Arc<ErlType> {
+  pub fn as_type(&self) -> ErlType {
     match &self.content {
       AstNodeType::Type { ty, .. } => ty.clone(),
       _ => panic!("Expected Type AST node, but got {}", self),

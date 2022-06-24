@@ -1,6 +1,6 @@
 //! Function type, containing clauses
 
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use std::sync::Arc;
 
@@ -48,7 +48,7 @@ impl FnType {
 
   /// Check whether argument list can be passed to any of the clauses
   #[allow(dead_code)]
-  pub(crate) fn get_compatible_clauses(&self, args: &[Arc<ErlType>]) -> Vec<FnClauseType> {
+  pub(crate) fn get_compatible_clauses(&self, args: &[ErlType]) -> Vec<FnClauseType> {
     self
       .clauses
       .iter()

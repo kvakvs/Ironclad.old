@@ -6,7 +6,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use crate::error::ic_error::IcResult;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -16,11 +16,11 @@ impl AstNodeImpl {
   /// list, so they would cause an error.
   pub(crate) fn extract_variables(
     node: &AstNode,
-    variables: &mut HashMap<String, Arc<ErlType>>,
+    variables: &mut HashMap<String, ErlType>,
   ) -> IcResult<()> {
     match &node.content {
       AstNodeType::Var(v) => {
-        variables.insert(v.name.clone(), ErlType::any());
+        variables.insert(v.name.clone(), ErlTypeImpl::any());
         Ok(())
       }
       AstNodeType::BinaryExpr { elements, .. } => {

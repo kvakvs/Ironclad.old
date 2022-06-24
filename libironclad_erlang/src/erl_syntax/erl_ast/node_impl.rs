@@ -16,7 +16,7 @@ use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::error::ic_error::IcResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::type_error::TypeError;
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
@@ -61,7 +61,7 @@ pub enum AstNodeType {
   /// A temporary node wrapper for parsed types. TODO: Use more extensively in typespecs and maybe in the augmented syntax?
   Type {
     /// The type
-    ty: Arc<ErlType>,
+    ty: ErlType,
   },
 
   /// Case clause for a `case x of` switch

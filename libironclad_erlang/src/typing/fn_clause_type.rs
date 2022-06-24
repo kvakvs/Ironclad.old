@@ -1,5 +1,5 @@
 //! Function clause type, component of function type
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
@@ -25,7 +25,7 @@ impl std::fmt::Display for FnClauseType {
 
 impl FnClauseType {
   /// Retrieve return type
-  pub fn ret_ty(&self) -> &Arc<ErlType> {
+  pub fn ret_ty(&self) -> &ErlType {
     &self.ret_type.ty
   }
 
@@ -58,7 +58,7 @@ impl FnClauseType {
 
   /// Check whether argument list can be passed to this clause
   #[allow(dead_code)]
-  pub(crate) fn can_accept_args(&self, args: &[Arc<ErlType>]) -> bool {
+  pub(crate) fn can_accept_args(&self, args: &[ErlType]) -> bool {
     self
       .args
       .iter()

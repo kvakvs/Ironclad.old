@@ -9,7 +9,7 @@ use crate::project::module::scope::mod_attr::ModuleAttributes;
 use crate::project::project_impl::ErlProjectImpl;
 use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::rw_hashmap::RwHashMap;
 use libironclad_util::rw_mfarity_set::RwHashSet;
@@ -25,9 +25,9 @@ pub struct RootScopeImpl {
   /// Access to the project (compiler options, inputs global and per file etc)
   pub project: ErlProject,
   /// Contains definitions, added by `-spec` attribute
-  pub fn_specs: RwHashMap<MFArity, Arc<ErlType>>,
+  pub fn_specs: RwHashMap<MFArity, ErlType>,
   /// Contains `-type NAME() ...` definitions for new types
-  pub user_types: RwHashMap<MFArity, Arc<ErlType>>,
+  pub user_types: RwHashMap<MFArity, ErlType>,
   /// Functions can only be found on the module root scope (but technically can be created in the
   /// other internal scopes too)
   pub fn_defs: RwHashMap<MFArity, AstNode>,

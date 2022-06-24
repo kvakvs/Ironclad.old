@@ -7,7 +7,7 @@ use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use libironclad_util::mfarity::MFArity;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -186,7 +186,7 @@ impl PreprocessorNodeImpl {
     location: SourceLoc,
     name: String,
     vars: Vec<String>,
-    ty: Arc<ErlType>,
+    ty: ErlType,
   ) -> PreprocessorNode {
     Self::new_with_location(location, PreprocessorNodeType::NewType { name, vars, ty })
   }
@@ -215,7 +215,7 @@ impl PreprocessorNodeImpl {
   pub(crate) fn new_fn_spec(
     location: SourceLoc,
     funarity: MFArity,
-    spec: Arc<ErlType>,
+    spec: ErlType,
   ) -> PreprocessorNode {
     Self::new_with_location(location, PreprocessorNodeType::FnSpec { funarity, spec })
   }

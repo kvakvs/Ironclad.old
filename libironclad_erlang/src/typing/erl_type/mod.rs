@@ -15,9 +15,9 @@ pub mod type_is;
 pub mod type_new;
 pub mod type_print;
 
-/// Describes an Erlang type, usually stored as Arc<ErlType>
+/// Describes an Erlang type, usually stored as ErlType
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ErlType {
+pub enum ErlTypeImpl {
   /// Any type
   Any,
   /// Empty set of types, or a void return, or a crash
@@ -47,7 +47,7 @@ pub enum ErlType {
   /// Tuple of multiple types, elements count is the size
   Tuple {
     /// Collection of types for tuple elements, same size as tuple arity
-    elements: Vec<Arc<ErlType>>,
+    elements: Vec<ErlType>,
   },
   /// A tuple with an atom tag and typed fields
   Record {
@@ -62,16 +62,16 @@ pub enum ErlType {
   /// List of elements belonging to an union type
   List {
     /// Union type for all elements
-    elements: Arc<ErlType>,
+    elements: ErlType,
     /// Tail element if not NIL, otherwise None
-    tail: Option<Arc<ErlType>>,
+    tail: Option<ErlType>,
   },
   /// Tuple-style strongly typed list of fixed size, with each element having own type
   StronglyTypedList {
     /// Type for each list element also
-    elements: Vec<Arc<ErlType>>,
+    elements: Vec<ErlType>,
     /// Tail element if not NIL
-    tail: Option<Arc<ErlType>>,
+    tail: Option<ErlType>,
   },
   /// Empty list []
   Nil,
@@ -140,55 +140,57 @@ pub enum ErlType {
   },
 }
 
+pub type ErlType = Arc<ErlTypeImpl>;
+
 //
 // Type classification
 //
 
-impl ErlType {
+impl ErlTypeImpl {
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
   /// This ordering is used for BTree construction, not for comparisons
   pub(crate) fn get_order(&self) -> usize {
     match self {
-      ErlType::None => 0,
+      ErlTypeImpl::None => 0,
       // ErlType::Union(_) => 1,
       // ErlType::TVar(_) => 2,
-      ErlType::Any => 1000,
+      ErlTypeImpl::Any => 1000,
 
-      ErlType::Number => 10,
-      ErlType::Float => 11,
-      ErlType::Integer => 12,
-      ErlType::IntegerRange { .. } => 13,
+      ErlTypeImpl::Number => 10,
+      ErlTypeImpl::Float => 11,
+      ErlTypeImpl::Integer => 12,
+      ErlTypeImpl::IntegerRange { .. } => 13,
 
-      ErlType::Boolean => 20,
-      ErlType::Atom => 21,
+      ErlTypeImpl::Boolean => 20,
+      ErlTypeImpl::Atom => 21,
 
-      ErlType::Reference => 30,
+      ErlTypeImpl::Reference => 30,
 
-      ErlType::AnyFn => 40,
-      ErlType::Fn { .. } => 41,
-      ErlType::Lambda { .. } => 42,
+      ErlTypeImpl::AnyFn => 40,
+      ErlTypeImpl::Fn { .. } => 41,
+      ErlTypeImpl::Lambda { .. } => 42,
 
-      ErlType::Port => 50,
+      ErlTypeImpl::Port => 50,
 
-      ErlType::Pid => 60,
+      ErlTypeImpl::Pid => 60,
 
-      ErlType::AnyTuple => 70,
-      ErlType::Tuple { .. } => 71,
-      ErlType::Record { .. } => 72,
+      ErlTypeImpl::AnyTuple => 70,
+      ErlTypeImpl::Tuple { .. } => 71,
+      ErlTypeImpl::Record { .. } => 72,
 
-      ErlType::Map { .. } => 80,
+      ErlTypeImpl::Map { .. } => 80,
 
-      ErlType::Nil => 90,
+      ErlTypeImpl::Nil => 90,
 
-      ErlType::AnyList => 100,
-      ErlType::List { .. } => 101,
-      ErlType::StronglyTypedList { .. } => 102,
+      ErlTypeImpl::AnyList => 100,
+      ErlTypeImpl::List { .. } => 101,
+      ErlTypeImpl::StronglyTypedList { .. } => 102,
 
-      ErlType::AnyBinary => 110,
-      ErlType::Binary { .. } => 111,
+      ErlTypeImpl::AnyBinary => 110,
+      ErlTypeImpl::Binary { .. } => 111,
 
-      ErlType::Singleton { val } => val.synthesize_type().get_order(),
+      ErlTypeImpl::Singleton { val } => val.synthesize_type().get_order(),
 
       other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", other),
     }

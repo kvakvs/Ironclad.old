@@ -3,8 +3,8 @@
 use crate::literal::Literal;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::map_type::MapMemberType;
-use crate::typing::erl_type::ErlType;
-use crate::typing::erl_type::ErlType::UserDefinedType;
+use crate::typing::erl_type::ErlTypeImpl::UserDefinedType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use crate::typing::type_union::TypeUnion;
@@ -16,31 +16,31 @@ use std::sync::Arc;
 //
 // Constructors and Generators
 //
-impl ErlType {
+impl ErlTypeImpl {
   /// Clones literal's refcounted pointer and returns a singleton type
-  pub(crate) fn new_singleton(lit: &Arc<Literal>) -> Arc<ErlType> {
-    ErlType::Singleton { val: lit.clone() }.into()
+  pub(crate) fn new_singleton(lit: &Arc<Literal>) -> ErlType {
+    ErlTypeImpl::Singleton { val: lit.clone() }.into()
   }
 
   /// Creates a new singleton atom of name `s`
-  pub fn new_atom(s: &str) -> Arc<ErlType> {
-    ErlType::Singleton { val: Literal::Atom(s.to_string()).into() }.into()
+  pub fn new_atom(s: &str) -> ErlType {
+    ErlTypeImpl::Singleton { val: Literal::Atom(s.to_string()).into() }.into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
-  pub fn list_of(t: Arc<ErlType>) -> Arc<ErlType> {
-    let result = ErlType::List { elements: t, tail: None };
+  pub fn list_of(t: ErlType) -> ErlType {
+    let result = ErlTypeImpl::List { elements: t, tail: None };
     result.into()
   }
 
   /// Creates a type for a proper list with a NIL tail.
-  pub(crate) fn list_of_types(types: Vec<Arc<ErlType>>) -> Arc<ErlType> {
-    let result = ErlType::StronglyTypedList { elements: types, tail: None };
+  pub(crate) fn list_of_types(types: Vec<ErlType>) -> ErlType {
+    let result = ErlTypeImpl::StronglyTypedList { elements: types, tail: None };
     result.into()
   }
 
   /// Creates new function type with clauses
-  pub(crate) fn new_fn_type(clauses: &[FnClauseType]) -> ErlType {
+  pub(crate) fn new_fn_type(clauses: &[FnClauseType]) -> ErlTypeImpl {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
@@ -51,25 +51,25 @@ impl ErlType {
     );
 
     let fn_type = FnType::new(arity, clauses);
-    ErlType::Fn(fn_type.into())
+    ErlTypeImpl::Fn(fn_type.into())
   }
 
   /// Creates a new function type with 1 clause, a count of `any()` args and a given return type
-  pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &Arc<ErlType>) -> ErlType {
+  pub fn new_fn_type_of_any_args(arity: usize, ret_ty: &ErlType) -> ErlTypeImpl {
     let any_args = iter::repeat(())
       .take(arity)
       .map(|_| Typevar::new(None, None))
       .collect();
     let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
     let fn_type = FnType::new(arity, &[clause]);
-    ErlType::Fn(fn_type.into())
+    ErlTypeImpl::Fn(fn_type.into())
   }
 
   /// Wrapper to access type union construction
-  pub fn new_union(types: &[Arc<ErlType>]) -> Arc<ErlType> {
+  pub fn new_union(types: &[ErlType]) -> ErlType {
     match types.len() {
       // Union of 0 types is empty type
-      0 => ErlType::none(),
+      0 => ErlTypeImpl::none(),
       // Union of 1 type is type itself
       1 => types[0].clone(),
       // Union of many types
@@ -81,7 +81,7 @@ impl ErlType {
         match u.types.len() {
           0 => panic!("Can't create type union of 0 types after normalization"),
           1 => u.types[0].clone(),
-          _ => ErlType::Union(u).into(),
+          _ => ErlTypeImpl::Union(u).into(),
         }
       }
     }
@@ -89,43 +89,43 @@ impl ErlType {
 
   /// Create a new union but do not normalize
   #[allow(dead_code)]
-  pub(crate) fn new_union_skip_normalize(types: &[Arc<ErlType>]) -> Arc<ErlType> {
+  pub(crate) fn new_union_skip_normalize(types: &[ErlType]) -> ErlType {
     match types.len() {
-      0 => ErlType::none(),
+      0 => ErlTypeImpl::none(),
       1 => types[0].clone(),
-      _ => ErlType::Union(TypeUnion::new(types)).into(),
+      _ => ErlTypeImpl::Union(TypeUnion::new(types)).into(),
     }
   }
 
   /// Construct a new tuple-type
-  pub fn new_tuple(elements: &[Arc<ErlType>]) -> Arc<ErlType> {
-    ErlType::Tuple { elements: elements.into() }.into()
+  pub fn new_tuple(elements: &[ErlType]) -> ErlType {
+    ErlTypeImpl::Tuple { elements: elements.into() }.into()
   }
 
   /// Construct a new map-type
-  pub(crate) fn new_map(members: Vec<MapMemberType>) -> Arc<ErlType> {
-    ErlType::Map { members }.into()
+  pub(crate) fn new_map(members: Vec<MapMemberType>) -> ErlType {
+    ErlTypeImpl::Map { members }.into()
   }
 
   /// Consumes argument.
   /// Construct a new tuple-type
-  pub(crate) fn new_tuple_move(elements: Vec<Arc<ErlType>>) -> Arc<ErlType> {
-    ErlType::Tuple { elements }.into()
+  pub(crate) fn new_tuple_move(elements: Vec<ErlType>) -> ErlType {
+    ErlTypeImpl::Tuple { elements }.into()
   }
 
   /// Construct a new type variable wrapper
-  pub(crate) fn new_typevar(tv: Typevar) -> Arc<ErlType> {
-    ErlType::Typevar(tv).into()
+  pub(crate) fn new_typevar(tv: Typevar) -> ErlType {
+    ErlTypeImpl::Typevar(tv).into()
   }
 
   /// Construct a new record reference by tag name
-  pub(crate) fn new_record_ref(tag: String) -> Arc<ErlType> {
-    ErlType::RecordRef { tag }.into()
+  pub(crate) fn new_record_ref(tag: String) -> ErlType {
+    ErlTypeImpl::RecordRef { tag }.into()
   }
 
   /// Construct a new integer range
-  pub(crate) fn new_range(a: ErlInteger, b: ErlInteger) -> Arc<ErlType> {
-    ErlType::IntegerRange { from: a, to: b }.into()
+  pub(crate) fn new_range(a: ErlInteger, b: ErlInteger) -> ErlType {
+    ErlTypeImpl::IntegerRange { from: a, to: b }.into()
   }
 
   /// Try match type name and arity vs known basic types
@@ -133,28 +133,28 @@ impl ErlType {
     maybe_module: Option<String>,
     type_name: String,
     args: &[Typevar],
-  ) -> Arc<ErlType> {
+  ) -> ErlType {
     #[allow(clippy::single_match)]
     match args.len() {
       0 => match type_name.as_ref() {
-        "any" => return ErlType::any(),
-        "none" => return ErlType::none(),
+        "any" => return ErlTypeImpl::any(),
+        "none" => return ErlTypeImpl::none(),
 
-        "number" => return ErlType::number(),
-        "integer" => return ErlType::integer(),
-        "float" => return ErlType::float(),
+        "number" => return ErlTypeImpl::number(),
+        "integer" => return ErlTypeImpl::integer(),
+        "float" => return ErlTypeImpl::float(),
 
-        "atom" => return ErlType::atom(),
-        "boolean" => return ErlType::boolean(),
+        "atom" => return ErlTypeImpl::atom(),
+        "boolean" => return ErlTypeImpl::boolean(),
 
-        "list" => return ErlType::any_list(),
-        "nil" => return ErlType::nil(),
+        "list" => return ErlTypeImpl::any_list(),
+        "nil" => return ErlTypeImpl::nil(),
 
-        "tuple" => return ErlType::any_tuple(),
+        "tuple" => return ErlTypeImpl::any_tuple(),
 
-        "pid" => return ErlType::pid(),
-        "port" => return ErlType::port(),
-        "reference" => return ErlType::reference(),
+        "pid" => return ErlTypeImpl::pid(),
+        "port" => return ErlTypeImpl::port(),
+        "reference" => return ErlTypeImpl::reference(),
         _ => {}
       },
       _ => {}

@@ -1,6 +1,6 @@
 //! A type variable: name and a type pair.
 
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::fmt::Formatter;
 use std::sync::Arc;
 
@@ -11,24 +11,27 @@ pub struct Typevar {
   /// Name of the typevar, or None if unnamed
   pub name: Option<String>,
   /// Type of the typevar, or any()
-  pub ty: Arc<ErlType>,
+  pub ty: ErlType,
 }
 
 impl Typevar {
   /// Construct a new typevar, with possibly a type, otherwise any() will be used.
-  pub(crate) fn new(name: Option<String>, maybe_type: Option<Arc<ErlType>>) -> Self {
-    Self { name, ty: maybe_type.unwrap_or_else(ErlType::any) }
+  pub(crate) fn new(name: Option<String>, maybe_type: Option<ErlType>) -> Self {
+    Self {
+      name,
+      ty: maybe_type.unwrap_or_else(ErlTypeImpl::any),
+    }
   }
 
   /// Creates an unnamed typevar with a given type
-  pub(crate) fn from_erltype(t: &Arc<ErlType>) -> Self {
+  pub(crate) fn from_erltype(t: &ErlType) -> Self {
     Self { name: None, ty: t.clone() }
   }
 
   /// Create an unnamed anytype.
   #[allow(dead_code)]
   pub(crate) fn new_unnamed_any() -> Self {
-    Self { name: None, ty: ErlType::any() }
+    Self { name: None, ty: ErlTypeImpl::any() }
   }
 
   /// Given a var, and a list of typevars in when clause, try find one matching
@@ -67,8 +70,8 @@ impl Typevar {
 
   /// Consumes argument.
   /// Converts vector of typevar into vector of erltype::typevars
-  pub(crate) fn vec_of_typevars_into_types(typevars: Vec<Typevar>) -> Vec<Arc<ErlType>> {
-    typevars.into_iter().map(ErlType::new_typevar).collect()
+  pub(crate) fn vec_of_typevars_into_types(typevars: Vec<Typevar>) -> Vec<ErlType> {
+    typevars.into_iter().map(ErlTypeImpl::new_typevar).collect()
   }
 }
 

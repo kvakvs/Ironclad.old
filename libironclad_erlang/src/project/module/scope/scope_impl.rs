@@ -1,7 +1,7 @@
 //! Scope for module
 
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
@@ -12,7 +12,7 @@ pub struct ScopeImpl {
   /// A debug name used to distinguish between scopes while printing
   pub name: String,
   /// Variables known to exist in the current scope
-  pub(crate) variables: RwLock<HashMap<String, Arc<ErlType>>>,
+  pub(crate) variables: RwLock<HashMap<String, ErlType>>,
   /// Reference to the parent scope for name search
   pub parent_scope: Weak<ScopeImpl>,
 }
@@ -61,7 +61,7 @@ impl ScopeImpl {
   pub(crate) fn new(
     name: String,
     parent_scope: Weak<ScopeImpl>,
-    variables: HashMap<String, Arc<ErlType>>,
+    variables: HashMap<String, ErlType>,
   ) -> Scope {
     ScopeImpl {
       name,
@@ -77,7 +77,7 @@ impl ScopeImpl {
   pub(crate) fn add(&self, var_name: &str) -> Scope {
     if let Ok(r_vars) = self.variables.read() {
       let mut new_variables = r_vars.clone();
-      new_variables.insert(var_name.to_string(), ErlType::any());
+      new_variables.insert(var_name.to_string(), ErlTypeImpl::any());
       Self::new(self.name.clone(), self.parent_scope.clone(), new_variables)
     } else {
       panic!("Can't lock Scope to clone and update variables")
@@ -88,7 +88,7 @@ impl ScopeImpl {
   #[allow(dead_code)]
   pub(crate) fn add_to(&self, var_name: &str) {
     if let Ok(mut w_vars) = self.variables.write() {
-      w_vars.insert(var_name.to_string(), ErlType::any());
+      w_vars.insert(var_name.to_string(), ErlTypeImpl::any());
     } else {
       panic!("Can't lock Scope to update vars")
     }
@@ -96,7 +96,7 @@ impl ScopeImpl {
 
   /// Retrieve variable type from scope
   #[allow(dead_code)]
-  pub(crate) fn get(&self, var_name: &str) -> Option<Arc<ErlType>> {
+  pub(crate) fn get(&self, var_name: &str) -> Option<ErlType> {
     if let Ok(r_vars) = self.variables.read() {
       r_vars.get(&var_name.to_string()).cloned()
     } else {
@@ -106,7 +106,7 @@ impl ScopeImpl {
 
   /// Attempt to find a variable in the scope, or delegate to the parent scope
   #[allow(dead_code)]
-  pub(crate) fn retrieve_var_from(&self, var: &ErlVar) -> Option<Arc<ErlType>> {
+  pub(crate) fn retrieve_var_from(&self, var: &ErlVar) -> Option<ErlType> {
     if let Ok(r_vars) = self.variables.read() {
       match r_vars.get(&var.name) {
         Some(var_type) => Some(var_type.clone()),

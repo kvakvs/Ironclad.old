@@ -304,7 +304,7 @@ fn parse_fn_with_list_comprehension() -> IcResult<()> {
   let root_scope = module.root_scope.clone();
   assert!(root_scope
     .fn_defs
-    .contains(&MFArity::new_local("module", 5)));
+    .contains(&MFArity::new_local("module", 2)));
   Ok(())
 }
 

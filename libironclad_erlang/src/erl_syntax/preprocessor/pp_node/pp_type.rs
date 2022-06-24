@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::token_stream::token::Token;
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use libironclad_util::mfarity::MFArity;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -105,7 +105,7 @@ pub enum PreprocessorNodeType {
     /// Type parameter variables
     vars: Vec<String>,
     /// Type definition
-    ty: Arc<ErlType>,
+    ty: ErlType,
   },
   /// A new record definition, created by `-record(name, {fields,...}).` attribute
   NewRecord {
@@ -119,6 +119,6 @@ pub enum PreprocessorNodeType {
     /// The function name and arity, module as None
     funarity: MFArity,
     /// Type for all function clauses
-    spec: Arc<ErlType>,
+    spec: ErlType,
   },
 }

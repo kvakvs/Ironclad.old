@@ -1,6 +1,6 @@
 //! Defines a pair of record field name and its type
 
-use crate::typing::erl_type::ErlType;
+use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::fmt::Formatter;
 use std::sync::Arc;
 
@@ -10,7 +10,7 @@ pub struct RecordFieldType {
   /// Record field name atom, stored as string
   pub name: String,
   /// Record field typespec
-  pub ty: Arc<ErlType>,
+  pub ty: ErlType,
 }
 
 impl std::fmt::Display for RecordFieldType {
