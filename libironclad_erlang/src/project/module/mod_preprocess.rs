@@ -17,7 +17,32 @@ use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 
+struct PreprocessState<'a> {
+  pub result: Vec<Token>,
+  pub itr: TokenLinesIter<'a>,
+  pub too_many_errors: bool,
+}
+
 impl ErlModuleImpl {
+  /// Given a next input line (till newline), check whether it is a preprocessor directive, and
+  /// whether it does not end with `).\n` or `.\n` - in this case we try to add one more line to it
+  /// till it is complete or till end of input is reached.
+  fn preprocess_expand_line<'a>(line: &'a [Token], state: &mut PreprocessState<'a>) -> &'a [Token] {
+    // The line is a beginning of an attribute or a preprocessor definition or condition
+    // These can only span one or more full lines, so we can work with lines iterator
+
+    // Expand the line slice till we find the terminator symbol `period + end of line`
+    let mut result = line;
+    while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) && !state.itr.eof() {
+      if let Some(expanded) = state.itr.expand_till_next_line() {
+        result = expanded;
+      } else {
+        break; // end of input
+      }
+    }
+    result
+  }
+
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
   #[named]
@@ -26,28 +51,21 @@ impl ErlModuleImpl {
     module: &ErlModule,
     tokens: &[Token],
   ) -> IcResult<Vec<Token>> {
-    let mut result: Vec<Token> = Vec::with_capacity(tokens.len());
-    let mut itr = TokenLinesIter::new(tokens);
-    let mut too_many_errors: bool = false;
+    let mut state = PreprocessState {
+      result: Vec::with_capacity(tokens.len()),
+      itr: TokenLinesIter::new(tokens),
+      too_many_errors: false,
+    };
 
-    while let Some(mut line) = itr.next() {
-      if too_many_errors {
+    while let Some(mut line) = state.itr.next() {
+      if state.too_many_errors {
         break;
       }
 
       if line.len() > 2 && line[0].is_tok(TokenType::Minus) && line[1].is_atom() {
-        // The line is a beginning of an attribute or a preprocessor definition or condition
-        // These can only span one or more full lines, so we can work with lines iterator
-
-        // Expand the line slice till we find the terminator symbol `period + end of line`
-        while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) && !itr.eof() {
-          if let Some(expanded) = itr.expand_till_next_line() {
-            line = expanded;
-          } else {
-            break; // end of input
-          }
-        }
+        line = Self::preprocess_expand_line(line, &mut state);
         println!("Next line: {}", format_tok_stream(line, 50));
+
         let parser_input = ParserInput::new_slice(line);
 
         let (tail, ppnode) = panicking_parser_error_reporter(
@@ -111,14 +129,14 @@ impl ErlModuleImpl {
           PreprocessorNodeType::IfdefBlock { .. } => {}
           PreprocessorNodeType::IfBlock { .. } => {}
           PreprocessorNodeType::Else => {
-            too_many_errors = too_many_errors
+            state.too_many_errors = state.too_many_errors
               || module.add_error(ErlError::preprocessor_error(
                 SourceLoc::unimplemented(file!(), function_name!()),
                 "Unexpected preprocessor -else.".to_string(),
               ))
           }
           PreprocessorNodeType::Endif => {
-            too_many_errors = too_many_errors
+            state.too_many_errors = state.too_many_errors
               || module.add_error(ErlError::preprocessor_error(
                 SourceLoc::unimplemented(file!(), function_name!()),
                 "Unexpected preprocessor -endif.".to_string(),
@@ -130,7 +148,7 @@ impl ErlModuleImpl {
         // result.push(pptok);
       } else {
         // copy the line contents
-        result.extend(line.iter().cloned())
+        state.result.extend(line.iter().cloned())
       }
     }
 
@@ -138,9 +156,9 @@ impl ErlModuleImpl {
     // TODO: Interpret -include and -include_lib
     // TODO: Parse and store other module attributes
     println!("Preprocessor: resulting tokens:");
-    result.iter().for_each(|t| print!("{}", t));
+    state.result.iter().for_each(|t| print!("{}", t));
     println!();
 
-    Ok(result)
+    Ok(state.result)
   }
 }

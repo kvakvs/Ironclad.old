@@ -108,4 +108,15 @@ impl RootScopeImpl {
       }
     }
   }
+
+  /// Check if preprocessor definition of any arity exists in the scope
+  pub fn is_defined(&self, name: &str) -> bool {
+    if let Ok(r_defines) = self.defines.collection.read() {
+      r_defines
+        .iter()
+        .any(|(name_arity, _)| name_arity.name == name)
+    } else {
+      panic!("Can't lock ParserScope.defines for reading")
+    }
+  }
 }

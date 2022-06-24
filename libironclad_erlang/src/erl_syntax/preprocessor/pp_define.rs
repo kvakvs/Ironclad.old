@@ -1,7 +1,7 @@
 //! Preprocessor definition, sometimes with args
 
-use crate::erl_syntax::preprocessor::pp_name_arity::NameArity;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use libironclad_util::mfarity::MFArity;
 use libironclad_util::pretty::Pretty;
 use std::sync::Arc;
 
@@ -47,7 +47,7 @@ impl PreprocessorDefineImpl {
   }
 
   /// Construct name/arity pair
-  pub(crate) fn get_name_arity(&self) -> NameArity {
-    NameArity { name: self.name.clone(), arity: self.get_arity() }
+  pub(crate) fn get_name_arity(&self) -> MFArity {
+    MFArity::new_local(&self.name, self.get_arity())
   }
 }

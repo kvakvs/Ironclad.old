@@ -4,7 +4,6 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_tokenizer_error_reporter;
-use crate::erl_syntax::parsers::parser_scope::{ParserScope, ParserScopeImpl};
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
 use crate::error::ic_error::IcResult;
@@ -28,8 +27,6 @@ pub struct ErlModuleImpl {
   pub name: RefCell<String>,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: SourceFile,
-  /// Stores state of preprocessor defines during stage_parse, and then final state after stage_parse (useful for testing)
-  pub parser_scope: ParserScope,
   /// AST tree of the module.
   pub ast: RefCell<AstNode>,
   // /// Local level scope, containing variables
@@ -50,7 +47,6 @@ impl Default for ErlModuleImpl {
       compiler_options: Default::default(),
       name: RefCell::new(String::default()),
       source_file: Arc::new(SourceFileImpl::default()),
-      parser_scope: ParserScopeImpl::new_empty().into(),
       ast: RefCell::new(AstNodeImpl::new_empty("dummy node for module root".to_string())),
       root_scope: Default::default(),
       errors: RwLock::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),

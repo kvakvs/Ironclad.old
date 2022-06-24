@@ -179,7 +179,7 @@ fn symbol_period(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_hash(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('#'), |_| Token::new(input.as_ptr(), TokenType::Period))(input)
+  map(char('#'), |_| Token::new(input.as_ptr(), TokenType::Hash))(input)
 }
 
 #[inline]

@@ -2,9 +2,9 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use libironclad_erlang::erl_syntax::token_stream::token::Token;
 use libironclad_erlang::erl_syntax::token_stream::token_type::TokenType;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_util::mfarity::MFArity;
 
 #[test]
 #[named]
@@ -86,6 +86,8 @@ fn parse_define_ident_only() {
   let input = "-define(AAA).
 -ifdef(AAA).
 -test_success.
+-else
+-test_failure().
 -endif.";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
@@ -93,8 +95,13 @@ fn parse_define_ident_only() {
     .attributes
     .get(&"test_success".to_string())
     .unwrap_or_default();
-  assert_eq!(success.len(), 1);
-  assert!(module.parser_scope.is_defined("AAA"));
+  let failure = root_scope
+    .attributes
+    .get(&"test_failure".to_string())
+    .unwrap_or_default();
+  assert_eq!(success.len(), 1, "-test_success attribute must be present");
+  assert_eq!(failure.len(), 0, "-test_failure attribute must not be present");
+  assert!(module.root_scope.is_defined("AAA"));
 }
 
 #[test]
@@ -108,7 +115,11 @@ fn parse_define_with_body_no_args() {
   assert_eq!(nodes.len(), 1);
   assert!(nodes[0].is_empty_ast_node(), "expecting an empty node transformed from -define");
 
-  let pdef = module.parser_scope.get_value("BBB", 0).unwrap();
+  let pdef = module
+    .root_scope
+    .defines
+    .get(&MFArity::new_local("BBB", 0))
+    .unwrap();
   assert_eq!(pdef.name, "BBB");
   assert!(pdef.tokens[0].is_tok(TokenType::SquareOpen));
   assert!(pdef.tokens[1].is_tok(TokenType::Atom("true".to_string())));
@@ -130,9 +141,7 @@ fn parse_define_with_body_2_args() {
     .get(&"test_success".to_string())
     .unwrap_or_default();
   assert_eq!(success.len(), 1);
-
-  let parser_scope = module.parser_scope.clone();
-  assert!(parser_scope.is_defined("CCC"));
+  assert!(module.root_scope.is_defined("CCC"));
 }
 
 // #[test]
@@ -184,7 +193,11 @@ fn parse_define_varied_spacing() {
 fn test_define_with_dquotes() {
   let input = "-define(AAA(X,Y), \"aaa\").\n";
   let module = test_util::parse_module(function_name!(), input);
-  let pdef = module.parser_scope.get_value("AAA", 2).unwrap();
+  let pdef = module
+    .root_scope
+    .defines
+    .get(&MFArity::new_local("AAA", 2))
+    .unwrap();
   assert!(pdef.tokens[0].is_tok(TokenType::new_str("aaa")));
   assert_eq!(pdef.args, vec!["X", "Y"]);
 }
@@ -217,8 +230,11 @@ fn test_macro_expansion_in_define() {
   // let (_, _, body) = nodes[1].as_preprocessor_define();
   // assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
 
-  let p_scope = module.parser_scope.clone();
-  let pdef = p_scope.get_value("BBB", 0).unwrap();
+  let pdef = module
+    .root_scope
+    .defines
+    .get(&MFArity::new_local("BBB", 0))
+    .unwrap();
   assert_eq!(pdef.name, "BBB");
   assert!(pdef.tokens[0].is_tok(TokenType::new_str("bbb")));
 }

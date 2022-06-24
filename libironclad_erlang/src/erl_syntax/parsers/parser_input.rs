@@ -1,7 +1,7 @@
 //! Contains implementations required for custom nom input to work
 
-use crate::erl_syntax::parsers::parser_scope::ParserScope;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::project::module::scope::root_scope::RootScope;
 use crate::source_file::SourceFile;
 use nom::Needed;
 use std::iter::Enumerate;
@@ -11,19 +11,19 @@ use std::slice::Iter;
 
 /// The nom-compatible token input
 #[derive(Debug, Clone)]
-pub struct ParserInputT<'a, ScopeType: Default> {
+pub struct ParserInput<'a> {
   /// Access to filename and source text, if value is defined
   pub source_file: Option<SourceFile>,
   /// Scope for the parser to update/query
-  pub scope: ScopeType,
+  pub scope: RootScope,
   /// The token stream
   pub tokens: &'a [Token],
 }
 
-/// Wrapper for parser input with parser scope
-pub type ParserInput<'a> = ParserInputT<'a, Option<ParserScope>>;
+// /// Wrapper for parser input with parser scope
+// pub type ParserInput<'a> = ParserInputT<'a, Option<RootScope>>;
 
-impl<'a, ScopeType: Default> nom::Offset for ParserInputT<'a, ScopeType> {
+impl<'a> nom::Offset for ParserInput<'a> {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.tokens.as_ptr();
     let snd = second.tokens.as_ptr();
@@ -45,7 +45,7 @@ impl<'a, ScopeType: Default> nom::Offset for ParserInputT<'a, ScopeType> {
 // }
 //
 
-impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
+impl<'a> ParserInput<'a> {
   /// Calculates offset for second inside `self`
   pub(crate) fn offset_inside(&self, base: &[Token]) -> usize {
     let snd = self.tokens.as_ptr();
@@ -70,7 +70,7 @@ impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
   pub(crate) fn new(source_file: &SourceFile, tokens: &'a [Token]) -> Self {
     Self {
       source_file: Some(source_file.clone()),
-      scope: ScopeType::default(),
+      scope: RootScope::default(),
       tokens,
     }
   }
@@ -79,7 +79,7 @@ impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
   pub fn new_slice(tokens: &'a [Token]) -> Self {
     Self {
       source_file: None,
-      scope: ScopeType::default(),
+      scope: RootScope::default(),
       tokens,
     }
   }
@@ -116,7 +116,7 @@ impl<'a, ScopeType: Default> ParserInputT<'a, ScopeType> {
     Self {
       source_file: None,
       tokens: input,
-      scope: ScopeType::default(),
+      scope: RootScope::default(),
     }
   }
   //

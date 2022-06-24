@@ -1,6 +1,5 @@
 //! Erlang project (with inputs defined in the config file)
 
-use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefinesMap};
 use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::conf::ProjectConf;
@@ -23,28 +22,28 @@ pub struct ErlProjectImpl {
 }
 
 impl ErlProjectImpl {
-  /// Create a starting preprocessor scope for the first line of a given file.
-  /// Initial scope values are derived from the commandline and the project settings for the file,
-  /// and the scope evolves as the preprocessor/parser goes through the file.
-  pub fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorDefinesMap {
-    let mut result_scope = if let Ok(r_inputs) = self.inputs.read() {
-      r_inputs.compiler_opts.scope.clone()
-    } else {
-      panic!("Can't lock project inputs for read")
-    };
-
-    // Find opts (if exist) for current file, and apply them over project global opts
-    if let Ok(r_inputs) = self.inputs.read() {
-      if let Some(per_file_opts) = r_inputs.compiler_opts_per_file.get(path) {
-        let new_scope = ParserScopeImpl::overlay(&result_scope, &per_file_opts.scope);
-        result_scope = new_scope;
-      }
-    } else {
-      panic!("Can't lock project inputs for read")
-    }
-
-    result_scope
-  }
+  // /// Create a starting preprocessor scope for the first line of a given file.
+  // /// Initial scope values are derived from the commandline and the project settings for the file,
+  // /// and the scope evolves as the preprocessor/parser goes through the file.
+  // pub fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorDefinesMap {
+  //   let mut result_scope = if let Ok(r_inputs) = self.inputs.read() {
+  //     r_inputs.compiler_opts.scope.clone()
+  //   } else {
+  //     panic!("Can't lock project inputs for read")
+  //   };
+  //
+  //   // Find opts (if exist) for current file, and apply them over project global opts
+  //   if let Ok(r_inputs) = self.inputs.read() {
+  //     if let Some(per_file_opts) = r_inputs.compiler_opts_per_file.get(path) {
+  //       let new_scope = ParserScopeImpl::overlay(&result_scope, &per_file_opts.scope);
+  //       result_scope = new_scope;
+  //     }
+  //   } else {
+  //     panic!("Can't lock project inputs for read")
+  //   }
+  //
+  //   result_scope
+  // }
 
   /// Get a clone of project libironclad options
   /// TODO: special override options if user specifies extras as a module attribute
