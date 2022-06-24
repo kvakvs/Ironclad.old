@@ -140,6 +140,7 @@ pub enum ErlTypeImpl {
   },
 }
 
+/// Wraps `ErlType` with `Arc<>`
 pub type ErlType = Arc<ErlTypeImpl>;
 
 //

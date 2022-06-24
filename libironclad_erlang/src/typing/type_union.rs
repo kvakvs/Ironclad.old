@@ -2,7 +2,6 @@
 
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::ops::Deref;
-use std::sync::Arc;
 
 /// Contains multiple types
 #[derive(Debug, Clone, Eq, PartialEq)]

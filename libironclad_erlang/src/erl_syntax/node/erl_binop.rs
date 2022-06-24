@@ -11,7 +11,6 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::type_error::TypeError;
 use std::ops::Deref;
-use std::sync::Arc;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]

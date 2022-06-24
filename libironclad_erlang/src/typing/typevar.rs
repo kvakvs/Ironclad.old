@@ -2,7 +2,6 @@
 
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// Represents a function argument, a type variable in a typespec or a member of `when` clause
 /// in a function spec. Name is optional.

@@ -6,11 +6,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
-use std::sync::{Arc, Weak};
+use std::sync::Weak;
 
 /// Function clause for new function definition, collection of clauses of same arity defines
 /// a new function.
@@ -48,7 +48,7 @@ impl ErlFnClause {
       AstNodeImpl::extract_variables(arg, &mut variables).unwrap();
     }
 
-    let clause_scope = ScopeImpl::new(scope_name, Weak::new(), variables).into();
+    let clause_scope = ScopeImpl::new(scope_name, Weak::new(), variables);
 
     ErlFnClause { name, args, body, guard_expr, scope: clause_scope }
   }

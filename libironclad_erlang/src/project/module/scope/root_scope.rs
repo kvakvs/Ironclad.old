@@ -9,7 +9,7 @@ use crate::project::module::scope::mod_attr::ModuleAttributes;
 use crate::project::project_impl::ErlProjectImpl;
 use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::rw_hashmap::RwHashMap;
 use libironclad_util::rw_mfarity_set::RwHashSet;

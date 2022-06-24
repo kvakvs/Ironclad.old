@@ -458,7 +458,7 @@ fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 /// Matches a non-letter, use with `peek` to mark where word ends
-fn word_break<'a>(input: &str) -> TokensResult<&str> {
+fn word_break(input: &str) -> TokensResult<&str> {
   recognize(not(alphanumeric1))(input)
 }
 

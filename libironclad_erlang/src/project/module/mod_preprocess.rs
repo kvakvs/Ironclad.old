@@ -16,11 +16,10 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
-use std::sync::Arc;
 
 struct PreprocessState<'a> {
   pub result: Vec<Token>,
@@ -84,7 +83,7 @@ fn on_import(state: &mut PreprocessState, module_name: &str, fun_arities: &[MFAr
 
 fn on_new_type(state: &mut PreprocessState, name: &str, vars: &[String], ty: ErlType) {
   let key = MFArity::new_local(name, vars.len());
-  state.module.root_scope.user_types.add(key, ty.clone())
+  state.module.root_scope.user_types.add(key, ty)
 }
 
 fn on_new_record(state: &mut PreprocessState, tag: &str, fields: &[RecordField]) {
@@ -124,13 +123,13 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     PreprocessorNodeType::Warning(_) => {}
     PreprocessorNodeType::IncludedFile { .. } => {}
     PreprocessorNodeType::Attr { tag, term } => on_attr(state, tag.as_str(), term),
-    PreprocessorNodeType::Export { fun_arities } => on_export(state, &fun_arities),
-    PreprocessorNodeType::ExportType { type_arities } => on_export_type(state, &type_arities),
+    PreprocessorNodeType::Export { fun_arities } => on_export(state, fun_arities),
+    PreprocessorNodeType::ExportType { type_arities } => on_export_type(state, type_arities),
     PreprocessorNodeType::Import { module: module_name, fun_arities } => {
-      on_import(state, module_name.as_str(), &fun_arities)
+      on_import(state, module_name.as_str(), fun_arities)
     }
     PreprocessorNodeType::NewType { name, vars, ty } => {
-      on_new_type(state, name.as_str(), &vars, ty.clone())
+      on_new_type(state, name.as_str(), vars, ty.clone())
     }
     PreprocessorNodeType::NewRecord { tag, fields } => on_new_record(state, tag, fields),
     PreprocessorNodeType::FnSpec { funarity, spec } => on_fn_spec(state, funarity, spec),
@@ -161,7 +160,6 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
 impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
-  #[named]
   pub fn preprocess(
     original_input: &str,
     module: &ErlModule,
@@ -193,7 +191,7 @@ impl ErlModuleImpl {
         let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
         assert_eq!(trim_tail, 0,
                 "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
-                format_tok_stream(&tail.tokens, 100));
+                format_tok_stream(tail.tokens, 100));
 
         preprocess_handle_ppnode(ppnode, &mut state);
       } else {

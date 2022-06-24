@@ -22,7 +22,7 @@ impl ModuleAttribute {
 }
 
 /// Module attributes are non-unique and grouped together by name.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ModuleAttributes {
   /// Array of module attributes sharing same name
   pub collection: RwLock<Vec<ModuleAttribute>>,
@@ -47,11 +47,11 @@ impl std::fmt::Display for ModuleAttribute {
   }
 }
 
-impl Default for ModuleAttributes {
-  fn default() -> Self {
-    Self { collection: Default::default() }
-  }
-}
+// impl Default for ModuleAttributes {
+//   fn default() -> Self {
+//     Self { collection: Default::default() }
+//   }
+// }
 
 impl ModuleAttributes {
   /// Retrieve collection length
@@ -60,6 +60,15 @@ impl ModuleAttributes {
       r_collection.len()
     } else {
       panic!("Can't lock ModuleAttributes for length check")
+    }
+  }
+
+  /// Check whether collection is empty
+  pub fn is_empty(&self) -> bool {
+    if let Ok(r_collection) = self.collection.read() {
+      r_collection.is_empty()
+    } else {
+      panic!("Can't lock ModuleAttributes for empty check")
     }
   }
 

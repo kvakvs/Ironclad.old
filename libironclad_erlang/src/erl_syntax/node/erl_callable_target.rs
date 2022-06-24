@@ -5,10 +5,9 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// A callable target (without application or args) to use in `ErlApply`.
 #[derive(Debug, Clone)]

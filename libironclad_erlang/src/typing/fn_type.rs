@@ -1,8 +1,7 @@
 //! Function type, containing clauses
 
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
-use std::sync::Arc;
 
 /// Function type
 #[derive(Debug, Eq, PartialEq)]

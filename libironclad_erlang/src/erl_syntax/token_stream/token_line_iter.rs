@@ -29,7 +29,7 @@ impl<'a> Iterator for TokenLinesIter<'a> {
     }
 
     // Skip over the last produced slice to begin after it
-    self.pos = self.pos + self.slice_len;
+    self.pos += self.slice_len;
 
     // Find next newline and return up to it
     for i in self.pos..self.base.len() {

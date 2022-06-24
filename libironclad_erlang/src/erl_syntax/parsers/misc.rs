@@ -18,9 +18,7 @@ use nom::Slice;
 use std::sync::Arc;
 
 #[inline]
-fn void_fn<T>(_in: T) -> () {
-  ()
-}
+fn void_fn<T>(_in: T) {}
 
 /// Recognizes one token of a given tokentype, the tokentype fields are ignored.
 /// *Complete version*: Will return an error if there's not enough input data.

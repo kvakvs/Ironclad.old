@@ -1,8 +1,7 @@
 //! Defines a pair of record field name and its type
 
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// Record field is a pair of field name and type
 #[derive(Debug, Eq, PartialEq)]

@@ -1,7 +1,6 @@
 //! Premade simple erltypes as lazy statics, to save on memory allocations
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use lazy_static::lazy_static;
-use std::sync::Arc;
 
 lazy_static! {
   static ref PF_TYPE_ANY: ErlType = ErlTypeImpl::Any.into();

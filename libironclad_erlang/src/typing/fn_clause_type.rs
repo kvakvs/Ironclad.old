@@ -1,9 +1,8 @@
 //! Function clause type, component of function type
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// Defines a function clause, with arguments and return type.
 /// Use 1 or multiple `FnClauseType` to construct a function type.

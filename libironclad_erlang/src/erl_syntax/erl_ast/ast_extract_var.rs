@@ -8,7 +8,6 @@ use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use crate::error::ic_error::IcResult;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 impl AstNodeImpl {
   /// For a function header, `myfun(A, {B, C}, #{key => D})` extract variable names: A, B, C, D.

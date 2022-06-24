@@ -12,13 +12,13 @@ impl ErlTypeImpl {
 
   /// Checks whether type is an atom
   pub fn is_atom(&self) -> bool {
-    return match self {
+    match self {
       ErlTypeImpl::Atom | ErlTypeImpl::Boolean => true,
       ErlTypeImpl::Singleton { val } => {
         matches!(val.deref(), Literal::Atom(_))
       }
       _ => false,
-    };
+    }
   }
 
   /// Checks whether type is a literal atom of value
@@ -35,7 +35,7 @@ impl ErlTypeImpl {
   /// Checks whether type is a number
   #[allow(dead_code)]
   pub(crate) fn is_number(&self) -> bool {
-    return match self {
+    match self {
       ErlTypeImpl::Number
       | ErlTypeImpl::Float
       | ErlTypeImpl::Integer
@@ -44,7 +44,7 @@ impl ErlTypeImpl {
         matches!(val.deref(), Literal::Integer(_) | Literal::Float(_))
       }
       _ => false,
-    };
+    }
   }
 
   /// Checks whether `self` is an integer or belongs to a complex type where integer is present too
@@ -68,24 +68,24 @@ impl ErlTypeImpl {
 
   /// Checks whether type is an integer number
   pub fn is_integer(&self) -> bool {
-    return match self {
+    match self {
       ErlTypeImpl::Integer | ErlTypeImpl::IntegerRange { .. } => true,
       ErlTypeImpl::Singleton { val } => {
         matches!(val.deref(), Literal::Integer(_))
       }
       _ => false,
-    };
+    }
   }
 
   /// Checks whether type is a floating point number (or an integer, because compatible why not)
   pub fn is_float(&self) -> bool {
-    return match self {
+    match self {
       ErlTypeImpl::Float => true,
       ErlTypeImpl::Singleton { val } => {
         matches!(val.deref(), Literal::Float(_)) // | Literal::Integer(_) | Literal::BigInteger
       }
       _ => false,
-    };
+    }
   }
 
   /// Checks whether type is a tuple type
@@ -104,7 +104,7 @@ impl ErlTypeImpl {
 
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
-    return match self {
+    match self {
       ErlTypeImpl::AnyList
       | ErlTypeImpl::List { .. }
       | ErlTypeImpl::StronglyTypedList { .. }
@@ -113,7 +113,7 @@ impl ErlTypeImpl {
         matches!(singleton.deref(), Literal::List { .. } | Literal::String { .. })
       }
       _ => false,
-    };
+    }
   }
 
   /// Checks whether type is an empty list (NIL)

@@ -7,10 +7,9 @@ use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 impl PreprocessorNodeImpl {
   // /// Generic constructor no location

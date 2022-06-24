@@ -39,6 +39,15 @@ impl<ValType: Hash + Eq> RwHashSet<ValType> {
     }
   }
 
+  /// Check whether the set is empty
+  pub fn is_empty(&self) -> bool {
+    if let Ok(r_collection) = self.collection.read() {
+      r_collection.is_empty()
+    } else {
+      panic!("Can't lock RwHashSet for empty check")
+    }
+  }
+
   /// Check whether an item exists
   pub fn contains(&self, key: &ValType) -> bool {
     if let Ok(r_collection) = self.collection.read() {

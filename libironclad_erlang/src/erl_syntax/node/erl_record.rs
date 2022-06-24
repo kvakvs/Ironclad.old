@@ -1,9 +1,8 @@
 //! Record definition: Fields
 
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::ErlType;
 use std::fmt::Formatter;
-use std::sync::Arc;
 
 /// Record field has a name, optional initializer, and optional type ascription. Defined with
 /// `-record(name, {fields, ...}).` module attributes.

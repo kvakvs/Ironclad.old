@@ -32,6 +32,10 @@ impl<KeyType, ValType> Default for RwHashMap<KeyType, ValType> {
 }
 
 impl<KeyType: Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
+  pub fn new(collection: HashMap<KeyType, ValType>) -> Self {
+    Self { collection: RwLock::new(collection) }
+  }
+
   /// Contained data length
   pub fn len(&self) -> usize {
     if let Ok(r_collection) = self.collection.read() {

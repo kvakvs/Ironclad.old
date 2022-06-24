@@ -39,5 +39,5 @@ pub fn parse_module_forms(input: ParserInput) -> ParserResult<Vec<AstNode>> {
 
 /// Parses module contents, must begin with `-module()` attr followed by 0 or more module forms.
 pub fn parse_module(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_module_forms, |forms: Vec<AstNode>| AstNodeImpl::new_module_forms(forms))(input.clone())
+  map(parse_module_forms, AstNodeImpl::new_module_forms)(input.clone())
 }

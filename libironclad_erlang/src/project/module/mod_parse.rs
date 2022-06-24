@@ -18,6 +18,7 @@ use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
 use crate::source_file::SourceFile;
 use nom::Finish;
+use std::ptr::null;
 
 impl ErlModuleImpl {
   /// Generic stage_parse helper for any Nom entry point.
@@ -48,7 +49,7 @@ impl ErlModuleImpl {
 
     // Inject a mandatory EOL if the stream doesn't end with one
     if !Token::ends_with(&tok_stream1, &[TokenType::EOL]) {
-      tok_stream1.push(Token::new(0 as *const u8, TokenType::EOL));
+      tok_stream1.push(Token::new(null::<u8>(), TokenType::EOL));
     }
 
     //----------------------
@@ -77,7 +78,7 @@ impl ErlModuleImpl {
       trim_tail,
       0,
       "Not all input was consumed by stage_parse.\n\tTail: «{}»",
-      format_tok_stream(&tail.tokens, 50),
+      format_tok_stream(tail.tokens, 50),
     );
 
     // TODO: This assignment below should be happening earlier before stage_parse, as stage_parse can refer to the SourceFile

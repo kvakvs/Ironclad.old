@@ -10,7 +10,6 @@ use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
 use libironclad_util::mfarity::MFArity;
-use std::sync::Arc;
 
 /// AST node which declares a new function. Contains function clauses. Names and arities on
 /// all clauses must be equal and same as the function name.
