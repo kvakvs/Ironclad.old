@@ -3,6 +3,7 @@
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, parenthesis_period_eol_eof, period_eol_eof, tok_comma, tok_par_close, tok_par_open,
+  ws_before,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::tok_macro_ident;
@@ -35,7 +36,7 @@ fn define_with_args_body_and_terminator(input: ParserInput) -> ParserResult<Prep
       opt(delimited(tok_par_open, comma_sep_macro_idents, tok_par_close)),
       tok_comma,
       // Followed by a body
-      many_till(any_token, parenthesis_period_eol_eof),
+      ws_before(many_till(any_token, parenthesis_period_eol_eof)),
     )),
     |(ident, args, _comma, (body, _term))| {
       let args1 = args.unwrap_or_default();
@@ -73,14 +74,14 @@ pub(crate) fn define_directive(input: ParserInput) -> ParserResult<PreprocessorN
   preceded(
     |i1| dash_atom(i1, "define"),
     alt((
-      context(
-        "-define directive with no args and no body",
-        delimited(tok_par_open, define_no_args_no_body, parenthesis_period_eol_eof),
-      ),
       // `define_with_args_body_and_terminator` will consume end delimiter
       context(
         "-define directive with optional args and body",
         preceded(tok_par_open, define_with_args_body_and_terminator),
+      ),
+      context(
+        "-define directive with no args and no body",
+        delimited(tok_par_open, define_no_args_no_body, parenthesis_period_eol_eof),
       ),
     )),
   )(input)

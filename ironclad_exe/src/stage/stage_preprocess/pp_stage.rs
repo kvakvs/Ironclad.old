@@ -55,7 +55,7 @@ impl PreprocessStage {
       .collect();
 
     for path in erl_files.iter() {
-      // For all input files, run stage_preprocess stage_parse and interpret the stage_preprocess directives
+      // For all input files, run stage_preprocess parse and interpret the stage_preprocess directives
       // Loaded and parsed HRL files are cached to be inserted into every include location
       // Create starting scope (from project settings and command line)
       let starting_scope = project.get_preprocessor_scope(path);

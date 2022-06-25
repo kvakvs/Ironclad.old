@@ -81,7 +81,7 @@ impl FileCacheImpl {
   }
 
   /// As source file text is read only, we replace.
-  /// The stage_parse trees referring the the old source file will retain their Arc<> to the old version
+  /// The parse trees referring the the old source file will retain their Arc<> to the old version
   pub fn update_source_text(&mut self, file_name: &Path, new_text: String) {
     let new_source_file = SourceFileImpl::new(file_name, new_text);
     self

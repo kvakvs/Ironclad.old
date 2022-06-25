@@ -11,6 +11,11 @@ impl AstNodeImpl {
     matches!(&self.content, AstNodeType::FnDef(_))
   }
 
+  /// Checks whether an ErlAst node is a tuple
+  pub fn is_tuple(&self) -> bool {
+    matches!(&self.content, AstNodeType::Tuple { .. })
+  }
+
   /// Checks whether an AST node is an `Empty`
   pub fn is_empty_ast_node(&self) -> bool {
     matches!(&self.content, AstNodeType::Empty { .. })

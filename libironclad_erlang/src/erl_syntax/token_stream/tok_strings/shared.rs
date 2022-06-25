@@ -60,7 +60,7 @@ pub(crate) fn parse_u32(input: TokenizerInput) -> TokensResult<u32> {
 // then combine them into larger parsers.
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
-/// to stage_parse sequences like \u{00AC}.
+/// to parse sequences like \u{00AC}.
 fn parse_unicode(input: TokenizerInput) -> TokensResult<Char> {
   // map_opt is like map_res, but it takes an Option instead of a Result. If
   // the function returns None, map_opt returns an error. In this case, because

@@ -1,4 +1,4 @@
-//! Complex support code to stage_parse 'delimited' atom strings and atoms in general
+//! Complex support code to parse 'delimited' atom strings and atoms in general
 //! String parsing code from Nom examples.
 
 use crate::erl_syntax::token_stream::misc::{parse_ident, ws_before_mut};
@@ -14,7 +14,7 @@ use nom::sequence::{delimited, preceded};
 
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
-/// to stage_parse sequences like \u{00AC}.
+/// to parse sequences like \u{00AC}.
 fn parse_unicode(input: TokenizerInput) -> TokensResult<Char> {
   // map_opt is like map_res, but it takes an Option instead of a Result. If
   // the function returns None, map_opt returns an error. In this case, because
@@ -96,7 +96,7 @@ pub(crate) fn build_quoted_atom_body(input: TokenizerInput) -> TokensResult<Stri
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
 fn parse_quoted_atom(input: TokenizerInput) -> TokensResult<String> {
-  // Finally, stage_parse the string. Note that, if `build_string` could accept a raw
+  // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the
   // loop won't accidentally match your closing delimiter!

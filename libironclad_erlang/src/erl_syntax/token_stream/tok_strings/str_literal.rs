@@ -61,7 +61,7 @@ pub(crate) fn build_quoted_str_body(input: TokenizerInput) -> TokensResult<Strin
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
 pub(crate) fn parse_doublequot_string(input: TokenizerInput) -> TokensResult<String> {
-  // Finally, stage_parse the string. Note that, if `build_string` could accept a raw
+  // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold_many0), be sure that the
   // loop won't accidentally match your closing delimiter!
@@ -83,8 +83,7 @@ fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
     // ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
     parse_int_unsigned_body,
     |num| {
-      ErlInteger::new_from_string(num)
-        .unwrap_or_else(|| panic!("Can't stage_parse {} as integer", num))
+      ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
     },
   )(input)
 }

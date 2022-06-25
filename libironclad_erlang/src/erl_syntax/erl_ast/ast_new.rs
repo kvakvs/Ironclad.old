@@ -101,7 +101,7 @@ impl AstNodeImpl {
         AstNodeImpl::construct_with_location(location, lit_node)
       }
       Err(e) => {
-        panic!("Failed to stage_parse float from \"{}\": error {}", val, e)
+        panic!("Failed to parse float from \"{}\": error {}", val, e)
       }
     }
   }

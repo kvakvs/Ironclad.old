@@ -20,21 +20,21 @@ use nom::Finish;
 
 mod test_util;
 
-/// Try stage_parse empty module
+/// Try parse empty module
 #[named]
 #[test]
 fn parse_empty_module() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse an empty module with start attribute only");
+  test_util::start(function_name!(), "parse an empty module with start attribute only");
   let nodes = test_util::parse_module_unwrap(function_name!(), "");
   assert_eq!(nodes.len(), 0);
   Ok(())
 }
 
-/// Try stage_parse `-export([])` attr
+/// Try parse `-export([])` attr
 #[named]
 #[test]
 fn parse_export_attr1() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse an export attr");
+  test_util::start(function_name!(), "parse an export attr");
 
   let input = "-export([name/123]).";
   let module = test_util::parse_module(function_name!(), input);
@@ -49,7 +49,7 @@ fn parse_export_attr1() -> IcResult<()> {
 #[named]
 #[test]
 fn parse_export_attr2() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse an export attr");
+  test_util::start(function_name!(), "parse an export attr");
   let input = "-export([module/2, format_error/1]).";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
@@ -64,11 +64,11 @@ fn parse_export_attr2() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse `-import(atom, [mfa,...]).` attr
+/// Try parse `-import(atom, [mfa,...]).` attr
 #[named]
 #[test]
 fn parse_import_attr() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse an import attr");
+  test_util::start(function_name!(), "parse an import attr");
   let input = "-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
@@ -91,7 +91,7 @@ fn parse_import_attr() -> IcResult<()> {
   Ok(())
 }
 
-// /// Try stage_parse empty module forms collection (from empty input)
+// /// Try parse empty module forms collection (from empty input)
 // #[named]
 // #[test]
 // fn parse_empty_module_forms_collection() -> IcResult<()> {
@@ -104,7 +104,7 @@ fn parse_import_attr() -> IcResult<()> {
 //   Ok(())
 // }
 
-/// Try stage_parse module forms collection with 2 functions in it
+/// Try parse module forms collection with 2 functions in it
 #[named]
 #[test]
 fn parse_2_module_forms_collection() -> IcResult<()> {
@@ -117,11 +117,11 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse string
+/// Try parse string
 #[named]
 #[test]
 fn parse_string_test() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a string literal");
+  test_util::start(function_name!(), "parse a string literal");
   let expr = test_util::parse_expr(function_name!(), "\"abc\"");
   if let Lit { value: lit, .. } = &expr.content {
     if let Literal::String(value) = lit.deref() {
@@ -132,23 +132,24 @@ fn parse_string_test() -> IcResult<()> {
   panic!("{} Expected: Literal(String) result, got {}", function_name!(), expr)
 }
 
-/// Try stage_parse quoted atom
+/// Try parse quoted atom
 #[named]
 #[test]
-fn parse_q_atom_test() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a quoted atom");
-  let expr = test_util::parse_expr(function_name!(), "'hello-atom'");
+fn parse_atom_test() {
+  test_util::start(function_name!(), "parse some atoms");
+  let input = "{'a-a', b_b, c, '$d'}";
+  let expr = test_util::parse_expr(function_name!(), input);
 
-  if let Lit { value: lit, .. } = &expr.content {
-    if let Literal::Atom(value) = lit.deref() {
-      assert_eq!(value, "hello-atom");
-      return Ok(());
-    }
-  }
-  panic!("{} Expected: Literal(Atom) result, got {}", function_name!(), expr)
+  assert!(expr.is_tuple());
+  let elements = expr.as_tuple();
+  assert_eq!(elements.len(), 4);
+  assert_eq!(elements[0].as_atom(), "a-a");
+  assert_eq!(elements[1].as_atom(), "b_b");
+  assert_eq!(elements[2].as_atom(), "c");
+  assert_eq!(elements[3].as_atom(), "$d");
 }
 
-/// Try stage_parse a 2+2 expression
+/// Try parse a 2+2 expression
 #[named]
 #[test]
 fn parse_expr_2_plus_2() -> IcResult<()> {
@@ -163,7 +164,7 @@ fn parse_expr_2_plus_2() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a flat + expression
+/// Try parse a flat + expression
 #[named]
 #[test]
 fn parse_expr_flat() -> IcResult<()> {
@@ -174,7 +175,7 @@ fn parse_expr_flat() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a list builder expression
+/// Try parse a list builder expression
 #[named]
 #[test]
 fn parse_expr_list_builder() -> IcResult<()> {
@@ -185,7 +186,7 @@ fn parse_expr_list_builder() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a more complex expression
+/// Try parse a more complex expression
 #[named]
 #[test]
 fn parse_expr_longer() -> IcResult<()> {
@@ -196,7 +197,7 @@ fn parse_expr_longer() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse an expression with parentheses and division
+/// Try parse an expression with parentheses and division
 #[named]
 #[test]
 fn parse_expr_2() -> IcResult<()> {
@@ -206,7 +207,7 @@ fn parse_expr_2() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse an expression with list comprehension
+/// Try parse an expression with list comprehension
 #[named]
 #[test]
 fn parse_expr_lc1() -> IcResult<()> {
@@ -223,7 +224,7 @@ fn parse_expr_lc1() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse an expression with list comprehension
+/// Try parse an expression with list comprehension
 #[named]
 #[test]
 fn parse_expr_lc2() -> IcResult<()> {
@@ -233,7 +234,7 @@ fn parse_expr_lc2() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a comma expression with some simpler nested exprs
+/// Try parse a comma expression with some simpler nested exprs
 #[named]
 #[test]
 #[ignore]
@@ -246,7 +247,7 @@ fn parse_expr_comma() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a list and a tuple
+/// Try parse a list and a tuple
 #[named]
 #[test]
 fn parse_expr_containers() -> IcResult<()> {
@@ -259,7 +260,7 @@ fn parse_expr_containers() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a hard-equals expression
+/// Try parse a hard-equals expression
 #[named]
 #[test]
 fn parse_expr_hard_eq() -> IcResult<()> {
@@ -271,7 +272,7 @@ fn parse_expr_hard_eq() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse some function defs
+/// Try parse some function defs
 #[named]
 #[test]
 fn parse_fn1() -> IcResult<()> {
@@ -292,11 +293,11 @@ fn parse_fn1() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse some function defs
+/// Try parse some function defs
 #[named]
 #[test]
 fn parse_fn_with_list_comprehension() -> IcResult<()> {
-  test_util::start(function_name!(), "From OTP's lib/compiler: stage_parse list comprehension");
+  test_util::start(function_name!(), "From OTP's lib/compiler: parse list comprehension");
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
     Fs = [function(F) || F <- Fs0],
     {ok,{Mod,Exp,Attr,Fs,Lc}}.";
@@ -319,7 +320,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
     println!("Parsed ExceptionPattern: {:?}", module.ast.borrow());
 
     // // TODO: Use panicking error reporter
-    // assert!(exc_tail.is_empty(), "Could not stage_parse exception pattern");
+    // assert!(exc_tail.is_empty(), "Could not parse exception pattern");
     // assert!(exc.class.is_var());
     // assert!(exc.error.is_var());
     // assert!(exc.stack.is_none());
@@ -331,7 +332,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
     println!("Parsed ExceptionPattern: {:?}", module.ast.borrow());
 
     // // TODO: Use panicking error reporter
-    // assert!(exc_tail.is_empty(), "Could not stage_parse exception pattern");
+    // assert!(exc_tail.is_empty(), "Could not parse exception pattern");
     // assert!(exc.class.is_var());
     // assert!(exc.error.is_var());
     // assert!(exc.stack.is_some());
@@ -348,7 +349,7 @@ fn parse_try_catch_clause() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), input);
   println!("Parsed Catch clause: {:?}", module.ast.borrow());
   // // TODO: Use panicking error reporter
-  // assert!(tail.is_empty(), "Could not stage_parse exception pattern");
+  // assert!(tail.is_empty(), "Could not parse exception pattern");
   // assert!(clause.exc_pattern.class.is_var());
   // assert!(clause.when_guard.is_some());
   // assert!(clause.body.is_atom());
@@ -369,7 +370,7 @@ fn parse_fn_try_catch() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a function apply expr. This can be any expression immediately followed by
+/// Try parse a function apply expr. This can be any expression immediately followed by
 /// a parenthesized comma expression.
 #[named]
 #[test]
@@ -579,11 +580,11 @@ fn parse_apply_3() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse a small `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+/// Try parse a small `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
 fn parse_small_record_test() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a record definition");
+  test_util::start(function_name!(), "parse a record definition");
   let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}).";
   let _parsed = test_util::parse_module_unwrap(function_name!(), input);
   Ok(())
@@ -610,11 +611,11 @@ fn sample_record_input() -> &'static str {
 	 }).\n"
 }
 
-/// Try stage_parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
 fn parse_record_raw_parser_invocation() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a record definition (raw parser invocation)");
+  test_util::start(function_name!(), "parse a record definition (raw parser invocation)");
   let input = sample_record_input();
   let tokens = test_util::tokenize(input);
   let p_input = ParserInput::new_slice(&tokens);
@@ -630,11 +631,11 @@ fn parse_record_raw_parser_invocation() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
 fn parse_record_test() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a record definition");
+  test_util::start(function_name!(), "parse a record definition");
   let input = sample_record_input();
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
@@ -644,11 +645,11 @@ fn parse_record_test() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl` as a part of a module
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl` as a part of a module
 #[named]
 #[test]
 fn parse_record_with_module() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a record definition as a part of a module");
+  test_util::start(function_name!(), "parse a record definition as a part of a module");
   let input = "-record(options, {includes }).\n";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
@@ -659,11 +660,11 @@ fn parse_record_with_module() -> IcResult<()> {
   Ok(())
 }
 
-/// Try stage_parse `-record(name, {fields})` with a map in it
+/// Try parse `-record(name, {fields})` with a map in it
 #[named]
 #[test]
 fn parse_record_with_map() -> IcResult<()> {
-  test_util::start(function_name!(), "stage_parse a record definition");
+  test_util::start(function_name!(), "parse a record definition");
   let input = "-record(t_tuple, {size=0 :: integer(),
     exact=false :: boolean(),
     elements=#{} :: tuple_elements()}).";

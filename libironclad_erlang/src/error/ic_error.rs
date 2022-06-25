@@ -78,7 +78,7 @@ impl IroncladError {
   }
 
   // TODO: move to preprocessor crate
-  /// Creates a preprocessor stage_parse error from a filename and a message
+  /// Creates a preprocessor parse error from a filename and a message
   #[allow(dead_code)]
   pub(crate) fn pp_parse<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
     let new_err =

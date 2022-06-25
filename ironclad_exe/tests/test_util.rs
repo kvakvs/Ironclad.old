@@ -23,7 +23,7 @@ pub fn start(n: &str, descr: &str) {
   println!("▼╍╍╍╍╍╍ {} ╍╍╍ ({}) ╍╍╍╍╍╍", n, descr);
 }
 
-/// Try stage_parse a define macro where value contains another macro
+/// Try parse a define macro where value contains another macro
 /// Returns `ErlModule`
 #[named]
 pub fn parse_module(function_name: &str, input: &str) -> ErlModule {
@@ -52,7 +52,7 @@ pub fn tokenize(input: &str) -> Vec<Token> {
   ErlModuleImpl::tokenize_helper(&project, src_file.clone(), tokenize_source).unwrap()
 }
 
-/// Try stage_parse a define macro where value contains another macro
+/// Try parse a define macro where value contains another macro
 /// Returns `ErlModule.ast.children()`
 pub fn parse_module_unwrap(function_name: &str, input: &str) -> Vec<AstNode> {
   let module = parse_module(function_name, input);

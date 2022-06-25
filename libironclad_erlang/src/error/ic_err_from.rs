@@ -40,7 +40,7 @@ impl From<ParseIntError> for IroncladError {
     IroncladError::new(
       IcErrorCategory::ErlangParse,
       SourceLoc::None,
-      format!("Cannot stage_parse integer: {}", pie),
+      format!("Cannot parse integer: {}", pie),
     )
   }
 }

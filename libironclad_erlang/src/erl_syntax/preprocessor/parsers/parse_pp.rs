@@ -1,4 +1,4 @@
-//! Groups type definitions shared by all preprocessor stage_parse modules
+//! Groups type definitions shared by all preprocessor parse modules
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open,
@@ -88,7 +88,7 @@ fn warning_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
 
 /// Parses a `-module(atom).` attribute.
 /// Dash `-` and terminating `.` are matched outside by the caller.
-/// Will create error if the attribute does not stage_parse (essentially a required attribute).
+/// Will create error if the attribute does not parse (essentially a required attribute).
 pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   context(
     "expected -module() attribute",

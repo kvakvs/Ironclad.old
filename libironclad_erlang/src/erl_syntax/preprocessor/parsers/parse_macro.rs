@@ -39,7 +39,7 @@
 // }
 //
 // /// Parse a `? <IDENT>` for a macro without arguments
-// /// Returns `Some(PreprocessorDefine)` to stage_parse, or `None` (macro not defined).
+// /// Returns `Some(PreprocessorDefine)` to parse, or `None` (macro not defined).
 // fn macro_invocation_0(input: ParserInput) -> ParserResult<MacroLookupResult> {
 //   // This parser will only work if name/0 macro is defined in input's scope
 //   let result = verify(context("macro identifier for macro invocation", cut(macro_ident)), |n1| {
@@ -65,7 +65,7 @@
 // }
 //
 // /// Parse a `? <IDENT> ( ARGS, ... )` for a macro with arguments.
-// /// Returns `Some(PreprocessorDefine)` to stage_parse, or `None` (macro not defined).
+// /// Returns `Some(PreprocessorDefine)` to parse, or `None` (macro not defined).
 // fn macro_invocation_with_args(input: ParserInput) -> ParserResult<MacroLookupResult> {
 //   // This parser will only work if name/0 macro is defined in input's scope
 //   map(

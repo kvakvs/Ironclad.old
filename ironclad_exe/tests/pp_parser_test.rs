@@ -8,7 +8,7 @@ use libironclad_util::mfarity::MFArity;
 
 #[test]
 #[named]
-/// Try stage_parse a simple pp directive -if(true).
+/// Try parse a simple pp directive -if(true).
 fn test_fragment_if_true() {
   test_util::start(function_name!(), "Parse -if(true) directive");
 
@@ -20,7 +20,7 @@ fn test_fragment_if_true() {
 #[test]
 #[named]
 #[should_panic]
-/// Try stage_parse a simple pp directive -if(3). and expect a panic
+/// Try parse a simple pp directive -if(3). and expect a panic
 fn test_fragment_if_3() {
   test_util::start(function_name!(), "Parse -if(3) directive for a panic");
   let input = "-if(3).
@@ -163,11 +163,8 @@ fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";
   let module = test_util::parse_module(function_name!(), input);
-  let ast = module.ast.borrow().clone();
-  let nodes = ast.children().unwrap_or_default();
-  assert_eq!(nodes.len(), 1);
-  assert!(nodes[0].is_empty_ast_node(), "expecting an empty node transformed from -define");
-
+  // let ast = module.ast.borrow().clone();
+  // let nodes = ast.children().unwrap_or_default();
   let pdef = module
     .root_scope
     .defines
@@ -224,12 +221,18 @@ fn parse_define_varied_spacing_do(function_name: &str, input: &str) {
   let input2 = format!("{}\n-ifdef(TEST).\n-testsuccess.\n-endif.", input);
   let module = test_util::parse_module(function_name, &input2);
 
-  let attrs = module
-    .root_scope
-    .attributes
-    .get(&"testsuccess".to_string())
-    .unwrap();
-  assert_eq!(attrs.len(), 1);
+  assert!(
+    module
+      .root_scope
+      .attributes
+      .contains(&"testsuccess".to_string()),
+    "Attributes in the module scope must contain -testsuccess"
+  );
+  assert_eq!(
+    module.root_scope.attributes.len(),
+    1,
+    "Exactly one attribute must be defined in the module scope"
+  );
 }
 
 #[test]
@@ -267,7 +270,7 @@ fn test_define_with_dquotes() {
 
 #[test]
 #[named]
-/// Try stage_parse a define macro where value contains another macro
+/// Try parse a define macro where value contains another macro
 fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
@@ -276,7 +279,7 @@ fn test_macro_expansion_in_define() {
   assert_eq!(
     nodes.len(),
     2,
-    "Must stage_parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
+    "Must parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
   );
   assert!(nodes[0].is_empty_ast_node());
   assert!(nodes[1].is_empty_ast_node());
@@ -294,7 +297,7 @@ fn test_macro_expansion_in_define() {
 
 #[test]
 #[named]
-/// Try stage_parse an expression with a macro
+/// Try parse an expression with a macro
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
@@ -314,7 +317,7 @@ fn test_ast_macro() {
     function_name!(),
     "(1) Substitute from macro completes the syntax and makes it parseable",
   );
-  // TODO: This will not stage_parse till the method of macro substitution is changed
+  // TODO: This will not parse till the method of macro substitution is changed
   let input = "-define(M1, A:B:C ->).
 myfunction1() ->
   try test
@@ -331,7 +334,7 @@ fn test_ast_macro_with_keyword() {
     function_name!(),
     "(2) Substitute from macro completes the syntax and makes it parseable",
   );
-  // TODO: This will not stage_parse till the method of macro substitution is changed
+  // TODO: This will not parse till the method of macro substitution is changed
   let input = "-define(M2, end.).
 myfunction2() ->
   begin ok ?M2";

@@ -49,6 +49,9 @@ pub const EXPR_STYLE_GUARD: usize = 1;
 /// Match expression: comma, semicolon not allowed, function calls not allowed, etc...
 pub const EXPR_STYLE_MATCHEXPR: usize = 2;
 
+/// Do not allow dynamic expression components: lambdas, function calls, variables etc
+pub const EXPR_STYLE_CONST_ONLY: usize = 3;
+
 // /// Parse a function call (application of args to a callable value)
 // fn parse_fn_application(input: ParserInput) -> ParserResult<AstNode> {
 //   // Application consists of a callable expression, "(", list of args, and ")"
@@ -195,7 +198,7 @@ fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<As
 fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   match STYLE {
     EXPR_STYLE_FULL => context(
-      "stage_parse expression (highest precedence)",
+      "parse expression (highest precedence)",
       alt((
         parse_lambda,
         parse_try_catch,
@@ -211,8 +214,21 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_list_comprehension,
       )),
     )(input),
+    EXPR_STYLE_CONST_ONLY => context(
+      "parse expression (const only)",
+      alt((
+        parse_if_statement,
+        parse_case_statement,
+        parse_binary,
+        parenthesized_expr::<STYLE>,
+        parse_list_of_exprs::<STYLE>,
+        parse_tuple_of_exprs::<STYLE>,
+        map_builder_of_exprs::<STYLE>,
+        parse_erl_literal,
+      )),
+    )(input),
     EXPR_STYLE_MATCHEXPR => context(
-      "stage_parse match expression (highest precedence)",
+      "parse match expression (highest precedence)",
       alt((
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
@@ -223,7 +239,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       )),
     )(input),
     EXPR_STYLE_GUARD => context(
-      "stage_parse guard expression (highest precedence)",
+      "parse guard expression (highest precedence)",
       alt((parenthesized_expr::<STYLE>, parse_var, parse_erl_literal)),
     )(input),
     _ => panic!("STYLE={} not implemented in parse_expr", STYLE),
@@ -401,16 +417,16 @@ fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 }
 
 /// Precedence 11: Catch operator, then continue to higher precedences
-/// This is also entry point to stage_parse expression when you don't want to recognize comma and semicolon
+/// This is also entry point to parse expression when you don't want to recognize comma and semicolon
 fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  // Try stage_parse (catch Expr) otherwise try next precedence level
+  // Try parse (catch Expr) otherwise try next precedence level
   map(pair(unop_catch, parse_expr_prec10::<STYLE>), |(catch_op, expr)| {
     ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), catch_op, expr)
   })(input.clone())
   .or_else(|_err| parse_expr_prec10::<STYLE>(input.clone()))
 }
 
-// /// Public entry point to stage_parse expression that cannot include comma or semicolon
+// /// Public entry point to parse expression that cannot include comma or semicolon
 // #[inline]
 // pub fn parse_expr_no_comma_no_semi(input: ParserInput) -> ParserResult<AstNode> {
 //   Self::parse_expr_prec11(input)
@@ -429,7 +445,7 @@ fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 #[named]
 fn parse_expr_prec13<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   match STYLE {
-    EXPR_STYLE_MATCHEXPR | EXPR_STYLE_FULL =>
+    EXPR_STYLE_MATCHEXPR | EXPR_STYLE_FULL | EXPR_STYLE_CONST_ONLY =>
     // Skip comma and semicolon operator
     {
       parse_expr_prec11::<STYLE>(input)
@@ -481,6 +497,11 @@ pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
 /// Parse a guard expression.
 pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
   context("guard expression", parse_expr_prec13::<{ EXPR_STYLE_GUARD }>)(input)
+}
+
+/// Parse a constant-only (literal) expression.
+pub fn parse_constant_expr(input: ParserInput) -> ParserResult<AstNode> {
+  context("constant-only expression", parse_expr_prec13::<{ EXPR_STYLE_CONST_ONLY }>)(input)
 }
 
 /// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.

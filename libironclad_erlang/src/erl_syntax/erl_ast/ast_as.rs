@@ -17,6 +17,14 @@ impl AstNodeImpl {
     }
   }
 
+  /// Unwrap self as a tuple
+  pub fn as_tuple(&self) -> &[AstNode] {
+    match &self.content {
+      AstNodeType::Tuple { elements } => elements,
+      _ => panic!("Expected Tuple AST node, but got {}", self),
+    }
+  }
+
   /// Unwrap self as erltype
   pub fn as_type(&self) -> ErlType {
     match &self.content {

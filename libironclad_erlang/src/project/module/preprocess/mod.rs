@@ -28,8 +28,8 @@ pub mod pp_state;
 
 /// Given a next input line (till newline), check whether it is a preprocessor directive, and
 /// whether it does not end with `).\n` or `.\n` - in this case we try to add one more line to it
-/// till it is complete or till end of input is reached.
-fn try_consume_entire_directive<'a>(
+/// till it forms a complete-looking preprocessor or attribute, or till the end of input is reached.
+fn expand_till_directive_end<'a>(
   line: &'a [Token],
   state: &mut PreprocessState<'a>,
 ) -> &'a [Token] {
@@ -38,7 +38,7 @@ fn try_consume_entire_directive<'a>(
 
   // Expand the line slice till we find the terminator symbol `period + end of line`
   let mut result = line;
-  while !Token::ends_with(line, &[TokenType::Period, TokenType::EOL]) && !state.itr.eof() {
+  while !ends_with_dot_eol(result) && !state.itr.eof() {
     if let Some(expanded) = state.itr.expand_till_next_line() {
       result = expanded;
     } else {
@@ -46,6 +46,11 @@ fn try_consume_entire_directive<'a>(
     }
   }
   result
+}
+
+#[inline]
+fn ends_with_dot_eol(line: &[Token]) -> bool {
+  Token::ends_with(line, &[TokenType::Period, TokenType::EOL])
 }
 
 fn on_undef(state: &mut PreprocessState, name: &str) {
@@ -256,25 +261,25 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     PreprocessorNodeType::Else => on_else(state),
     PreprocessorNodeType::Endif => on_endif(state),
     _ => {
-      println!("Section is not active for: {}", ppnode);
+      // println!("Section is not active for: {}", ppnode);
     }
   }
 }
 
 #[inline]
-fn line_contains_preprocessor_directive(line: &[Token]) -> bool {
+fn line_begins_with_preprocessor_or_attr(line: &[Token]) -> bool {
   // Begins with a -
   // Followed by an atom, or an "else" keyword, because -else() tokenizes as a keyword
   line.len() > 2
     && line[0].is_tok(TokenType::Minus)
-    && (line[1].is_atom() || line[1].is_keyword(Keyword::Else))
+    && (line[1].is_atom() || line[1].is_keyword(Keyword::Else) || line[1].is_keyword(Keyword::If))
 }
 
 impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
   #[named]
-  pub fn preprocess(
+  pub fn preprocess_interpret(
     original_input: &str,
     module: &ErlModule,
     tokens: &[Token],
@@ -286,8 +291,8 @@ impl ErlModuleImpl {
         break;
       }
 
-      if line_contains_preprocessor_directive(&line) {
-        line = try_consume_entire_directive(line, &mut state);
+      if line_begins_with_preprocessor_or_attr(&line) {
+        line = expand_till_directive_end(line, &mut state);
         println!("Next line: {}", format_tok_stream(line, 50));
 
         //---------------

@@ -32,6 +32,7 @@ pub fn tok(compare_val: TokenType) -> impl Fn(ParserInput) -> ParserResult<()> {
 }
 
 /// Recognizes one atom of given text value
+#[inline]
 pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
@@ -42,6 +43,7 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
 }
 
 /// Matches a `<-> <atom>` pair
+#[inline]
 pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResult<'a, ()> {
   map(pair(tok_minus, tok_atom_of(value)), void_fn)(input)
 }
@@ -84,6 +86,7 @@ fn tok_atom_1(input: ParserInput) -> ParserResult<String> {
 }
 
 /// Recognizes one str token, returns the string.
+#[inline]
 pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
   ws_before(tok_string_1)(input)
 }
@@ -140,6 +143,7 @@ fn erl_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
+#[inline]
 pub(crate) fn ws_before<'a, InnerFn: 'a, Out>(
   inner: InnerFn,
 ) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>

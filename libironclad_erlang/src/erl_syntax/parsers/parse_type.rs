@@ -31,7 +31,7 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple
 pub struct ErlTypeParser {}
 
 impl ErlTypeParser {
-  /// Given function spec module attribute `-spec name(args...) -> ...` stage_parse into an AST node
+  /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
   /// Dash `-` is matched outside by the caller.
   pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
     map(
@@ -296,7 +296,7 @@ impl ErlTypeParser {
     input: ParserInput,
   ) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
     map(tok_integer, |i: ErlInteger| {
-      // TODO: Can a parsed integer stage_parse with an error?
+      // TODO: Can a parsed integer parse with an error?
       ErlTypeImpl::new_singleton(&Literal::Integer(i).into())
     })(input)
   }
@@ -309,7 +309,7 @@ impl ErlTypeParser {
     map(
       separated_pair(tok_integer, tok(TokenType::PeriodPeriod), tok_integer),
       |(a, b)| {
-        // TODO: Can a parsed integer stage_parse with an error?
+        // TODO: Can a parsed integer parse with an error?
         ErlTypeImpl::new_range(a, b)
       },
     )(input)
@@ -320,7 +320,7 @@ impl ErlTypeParser {
     map(tok_atom, |a_str| ErlTypeImpl::new_singleton(&Literal::Atom(a_str).into()))(input)
   }
 
-  /// Parse any simple Erlang type without union. To stage_parse unions use `parse_type`.
+  /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
   pub(crate) fn parse_nonunion_type(
     input: ParserInput,
   ) -> nom::IResult<ParserInput, ErlType, ErlParserError> {

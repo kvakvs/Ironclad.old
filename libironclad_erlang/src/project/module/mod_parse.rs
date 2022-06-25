@@ -21,7 +21,7 @@ use nom::Finish;
 use std::ptr::null;
 
 impl ErlModuleImpl {
-  /// Generic stage_parse helper for any Nom entry point.
+  /// Generic parse helper for any Nom entry point.
   /// Input comes as string in the `SourceFile`, the input is tokenized and then parsed.
   pub fn parse_helper<T>(
     project: &ErlProject,
@@ -56,7 +56,8 @@ impl ErlModuleImpl {
     // Stage 2 preprocessor: handle ifdefs, defines, includes etc
     // tokenize includes and paste in the token stream too
     //----------------------
-    let tok_stream2 = ErlModuleImpl::preprocess(src_file.text.as_str(), &module, &tok_stream1)?;
+    let tok_stream2 =
+      ErlModuleImpl::preprocess_interpret(src_file.text.as_str(), &module, &tok_stream1)?;
     ErlModuleImpl::verify_integrity(&module)?;
 
     //----------------------
@@ -77,7 +78,7 @@ impl ErlModuleImpl {
     assert_eq!(
       trim_tail,
       0,
-      "Not all input was consumed by stage_parse.\n\tTail: «{}»",
+      "Not all input was consumed by parse.\n\tTail: «{}»",
       format_tok_stream(tail.tokens, 50),
     );
 
