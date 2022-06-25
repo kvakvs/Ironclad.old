@@ -86,7 +86,7 @@ fn parse_define_ident_only() {
   let input = "-define(AAA).
 -ifdef(AAA).
 -test_success.
--else
+-else.
 -test_failure().
 -endif.";
   let module = test_util::parse_module(function_name!(), input);

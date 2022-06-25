@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_keyword_else, tok_keyword_if,
+  dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_keyword_else, tok_keyword_if, tok_minus,
   tok_par_close, tok_par_open, tok_var,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
@@ -12,10 +12,12 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
+use crate::erl_syntax::token_stream::token::format_tok_stream;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::combinator::{map, opt, recognize};
-use nom::sequence::{delimited, pair};
+use nom::combinator::{cut, map, opt, recognize};
+use nom::error::context;
+use nom::sequence::{delimited, pair, preceded, terminated};
 
 // /// Parses multiple lines of any directives except `-endif.` or `-else.`
 // fn parse_fragments_till_else(input: ParserInput) -> VecAstParserResult {
@@ -152,7 +154,13 @@ pub(crate) fn ifndef_directive(input: ParserInput) -> ParserResult<PreprocessorN
 /// Parse a `-else.`, return a temporary `Else` node, which will not go into final `PpAst`
 pub(crate) fn else_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
-    delimited(tok_keyword_else, opt(pair(tok_par_open, tok_par_close)), period_eol_eof),
+    preceded(
+      pair(tok_minus, alt((tok_keyword_else, tok_atom_of("else")))),
+      context(
+        "-else(). directive",
+        cut(terminated(opt(pair(tok_par_open, tok_par_close)), period_eol_eof)),
+      ),
+    ),
     |_opt| {
       PreprocessorNodeImpl::new_with_location(SourceLoc::new(&input), PreprocessorNodeType::Else)
     },

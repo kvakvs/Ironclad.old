@@ -30,23 +30,20 @@ pub enum PreprocessorNodeType {
   /// Specific directive: -undef(NAME). removes a named macro definition
   Undef(String),
   /// Proceed interpreting AST nodes if the named macro is defined
-  IfdefBlock {
+  Ifdef {
     /// The condition to check
     macro_name: String,
-    /// The nested lines
-    cond_true: Vec<AstNode>,
-    /// The nested lines for the else block (if it was present)
-    cond_false: Vec<AstNode>,
+  },
+  /// Proceed interpreting AST nodes if the named macro is NOT defined
+  Ifndef {
+    /// The condition to check
+    macro_name: String,
   },
   /// If(expression) stores an expression which must resolve to a constant value otherwise compile
   /// error will be triggered.
-  IfBlock {
+  If {
     /// The condition to check
     cond: AstNode,
-    /// The nested lines
-    cond_true: Vec<AstNode>,
-    /// The nested lines for the else block (if it was present)
-    cond_false: Vec<AstNode>,
   },
   /// Produce a libironclad error
   Error(String),
@@ -65,14 +62,8 @@ pub enum PreprocessorNodeType {
   Else,
   ///`-endif` node
   Endif,
-  /// `-if(...).` node
-  If(AstNode),
   /// `-elif(...).` node
-  ElseIf(AstNode),
-  /// -ifdef(...). is pushed on conditions stack in `ParserScope` during parsing
-  Ifdef(String),
-  /// -ifndef(...). is translated into `IfdefBlock`
-  Ifndef(String),
+  ElseIf { cond: AstNode },
   /// A generic attribute with tag and one optional value `- <TAG> ( <VALUE> ).`
   Attr {
     /// Attribute tag in `- <TAG> ().`

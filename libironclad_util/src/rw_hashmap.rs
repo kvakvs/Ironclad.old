@@ -20,7 +20,7 @@ impl<KeyType: Display, ValType: Display> Display for RwHashMap<KeyType, ValType>
       }
       Ok(())
     } else {
-      panic!("Can't lock RwHashMap to print")
+      panic!("Can't lock RwHashMap for printing")
     }
   }
 }

@@ -22,26 +22,17 @@ impl std::fmt::Display for PreprocessorNodeImpl {
 
         if !args.is_empty() {
           Pretty::display_paren_list(args.iter(), f)?;
+          write!(f, ").")?;
         }
         if !body.is_empty() {
           write!(f, ", {}).", format_tok_stream(body, 100))?;
         }
         Ok(())
       }
-      PreprocessorNodeType::IfdefBlock { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
-      // PpAst::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
-      PreprocessorNodeType::IfBlock { cond, cond_true, cond_false } => {
-        writeln!(f, "-if({}).", cond)?;
-        for c in cond_true {
-          writeln!(f, "{}", c)?;
-        }
-        if !cond_false.is_empty() {
-          writeln!(f, "-else.")?;
-        }
-        for c in cond_false {
-          writeln!(f, "{}", c)?;
-        }
-        writeln!(f, "-endif.")
+      PreprocessorNodeType::Ifdef { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
+      PreprocessorNodeType::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
+      PreprocessorNodeType::If { cond, .. } => {
+        writeln!(f, "-if({}).", cond)
       }
       PreprocessorNodeType::Undef(name) => write!(f, "-undef({}).", name),
       PreprocessorNodeType::Error(t) => {
@@ -93,6 +84,12 @@ impl std::fmt::Display for PreprocessorNodeImpl {
         write!(f, ".")
       }
       PreprocessorNodeType::ModuleName { name, .. } => write!(f, "-module({}).", name),
+      PreprocessorNodeType::Else => write!(f, "-else."),
+      PreprocessorNodeType::Endif => write!(f, "-endif."),
+      PreprocessorNodeType::If { cond } => write!(f, "-if({}).", cond),
+      PreprocessorNodeType::ElseIf { cond } => write!(f, "-elseif({}).", cond),
+      PreprocessorNodeType::Ifdef { macro_name } => write!(f, "-ifdef({}).", macro_name),
+      PreprocessorNodeType::Ifndef { macro_name } => write!(f, "-ifndef({}).", macro_name),
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }

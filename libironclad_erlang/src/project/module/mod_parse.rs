@@ -81,7 +81,6 @@ impl ErlModuleImpl {
       format_tok_stream(tail.tokens, 50),
     );
 
-    // TODO: This assignment below should be happening earlier before stage_parse, as stage_parse can refer to the SourceFile
     module.ast.replace(forms.clone());
 
     // Scan AST and find FnDef nodes, update functions knowledge

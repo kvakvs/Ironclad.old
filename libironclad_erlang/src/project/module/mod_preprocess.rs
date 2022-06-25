@@ -1,7 +1,6 @@
 //! Preprocessing support for `ErlModule`
 
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -9,13 +8,13 @@ use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
+use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::record_def::RecordDefinition;
-use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
@@ -31,7 +30,10 @@ struct PreprocessState<'a> {
 /// Given a next input line (till newline), check whether it is a preprocessor directive, and
 /// whether it does not end with `).\n` or `.\n` - in this case we try to add one more line to it
 /// till it is complete or till end of input is reached.
-fn preprocess_expand_line<'a>(line: &'a [Token], state: &mut PreprocessState<'a>) -> &'a [Token] {
+fn try_consume_entire_directive<'a>(
+  line: &'a [Token],
+  state: &mut PreprocessState<'a>,
+) -> &'a [Token] {
   // The line is a beginning of an attribute or a preprocessor definition or condition
   // These can only span one or more full lines, so we can work with lines iterator
 
@@ -107,21 +109,20 @@ fn on_attr(state: &mut PreprocessState, tag: &str, term: &Option<AstNode>) {
   state.module.root_scope.add_attr(tag, term.clone())
 }
 
-#[named]
 fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessState) {
   match &ppnode.content {
     PreprocessorNodeType::ModuleName { name } => {
       ErlModuleImpl::set_name(state.module, name.as_str())
     }
-    PreprocessorNodeType::Include(_) => {}
-    PreprocessorNodeType::IncludeLib(_) => {}
+    PreprocessorNodeType::Include(_) => unimplemented!(),
+    PreprocessorNodeType::IncludeLib(_) => unimplemented!(),
     PreprocessorNodeType::Define { name, args, body } => {
       on_define(state, name.as_str(), args, body)
     }
-    PreprocessorNodeType::Undef(_) => {}
-    PreprocessorNodeType::Error(_) => {}
-    PreprocessorNodeType::Warning(_) => {}
-    PreprocessorNodeType::IncludedFile { .. } => {}
+    PreprocessorNodeType::Undef(_) => unimplemented!(),
+    PreprocessorNodeType::Error(_) => unimplemented!(),
+    PreprocessorNodeType::Warning(_) => unimplemented!(),
+    PreprocessorNodeType::IncludedFile { .. } => unimplemented!(),
     PreprocessorNodeType::Attr { tag, term } => on_attr(state, tag.as_str(), term),
     PreprocessorNodeType::Export { fun_arities } => on_export(state, fun_arities),
     PreprocessorNodeType::ExportType { type_arities } => on_export_type(state, type_arities),
@@ -134,27 +135,36 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     PreprocessorNodeType::NewRecord { tag, fields } => on_new_record(state, tag, fields),
     PreprocessorNodeType::FnSpec { funarity, spec } => on_fn_spec(state, funarity, spec),
 
-    PreprocessorNodeType::If(_) => {}
-    PreprocessorNodeType::ElseIf(_) => {}
-    PreprocessorNodeType::Ifdef(_) => {}
-    PreprocessorNodeType::Ifndef(_) => {}
-    PreprocessorNodeType::IfdefBlock { .. } => {}
-    PreprocessorNodeType::IfBlock { .. } => {}
+    PreprocessorNodeType::If { .. } => unimplemented!(),
+    PreprocessorNodeType::ElseIf { .. } => unimplemented!(),
+    PreprocessorNodeType::Ifdef { .. } => unimplemented!(),
+    PreprocessorNodeType::Ifndef { .. } => unimplemented!(),
     PreprocessorNodeType::Else => {
-      state.too_many_errors = state.too_many_errors
-        || state.module.add_error(ErlError::preprocessor_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          "Unexpected preprocessor -else.".to_string(),
-        ))
+      unimplemented!()
+      // state.too_many_errors = state.too_many_errors
+      //   || state.module.add_error(ErlError::preprocessor_error(
+      //     SourceLoc::unimplemented(file!(), function_name!()),
+      //     "Unexpected preprocessor -else.".to_string(),
+      //   ))
     }
     PreprocessorNodeType::Endif => {
-      state.too_many_errors = state.too_many_errors
-        || state.module.add_error(ErlError::preprocessor_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          "Unexpected preprocessor -endif.".to_string(),
-        ))
+      unimplemented!()
+      // state.too_many_errors = state.too_many_errors
+      //   || state.module.add_error(ErlError::preprocessor_error(
+      //     SourceLoc::unimplemented(file!(), function_name!()),
+      //     "Unexpected preprocessor -endif.".to_string(),
+      //   ))
     }
   }
+}
+
+#[inline]
+fn line_contains_preprocessor_directive(line: &[Token]) -> bool {
+  // Begins with a -
+  // Followed by an atom, or an "else" keyword, because -else() tokenizes as a keyword
+  line.len() > 2
+    && line[0].is_tok(TokenType::Minus)
+    && (line[1].is_atom() || line[1].is_keyword(Keyword::Else))
 }
 
 impl ErlModuleImpl {
@@ -177,12 +187,15 @@ impl ErlModuleImpl {
         break;
       }
 
-      if line.len() > 2 && line[0].is_tok(TokenType::Minus) && line[1].is_atom() {
-        line = preprocess_expand_line(line, &mut state);
+      if line_contains_preprocessor_directive(&line) {
+        line = try_consume_entire_directive(line, &mut state);
         println!("Next line: {}", format_tok_stream(line, 50));
 
+        //---------------
+        // Parse the accumulated one or more lines as a preprocessor directive
+        // or a module attribute
+        //---------------
         let parser_input = ParserInput::new_slice(line);
-
         let (tail, ppnode) = panicking_parser_error_reporter(
           original_input,
           parser_input.clone(),
@@ -200,10 +213,7 @@ impl ErlModuleImpl {
       }
     }
 
-    // TODO: Interpret -define/undef -if/ifdef/ifndef/else
-    // TODO: Interpret -include and -include_lib
-    // TODO: Parse and store other module attributes
-    println!("Preprocessor: resulting tokens:");
+    println!("Preprocessor: remaining/resulting tokens:");
     state.result.iter().for_each(|t| print!("{}", t));
     println!();
 

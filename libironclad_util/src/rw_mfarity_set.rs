@@ -16,9 +16,9 @@ pub struct RwHashSet<ValType: Hash> {
 impl<ValType: Hash + Display> Display for RwHashSet<ValType> {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     if let Ok(r_collection) = self.collection.read() {
-      Pretty::display_square_list(r_collection.iter(), f)
+      Pretty::display_curly_list(r_collection.iter(), f)
     } else {
-      panic!("Can't lock ModuleAttributes for printing")
+      panic!("Can't lock RwHashSet for printing")
     }
   }
 }

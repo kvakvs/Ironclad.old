@@ -110,25 +110,25 @@ impl PreprocessorNodeImpl {
   /// Create a new `-if()` data node
   #[inline]
   pub(crate) fn new_if(location: SourceLoc, expr: AstNode) -> PreprocessorNode {
-    Self::new_with_location(location, PreprocessorNodeType::If(expr))
+    Self::new_with_location(location, PreprocessorNodeType::If { cond: expr })
   }
 
   /// Create a new `-elif()` data node
   #[inline]
   pub(crate) fn new_elif(location: SourceLoc, expr: AstNode) -> PreprocessorNode {
-    Self::new_with_location(location, PreprocessorNodeType::ElseIf(expr))
+    Self::new_with_location(location, PreprocessorNodeType::ElseIf { cond: expr })
   }
 
   /// Create a new `-ifdef()` data node
   #[inline]
   pub(crate) fn new_ifdef(location: SourceLoc, ident: String) -> PreprocessorNode {
-    Self::new_with_location(location, PreprocessorNodeType::Ifdef(ident))
+    Self::new_with_location(location, PreprocessorNodeType::Ifdef { macro_name: ident })
   }
 
   /// Create a new `-ifndef()` data node
   #[inline]
   pub(crate) fn new_ifndef(location: SourceLoc, ident: String) -> PreprocessorNode {
-    Self::new_with_location(location, PreprocessorNodeType::Ifndef(ident))
+    Self::new_with_location(location, PreprocessorNodeType::Ifndef { macro_name: ident })
   }
 
   /// Create a new `-undef(SYMBOL).` data node
