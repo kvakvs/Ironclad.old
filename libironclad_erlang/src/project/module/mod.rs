@@ -2,8 +2,8 @@
 
 pub mod mod_impl;
 pub mod mod_parse;
-pub mod mod_preprocess;
 pub mod mod_verify;
+pub mod preprocess;
 pub mod scope;
 
 // /// Read accessor

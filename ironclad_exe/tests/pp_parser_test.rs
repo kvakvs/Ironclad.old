@@ -106,6 +106,59 @@ fn parse_define_ident_only() {
 
 #[test]
 #[named]
+fn parse_define_undef() {
+  test_util::start(function_name!(), "Parse a basic -define macro with -undef");
+  let input = "-define(AAA(X), blep).
+-undef(AAA).
+-ifdef(AAA).
+-test_failure().
+-else.
+-test_success.
+-endif.";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = module.root_scope.clone();
+  let success = root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap_or_default();
+  let failure = root_scope
+    .attributes
+    .get(&"test_failure".to_string())
+    .unwrap_or_default();
+  assert_eq!(success.len(), 1, "-test_success attribute must be present");
+  assert_eq!(failure.len(), 0, "-test_failure attribute must not be present");
+  assert!(!module.root_scope.is_defined("AAA"));
+}
+
+#[test]
+#[named]
+fn parse_if_elif() {
+  test_util::start(function_name!(), "Parse a basic -define macro with -if/elif");
+  let input = "-define(AAA).
+-if(false).
+-test_failure().
+-elif(true).
+-test_success.
+-elif(false).
+-test_failure().
+-endif.";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = module.root_scope.clone();
+  let success = root_scope
+    .attributes
+    .get(&"test_success".to_string())
+    .unwrap_or_default();
+  let failure = root_scope
+    .attributes
+    .get(&"test_failure".to_string())
+    .unwrap_or_default();
+  assert_eq!(success.len(), 1, "-test_success attribute must be present");
+  assert_eq!(failure.len(), 0, "-test_failure attribute must not be present");
+  assert!(module.root_scope.is_defined("AAA"));
+}
+
+#[test]
+#[named]
 fn parse_define_with_body_no_args() {
   test_util::start(function_name!(), "Parse a basic -define macro with body and no args");
   let input = "-define(BBB, [true)).";

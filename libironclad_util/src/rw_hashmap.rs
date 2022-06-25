@@ -31,7 +31,7 @@ impl<KeyType, ValType> Default for RwHashMap<KeyType, ValType> {
   }
 }
 
-impl<KeyType: Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
+impl<KeyType: Clone + Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
   pub fn new(collection: HashMap<KeyType, ValType>) -> Self {
     Self { collection: RwLock::new(collection) }
   }
@@ -58,6 +58,25 @@ impl<KeyType: Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
   pub fn add(&self, key: KeyType, item: ValType) {
     if let Ok(mut w_collection) = self.collection.write() {
       w_collection.insert(key, item);
+    } else {
+      panic!("Can't lock RwHashMap to insert a new one")
+    }
+  }
+
+  /// Deletes an item, if a predicate returns true
+  pub fn delete_if(&self, predicate: impl Fn(&KeyType, &ValType) -> bool) {
+    if let Ok(mut w_collection) = self.collection.write() {
+      let mut remove_candidates = Vec::<KeyType>::new();
+
+      for (key, val) in w_collection.iter() {
+        if predicate(key, val) {
+          remove_candidates.push(key.clone());
+        }
+      }
+
+      for k in remove_candidates.iter() {
+        let _ = w_collection.remove(k);
+      }
     } else {
       panic!("Can't lock RwHashMap to insert a new one")
     }
