@@ -32,7 +32,7 @@ pub struct PreprocessFile {
 impl PreprocessFile {
   /// Create a stage_preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
-  pub(crate) fn new(
+  pub fn new(
     ast_cache: &Arc<RwLock<PpAstCache>>,
     file_cache: &FileCache,
     scope: Arc<ParserScope>,
@@ -46,7 +46,7 @@ impl PreprocessFile {
 
   /// Create a self-contained preprocessor stage used for testing, does not take any inputs and
   /// builds everything for itself
-  pub(crate) fn new_self_contained() -> Self {
+  pub fn new_self_contained() -> Self {
     let ast_cache = Arc::new(RwLock::new(PpAstCache::default()));
     let file_cache = Arc::new(RwLock::new(FileCache::default()));
     let scope = ParserScope::default().into();
@@ -112,7 +112,7 @@ impl PreprocessFile {
   // }
 
   /// Returns: True if a file was preprocessed
-  pub(crate) fn preprocess_file(
+  pub fn preprocess_file(
     &mut self,
     stats: &mut PreprocessorStats,
     project: &ErlProject,

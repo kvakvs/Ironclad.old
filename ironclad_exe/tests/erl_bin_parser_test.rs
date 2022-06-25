@@ -1,6 +1,5 @@
 extern crate core;
 extern crate function_name;
-extern crate libironclad;
 extern crate libironclad_erlang;
 
 use ::function_name::named;

@@ -2,7 +2,7 @@
 //! Preprocessor stage shared state for all files
 
 use crate::project::ErlProject;
-use crate::stage::stage_preprocess::pp_stage_file::PreprocessFile;
+use ironclad::stage_preprocess::pp_stage_file::PreprocessFile;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::file_cache::FileCache;
 use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
@@ -20,7 +20,7 @@ pub struct PreprocessStage {
 impl PreprocessStage {
   /// Create a stage_preprocess state struct for processing a file.
   /// Preprocessor symbols are filled from the command line and project TOML file settings.
-  pub(crate) fn new() -> Self {
+  pub fn new() -> Self {
     Self { stats: PreprocessorStats::new() }
   }
 
@@ -33,7 +33,7 @@ impl PreprocessStage {
   /// Side effects: Updates file contents cache
   /// Returns preprocessed collection of module sources
   #[deprecated]
-  pub(crate) fn run_pp_stage(
+  pub fn run_pp_stage(
     &mut self,
     project: &mut ErlProject,
     file_cache: FileCache,

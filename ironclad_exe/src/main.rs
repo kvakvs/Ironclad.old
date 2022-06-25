@@ -1,14 +1,20 @@
-extern crate libironclad;
+//! # Ironclad parser and type analyzer + compiler
+//!
+//! A fusion of Erlang erlc (lib/compile in OTP repository) and compile-time type checker,
+//! somewhat like Dialyzer (lib/dialyzer in OTP repository).
+extern crate function_name;
 extern crate libironclad_erlang;
 
 use std::process::exit;
 
-use libironclad::stage::stage_parse::ErlParseStage;
-use libironclad::stage::stage_preload::FilePreloadStage;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::project::ErlProject;
+use stage::stage_parse::ErlParseStage;
+use stage::stage_preload::FilePreloadStage;
+
+pub mod stage;
 
 /// Test default project created from "" empty config
 fn test_empty_config_project() -> IcResult<()> {
