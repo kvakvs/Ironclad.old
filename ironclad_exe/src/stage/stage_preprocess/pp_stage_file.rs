@@ -7,12 +7,12 @@ use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_report
 use libironclad_erlang::erl_syntax::parsers::parser_scope::ParserScope;
 use libironclad_erlang::error::ic_error::{IcResult, IroncladError};
 use libironclad_erlang::error::ic_error_trait::IcError;
-use libironclad_erlang::file_cache::FileCache;
-use libironclad_erlang::source_file::SourceFileImpl;
 use libironclad_erlang::source_loc::SourceLoc;
-use libironclad_erlang::stats::cache_stats::CacheStats;
-use libironclad_erlang::stats::io_stats::IOStats;
-use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
+use libironclad_util::io::file_cache::FileCache;
+use libironclad_util::source_file::SourceFileImpl;
+use libironclad_util::stats::cache_stats::CacheStats;
+use libironclad_util::stats::io_stats::IOStats;
+use libironclad_util::stats::preprocessor_stats::PreprocessorStats;
 use nom::Finish;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

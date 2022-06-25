@@ -16,7 +16,6 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::record_def::RecordDefinition;
 use crate::typing::erl_type::ErlType;
-use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 

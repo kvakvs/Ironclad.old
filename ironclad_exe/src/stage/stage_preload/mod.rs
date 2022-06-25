@@ -1,8 +1,8 @@
 //! Scans the project directory structure and preloads all ERL and HRL source files into memory
 
 use libironclad_erlang::error::ic_error::IroncladResult;
-use libironclad_erlang::file_cache::FileCache;
-use libironclad_erlang::stats::preload_stats::FilePreloadStats;
+use libironclad_util::io::file_cache::FileCache;
+use libironclad_util::stats::preload_stats::FilePreloadStats;
 use std::path::PathBuf;
 
 /// Handles loading/caching text files in memory

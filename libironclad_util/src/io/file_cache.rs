@@ -2,7 +2,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use crate::error::ic_error::IroncladResult;
+use crate::io::file_error::IcFileError;
 use crate::source_file::{SourceFile, SourceFileImpl};
 use crate::stats::cache_stats::CacheStats;
 use crate::stats::io_stats::IOStats;
@@ -33,7 +33,7 @@ impl FileCacheImpl {
   }
 
   /// Load file contents, store entire contents in the hashmap
-  pub fn preload_file(&mut self, file_name: &Path) -> IroncladResult<SourceFile> {
+  pub fn preload_file(&mut self, file_name: &Path) -> Result<SourceFile, IcFileError> {
     println!("Attempt to load file: {:?}", file_name);
 
     let contents = std::fs::read_to_string(file_name)?;
@@ -54,7 +54,7 @@ impl FileCacheImpl {
 
   /// Retrieve cached file contents or attempt to load (and update the cache)
   /// TODO: Cloning of strings is bad
-  pub fn get_or_load(&mut self, file_name: &Path) -> IroncladResult<SourceFile> {
+  pub fn get_or_load(&mut self, file_name: &Path) -> Result<SourceFile, IcFileError> {
     println!("FileCache: get or load {}", file_name.to_string_lossy());
     let canon_path = file_name.canonicalize().unwrap();
 

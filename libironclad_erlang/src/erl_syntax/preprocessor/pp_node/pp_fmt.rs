@@ -29,12 +29,7 @@ impl std::fmt::Display for PreprocessorNodeImpl {
         }
         Ok(())
       }
-      PreprocessorNodeType::Ifdef { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
-      PreprocessorNodeType::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
-      PreprocessorNodeType::If { cond, .. } => {
-        writeln!(f, "-if({}).", cond)
-      }
-      PreprocessorNodeType::Undef(name) => write!(f, "-undef({}).", name),
+
       PreprocessorNodeType::Error(t) => {
         write!(f, "-error(")?;
         Pretty::doublequot_string(f, t)?;
@@ -88,8 +83,9 @@ impl std::fmt::Display for PreprocessorNodeImpl {
       PreprocessorNodeType::Endif => write!(f, "-endif."),
       PreprocessorNodeType::If { cond } => write!(f, "-if({}).", cond),
       PreprocessorNodeType::ElseIf { cond } => write!(f, "-elseif({}).", cond),
-      PreprocessorNodeType::Ifdef { macro_name } => write!(f, "-ifdef({}).", macro_name),
-      PreprocessorNodeType::Ifndef { macro_name } => write!(f, "-ifndef({}).", macro_name),
+      PreprocessorNodeType::Ifdef { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
+      PreprocessorNodeType::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
+      PreprocessorNodeType::Undef(name) => write!(f, "-undef({}).", name),
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }

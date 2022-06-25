@@ -11,11 +11,8 @@ extern crate num_bigint;
 
 pub mod erl_syntax;
 pub mod error;
-pub mod file_cache;
 pub mod literal;
 pub mod project;
 pub mod record_def;
-pub mod source_file;
 pub mod source_loc;
-pub mod stats;
 pub mod typing;

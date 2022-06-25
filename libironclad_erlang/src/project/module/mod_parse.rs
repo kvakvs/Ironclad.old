@@ -16,7 +16,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
-use crate::source_file::SourceFile;
+use libironclad_util::source_file::SourceFile;
 use nom::Finish;
 use std::ptr::null;
 

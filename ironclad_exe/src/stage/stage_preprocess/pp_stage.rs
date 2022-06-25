@@ -4,9 +4,9 @@
 use crate::project::ErlProject;
 use ironclad::stage_preprocess::pp_stage_file::PreprocessFile;
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::file_cache::FileCache;
-use libironclad_erlang::stats::preprocessor_stats::PreprocessorStats;
 use libironclad_preprocessor::preprocessor_syntax::pp_ast::PpAstCache;
+use libironclad_util::io::file_cache::FileCache;
+use libironclad_util::stats::preprocessor_stats::PreprocessorStats;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 

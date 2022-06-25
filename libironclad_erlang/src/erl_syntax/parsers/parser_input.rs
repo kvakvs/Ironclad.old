@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::project::module::scope::root_scope::RootScope;
-use crate::source_file::SourceFile;
+use libironclad_util::source_file::SourceFile;
 use nom::Needed;
 use std::iter::Enumerate;
 use std::mem::size_of;

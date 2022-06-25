@@ -1,6 +1,7 @@
 //! Larger categories for errors
 
 use crate::error::ic_error_trait::IcError;
+use libironclad_util::io::file_error::IcFileError;
 use std::path::PathBuf;
 
 /// General error type covering all system errors, parser errors, compiler errors, etc.
@@ -10,7 +11,9 @@ pub enum IcErrorCategory {
   Multiple(Vec<IcError>),
 
   /// Returned when file or directory read/write failed
-  Io(std::io::Error),
+  StdIoError(std::io::Error),
+  /// Ironclad's own File IO error reporting
+  IcFileError(IcFileError),
 
   /// Project errors produced when glob() scanning input files and directories
   Glob(glob::GlobError),
@@ -59,7 +62,8 @@ impl IcErrorCategory {
   pub(crate) fn to_string(&self) -> &str {
     match self {
       IcErrorCategory::Multiple(_) => "Multiple errors",
-      IcErrorCategory::Io(_) => "File error",
+      IcErrorCategory::StdIoError(_) => "IO (general) error",
+      IcErrorCategory::IcFileError(_) => "IO (file) error",
       IcErrorCategory::Glob(_) => "Directory scan error",
       IcErrorCategory::GlobPattern(_) => "Glob pattern error",
       IcErrorCategory::Config(_) => "Configuration file error",

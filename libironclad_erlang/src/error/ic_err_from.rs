@@ -2,11 +2,18 @@
 use crate::error::ic_error::IroncladError;
 use crate::error::ic_error_category::IcErrorCategory;
 use crate::source_loc::SourceLoc;
+use libironclad_util::io::file_error::IcFileError;
 use std::num::ParseIntError;
 
 impl From<std::io::Error> for IroncladError {
   fn from(value: std::io::Error) -> Self {
-    IroncladError::new_type_only(IcErrorCategory::Io(value))
+    IroncladError::new_type_only(IcErrorCategory::StdIoError(value))
+  }
+}
+
+impl From<IcFileError> for IroncladError {
+  fn from(value: IcFileError) -> Self {
+    IroncladError::new_type_only(IcErrorCategory::IcFileError(value))
   }
 }
 

@@ -10,7 +10,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
-use crate::source_file::{SourceFile, SourceFileImpl};
+use libironclad_util::source_file::{SourceFile, SourceFileImpl};
 use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
