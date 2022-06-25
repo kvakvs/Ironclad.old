@@ -83,7 +83,7 @@ where
 }
 
 #[inline]
-fn ident_continuation(input: TokenizerInput) -> TokensResult<TokenizerInput> {
+pub(crate) fn ident_continuation(input: TokenizerInput) -> TokensResult<TokenizerInput> {
   alt((alphanumeric1, recognize(char('_'))))(input)
 }
 

@@ -6,16 +6,16 @@ use libironclad_erlang::erl_syntax::token_stream::token_type::TokenType;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
 
-#[test]
-#[named]
-/// Try parse a simple pp directive -if(true).
-fn test_fragment_if_true() {
-  test_util::start(function_name!(), "Parse -if(true) directive");
-
-  let input = "-if(true).
--end.";
-  let _module = test_util::parse_module(function_name!(), input);
-}
+// #[test]
+// #[named]
+// /// Try parse a simple pp directive -if(true).
+// fn test_fragment_if_true() {
+//   test_util::start(function_name!(), "Parse -if(true) directive");
+//
+//   let input = "-if(true).
+// -endif.";
+//   let _module = test_util::parse_module(function_name!(), input);
+// }
 
 #[test]
 #[named]
@@ -49,9 +49,18 @@ fn parse_if_branches() {
     .unwrap();
   assert_eq!(succ.len(), 1);
 
-  // assert!(nodes[0].is_generic_attr("before_if"));
-  // assert!(nodes[1].is_generic_attr("test_success"));
-  // assert!(nodes[2].is_generic_attr("after_if"));
+  assert!(module
+    .root_scope
+    .attributes
+    .contains(&"before_if".to_string()));
+  assert!(module
+    .root_scope
+    .attributes
+    .contains(&"test_success".to_string()));
+  assert!(module
+    .root_scope
+    .attributes
+    .contains(&"after_if".to_string()));
 }
 
 #[test]

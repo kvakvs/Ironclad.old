@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
-  bigcapacity_many0, parse_macro_ident, varname, ws_before_mut, ws_mut,
+  bigcapacity_many0, ident_continuation, parse_macro_ident, varname, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
@@ -458,8 +458,9 @@ fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 /// Matches a non-letter, use with `peek` to mark where word ends
+#[inline]
 fn word_break(input: &str) -> TokensResult<&str> {
-  recognize(not(alphanumeric1))(input)
+  recognize(not(ident_continuation))(input)
 }
 
 fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
