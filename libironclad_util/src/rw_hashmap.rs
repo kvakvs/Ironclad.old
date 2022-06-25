@@ -31,7 +31,7 @@ impl<KeyType, ValType> Default for RwHashMap<KeyType, ValType> {
   }
 }
 
-impl<KeyType: Clone + Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
+impl<KeyType: std::fmt::Debug + Clone + Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
   pub fn new(collection: HashMap<KeyType, ValType>) -> Self {
     Self { collection: RwLock::new(collection) }
   }
@@ -75,7 +75,7 @@ impl<KeyType: Clone + Eq + Hash, ValType: Clone> RwHashMap<KeyType, ValType> {
       }
 
       for k in remove_candidates.iter() {
-        let _ = w_collection.remove(k);
+        w_collection.remove(k);
       }
     } else {
       panic!("Can't lock RwHashMap to insert a new one")

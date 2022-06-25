@@ -1,13 +1,10 @@
 //! State for preprocessor interpreter.
 
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::preprocess::pp_section::PreprocessorSection;
-use crate::source_loc::SourceLoc;
-use ::function_name::named;
 
 /// Stores the state of preprocessor directives interpretation.
 pub(crate) struct PreprocessState<'a> {
@@ -42,28 +39,14 @@ impl<'a> PreprocessState<'a> {
       .push(PreprocessorSection::new(ppnode, condition));
   }
 
-  /// Modify last section to opposite `condition`, produce errors if the condition is already true
-  /// or if double else is encountered.
-  #[named]
-  pub fn else_section(&mut self) {
-    if let Some(section) = self.section.last_mut() {
-      if section.else_encountered {
-        // Can only encounter -else once, otherwise an error is raised
-        let msg = "-else() encountered after another -else().".to_string();
-        self.module.add_error(ErlError::preprocessor_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          msg,
-        ));
-      } else {
-        section.else_encountered = true;
-      }
+  /// Return true if last section `condition` is true, allowing us to paste tokens into the output,
+  /// and to interpret further directives in this section.
+  pub fn is_section_condition_true(&self) -> bool {
+    if let Some(section) = self.section.last() {
+      section.condition
     } else {
-      let msg =
-        "-else() encountered without a matching -if(), ifdef(), -ifndef() or -elif().".to_string();
-      self.module.add_error(ErlError::preprocessor_error(
-        SourceLoc::unimplemented(file!(), function_name!()),
-        msg,
-      ));
+      // No if/ifdef/elif/else section, paste is allowed
+      true
     }
   }
 }

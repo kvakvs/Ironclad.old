@@ -86,6 +86,7 @@ impl std::fmt::Display for PreprocessorNodeImpl {
       PreprocessorNodeType::Ifdef { macro_name, .. } => write!(f, "-ifdef({}).", macro_name),
       PreprocessorNodeType::Ifndef { macro_name, .. } => write!(f, "-ifndef({}).", macro_name),
       PreprocessorNodeType::Undef(name) => write!(f, "-undef({}).", name),
+      #[allow(unreachable_patterns)]
       _ => unreachable!("{}(): can't process {:?}", function_name!(), self),
     }
   }
