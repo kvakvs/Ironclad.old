@@ -10,14 +10,14 @@ use crate::project::module::preprocess::pp_section::PreprocessorSection;
 pub(crate) struct PreprocessState<'a> {
   /// Output vector of Tokens, returned as result of interpretation
   pub(crate) result: Vec<Token>,
-  /// Input vector of Tokens (comes from the tokenizer)
-  pub(crate) itr: TokenLinesIter<'a>,
   /// Flag to stop the preprocessing when too many errors are encountered, so we don't flood the terminal
   pub(crate) too_many_errors: bool,
   /// Module ref with scope
   pub(crate) module: &'a ErlModule,
   /// Stack of encountered -if/ifdef/ifndef and matching else pairs. Endif pops last stack item.
   pub(crate) section: Vec<PreprocessorSection>,
+  /// Input iterator of Tokens
+  pub(crate) itr: TokenLinesIter<'a>,
 }
 
 impl<'a> PreprocessState<'a> {

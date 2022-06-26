@@ -64,6 +64,12 @@ impl Token {
     }
   }
 
+  /// Check whether the token is a macro invocation
+  #[inline]
+  pub fn is_macro_invocation(&self) -> bool {
+    matches!(self.content, TokenType::MacroInvocation(_))
+  }
+
   /// Check whether the token is a given type token
   #[inline]
   pub fn is_tok(&self, tt: TokenType) -> bool {

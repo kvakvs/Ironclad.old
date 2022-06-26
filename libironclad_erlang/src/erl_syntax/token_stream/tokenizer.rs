@@ -14,7 +14,7 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, anychar, char};
+use nom::character::complete::{anychar, char};
 use nom::combinator::{complete, cut, map, not, peek, recognize};
 use nom::error::context;
 use nom::sequence::{preceded, terminated};
@@ -246,6 +246,14 @@ fn tok_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
   map(preceded(char('$'), dollar_character), |c: Char| {
     Token::new(input.as_ptr(), TokenType::Character(c))
   })(input)
+}
+
+#[inline]
+fn tok_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
+  map(
+    preceded(tag("??"), context("stringify macro argument", cut(varname))),
+    |var_n| Token::new(input.as_ptr(), TokenType::MacroStringifyArg(var_n)),
+  )(input)
 }
 
 #[inline]
@@ -513,6 +521,7 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
   complete(ws_mut(bigcapacity_many0(ws_before_mut(alt((
     //preprocessor_token,
     tok_newline,
+    tok_macro_stringify_arg,
     tok_macro_invocation,
     tok_dollar_character,
     tok_string,

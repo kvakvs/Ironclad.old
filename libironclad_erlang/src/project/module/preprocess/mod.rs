@@ -4,9 +4,6 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
@@ -15,16 +12,17 @@ use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::IcResult;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::project::module::preprocess::pp_tok_stream::TokenStream;
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
-use nom::Finish;
 use pp_state::PreprocessState;
 
 pub mod pp_section;
 pub mod pp_state;
+pub mod pp_tok_stream;
 
 /// Given a next input line (till newline), check whether it is a preprocessor directive, and
 /// whether it does not end with `).\n` or `.\n` - in this case we try to add one more line to it
@@ -275,6 +273,51 @@ fn line_begins_with_preprocessor_or_attr(line: &[Token]) -> bool {
     && (line[1].is_atom() || line[1].is_keyword(Keyword::Else) || line[1].is_keyword(Keyword::If))
 }
 
+fn has_any_macro_invocations(line: &[Token]) -> bool {
+  line.iter().any(|t| t.is_macro_invocation())
+}
+
+/// Given an input line of tokens, replace macro invocations with their actual body content.
+/// Also substitute the macro variables.
+fn substitute_macro_invocations<'a>(
+  _original_input: &str,
+  tokens: &'a [Token],
+  _state: &mut PreprocessState<'a>,
+) -> TokenStream<'a> {
+  if !has_any_macro_invocations(tokens) {
+    // no changes, no macro invocations
+    return TokenStream::new_borrowed(tokens);
+  }
+
+  let substituted = Vec::with_capacity(tokens.len());
+
+  for t in tokens.iter() {
+    if let TokenType::MacroInvocation(_macro_name) = &t.content {
+      // let (tail, ppnode) = panicking_parser_error_reporter(
+      //   original_input,
+      //   parser_input.clone(),
+      //   parse_macro_invocation_args(parser_input).finish(),
+      // );
+      // let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
+      // assert_eq!(
+      //   trim_tail,
+      //   0,
+      //   "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
+      //   format_tok_stream(tail.tokens, 100)
+      // );
+      //
+      // let macro_body = state.macros.get(macro_name).unwrap();
+      // let macro_body = substitute_macro_invocations(macro_body, state);
+      // let macro_body = substitute_macro_variables(macro_body, macro_args, state);
+      // substituted.extend_from_slice(macro_body);
+    } else {
+      // substituted.push(t.clone());
+    }
+  }
+
+  TokenStream::new_owned(substituted)
+}
+
 impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
@@ -286,35 +329,33 @@ impl ErlModuleImpl {
   ) -> IcResult<Vec<Token>> {
     let mut state = PreprocessState::new(module, tokens);
 
-    while let Some(mut line) = state.itr.next() {
+    while let Some(line) = state.itr.next() {
       if state.too_many_errors {
         break;
       }
 
       if line_begins_with_preprocessor_or_attr(&line) {
-        line = expand_till_directive_end(line, &mut state);
-        println!("Next line: {}", format_tok_stream(line, 50));
+        let line2 = expand_till_directive_end(line, &mut state);
+        let line3 = substitute_macro_invocations(original_input, line2, &mut state);
+        let (tail, ppnode) = line3.parse_as_preprocessor(original_input);
 
-        //---------------
-        // Parse the accumulated one or more lines as a preprocessor directive
-        // or a module attribute
-        //---------------
-        let parser_input = ParserInput::new_slice(line);
-        let (tail, ppnode) = panicking_parser_error_reporter(
-          original_input,
-          parser_input.clone(),
-          parse_preproc_directive(parser_input).finish(),
-        );
-        let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
-        assert_eq!(trim_tail, 0,
-                "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
-                format_tok_stream(tail.tokens, 100));
-
+        // Any non-EOL token in the tail = the input was not consumed
+        let tail_non_eol = tail.tokens.iter().any(|t| !t.is_eol());
+        if tail_non_eol {
+          let msg = format!(
+            "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
+            format_tok_stream(tail.tokens, 100));
+          module.add_error(ErlError::preprocessor_error(
+            SourceLoc::unimplemented(file!(), function_name!()),
+            msg,
+          ));
+        }
         preprocess_handle_ppnode(ppnode, &mut state);
       } else {
         if state.is_section_condition_true() {
           // copy the line contents
-          state.result.extend(line.iter().cloned())
+          let line2 = substitute_macro_invocations(original_input, line, &mut state);
+          state.result.extend(line2.as_slice().iter().cloned())
         }
       }
     }
