@@ -318,6 +318,21 @@ fn substitute_macro_invocations<'a>(
   TokenStream::new_owned(substituted)
 }
 
+/// Final checks for whether preprocessing was successful:
+/// * Unmatched #if/#endif
+#[named]
+fn final_state_check(state: &mut PreprocessState) {
+  // Check for if/ifdef/else without a matching endif
+  if let Some(last_sec) = state.section.last() {
+    let msg =
+      format!("A preprocessor section does not have a matching -endif: {}", last_sec.ppnode);
+    state.module.add_error(ErlError::preprocessor_error(
+      SourceLoc::unimplemented(file!(), function_name!()),
+      msg,
+    ));
+  }
+}
+
 impl ErlModuleImpl {
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
@@ -360,19 +375,16 @@ impl ErlModuleImpl {
       }
     }
 
-    if let Some(last_sec) = state.section.last() {
-      // Unmatching if/ifdef/else without endif
-      let msg =
-        format!("A preprocessor section does not have a matching -endif: {}", last_sec.ppnode);
-      module.add_error(ErlError::preprocessor_error(
-        SourceLoc::unimplemented(file!(), function_name!()),
-        msg,
-      ));
-    }
+    final_state_check(&mut state);
 
-    println!("Preprocessor: remaining/resulting tokens:");
-    state.result.iter().for_each(|t| print!("{}", t));
-    println!();
+    if !module.has_errors() {
+      println!(
+        "Preprocessor: output tokens:\n{}",
+        format_tok_stream(&state.result, state.result.len())
+      );
+    }
+    // state.result.iter().for_each(|t| print!("{}", t));
+    // println!();
 
     Ok(state.result)
   }

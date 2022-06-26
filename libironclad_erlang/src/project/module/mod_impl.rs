@@ -114,4 +114,20 @@ impl ErlModuleImpl {
     }
     self.name.replace(name.to_string());
   }
+
+  /// Check whether any errors were reported for this module
+  pub fn has_errors(&self) -> bool {
+    self.errors.read().unwrap().len() > 0
+  }
+
+  /// Print errors accumulated for this module
+  pub fn print_errors(&self) {
+    if let Ok(r_errors) = self.errors.read() {
+      for err in r_errors.iter() {
+        println!("{}", err);
+      }
+    } else {
+      panic!("Can't lock module errors collection for printing")
+    }
+  }
 }

@@ -160,7 +160,7 @@ impl ErlProjectImpl {
   }
 
   /// Register a new module
-  pub fn register_new_module(&self, _module: ErlModule) {}
+  pub fn register_new_module(&self, _module: &ErlModule) {}
 }
 
 impl From<ProjectConf> for ErlProjectImpl {

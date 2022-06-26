@@ -32,10 +32,14 @@ impl ErlParseStage {
           let module =
             ErlModuleImpl::from_module_source(project, source_file, Some(compiler_opts.clone()))?;
 
-          project.register_new_module(module);
+          project.register_new_module(&module);
 
           file_time.stop_timer();
           println!("FILE {} - {}", stage_time, source_file.file_name.to_string_lossy());
+
+          if module.has_errors() {
+            module.print_errors()
+          }
         }
 
         if cfg!(debug_assertions) {

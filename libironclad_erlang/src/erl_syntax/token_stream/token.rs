@@ -1,5 +1,6 @@
 //! Input is broken into tokens
 
+use crate::colored::Colorize;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 
@@ -114,15 +115,17 @@ impl std::fmt::Display for Token {
 
 /// A temporary solution for displaying token streams without a pile of commas between each token
 pub fn format_tok_stream(tokens: &[Token], cut: usize) -> String {
-  tokens.iter().take(cut).map(|t| format!("{}", t)).collect()
+  let out: String = tokens.iter().take(cut).map(|t| format!("{}", t)).collect();
+  out.bright_yellow().on_blue().to_string()
 }
 
 /// A temporary solution for displaying token streams without a pile of commas between each token.
 /// Stops at newline or stream end.
 pub fn format_tok_till_eol(tokens: &[Token]) -> String {
-  tokens
+  let out: String = tokens
     .iter()
     .take_while(|&t| !t.is_eol())
     .map(|t| format!("{}", t))
-    .collect()
+    .collect();
+  out.bright_yellow().on_blue().to_string()
 }
