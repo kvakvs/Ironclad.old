@@ -188,15 +188,17 @@ where
 //   delimited(spaces_or_comments0, inner, multispace0)
 // }
 
-/// Print detailed error with source pointers, and panic
+/// Print detailed error with source pointers, and panic.
+/// Set `require_empty_tail` to true to panic if the parse did not consume the whole input.
 #[named]
 pub fn panicking_parser_error_reporter<'a, Out>(
   original_input: &str,
   tokenstream_input: ParserInput,
   res: Result<(ParserInput<'a>, Out), ErlParserError>,
+  require_empty_tail: bool,
 ) -> (ParserInput<'a>, Out) {
   match res {
-    Ok((tail, out)) => {
+    Ok((tail, out)) if require_empty_tail => {
       let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
       if trim_tail != 0 {
         panic!(
@@ -206,6 +208,7 @@ pub fn panicking_parser_error_reporter<'a, Out>(
       }
       (tail, out)
     }
+    Ok((tail, out)) => (tail, out),
     Err(e) => {
       println!(
         "Parse error: {}",

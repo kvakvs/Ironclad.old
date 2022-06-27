@@ -321,10 +321,10 @@ fn test_macro_expansion_in_expr() {
 #[test]
 #[named]
 /// Try substitute a macro with more AST nodes in it
-fn test_ast_macro() {
+fn test_ast_macro0() {
   test_util::start(
     function_name!(),
-    "(1) Substitute from macro completes the syntax and makes it parseable",
+    "(1) Substitute from macro completes the syntax and makes it parseable, using ?M no parens",
   );
   // TODO: This will not parse till the method of macro substitution is changed
   let input = "-define(M1, A:B:C ->).
@@ -337,15 +337,32 @@ myfunction1() ->
 
 #[test]
 #[named]
+/// Try substitute a macro with more AST nodes in it
+fn test_ast_macro1() {
+  test_util::start(
+    function_name!(),
+    "(2) Substitute from macro completes the syntax and makes it parseable, using ?M() syntax",
+  );
+  // TODO: This will not parse till the method of macro substitution is changed
+  let input = "-define(M2, A:B:C ->).
+myfunction1() ->
+  try test
+  catch ?M2() ok
+  end.";
+  let _nodes = test_util::parse_module_unwrap(function_name!(), input);
+}
+
+#[test]
+#[named]
 /// Try substitute a macro with a keyword making the syntax parseable
 fn test_ast_macro_with_keyword() {
   test_util::start(
     function_name!(),
-    "(2) Substitute from macro completes the syntax and makes it parseable",
+    "(3) Substitute from macro completes the syntax and makes it parseable",
   );
   // TODO: This will not parse till the method of macro substitution is changed
-  let input = "-define(M2, end.).
+  let input = "-define(M3, end.).
 myfunction2() ->
-  begin ok ?M2";
+  begin ok ?M3";
   let _nodes = test_util::parse_module_unwrap(function_name!(), input);
 }

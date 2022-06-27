@@ -2,7 +2,6 @@
 #![feature(iter_advance_by)]
 #![warn(missing_docs)]
 extern crate colored;
-extern crate core;
 extern crate derivative;
 extern crate lazy_static;
 extern crate libironclad_util;

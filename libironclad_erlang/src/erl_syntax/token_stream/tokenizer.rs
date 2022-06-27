@@ -229,38 +229,32 @@ fn symbol_squareopen(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn tok_string(input: TokenizerInput) -> TokensResult<Token> {
-  map(parse_doublequot_string, |s| {
-    Token::new(input.as_ptr(), TokenType::Str(s.into()))
-  })(input)
+  let map_fn = |s: String| Token::new(input.as_ptr(), TokenType::Str(s.into()));
+  map(parse_doublequot_string, map_fn)(input)
 }
 
 #[inline]
 fn dollar_character(input: TokenizerInput) -> TokensResult<Char> {
-  map(recognize(alt((preceded(char('\\'), anychar), anychar))), |s: TokenizerInput| {
-    s.chars().next().unwrap()
-  })(input)
+  let map_fn = |s: TokenizerInput| s.chars().next().unwrap();
+  map(recognize(alt((preceded(char('\\'), anychar), anychar))), map_fn)(input)
 }
 
 #[inline]
 fn tok_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
-  map(preceded(char('$'), dollar_character), |c: Char| {
-    Token::new(input.as_ptr(), TokenType::Character(c))
-  })(input)
+  let map_fn = |c: Char| Token::new(input.as_ptr(), TokenType::Character(c));
+  map(preceded(char('$'), dollar_character), map_fn)(input)
 }
 
 #[inline]
 fn tok_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
-  map(
-    preceded(tag("??"), context("stringify macro argument", cut(varname))),
-    |var_n| Token::new(input.as_ptr(), TokenType::MacroStringifyArg(var_n)),
-  )(input)
+  let map_fn = |var_n| Token::new(input.as_ptr(), TokenType::MacroStringifyArg(var_n));
+  map(preceded(tag("??"), context("stringify macro argument", cut(varname))), map_fn)(input)
 }
 
 #[inline]
 fn tok_macro_invocation(input: TokenizerInput) -> TokensResult<Token> {
-  map(preceded(char('?'), context("macro invocation", cut(parse_macro_ident))), |m| {
-    Token::new(input.as_ptr(), TokenType::MacroInvocation(m))
-  })(input)
+  let map_fn = |m| Token::new(input.as_ptr(), TokenType::MacroInvocation(m));
+  map(preceded(char('?'), context("macro invocation", cut(parse_macro_ident))), map_fn)(input)
 }
 
 fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {

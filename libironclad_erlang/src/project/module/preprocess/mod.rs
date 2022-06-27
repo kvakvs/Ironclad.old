@@ -4,6 +4,9 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
+use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
@@ -18,8 +21,11 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
+use nom::Finish;
 use pp_state::PreprocessState;
+use std::slice;
 
+pub mod pp_macro_substitution;
 pub mod pp_section;
 pub mod pp_state;
 pub mod pp_tok_stream;
@@ -39,6 +45,33 @@ fn expand_till_directive_end<'a>(
   while !ends_with_dot_eol(result) && !state.itr.eof() {
     if let Some(expanded) = state.itr.expand_till_next_line() {
       result = expanded;
+    } else {
+      break; // end of input
+    }
+  }
+  result
+}
+
+/// Peek at the next input line, if it doesn't start with a `- <ATOM>` then add it to the line
+fn expand_till_directive_start<'a>(
+  line: &'a [Token],
+  state: &mut PreprocessState<'a>,
+) -> &'a [Token] {
+  // Expand the line slice till we find the start tokens `- <ATOM>`
+  let mut result = line;
+
+  while !state.itr.eof() {
+    let itr_prev = state.itr.clone();
+
+    if let Some(next) = state.itr.next() {
+      if !line_begins_with_preprocessor_or_attr(next) {
+        unsafe {
+          result = slice::from_raw_parts(result.as_ptr(), result.len() + next.len());
+        }
+      } else {
+        state.itr = itr_prev;
+        return result;
+      }
     } else {
       break; // end of input
     }
@@ -273,51 +306,6 @@ fn line_begins_with_preprocessor_or_attr(line: &[Token]) -> bool {
     && (line[1].is_atom() || line[1].is_keyword(Keyword::Else) || line[1].is_keyword(Keyword::If))
 }
 
-fn has_any_macro_invocations(line: &[Token]) -> bool {
-  line.iter().any(|t| t.is_macro_invocation())
-}
-
-/// Given an input line of tokens, replace macro invocations with their actual body content.
-/// Also substitute the macro variables.
-fn substitute_macro_invocations<'a>(
-  _original_input: &str,
-  tokens: &'a [Token],
-  _state: &mut PreprocessState<'a>,
-) -> TokenStream<'a> {
-  if !has_any_macro_invocations(tokens) {
-    // no changes, no macro invocations
-    return TokenStream::new_borrowed(tokens);
-  }
-
-  let substituted = Vec::with_capacity(tokens.len());
-
-  for t in tokens.iter() {
-    if let TokenType::MacroInvocation(_macro_name) = &t.content {
-      // let (tail, ppnode) = panicking_parser_error_reporter(
-      //   original_input,
-      //   parser_input.clone(),
-      //   parse_macro_invocation_args(parser_input).finish(),
-      // );
-      // let trim_tail = tail.tokens.iter().filter(|t| !t.is_eol()).count();
-      // assert_eq!(
-      //   trim_tail,
-      //   0,
-      //   "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
-      //   format_tok_stream(tail.tokens, 100)
-      // );
-      //
-      // let macro_body = state.macros.get(macro_name).unwrap();
-      // let macro_body = substitute_macro_invocations(macro_body, state);
-      // let macro_body = substitute_macro_variables(macro_body, macro_args, state);
-      // substituted.extend_from_slice(macro_body);
-    } else {
-      // substituted.push(t.clone());
-    }
-  }
-
-  TokenStream::new_owned(substituted)
-}
-
 /// Final checks for whether preprocessing was successful:
 /// * Unmatched #if/#endif
 #[named]
@@ -351,7 +339,8 @@ impl ErlModuleImpl {
 
       if line_begins_with_preprocessor_or_attr(&line) {
         let line2 = expand_till_directive_end(line, &mut state);
-        let line3 = substitute_macro_invocations(original_input, line2, &mut state);
+        let line3 =
+          pp_macro_substitution::substitute_macro_invocations(original_input, line2, &mut state);
         let (tail, ppnode) = line3.parse_as_preprocessor(original_input);
 
         // Any non-EOL token in the tail = the input was not consumed
@@ -368,9 +357,15 @@ impl ErlModuleImpl {
         preprocess_handle_ppnode(ppnode, &mut state);
       } else {
         if state.is_section_condition_true() {
-          // copy the line contents
-          let line2 = substitute_macro_invocations(original_input, line, &mut state);
-          state.result.extend(line2.as_slice().iter().cloned())
+          // Grow the selection till we hit a start of a preprocessor directive or an attribute
+          let line2 = expand_till_directive_start(line, &mut state);
+          println!("Expanded line: {}", format_tok_stream(line2, line2.len()));
+
+          // Substitute macro invocations in the line with their content
+          let line3 =
+            pp_macro_substitution::substitute_macro_invocations(original_input, line2, &mut state);
+          // Copy the line contents to result.
+          state.result.extend(line3.as_slice().iter().cloned())
         }
       }
     }

@@ -4,6 +4,7 @@ use crate::erl_syntax::token_stream::token::Token;
 
 /// Iterate over token stream lines, by finding `Newline` tokens.
 /// Note: `Newline` tokens are removed in the preprocessor.
+#[derive(Clone)]
 pub(crate) struct TokenLinesIter<'a> {
   /// The array of tokens we use as input
   pub base: &'a [Token],

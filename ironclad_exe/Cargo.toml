@@ -1,6 +1,6 @@
 [package]
 name = "ironclad"
-version = "2022.6.0"
+version = "2022.7.0"
 authors = ["Dmytro Lytovchenko <dmytro.lytovchenko@gmail.com>"]
 edition = "2021"
 
@@ -10,11 +10,9 @@ edition = "2021"
 libironclad_erlang = { path = "../libironclad_erlang" }
 libironclad_util = { path = "../libironclad_util" }
 
-thiserror = "1"
-glob = "0"
-#pest = "2"
-#pest_derive = "2"
 alphabet = "0"
-lazy_static = "1"
 function_name = "0"
+glob = "0"
+lazy_static = "1"
 nom = "7"
+thiserror = "1"

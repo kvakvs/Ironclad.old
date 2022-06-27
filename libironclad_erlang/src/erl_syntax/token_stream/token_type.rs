@@ -212,7 +212,7 @@ impl std::fmt::Display for TokenType {
       TokenType::ListAppend => write!(f, "⊕"),
       TokenType::ListSubtract => write!(f, "⊖"),
       TokenType::MacroInvocation(macro_name) => write!(f, "?{}", macro_name),
-      TokenType::MacroStringifyArg(macro_arg) => write!(f, "??{}", macro_arg),
+      TokenType::MacroStringifyArg(macro_arg) => write!(f, "⁇{}", macro_arg),
       TokenType::Minus => write!(f, "-"),
       TokenType::Mul => write!(f, "*"),
       TokenType::NotEq => write!(f, "≠"),

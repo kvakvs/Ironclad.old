@@ -71,6 +71,7 @@ impl ErlModuleImpl {
         src_file.text.as_str(),
         tokens_input.clone(),
         parse_fn(tokens_input.clone()).finish(),
+        true,
       )
     };
 

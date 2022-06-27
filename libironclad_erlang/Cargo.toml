@@ -1,6 +1,6 @@
 [package]
 name = "libironclad_erlang"
-version = "2022.6.0"
+version = "2022.7.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,14 +8,14 @@ edition = "2021"
 [dependencies]
 libironclad_util = { path = "../libironclad_util" }
 
-function_name = "0"
-nom = "7"
+colored = "2"
 derivative = "2"
+function_name = "0"
+glob = "0"
 lazy_static = "1"
+nom = "7"
 num = "0"
 num-bigint = "0"
-glob = "0"
-toml = "0"
 serde = "1"
 serde_derive = "1"
-colored = "2"
+toml = "0"

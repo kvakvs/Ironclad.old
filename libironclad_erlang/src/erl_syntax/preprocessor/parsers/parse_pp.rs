@@ -1,9 +1,11 @@
 //! Groups type definitions shared by all preprocessor parse modules
+use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_comma, tok_par_close, tok_par_open,
   tok_string,
 };
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
 use crate::erl_syntax::preprocessor::parsers::parse_def_undef::{
@@ -17,7 +19,7 @@ use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::combinator::{cut, map};
+use nom::combinator::{cut, map, not, peek};
 use nom::error::context;
 use nom::multi::separated_list0;
 use nom::sequence::delimited;
@@ -103,6 +105,20 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<Preprocessor
       period_eol_eof,
     ),
   )(input.clone())
+}
+
+/// Parses `( EXPR, EXPR, ...)` which follow a macro invocation token `?MACRONAME`.
+fn no_invocation_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
+  map(peek(not(tok_par_open)), |_| Vec::default())(input)
+}
+
+pub(crate) fn parse_macro_invocation_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
+  delimited(
+    tok_par_open,
+    // Do we allow ?MACRO() with parentheses but without args?
+    alt((no_invocation_args, separated_list0(tok_comma, parse_expr))),
+    tok_par_close,
+  )(input)
 }
 
 /// Parse one of supported preprocessor directives

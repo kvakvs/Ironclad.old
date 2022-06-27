@@ -219,6 +219,7 @@ fn parse_expr_lc1() -> IcResult<()> {
     input,
     p_input.clone(),
     parse_list_comprehension(p_input.clone()).finish(),
+    true,
   );
   assert!(matches!(&expr.content, ListComprehension { .. }));
   Ok(())
@@ -623,6 +624,7 @@ fn parse_record_raw_parser_invocation() -> IcResult<()> {
     input,
     p_input.clone(),
     parse_record_def(p_input.clone()).finish(),
+    true,
   );
   // let root_scope = module.root_scope.clone();
   // let record_def = root_scope.record_defs.get(&"options".to_string()).unwrap();

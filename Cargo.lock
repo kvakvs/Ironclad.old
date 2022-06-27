@@ -93,7 +93,7 @@ dependencies = [
 
 [[package]]
 name = "ironclad"
-version = "2022.6.0"
+version = "2022.7.0"
 dependencies = [
  "alphabet",
  "function_name",
@@ -119,7 +119,7 @@ checksum = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836"
 
 [[package]]
 name = "libironclad_erlang"
-version = "2022.6.0"
+version = "2022.7.0"
 dependencies = [
  "colored",
  "derivative",
@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "libironclad_util"
-version = "0.1.0"
+version = "2022.7.0"
 
 [[package]]
 name = "memchr"
