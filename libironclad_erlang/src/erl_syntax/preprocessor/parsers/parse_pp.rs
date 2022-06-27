@@ -33,18 +33,12 @@ pub(crate) fn comma_sep_macro_idents(input: ParserInput) -> ParserResult<Vec<Str
 /// Parse a `-include(STRING)`
 fn include_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   match delimited(
-    tok_atom_of("include"),
+    |i1| dash_atom(i1, "include"),
     delimited(tok_par_open, tok_string, tok_par_close),
     period_eol_eof,
   )(input.clone())
   {
     Ok((input2, path)) => {
-      // let included_file = input
-      //   .scope
-      //   .load_include(SourceLoc::new(&input), &PathBuf::from(path), input.file_name())
-      //   .unwrap();
-      // let input3 = input2.clone_with_input(included_file);
-      // tokenize_source(input3)
       let node =
         PreprocessorNodeImpl::new_include(SourceLoc::new(&input), path.as_str().to_string());
       Ok((input2, node))
@@ -57,7 +51,7 @@ fn include_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
 fn include_lib_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      tok_atom_of("include_lib"),
+      |i1| dash_atom(i1, "include_lib"),
       delimited(tok_par_open, tok_string, tok_par_close),
       period_eol_eof,
     ),
@@ -69,7 +63,7 @@ fn include_lib_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
 fn error_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      tok_atom_of("error"),
+      |i1| dash_atom(i1, "error"),
       delimited(tok_par_open, tok_string, tok_par_close),
       period_eol_eof,
     ),
@@ -81,7 +75,7 @@ fn error_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
 fn warning_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
-      tok_atom_of("warning"),
+      |i1| dash_atom(i1, "warning"),
       delimited(tok_par_open, tok_string, tok_par_close),
       period_eol_eof,
     ),
@@ -147,10 +141,12 @@ pub(crate) fn parse_preproc_directive(input: ParserInput) -> ParserResult<Prepro
       context("'-ifndef()' directive", ifndef_directive),
       context("'-if()' directive", if_directive),
     )),
-    context("'-warning()' directive", warning_directive),
-    context("'-error()' directive", error_directive),
-    context("'-include_lib()' directive", include_lib_directive),
-    context("'-include()' directive", include_directive),
-    parse_any_module_attr,
+    alt((
+      context("'-warning()' directive", warning_directive),
+      context("'-error()' directive", error_directive),
+      context("'-include_lib()' directive", include_lib_directive),
+      context("'-include()' directive", include_directive),
+      parse_any_module_attr,
+    )),
   ))(input)
 }

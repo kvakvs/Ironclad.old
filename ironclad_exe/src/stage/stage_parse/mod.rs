@@ -22,6 +22,8 @@ impl ErlParseStage {
 
         // Take only .erl and .hrl files
         if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
+          println!("FILE {}", source_file.file_name.to_string_lossy());
+
           let compiler_opts = project.get_compiler_options_for(path);
 
           let mut file_time = TimeStatsImpl::default();
@@ -42,9 +44,9 @@ impl ErlParseStage {
           }
         }
 
-        if cfg!(debug_assertions) {
-          break;
-        }
+        // if cfg!(debug_assertions) {
+        //   break;
+        // }
       }
     }
 

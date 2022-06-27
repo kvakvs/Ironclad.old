@@ -79,6 +79,19 @@ pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
   ws_before(tok_atom_1)(input)
 }
 
+/// Recognizes one keyword token, returns the string.
+#[inline]
+pub fn tok_any_keyword_or_atom(input: ParserInput) -> ParserResult<String> {
+  match input.tokens.iter().next() {
+    Some(tok) => match &tok.content {
+      TokenType::Keyword(k) => Ok((input.slice(1..), k.to_string())),
+      TokenType::Atom(a) => Ok((input.slice(1..), a.clone())),
+      _ => Err(nom::Err::Error(ErlParserError::any_keyword_or_atom_expected(input))),
+    },
+    _ => Err(nom::Err::Error(ErlParserError::any_keyword_or_atom_expected(input))),
+  }
+}
+
 fn tok_atom_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),

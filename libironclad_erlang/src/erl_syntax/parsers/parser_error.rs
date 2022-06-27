@@ -21,6 +21,8 @@ pub enum ErlParserErrorKind {
   AnyAtomExpected,
   /// Need a specific keyword
   KeywordExpected(Keyword),
+  /// Used for preprocessor directives and module attributes, after `-` a keyword or atom is expected
+  AnyKeywordOrAtomExpected,
   /// Need a specific token
   TokenExpected(TokenType),
   /// Any integer
@@ -98,6 +100,14 @@ impl<'a> ErlParserError<'a> {
   pub fn keyword_expected(input: ParserInput<'a>, k: Keyword) -> Self {
     ErlParserError {
       errors: vec![(input, ErlParserErrorKind::KeywordExpected(k))],
+    }
+  }
+
+  /// Create a Keyword-or-Atom expected error
+  #[inline]
+  pub fn any_keyword_or_atom_expected(input: ParserInput<'a>) -> Self {
+    ErlParserError {
+      errors: vec![(input, ErlParserErrorKind::AnyKeywordOrAtomExpected)],
     }
   }
 
