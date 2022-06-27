@@ -2,8 +2,10 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
+use libironclad_erlang::erl_syntax::token_stream::token::Token;
 use libironclad_erlang::erl_syntax::token_stream::token_type::TokenType;
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::typing::erl_integer::ErlInteger;
 use libironclad_util::mfarity::MFArity;
 
 // #[test]
@@ -282,26 +284,22 @@ fn test_define_with_dquotes() {
 /// Try parse a define macro where value contains another macro
 fn test_macro_expansion_in_define() {
   test_util::start(function_name!(), "Parse a -define macro with another macro in value");
-  let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\n-define(BBB, ?AAA).");
-  let ast = module.ast.borrow().clone();
-  let nodes = ast.children().unwrap_or_default();
-  assert_eq!(
-    nodes.len(),
-    2,
-    "Must parse to 2 empty nodes one for -define(AAA), and one for -define(BBB)"
-  );
-  assert!(nodes[0].is_empty_ast_node());
-  assert!(nodes[1].is_empty_ast_node());
-  // let (_, _, body) = nodes[1].as_preprocessor_define();
-  // assert_eq!(body, "bbb", "Macro ?AAA must expand to «bbb» but is now «{}»", body);
-
+  let module =
+    test_util::parse_module(function_name!(), "-define(AAA, test_success).\n-define(BBB, ?AAA).");
   let pdef = module
     .root_scope
     .defines
     .get(&MFArity::new_local("BBB", 0))
     .unwrap();
   assert_eq!(pdef.name, "BBB");
-  assert!(pdef.tokens[0].is_tok(TokenType::new_str("bbb")));
+  if let TokenType::Atom(a) = &pdef.tokens[0].content {
+    assert_eq!(
+      a, "test_success",
+      "Macro BBB must expand to 'test_success' and not macro invocation of ?AAA"
+    );
+  } else {
+    panic!("pdef.tokens[0] is not an atom: {}", pdef.tokens[0]);
+  }
 }
 
 #[test]
@@ -310,12 +308,15 @@ fn test_macro_expansion_in_define() {
 fn test_macro_expansion_in_expr() {
   test_util::start(function_name!(), "Parse an expression with macro substitution");
   let module = test_util::parse_module(function_name!(), "-define(AAA, bbb).\nmyfun() -> ?AAA.");
-  let ast = module.ast.borrow().clone();
-  let nodes = ast.children().unwrap_or_default();
-  assert_eq!(nodes.len(), 2);
-  let fndef = nodes[1].as_fn_def();
-  assert_eq!(fndef.clauses.len(), 1);
-  assert!(fndef.clauses[0].body.is_atom_of("bbb"));
+  // let ast = module.ast.borrow().clone();
+  // let nodes = ast.children().unwrap_or_default();
+  let fndef = module
+    .root_scope
+    .fn_defs
+    .get(&MFArity::new_local("myfun", 0))
+    .unwrap();
+  assert_eq!(fndef.as_fn_def().clauses.len(), 1);
+  assert!(fndef.as_fn_def().clauses[0].body.is_atom_of("bbb"));
 }
 
 #[test]
@@ -364,4 +365,23 @@ fn test_ast_macro_with_keyword() {
 myfunction2() ->
   begin ok ?M3.";
   let _nodes = test_util::parse_module_unwrap(function_name!(), input);
+}
+
+#[test]
+#[named]
+/// Try substitute a macro with args
+fn test_ast_macro_args_substitution() {
+  test_util::start(function_name!(), "Substitute a macro with arguments");
+  let input = "-define(M(A,B), A + B).
+-define(result, ?M(1,2)).";
+  let module = test_util::parse_module(function_name!(), input);
+  let pdef = module
+    .root_scope
+    .defines
+    .get(&MFArity::new_local("result", 0))
+    .unwrap();
+  assert!(pdef.tokens[0].is_tok(TokenType::Integer(ErlInteger::Small(1))));
+  assert!(pdef.tokens[1].is_tok(TokenType::Plus));
+  assert!(pdef.tokens[2].is_tok(TokenType::Integer(ErlInteger::Small(2))));
+  println!("{:?}", pdef);
 }
