@@ -17,9 +17,10 @@ use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::{
 };
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
+use crate::erl_syntax::token_stream::token::Token;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::combinator::{cut, map, not, peek};
+use nom::combinator::{cut, map, not, opt, peek, recognize};
 use nom::error::context;
 use nom::multi::separated_list0;
 use nom::sequence::delimited;
@@ -107,17 +108,26 @@ pub(crate) fn module_start_attr(input: ParserInput) -> ParserResult<Preprocessor
   )(input.clone())
 }
 
-/// Parses `( EXPR, EXPR, ...)` which follow a macro invocation token `?MACRONAME`.
-fn no_invocation_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
-  map(peek(not(tok_par_open)), |_| Vec::default())(input)
-}
+// /// Succeeds if next token is not `(` (possibly with leading `EOL`)
+// fn no_invocation_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
+//   map(peek(not(tok_par_open)), |_| Vec::default())(input)
+// }
 
-pub(crate) fn parse_macro_invocation_args(input: ParserInput) -> ParserResult<Vec<AstNode>> {
-  delimited(
-    tok_par_open,
-    // Do we allow ?MACRO() with parentheses but without args?
-    alt((no_invocation_args, separated_list0(tok_comma, parse_expr))),
-    tok_par_close,
+/// Parses `(EXPR, EXPR, ...)` which follow a macro invocation token `?MACRONAME`, or `()` or
+/// nothing. If an opening parenthesis is not found, then return value is empty vector.
+/// Returns `Vec<AstNode>` but it is ignored by the caller and "recognized" to `Vec<Token>`.
+pub(crate) fn parse_macro_invocation_args(input: ParserInput) -> ParserResult<Vec<Vec<Token>>> {
+  map(
+    opt(delimited(
+      tok_par_open,
+      // Do we allow ?MACRO() with 0 args in parentheses?
+      separated_list0(tok_comma, recognize(parse_expr)),
+      tok_par_close,
+    )),
+    |maybe_args| match maybe_args {
+      Some(args) => args.into_iter().map(|arg| arg.tokens.into()).collect(),
+      None => Vec::default(),
+    },
   )(input)
 }
 

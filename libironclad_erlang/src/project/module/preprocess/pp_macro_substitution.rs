@@ -16,8 +16,24 @@ fn has_any_macro_invocations(line: &[Token]) -> bool {
   line.iter().any(|t| t.is_macro_invocation())
 }
 
-fn paste_tokens(output: &mut Vec<Token>, pdef: &PreprocessorDefine, args: &[AstNode]) {
-  output.extend(pdef.tokens.iter().cloned());
+/// For all tokens in `pdef.tokens` paste them into the `output`.
+/// If a token is a `Variable(s)` token, then try look up its name in the macro args list, and if
+/// found, paste the value from `args[]` into the output.
+fn paste_tokens(output: &mut Vec<Token>, pdef: &PreprocessorDefine, args: &[Vec<Token>]) {
+  for t in pdef.tokens.iter() {
+    match &t.content {
+      TokenType::Variable(var) => {
+        if let Some(arg_index) = pdef.args.iter().position(|arg_name| arg_name == var) {
+          let arg = &args[arg_index];
+          // TODO: Macro invocation inside a macro body
+          output.extend(arg.iter().cloned());
+        } else {
+          output.push(t.clone());
+        }
+      }
+      _other => output.push(t.clone()),
+    }
+  }
 }
 
 /// Given an input line of tokens, replace macro invocations with their actual body content.
@@ -38,7 +54,7 @@ pub(crate) fn substitute_macro_invocations<'a>(
 
   while let Some((index, t)) = tokens_itr.next() {
     if let TokenType::MacroInvocation(macro_name) = &t.content {
-      println!("Found invocation of {}", &macro_name);
+      // println!("Found invocation of {}", &macro_name);
 
       let (tail, args) = parse_as_invocation_params(original_input, &tokens[index + 1..]);
 
@@ -61,16 +77,17 @@ pub(crate) fn substitute_macro_invocations<'a>(
 }
 
 /// Invoke parser producing a list of expressions? separated by commas
+/// Return value: Corressponding tokens, not the AST expressions! One vec of tokens per macro arg.
 fn parse_as_invocation_params<'a>(
   original_input: &str,
   tokens: &'a [Token],
-) -> (ParserInput<'a>, Vec<AstNode>) {
+) -> (ParserInput<'a>, Vec<Vec<Token>>) {
   let parser_input = ParserInput::new_slice(tokens);
-  let (tail, ppnode) = panicking_parser_error_reporter(
+  let (tail, nodes_as_tokens) = panicking_parser_error_reporter(
     original_input,
     parser_input.clone(),
     parse_macro_invocation_args(parser_input).finish(),
     false,
   );
-  (tail, ppnode)
+  (tail, nodes_as_tokens)
 }

@@ -13,8 +13,8 @@ use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_vertical_bar, tok_hash,
-  tok_left_arrow, tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
-  tok_vertical_bar,
+  tok_keyword_begin, tok_keyword_end, tok_left_arrow, tok_par_close, tok_par_open,
+  tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
@@ -194,6 +194,20 @@ fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<As
   delimited(tok_par_open, parse_expr_prec13::<STYLE>, tok_par_close)(input)
 }
 
+/// Parses a `begin-end` grouping
+pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
+  let map_fn =
+    |exprs: Vec<AstNode>| -> AstNode { AstNodeImpl::new_begin_end(SourceLoc::new(&input), exprs) };
+  map(
+    delimited(
+      tok_keyword_begin,
+      context("contents of a begin...end block", cut(separated_list1(tok_comma, parse_expr))),
+      tok_keyword_end,
+    ),
+    map_fn,
+  )(input.clone())
+}
+
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
 fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   match STYLE {
@@ -201,6 +215,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       "parse expression (highest precedence)",
       alt((
         parse_lambda,
+        parse_begin_end,
         parse_try_catch,
         parse_if_statement,
         parse_case_statement,

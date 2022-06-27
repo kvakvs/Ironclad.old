@@ -1,9 +1,9 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, FnDef, FnRef, IfStatement, List,
-  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple,
-  Type, UnaryOp, Var, MFA,
+  Apply, BeginEnd, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, FnDef, FnRef,
+  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot,
+  TryCatch, Tuple, Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -14,6 +14,11 @@ impl std::fmt::Display for AstNodeImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match &self.content {
       AstNodeType::Empty { comment } => writeln!(f, "%% {}", comment),
+      BeginEnd { exprs } => {
+        write!(f, "begin ")?;
+        Pretty::display_comma_separated(exprs.iter(), f)?;
+        write!(f, " end")
+      }
       ModuleRoot { forms } => {
         writeln!(f, "-module(...).")?;
         for form in forms.iter() {

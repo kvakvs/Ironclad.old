@@ -359,7 +359,7 @@ impl ErlModuleImpl {
         if state.is_section_condition_true() {
           // Grow the selection till we hit a start of a preprocessor directive or an attribute
           let line2 = expand_till_directive_start(line, &mut state);
-          println!("Expanded line: {}", format_tok_stream(line2, line2.len()));
+          // println!("Expanded line: {}", format_tok_stream(line2, line2.len()));
 
           // Substitute macro invocations in the line with their content
           let line3 =

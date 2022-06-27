@@ -116,6 +116,19 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(r)
         }
       }
+      AstNodeType::BeginEnd { exprs } => {
+        let mut r = Vec::default();
+        for e in exprs.iter() {
+          if let Some(c) = e.children() {
+            r.extend(c.iter().cloned());
+          }
+        }
+        if r.is_empty() {
+          None
+        } else {
+          Some(r)
+        }
+      }
       AstNodeType::BinaryExpr { elements, .. } => {
         let mut r = Vec::default();
         for bel in elements.iter() {

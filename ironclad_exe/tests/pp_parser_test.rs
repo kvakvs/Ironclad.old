@@ -360,9 +360,8 @@ fn test_ast_macro_with_keyword() {
     function_name!(),
     "(3) Substitute from macro completes the syntax and makes it parseable",
   );
-  // TODO: This will not parse till the method of macro substitution is changed
-  let input = "-define(M3, end.).
+  let input = "-define(M3, end).
 myfunction2() ->
-  begin ok ?M3";
+  begin ok ?M3.";
   let _nodes = test_util::parse_module_unwrap(function_name!(), input);
 }

@@ -1,7 +1,7 @@
 //! Creation code for ErlAst
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, FnDef, IfStatement, List,
+  Apply, BeginEnd, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, FnDef, IfStatement, List,
   ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
@@ -197,6 +197,11 @@ impl AstNodeImpl {
   /// Create a new `if` AST Node for `if COND -> EXPR; ... end`
   pub(crate) fn new_if_statement(location: SourceLoc, clauses: Vec<ErlIfClause>) -> AstNode {
     AstNodeImpl::construct_with_location(location, IfStatement { clauses })
+  }
+
+  /// Create a new `BeginEnd` block
+  pub(crate) fn new_begin_end(location: SourceLoc, exprs: Vec<AstNode>) -> AstNode {
+    AstNodeImpl::construct_with_location(location, BeginEnd { exprs })
   }
 
   /// Create a new `case` AST Node for `case EXPR of MATCH -> EXPR; ... end`

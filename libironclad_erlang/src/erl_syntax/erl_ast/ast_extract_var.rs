@@ -58,6 +58,12 @@ impl AstNodeImpl {
         }
         Ok(())
       }
+      AstNodeType::BeginEnd { exprs } => {
+        for expr in exprs {
+          Self::extract_variables(&expr, variables)?;
+        }
+        Ok(())
+      }
       AstNodeType::TryCatch { body, of_branches, catch_clauses, .. } => {
         Self::extract_variables(body, variables)?;
         if let Some(ofb) = of_branches {

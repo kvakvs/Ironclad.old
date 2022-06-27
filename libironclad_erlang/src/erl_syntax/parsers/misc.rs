@@ -407,6 +407,12 @@ pub(crate) fn tok_keyword_if(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok_keyword(Keyword::If)), void_fn)(input)
 }
 
+/// Matches a `begin` keyword with possibly a newline before it
+#[inline]
+pub(crate) fn tok_keyword_begin(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok_keyword(Keyword::Begin)), void_fn)(input)
+}
+
 /// Matches a `end` keyword with possibly a newline before it
 #[inline]
 pub(crate) fn tok_keyword_end(input: ParserInput) -> ParserResult<()> {

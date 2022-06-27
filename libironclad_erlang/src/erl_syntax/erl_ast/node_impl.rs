@@ -163,6 +163,12 @@ pub enum AstNodeType {
     clauses: Vec<ErlIfClause>,
   },
 
+  /// A block of expressions between `begin` and `end`
+  BeginEnd {
+    /// The expressions
+    exprs: Vec<AstNode>,
+  },
+
   /// A list of binary elements constructing a binary value, or serving as a binary match expression
   BinaryExpr {
     /// Comma separated elements of a binary, with `:bit-widths` and `/type-specs`
