@@ -229,6 +229,7 @@ fn on_else_if(state: &mut PreprocessState, cond: &AstNode) {
   }
 }
 
+#[named]
 fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessState) {
   let active = state.is_section_condition_true();
 
@@ -250,8 +251,15 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     //------------------
     // Failure on demand
     //------------------
-    PreprocessorNodeType::Error(_) if active => unimplemented!(),
-    PreprocessorNodeType::Warning(_) if active => unimplemented!(),
+    PreprocessorNodeType::Error(e) if active => {
+      state.module.add_error(ErlError::preprocessor_error(
+        SourceLoc::unimplemented(file!(), function_name!()),
+        e.clone(),
+      ));
+    }
+    PreprocessorNodeType::Warning(w) if active => state.module.add_warning(
+      ErlError::preprocessor_error(SourceLoc::unimplemented(file!(), function_name!()), w.clone()),
+    ),
 
     //------------------
     // Populate module scope with stuff

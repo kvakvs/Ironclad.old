@@ -10,6 +10,7 @@ use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
+use libironclad_util::rw_vec::RwVec;
 use libironclad_util::source_file::{SourceFile, SourceFileImpl};
 use nom::Finish;
 use std::cell::RefCell;
@@ -35,7 +36,9 @@ pub struct ErlModuleImpl {
   pub root_scope: RootScope,
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
-  pub errors: RwLock<Vec<ErlError>>,
+  pub errors: RwVec<ErlError>,
+  /// Warnings which can accumulate but do not block the processing
+  pub warnings: RwVec<ErlError>,
 }
 
 /// Wraps module into runtime-lockable refcount
@@ -49,7 +52,8 @@ impl Default for ErlModuleImpl {
       source_file: Arc::new(SourceFileImpl::default()),
       ast: RefCell::new(AstNodeImpl::new_empty("dummy node for module root".to_string())),
       root_scope: Default::default(),
-      errors: RwLock::new(Vec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100)),
+      errors: RwVec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100),
+      warnings: RwVec::default(),
     }
   }
 }
@@ -94,12 +98,13 @@ impl ErlModuleImpl {
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
   pub fn add_error(&self, err: ErlError) -> bool {
-    if let Ok(mut w_errors) = self.errors.write() {
-      w_errors.push(err);
-      w_errors.len() < self.compiler_options.max_errors_per_module
-    } else {
-      panic!("Can't lock module errors for appending")
-    }
+    self.errors.push(err);
+    self.errors.len() < self.compiler_options.max_errors_per_module
+  }
+
+  /// Adds an warning to vector of warnings.
+  pub fn add_warning(&self, err: ErlError) {
+    self.warnings.push(err);
   }
 
   /// Update the module name when we learn it from -module() attribute
@@ -117,17 +122,25 @@ impl ErlModuleImpl {
 
   /// Check whether any errors were reported for this module
   pub fn has_errors(&self) -> bool {
-    self.errors.read().unwrap().len() > 0
+    self.errors.len() > 0
   }
 
   /// Print errors accumulated for this module
   pub fn print_errors(&self) {
-    if let Ok(r_errors) = self.errors.read() {
+    if let Ok(r_errors) = self.errors.data.read() {
       for err in r_errors.iter() {
         println!("{}", err);
       }
     } else {
       panic!("Can't lock module errors collection for printing")
+    }
+
+    if let Ok(r_warnings) = self.warnings.data.read() {
+      for wrn in r_warnings.iter() {
+        println!("{}", wrn);
+      }
+    } else {
+      panic!("Can't lock module warnings collection for printing")
     }
   }
 }

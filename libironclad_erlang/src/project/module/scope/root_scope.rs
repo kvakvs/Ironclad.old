@@ -12,7 +12,7 @@ use crate::typing::erl_type::ErlType;
 use libironclad_util::io::file_cache::FileCache;
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::rw_hashmap::RwHashMap;
-use libironclad_util::rw_mfarity_set::RwHashSet;
+use libironclad_util::rw_hashset::RwHashSet;
 use std::sync::Arc;
 
 /// Implements module root scope, stuff available directly from the module root
