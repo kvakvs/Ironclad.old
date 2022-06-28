@@ -3,5 +3,3 @@
 //! A stage outputs something usable by the following stage.
 
 pub mod stage_parse;
-pub mod stage_preload;
-pub mod stage_preprocess;

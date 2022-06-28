@@ -13,10 +13,10 @@ impl std::fmt::Display for PreprocessorNodeImpl {
     match &self.content {
       PreprocessorNodeType::Include(p) => writeln!(f, "-include(\"{}\").", p),
       PreprocessorNodeType::IncludeLib(p) => write!(f, "-include_lib(\"{}\").", p),
-      PreprocessorNodeType::IncludedFile { tokens, filename } => {
-        writeln!(f, "%% included from: {}", filename.to_string_lossy())?;
-        format_tok_stream(tokens, 100).fmt(f)
-      }
+      // PreprocessorNodeType::IncludedFile { tokens, filename } => {
+      //   writeln!(f, "%% included from: {}", filename.to_string_lossy())?;
+      //   format_tok_stream(tokens, 100).fmt(f)
+      // }
       PreprocessorNodeType::Define { name, args, body } => {
         write!(f, "-define({}", name)?;
 

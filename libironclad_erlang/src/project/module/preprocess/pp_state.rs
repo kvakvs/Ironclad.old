@@ -5,6 +5,7 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::preprocess::pp_section::PreprocessorSection;
+use crate::project::ErlProject;
 
 /// Stores the state of preprocessor directives interpretation.
 pub(crate) struct PreprocessState<'a> {
@@ -13,7 +14,9 @@ pub(crate) struct PreprocessState<'a> {
   /// Flag to stop the preprocessing when too many errors are encountered, so we don't flood the terminal
   pub(crate) too_many_errors: bool,
   /// Module ref with scope
-  pub(crate) module: &'a ErlModule,
+  pub(crate) project: ErlProject,
+  /// Module ref with scope
+  pub(crate) module: ErlModule,
   /// Stack of encountered -if/ifdef/ifndef and matching else pairs. Endif pops last stack item.
   pub(crate) section: Vec<PreprocessorSection>,
   /// Input iterator of Tokens
@@ -22,12 +25,13 @@ pub(crate) struct PreprocessState<'a> {
 
 impl<'a> PreprocessState<'a> {
   /// Create a new state to begin preprocessing
-  pub fn new(module: &'a ErlModule, tokens: &'a [Token]) -> Self {
+  pub fn new(project: &ErlProject, module: &ErlModule, tokens: &'a [Token]) -> Self {
     PreprocessState {
+      project: project.clone(),
+      module: module.clone(),
       result: Vec::with_capacity(tokens.len()),
       itr: TokenLinesIter::new(tokens),
       too_many_errors: false,
-      module,
       section: Vec::default(),
     }
   }

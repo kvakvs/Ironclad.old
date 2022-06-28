@@ -9,16 +9,13 @@ use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
-use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
+use crate::erl_syntax::token_stream::token::format_tok_stream;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
 use libironclad_util::source_file::SourceFile;
 use nom::Finish;
-use std::ptr::null;
 
 impl ErlModuleImpl {
   /// Generic parse helper for any Nom entry point.
@@ -40,25 +37,7 @@ impl ErlModuleImpl {
       module_impl.compiler_options = o;
     }
     let module: ErlModule = module_impl.into();
-
-    //----------------------
-    // Stage 1 tokenize the input
-    //----------------------
-    let mut tok_stream1 =
-      ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
-
-    // Inject a mandatory EOL if the stream doesn't end with one
-    if !Token::ends_with(&tok_stream1, &[TokenType::EOL]) {
-      tok_stream1.push(Token::new(null::<u8>(), TokenType::EOL));
-    }
-
-    //----------------------
-    // Stage 2 preprocessor: handle ifdefs, defines, includes etc
-    // tokenize includes and paste in the token stream too
-    //----------------------
-    let tok_stream2 =
-      ErlModuleImpl::preprocess_interpret(src_file.text.as_str(), &module, &tok_stream1)?;
-    ErlModuleImpl::verify_integrity(&module)?;
+    let tok_stream2 = ErlModuleImpl::tokenize(project, &module, &src_file)?;
 
     //----------------------
     // Stage 3 real parsing begins: tokens to AST

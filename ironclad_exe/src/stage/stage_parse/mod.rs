@@ -3,50 +3,46 @@
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
 use libironclad_erlang::project::ErlProject;
-use libironclad_util::io::file_cache::FileCache;
 use libironclad_util::stats::time_stats::TimeStatsImpl;
+use std::path::Path;
 
 /// Handles parsing loaded Erlang files in the project
 pub struct ErlParseStage {}
 
 impl ErlParseStage {
+  /// Files acceptable as translation units (HRL headers are included independently without checking
+  /// for file extension)
+  #[inline]
+  fn is_acceptable_input(path: &Path) -> bool {
+    path.extension().unwrap_or_default() == "erl"
+  }
+
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run_parse_stage(project: &ErlProject, contents_cache: FileCache) -> IcResult<()> {
+  pub fn run_parse_stage(project: &ErlProject) -> IcResult<()> {
     let mut stage_time = TimeStatsImpl::default();
+    let inputs = project.project_inputs.input_paths.clone_contents();
 
-    if let Ok(contents_cache_r) = contents_cache.read() {
-      for (path, source_file) in &contents_cache_r.all_files {
-        let path_s = path.to_string_lossy();
+    for path in inputs.iter() {
+      // Take only .erl and .hrl files
+      if Self::is_acceptable_input(path) {
+        let compiler_opts = project.get_compiler_options_for(path);
+        let mut operation_timer = TimeStatsImpl::default();
 
-        // Take only .erl and .hrl files
-        if path_s.ends_with(".erl") || path_s.ends_with(".hrl") {
-          println!("FILE {}", source_file.file_name.to_string_lossy());
+        let source_file = project.get_source_file(path)?;
+        println!("FILE {}", source_file.file_name.to_string_lossy());
 
-          let compiler_opts = project.get_compiler_options_for(path);
+        let module =
+          ErlModuleImpl::from_module_source(project, &source_file, Some(compiler_opts.clone()))?;
+        project.register_new_module(&module);
 
-          let mut file_time = TimeStatsImpl::default();
-          // let module = ErlModuleImpl::new(compiler_opts, source_file.clone());
-          // let tok_stream =
-          //   module.tokenize_helper(project.clone(), source_file.clone(), tokenize_source)?;
+        operation_timer.stop_timer();
+        println!("FILE {} - {}", stage_time, source_file.file_name.to_string_lossy());
 
-          let module =
-            ErlModuleImpl::from_module_source(project, source_file, Some(compiler_opts.clone()))?;
-
-          project.register_new_module(&module);
-
-          file_time.stop_timer();
-          println!("FILE {} - {}", stage_time, source_file.file_name.to_string_lossy());
-
-          if module.has_errors() {
-            module.print_errors()
-          }
+        if module.has_errors() {
+          module.print_errors()
         }
-
-        // if cfg!(debug_assertions) {
-        //   break;
-        // }
       }
     }
 

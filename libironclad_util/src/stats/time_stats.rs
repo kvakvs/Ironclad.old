@@ -24,7 +24,7 @@ impl TimeStatsImpl {
 impl std::fmt::Display for TimeStatsImpl {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let micros = self.finished.duration_since(self.started).unwrap();
-    writeln!(f, "Duration: {}.{:03} s", micros.as_secs(), micros.subsec_millis())
+    write!(f, "Duration: {}.{:03} s", micros.as_secs(), micros.subsec_millis())
   }
 }
 

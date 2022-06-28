@@ -3,8 +3,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok, tok_any_keyword_or_atom, tok_atom, tok_comma, tok_forward_slash,
-  tok_integer, tok_keyword, tok_minus, tok_par_close, tok_par_open, tok_square_close,
-  tok_square_open,
+  tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::ErlTypeParser;

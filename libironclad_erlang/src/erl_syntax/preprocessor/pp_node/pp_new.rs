@@ -9,7 +9,6 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
-use std::path::{Path, PathBuf};
 
 impl PreprocessorNodeImpl {
   // /// Generic constructor no location
@@ -27,19 +26,19 @@ impl PreprocessorNodeImpl {
     Self { location, content }.into()
   }
 
-  /// Create new nested included file AST node
-  #[inline]
-  #[allow(dead_code)]
-  pub(crate) fn new_included_file(
-    location: SourceLoc,
-    file: &Path,
-    tokens: Vec<Token>,
-  ) -> PreprocessorNode {
-    Self::new_with_location(
-      location,
-      PreprocessorNodeType::IncludedFile { filename: PathBuf::from(file), tokens },
-    )
-  }
+  // /// Create new nested included file AST node
+  // #[inline]
+  // #[allow(dead_code)]
+  // pub(crate) fn new_included_file(
+  //   location: SourceLoc,
+  //   file: &Path,
+  //   tokens: Vec<Token>,
+  // ) -> PreprocessorNode {
+  //   Self::new_with_location(
+  //     location,
+  //     PreprocessorNodeType::IncludedFile { filename: PathBuf::from(file), tokens },
+  //   )
+  // }
 
   /// Create new macro definition
   #[inline]

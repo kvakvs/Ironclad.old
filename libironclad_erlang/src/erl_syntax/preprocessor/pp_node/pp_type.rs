@@ -5,7 +5,6 @@ use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
-use std::path::PathBuf;
 
 /// Preprocessor data nodes, are produced during the `ErlModule::stage_preprocess` stage.
 /// They are not stored anywhere in the final AST.
@@ -49,13 +48,13 @@ pub enum PreprocessorNodeType {
   Error(String),
   /// Produce a libironclad warning
   Warning(String),
-  /// Nested included file
-  IncludedFile {
-    /// Filename for this included file
-    filename: PathBuf,
-    /// Preprocessor sub-tree to descend into the includefile
-    tokens: Vec<Token>,
-  },
+  // /// Nested included file
+  // IncludedFile {
+  //   /// Filename for this included file
+  //   filename: PathBuf,
+  //   /// Preprocessor sub-tree to descend into the includefile
+  //   tokens: Vec<Token>,
+  // },
   // Temporary nodes, appear during parsing and should never appear into the final AST output.
   // These values never leave the parser module.
   /// `-else.` node

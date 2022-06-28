@@ -6,6 +6,8 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_tokenizer_error_reporter;
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::erl_syntax::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
@@ -16,6 +18,7 @@ use nom::Finish;
 use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Debug;
+use std::ptr::null;
 use std::sync::{Arc, RwLock};
 
 /// Erlang Module consists of
@@ -25,7 +28,7 @@ pub struct ErlModuleImpl {
   /// Options used to build this module. Possibly just a ref to the main project's options
   pub compiler_options: CompilerOpts,
   /// Module name atom, as a string
-  pub name: RefCell<String>,
+  pub name: RwLock<String>,
   /// The file we're processing AND the file contents (owned by SourceFile)
   pub source_file: SourceFile,
   /// AST tree of the module.
@@ -48,7 +51,7 @@ impl Default for ErlModuleImpl {
   fn default() -> Self {
     Self {
       compiler_options: Default::default(),
-      name: RefCell::new(String::default()),
+      name: RwLock::new(String::default()),
       source_file: Arc::new(SourceFileImpl::default()),
       ast: RefCell::new(AstNodeImpl::new_empty("dummy node for module root".to_string())),
       root_scope: Default::default(),
@@ -60,7 +63,7 @@ impl Default for ErlModuleImpl {
 
 impl Debug for ErlModuleImpl {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "ErlModule({})", self.name.borrow())
+    write!(f, "ErlModule({})", self.name.read().unwrap())
   }
 }
 
@@ -78,6 +81,35 @@ impl ErlModuleImpl {
       ..Default::default()
     }
     .into()
+  }
+
+  /// Given project, module and the source file, break it into tokens, and interpret the
+  /// preprocessor directives using module root scope.
+  pub fn tokenize(
+    project: &ErlProject,
+    module: &ErlModule,
+    src_file: &SourceFile,
+  ) -> IcResult<Vec<Token>> {
+    //----------------------
+    // Stage 1 tokenize the input
+    //----------------------
+    let mut tok_stream1 =
+      ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+
+    // Inject a mandatory EOL if the stream doesn't end with one
+    if !Token::ends_with(&tok_stream1, &[TokenType::EOL]) {
+      tok_stream1.push(Token::new(null::<u8>(), TokenType::EOL));
+    }
+
+    //----------------------
+    // Stage 2 preprocessor: handle ifdefs, defines, includes etc
+    // tokenize includes and paste in the token stream too
+    //----------------------
+    let tok_stream2 =
+      ErlModuleImpl::preprocess_interpret(src_file.text.as_str(), project, module, &tok_stream1)?;
+    ErlModuleImpl::verify_integrity(&module)?;
+
+    Ok(tok_stream2)
   }
 
   /// Generic tokenizer for any Nom entry point
@@ -110,14 +142,22 @@ impl ErlModuleImpl {
   /// Update the module name when we learn it from -module() attribute
   pub fn set_name(&self, name: &str) {
     if cfg!(debug_assertions) {
-      let self_name = self.name.borrow();
+      let self_name = self.name.read().unwrap();
       assert!(
         self_name.is_empty(),
         "Only one -module() attribute per module is allowed, the name is already set to {}",
         self_name
       );
     }
-    self.name.replace(name.to_string());
+    if let Ok(mut w_name) = self.name.write() {
+      w_name.clear();
+      w_name.push_str(name);
+    }
+  }
+
+  /// Access module name
+  pub fn get_name(&self) -> String {
+    self.name.read().unwrap().clone()
   }
 
   /// Check whether any errors were reported for this module

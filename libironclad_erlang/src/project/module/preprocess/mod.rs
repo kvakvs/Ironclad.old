@@ -4,25 +4,22 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::{IcResult, IroncladError};
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
-use crate::project::module::preprocess::pp_tok_stream::TokenStream;
+use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
-use nom::Finish;
 use pp_state::PreprocessState;
+use std::path::PathBuf;
 use std::slice;
 
 pub mod pp_macro_substitution;
@@ -229,8 +226,32 @@ fn on_else_if(state: &mut PreprocessState, cond: &AstNode) {
   }
 }
 
+/// Handle `-include(Path)` preprocessor directive
+fn on_include(state: &mut PreprocessState, path: &str, ppnode: PreprocessorNode) -> IcResult<()> {
+  let literal_path = PathBuf::from(path);
+  let project = &state.project;
+  let found_path = project.find_include(ppnode.location.clone(), &literal_path, None)?;
+  println!("Found include at {}", found_path.to_string_lossy());
+  let src_file = project
+    .file_cache
+    .get_or_load(&found_path)
+    .map_err(|e| IroncladError::from(e))?;
+  let tokens = ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)?;
+  state.result.extend(tokens.iter().cloned());
+  Ok(())
+}
+
+fn on_include_lib(
+  state: &mut PreprocessState,
+  path: &str,
+  ppnode: PreprocessorNode,
+) -> IcResult<()> {
+  // let path = state.module.find_include_path(path)?;
+  unimplemented!()
+}
+
 #[named]
-fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessState) {
+fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessState) -> IcResult<()> {
   let active = state.is_section_condition_true();
 
   match &ppnode.content {
@@ -238,15 +259,17 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     // Set module name (can be done only once)
     //------------------
     PreprocessorNodeType::ModuleName { name } if active => {
-      ErlModuleImpl::set_name(state.module, name.as_str())
+      ErlModuleImpl::set_name(&state.module, name.as_str())
     }
 
     //------------------
     // Inclusion
     //------------------
-    PreprocessorNodeType::Include(_) if active => unimplemented!(),
-    PreprocessorNodeType::IncludeLib(_) if active => unimplemented!(),
-    PreprocessorNodeType::IncludedFile { .. } if active => unimplemented!(),
+    PreprocessorNodeType::Include(path) if active => on_include(state, path, ppnode.clone())?,
+    PreprocessorNodeType::IncludeLib(path) if active => {
+      on_include_lib(state, path, ppnode.clone())?
+    }
+    // PreprocessorNodeType::IncludedFile { .. } if active => unimplemented!(),
 
     //------------------
     // Failure on demand
@@ -303,6 +326,7 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
       // println!("Section is not active for: {}", ppnode);
     }
   }
+  Ok(())
 }
 
 #[inline]
@@ -335,10 +359,11 @@ impl ErlModuleImpl {
   #[named]
   pub fn preprocess_interpret(
     original_input: &str,
+    project: &ErlProject,
     module: &ErlModule,
     tokens: &[Token],
   ) -> IcResult<Vec<Token>> {
-    let mut state = PreprocessState::new(module, tokens);
+    let mut state = PreprocessState::new(project, module, tokens);
 
     while let Some(line) = state.itr.next() {
       if state.too_many_errors {
@@ -362,7 +387,7 @@ impl ErlModuleImpl {
             msg,
           ));
         }
-        preprocess_handle_ppnode(ppnode, &mut state);
+        preprocess_handle_ppnode(ppnode, &mut state)?;
       } else {
         if state.is_section_condition_true() {
           // Grow the selection till we hit a start of a preprocessor directive or an attribute
@@ -380,14 +405,12 @@ impl ErlModuleImpl {
 
     final_state_check(&mut state);
 
-    if !module.has_errors() {
-      println!(
-        "Preprocessor: output tokens:\n{}",
-        format_tok_stream(&state.result, state.result.len())
-      );
-    }
-    // state.result.iter().for_each(|t| print!("{}", t));
-    // println!();
+    // if !module.has_errors() {
+    //   println!(
+    //     "Preprocessor: output tokens:\n{}",
+    //     format_tok_stream(&state.result, state.result.len())
+    //   );
+    // }
 
     Ok(state.result)
   }

@@ -7,57 +7,42 @@ use crate::project::input_opts::InputOpts;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::project_inputs::ErlProjectInputs;
 use crate::source_loc::SourceLoc;
-use std::collections::{HashMap, HashSet};
+use libironclad_util::io::file_cache::FileCache;
+use libironclad_util::rw_hashmap::RwHashMap;
+use libironclad_util::rw_vec::RwVec;
+use libironclad_util::source_file::SourceFile;
+use std::collections::HashSet;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
 
 /// Same as ErlProjectConf but no Option<> fields
 #[derive(Default, Debug)]
 pub struct ErlProjectImpl {
   /// Inputs and compile options provided from the project file and command line
-  pub inputs: RwLock<ErlProjectInputs>,
+  pub project_inputs: ErlProjectInputs,
   /// Collection of loaded modules
-  pub modules: RwLock<HashMap<String, Arc<ErlModule>>>,
+  pub modules: RwHashMap<String, ErlModule>,
+  /// Stores files recently loaded from disk
+  pub file_cache: FileCache,
 }
 
 impl ErlProjectImpl {
-  // /// Create a starting preprocessor scope for the first line of a given file.
-  // /// Initial scope values are derived from the commandline and the project settings for the file,
-  // /// and the scope evolves as the preprocessor/parser goes through the file.
-  // pub fn get_preprocessor_scope(&self, path: &Path) -> PreprocessorDefinesMap {
-  //   let mut result_scope = if let Ok(r_inputs) = self.inputs.read() {
-  //     r_inputs.compiler_opts.scope.clone()
-  //   } else {
-  //     panic!("Can't lock project inputs for read")
-  //   };
-  //
-  //   // Find opts (if exist) for current file, and apply them over project global opts
-  //   if let Ok(r_inputs) = self.inputs.read() {
-  //     if let Some(per_file_opts) = r_inputs.compiler_opts_per_file.get(path) {
-  //       let new_scope = ParserScopeImpl::overlay(&result_scope, &per_file_opts.scope);
-  //       result_scope = new_scope;
-  //     }
-  //   } else {
-  //     panic!("Can't lock project inputs for read")
-  //   }
-  //
-  //   result_scope
-  // }
-
   /// Get a clone of project libironclad options
   /// TODO: special override options if user specifies extras as a module attribute
   pub fn get_compiler_options_for(&self, path: &Path) -> CompilerOpts {
-    if let Ok(r_inputs) = self.inputs.read() {
-      if let Some(per_file_opts) = r_inputs.compiler_opts_per_file.get(path) {
-        // If found per-file settings, combine global with per-file
-        r_inputs.compiler_opts.overlay(per_file_opts.deref()).into()
-      } else {
-        // If not found per-file settings, just provide a clone of global settings
-        r_inputs.compiler_opts.clone()
-      }
+    // sad reality of generic get having arg of &PathBuf and not &Path
+    let pb = PathBuf::from(path);
+
+    if let Some(per_file_opts) = self.project_inputs.compiler_opts_per_file.get(&pb) {
+      // If found per-file settings, combine global with per-file
+      self
+        .project_inputs
+        .compiler_opts
+        .overlay(per_file_opts.deref())
+        .into()
     } else {
-      panic!("Can't lock project inputs to read the compiler opts")
+      // If not found per-file settings, just provide a clone of global settings
+      self.project_inputs.compiler_opts.clone()
     }
   }
 
@@ -70,28 +55,23 @@ impl ErlProjectImpl {
     let mut file_set: HashSet<PathBuf> = HashSet::with_capacity(ErlProjectImpl::DEFAULT_CAPACITY);
     let mut file_list = Vec::new();
 
-    if let Ok(r_inputs) = self.inputs.read() {
-      for file_mask in &r_inputs.input_opts.files {
-        for dir in &r_inputs.input_opts.directories {
-          let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
+    for file_mask in &self.project_inputs.input_opts.files {
+      for dir in &self.project_inputs.input_opts.directories {
+        let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
 
-          for entry in glob::glob(&file_glob)? {
-            match entry {
-              Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
-              Err(err) => return Err(IroncladError::from(err)),
-            }
-          } // for glob search results
-        } // for input dirs
-      } // for input file masks
-    } else {
-      panic!("Can't lock project inputs to build file list")
-    }
+        for entry in glob::glob(&file_glob)? {
+          match entry {
+            Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
+            Err(err) => return Err(IroncladError::from(err)),
+          }
+        } // for glob search results
+      } // for input dirs
+    } // for input file masks
 
-    if let Ok(mut w_inputs) = self.inputs.write() {
-      w_inputs.inputs = file_list;
-    } else {
-      panic!("Can't lock project inputs to update the file list")
-    }
+    self
+      .project_inputs
+      .input_paths
+      .replace(file_list.iter().cloned());
     Ok(())
   }
 
@@ -114,7 +94,6 @@ impl ErlProjectImpl {
     Ok(())
   }
 
-  #[allow(dead_code)]
   fn find_include_in(sample: &Path, try_dirs: &[String]) -> Option<PathBuf> {
     for dir in try_dirs {
       let try_path = Path::new(&dir).join(sample);
@@ -127,40 +106,44 @@ impl ErlProjectImpl {
   }
 
   /// Check include paths to find the file.
-  #[allow(dead_code)]
   pub(crate) fn find_include(
     &self,
     location: SourceLoc,
     find_file: &Path,
     from_file: Option<PathBuf>,
   ) -> IcResult<PathBuf> {
-    if let Ok(r_inputs) = self.inputs.read() {
-      println!("inp {:?}", r_inputs);
-
-      // Try find in local search paths for file
-      if let Some(from_file1) = &from_file {
-        if let Some(opts_per_file) = r_inputs.compiler_opts_per_file.get(from_file1) {
-          if let Some(try_loc) = Self::find_include_in(find_file, &opts_per_file.include_paths) {
-            return Ok(try_loc);
-          }
+    // Try find in local search paths for file
+    if let Some(from_file1) = &from_file {
+      if let Some(opts_per_file) = self.project_inputs.compiler_opts_per_file.get(from_file1) {
+        if let Some(try_loc) = Self::find_include_in(find_file, &opts_per_file.include_paths) {
+          return Ok(try_loc);
         }
       }
+    }
 
-      // Try find in global search paths
-      if let Some(try_glob) =
-        Self::find_include_in(find_file, &r_inputs.compiler_opts.include_paths)
-      {
-        Ok(try_glob)
-      } else {
-        IroncladError::file_not_found(location, find_file, "searching for an -include() path")
-      }
+    // Try find in global search paths
+    if let Some(try_glob) =
+      Self::find_include_in(find_file, &self.project_inputs.compiler_opts.include_paths)
+    {
+      Ok(try_glob)
     } else {
-      panic!("Can't lock project inputs to resolve include path")
+      IroncladError::file_not_found(location, find_file, "searching for an -include() path")
     }
   }
 
   /// Register a new module
-  pub fn register_new_module(&self, _module: &ErlModule) {}
+  pub fn register_new_module(&self, module: &ErlModule) {
+    let m_name = module.get_name();
+    self.modules.add(m_name, module.clone())
+  }
+
+  /// Retrieve a source file from the file cache, load if necessary
+  pub fn get_source_file(&self, path: &Path) -> IcResult<SourceFile> {
+    self
+      .file_cache
+      .get_or_load(path)
+      .map_err(|e| IroncladError::from(e).into())
+  }
 }
 
 impl From<ProjectConf> for ErlProjectImpl {
@@ -169,11 +152,12 @@ impl From<ProjectConf> for ErlProjectImpl {
       compiler_opts: CompilerOptsImpl::new_from_maybe_opts(conf.compiler_opts).into(),
       compiler_opts_per_file: Default::default(),
       input_opts: InputOpts::from(conf.inputs),
-      inputs: Vec::default(),
+      input_paths: RwVec::default(),
     };
     Self {
-      inputs: RwLock::new(inputs),
-      modules: RwLock::new(HashMap::default()),
+      project_inputs: inputs,
+      modules: RwHashMap::default(),
+      file_cache: FileCache::default(),
     }
   }
 }

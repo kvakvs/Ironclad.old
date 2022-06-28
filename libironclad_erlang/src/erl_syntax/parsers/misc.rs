@@ -1,5 +1,4 @@
 //! Helper functions for Nom parsing
-use crate::colored::Colorize;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;

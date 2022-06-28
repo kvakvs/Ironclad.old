@@ -27,6 +27,17 @@ impl<ValType> Default for RwVec<ValType> {
   }
 }
 
+impl<ValType: Clone> RwVec<ValType> {
+  /// Return a clone of contents
+  pub fn clone_contents(&self) -> Vec<ValType> {
+    if let Ok(r_vec) = self.data.read() {
+      r_vec.clone()
+    } else {
+      panic!("Can't lock RwVec for cloning")
+    }
+  }
+}
+
 impl<ValType> RwVec<ValType> {
   /// Create a `RwVec` with preallocated capacity
   pub fn with_capacity(cap: usize) -> Self {
@@ -66,6 +77,19 @@ impl<ValType> RwVec<ValType> {
       w_data.push(item);
     } else {
       panic!("Can't lock RwVec to push")
+    }
+  }
+
+  /// Replace the contents
+  pub fn replace<Iter>(&self, itr: Iter)
+  where
+    Iter: Iterator<Item = ValType>,
+  {
+    if let Ok(mut w_data) = self.data.write() {
+      w_data.clear();
+      w_data.extend(itr);
+    } else {
+      panic!("Can't lock RwVec to replace values from iterator")
     }
   }
 }

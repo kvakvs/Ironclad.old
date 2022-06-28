@@ -1,6 +1,5 @@
 //! Code for processing a line of tokens and pasting macro values instead of macro invocations.
 
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;

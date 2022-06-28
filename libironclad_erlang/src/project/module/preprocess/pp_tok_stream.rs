@@ -1,11 +1,8 @@
 //! Token source owning its tokens vector
 
-use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::preprocessor::parsers::parse_pp::{
-  parse_macro_invocation_args, parse_preproc_directive,
-};
+use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::Token;
 use nom::Finish;
