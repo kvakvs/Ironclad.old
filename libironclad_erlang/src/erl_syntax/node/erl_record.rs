@@ -28,3 +28,18 @@ impl std::fmt::Display for RecordField {
     Ok(())
   }
 }
+
+/// Defines a member of map construction AST node in `#{ key => value }`
+#[derive(Debug)]
+pub struct RecordBuilderMember {
+  /// The record field name
+  pub field: String,
+  /// The value to that field
+  pub expr: AstNode,
+}
+
+impl std::fmt::Display for RecordBuilderMember {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{} = {}", self.field, self.expr)
+  }
+}

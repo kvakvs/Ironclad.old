@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty,
   FnDef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
-  ModuleRoot, TryCatch, Tuple, Var,
+  ModuleRoot, RecordBuilder, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -18,6 +18,7 @@ use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
+use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -135,6 +136,16 @@ impl AstNodeImpl {
   /// Create a new AST node for a map builder
   pub(crate) fn new_map_builder(location: SourceLoc, members: Vec<MapBuilderMember>) -> AstNode {
     AstNodeImpl::construct_with_location(location, MapBuilder { members })
+  }
+
+  /// Create a new AST node for a record builder
+  pub(crate) fn new_record_builder(
+    location: SourceLoc,
+    base: Option<String>,
+    tag: String,
+    members: Vec<RecordBuilderMember>,
+  ) -> AstNode {
+    AstNodeImpl::construct_with_location(location, RecordBuilder { base, tag, members })
   }
 
   /// Create a new AST node for a comma-expression

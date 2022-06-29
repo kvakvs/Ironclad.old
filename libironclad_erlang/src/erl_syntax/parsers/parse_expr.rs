@@ -8,11 +8,12 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
+use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
+  tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
   tok_double_angle_open, tok_double_vertical_bar, tok_hash, tok_keyword_begin, tok_keyword_end,
   tok_left_arrow, tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
   tok_vertical_bar,
@@ -39,7 +40,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::{many0, separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 
 /// Full expression including comma operator, for function bodies
 pub const EXPR_STYLE_FULL: usize = 0;
@@ -52,18 +53,6 @@ pub const EXPR_STYLE_MATCHEXPR: usize = 2;
 
 /// Do not allow dynamic expression components: lambdas, function calls, variables etc
 pub const EXPR_STYLE_CONST_ONLY: usize = 3;
-
-// /// Parse a function call (application of args to a callable value)
-// fn parse_fn_application(input: ParserInput) -> ParserResult<AstNode> {
-//   // Application consists of a callable expression, "(", list of args, and ")"
-//   map(
-//     tuple((parse_expr, parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>)),
-//     |(expr, args)| {
-//       let target = CallableTarget::new_expr(expr);
-//       AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
-//     },
-//   )(input.clone())
-// }
 
 fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_var, |n| AstNodeImpl::construct_without_location(Var(ErlVar::new(&n))))(input)
@@ -176,7 +165,17 @@ fn map_builder_member<const STYLE: usize>(input: ParserInput) -> ParserResult<Ma
       tok(TokenType::RightDoubleArr),
       parse_expr_prec13::<STYLE>,
     ),
-    |(key, value)| MapBuilderMember { key, value },
+    |(key, expr)| MapBuilderMember { key, expr },
+  )(input)
+}
+
+/// Parse one member of a record builder `'field' = EXPR`
+fn record_builder_member<const STYLE: usize>(
+  input: ParserInput,
+) -> ParserResult<RecordBuilderMember> {
+  map(
+    separated_pair(tok_atom, tok(TokenType::EqualSymbol), parse_expr_prec13::<STYLE>),
+    |(field, expr)| RecordBuilderMember { field, expr },
   )(input)
 }
 
@@ -190,6 +189,23 @@ fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<
       tok_curly_close,
     ),
     |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), members),
+  )(input.clone())
+}
+
+/// Parse a record builder expression
+fn parse_record_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+  map(
+    terminated(
+      tuple((
+        opt(tok_var),
+        delimited(tok_hash, tok_atom, tok_curly_open),
+        separated_list0(tok_comma, record_builder_member::<STYLE>),
+      )),
+      tok_curly_close,
+    ),
+    |(base, tag, members)| {
+      AstNodeImpl::new_record_builder(SourceLoc::new(&input), base, tag, members)
+    },
   )(input.clone())
 }
 
@@ -248,6 +264,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
         map_builder_of_exprs::<STYLE>,
+        parse_record_builder::<STYLE>,
         parse_var,
         parse_erl_literal,
         parse_list_comprehension,
@@ -274,6 +291,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
+        parse_record_builder::<STYLE>,
         parse_var,
         parse_erl_literal,
         parse_binary,

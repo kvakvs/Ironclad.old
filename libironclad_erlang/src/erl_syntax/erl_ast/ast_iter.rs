@@ -147,6 +147,14 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(r)
         }
       }
+      AstNodeType::RecordBuilder { members, .. } => {
+        let mut r = Vec::default();
+        for m in members {
+          r.push(m.expr.clone());
+        }
+        Some(r)
+      }
+      AstNodeType::MapBuilder { .. } => unimplemented!("children() for map builder"),
       _ => {
         unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
       }

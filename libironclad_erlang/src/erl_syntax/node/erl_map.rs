@@ -9,11 +9,11 @@ pub struct MapBuilderMember {
   /// The key to the map, an expression
   pub key: AstNode,
   /// The value to that key, an expression
-  pub value: AstNode,
+  pub expr: AstNode,
 }
 
 impl std::fmt::Display for MapBuilderMember {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{} => {}", self.key, self.value)
+    write!(f, "{} => {}", self.key, self.expr)
   }
 }

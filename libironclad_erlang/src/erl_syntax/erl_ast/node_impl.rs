@@ -11,6 +11,7 @@ use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_fn_def::ErlFnDef;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
+use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::error::ic_error::IcResult;
@@ -123,6 +124,16 @@ pub enum AstNodeType {
   MapBuilder {
     /// Map keys, matching values by index
     members: Vec<MapBuilderMember>,
+  },
+
+  /// A map of some keys and some values, using `=>` syntax for construction
+  RecordBuilder {
+    /// The base variable name used for construction, must have same record type: `Var#recordtag{}`
+    base: Option<String>,
+    /// The record tag `#recordtag{}`
+    tag: String,
+    /// Record members
+    members: Vec<RecordBuilderMember>,
   },
 
   /// Comma-separated list of expressions, final expression is the result

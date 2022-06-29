@@ -114,7 +114,14 @@ impl AstNodeImpl {
         // Cannot bind variable to a map key in arguments list
         for v in members {
           Self::extract_variables(&v.key, variables)?;
-          Self::extract_variables(&v.value, variables)?;
+          Self::extract_variables(&v.expr, variables)?;
+        }
+        Ok(())
+      }
+      AstNodeType::RecordBuilder { base, tag, members, .. } => {
+        variables.insert(tag.clone(), ErlTypeImpl::new_record_ref(tag.clone()));
+        for v in members {
+          Self::extract_variables(&v.expr, variables)?;
         }
         Ok(())
       }
