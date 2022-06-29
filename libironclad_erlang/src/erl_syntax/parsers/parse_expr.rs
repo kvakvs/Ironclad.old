@@ -215,9 +215,7 @@ fn parse_record_builder_no_base<const STYLE: usize>(input: ParserInput) -> Parse
 /// Parse a record field access expression. Matches `# RECORDTAG "." FIELDTAG`
 /// Returns (record: String, field: String)
 fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String)> {
-  terminated(pair(delimited(tok_hash, tok_atom, tok_period), tok_atom), tok_curly_close)(
-    input.clone(),
-  )
+  pair(delimited(tok_hash, tok_atom, tok_period), tok_atom)(input.clone())
 }
 
 /// Parses comma separated sequence of expressions
@@ -264,7 +262,7 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
 fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   match STYLE {
     EXPR_STYLE_FULL => context(
-      "parse expression (highest precedence)",
+      "[hidden] parse expression (highest precedence)",
       alt((
         alt((
           parse_lambda,

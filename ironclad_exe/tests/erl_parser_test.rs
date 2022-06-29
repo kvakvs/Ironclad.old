@@ -202,17 +202,20 @@ fn parse_expr_based_numbers() -> IcResult<()> {
 /// Try parse record field accessors
 #[named]
 #[test]
-fn parse_expr_record_field_access() -> IcResult<()> {
+fn parse_expr_record_field_access() {
   test_util::start(function_name!(), "Parse record field accessors");
-  let input = "{Var#record.field,\
-(Var)#record.field,\
-(functioncall())#record.field}";
-  let expr = test_util::parse_expr(function_name!(), input);
-  let tuple = expr.as_tuple();
-  assert!(tuple[0].is_record_field(), "Failed to parse Var#record.field");
-  assert!(tuple[1].is_record_field(), "Failed to parse (Var)#record.field");
-  assert!(tuple[2].is_record_field(), "Failed to parse (functioncall())#record.field");
-  Ok(())
+  let input1 = "Var#record.field";
+  let input2 = "(Var)#record.field";
+  let input3 = "(functioncall())#record.field";
+
+  let expr1 = test_util::parse_expr(function_name!(), input1);
+  assert!(expr1.is_record_field(), "Failed to parse Var#record.field");
+
+  let expr2 = test_util::parse_expr(function_name!(), input2);
+  assert!(expr2.is_record_field(), "Failed to parse (Var)#record.field");
+
+  let expr3 = test_util::parse_expr(function_name!(), input3);
+  assert!(expr3.is_record_field(), "Failed to parse (functioncall())#record.field");
 }
 
 /// Try parse an expression with parentheses and division

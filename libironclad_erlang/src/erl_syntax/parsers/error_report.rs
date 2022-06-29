@@ -94,7 +94,7 @@ pub fn convert_token_stream_parser_error(
             )
           }
         }
-        ErlParserErrorKind::Context(s) => writeln!(
+        ErlParserErrorKind::Context(s) if !s.starts_with("[hidden]") => writeln!(
           &mut result,
           "    {i}: at line {line_number}:{column}, in {context}:\n    \
            {line}",
@@ -104,6 +104,7 @@ pub fn convert_token_stream_parser_error(
           context = s,
           line = format_tok_stream(line, FORMAT_LIMIT),
         ),
+        ErlParserErrorKind::Context(_s) => Ok(()),
         ErlParserErrorKind::Nom(e) => writeln!(
           &mut result,
           "    {i}: at line {line_number}:{column}, in {nom_err:?}:\n    \
