@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::exit_codes::erl_fatal_error;
 use crate::project::module::preprocess::pp_state::PreprocessState;
@@ -56,7 +56,7 @@ pub(crate) fn substitute_macro_invocations<'a>(
 
   let mut output = Vec::with_capacity(tokens.len());
   let mut index = 0usize;
-  let mut max_index = tokens.len();
+  let max_index = tokens.len();
 
   while index < max_index {
     let t = &tokens[index];
@@ -95,7 +95,7 @@ pub(crate) fn substitute_macro_invocations<'a>(
 ///               arguments list (used to skip the length of tokens)
 fn parse_as_invocation_params(original_input: &str, tokens: &[Token]) -> (Vec<Vec<Token>>, usize) {
   let parser_input = ParserInput::new_slice(tokens);
-  let (tail, nodes_as_tokens) = panicking_parser_error_reporter(
+  let (_tail, nodes_as_tokens) = panicking_parser_error_reporter(
     original_input,
     parser_input.clone(),
     parse_macro_invocation_args(parser_input).finish(),

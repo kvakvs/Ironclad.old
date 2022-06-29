@@ -138,7 +138,13 @@ pub enum AstNodeType {
     /// The generators which produce the list comprehension inpits, and the conditions
     generators: Vec<AstNode>,
   },
-
+  /// A binary comprehension expression
+  BinaryComprehension {
+    /// The result expression
+    expr: AstNode,
+    /// The generators which produce the list comprehension inpits, and the conditions
+    generators: Vec<AstNode>,
+  },
   /// A list comprehension generator expression `Expr <- Expr`
   ListComprehensionGenerator {
     /// The output match expression

@@ -1,8 +1,9 @@
 //! Creation code for ErlAst
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BeginEnd, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty, FnDef, IfStatement, List,
-  ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot, TryCatch, Tuple, Var,
+  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty,
+  FnDef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
+  ModuleRoot, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -152,6 +153,16 @@ impl AstNodeImpl {
     generators: Vec<AstNode>,
   ) -> AstNode {
     let lc_node = ListComprehension { expr, generators };
+    AstNodeImpl::construct_with_location(location, lc_node)
+  }
+
+  /// Create a new AST node for a list comprehension
+  pub(crate) fn new_binary_comprehension(
+    location: SourceLoc,
+    expr: AstNode,
+    generators: Vec<AstNode>,
+  ) -> AstNode {
+    let lc_node = BinaryComprehension { expr, generators };
     AstNodeImpl::construct_with_location(location, lc_node)
   }
 

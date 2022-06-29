@@ -32,3 +32,15 @@ fn parse_bin1() -> IcResult<()> {
   }
   Ok(())
 }
+
+#[named]
+#[test]
+fn parse_nested_bin() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse nested binaries");
+
+  let input1 = "<<<<3, 4>>/binary, 5, 6>>";
+  let ast1 = test_util::parse_expr(function_name!(), input1);
+  println!("{} From «{}» parsed: {:?}", function_name!(), input1, ast1);
+  assert!(ast1.is_binary());
+  Ok(())
+}

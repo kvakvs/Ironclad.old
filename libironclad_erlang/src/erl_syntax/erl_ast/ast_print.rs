@@ -1,9 +1,9 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BeginEnd, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr, FnDef, FnRef,
-  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot,
-  TryCatch, Tuple, Type, UnaryOp, Var, MFA,
+  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr,
+  FnDef, FnRef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
+  ModuleRoot, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -77,6 +77,11 @@ impl std::fmt::Display for AstNodeImpl {
         write!(f, "[{} || ", expr)?;
         Pretty::display_comma_separated(generators.iter(), f)?;
         write!(f, "]")
+      }
+      BinaryComprehension { expr, generators, .. } => {
+        write!(f, "<<{} || ", expr)?;
+        Pretty::display_comma_separated(generators.iter(), f)?;
+        write!(f, ">>")
       }
       ListComprehensionGenerator { left, right, .. } => {
         write!(f, "{} <- {}", left, right)

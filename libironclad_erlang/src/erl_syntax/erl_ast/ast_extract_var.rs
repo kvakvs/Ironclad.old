@@ -44,6 +44,13 @@ impl AstNodeImpl {
         }
         Ok(())
       }
+      AstNodeType::BinaryComprehension { expr, generators, .. } => {
+        Self::extract_variables(expr, variables)?;
+        for g in generators {
+          Self::extract_variables(g, variables)?;
+        }
+        Ok(())
+      }
       AstNodeType::ListComprehensionGenerator { left, right, .. } => {
         Self::extract_variables(left, variables)?;
         Self::extract_variables(right, variables)

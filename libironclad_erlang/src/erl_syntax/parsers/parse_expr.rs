@@ -12,9 +12,10 @@ use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_vertical_bar, tok_hash,
-  tok_keyword_begin, tok_keyword_end, tok_left_arrow, tok_par_close, tok_par_open,
-  tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
+  tok, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
+  tok_double_angle_open, tok_double_vertical_bar, tok_hash, tok_keyword_begin, tok_keyword_end,
+  tok_left_arrow, tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
+  tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
@@ -127,11 +128,35 @@ fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
+fn parse_binary_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
+  map(
+    separated_pair(
+      context("binary comprehension output expression", parse_expr),
+      tok_double_vertical_bar,
+      context(
+        "binary comprehension generators",
+        cut(parse_list_comprehension_exprs_and_generators),
+      ),
+    ),
+    |(expr, generators): (AstNode, Vec<AstNode>)| -> AstNode {
+      AstNodeImpl::new_binary_comprehension(SourceLoc::new(&input), expr, generators)
+    },
+  )(input.clone())
+}
+
 /// Public for testing. Parses a list comprehension syntax `[ OUTPUT | GENERATORS ]`
 pub fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
   context(
     "list comprehension",
     delimited(tok_square_open, parse_list_comprehension_1, tok_square_close),
+  )(input)
+}
+
+/// Parses a binary comprehension syntax `<< OUTPUT || VAR1 <- GENERATOR1, COND1 ... >>`
+fn parse_binary_comprehension(input: ParserInput) -> ParserResult<AstNode> {
+  context(
+    "binary comprehension",
+    delimited(tok_double_angle_open, parse_binary_comprehension_1, tok_double_angle_close),
   )(input)
 }
 
@@ -219,7 +244,6 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_try_catch,
         parse_if_statement,
         parse_case_statement,
-        parse_binary,
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
@@ -227,6 +251,8 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_var,
         parse_erl_literal,
         parse_list_comprehension,
+        parse_binary_comprehension,
+        parse_binary,
       )),
     )(input),
     EXPR_STYLE_CONST_ONLY => context(
