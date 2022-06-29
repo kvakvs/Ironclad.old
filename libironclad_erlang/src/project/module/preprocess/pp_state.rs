@@ -25,15 +25,25 @@ pub(crate) struct PreprocessState<'a> {
 
 impl<'a> PreprocessState<'a> {
   /// Create a new state to begin preprocessing
-  pub fn new(project: &ErlProject, module: &ErlModule, tokens: &'a [Token]) -> Self {
+  pub fn new(
+    project: &ErlProject,
+    module: &ErlModule,
+    input_tokens: (*const Token, usize),
+  ) -> Self {
     PreprocessState {
       project: project.clone(),
       module: module.clone(),
-      result: Vec::with_capacity(tokens.len()),
-      itr: TokenLinesIter::new(tokens),
+      result: Vec::with_capacity(input_tokens.1),
+      itr: TokenLinesIter::new(input_tokens),
       too_many_errors: false,
       section: Vec::default(),
     }
+  }
+
+  /// Insert tokens vector contents at the current preprocessing state. The vector might be
+  /// reallocated, so also update the `itr` iterator. This is used to include files.
+  pub(crate) fn paste_tokens(&self, paste_into: &mut Vec<Token>, tokens: &[Token]) {
+    paste_into.splice(self.itr.pos..self.itr.pos, tokens.iter().cloned());
   }
 
   /// Pushes a new section to the stack, when a condition is encountered.

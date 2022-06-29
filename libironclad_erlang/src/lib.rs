@@ -11,6 +11,7 @@ extern crate num_bigint;
 
 pub mod erl_syntax;
 pub mod error;
+pub mod exit_codes;
 pub mod literal;
 pub mod project;
 pub mod record_def;

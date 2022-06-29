@@ -34,7 +34,7 @@ fn main_do() -> IcResult<()> {
     Ok(erlp) => ErlProjectImpl::from(erlp).into(),
     Err(e) => return Err(Box::new(e)),
   };
-  // println!("{:?}", project);
+  println!("{}", project);
 
   project.build_file_list()?;
 

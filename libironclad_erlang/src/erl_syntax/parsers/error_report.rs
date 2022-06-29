@@ -56,7 +56,8 @@ pub fn convert_token_stream_parser_error(
         .unwrap_or(0);
 
       // Find the full line after that newline
-      let line = TokenLinesIter::new(&tokens_input.tokens[line_begin..])
+      let line_slice1 = &tokens_input.tokens[line_begin..];
+      let line = TokenLinesIter::new((line_slice1.as_ptr(), line_slice1.len()))
         .next()
         .unwrap_or(&tokens_input.tokens[line_begin..]);
       // .trim_end();
@@ -69,9 +70,9 @@ pub fn convert_token_stream_parser_error(
           if let Some(actual) = substring.tokens.iter().next() {
             writeln!(
               &mut result,
-              "expected '{expected}', found {actual}
-    {i}: at line {line_number}:{column}:
-    {line}",
+              "expected '{expected}', found {actual}\n    \
+               {i}: at line {line_number}:{column}:\n    \
+               {line}",
               i = i,
               line_number = line_number,
               line = format_tok_stream(line, FORMAT_LIMIT),
@@ -82,9 +83,9 @@ pub fn convert_token_stream_parser_error(
           } else {
             writeln!(
               &mut result,
-              "expected '{expected}', got end of input
-    {i}: at line {line_number}:{column}:
-    {line}",
+              "expected '{expected}', got end of input\n    \
+               {i}: at line {line_number}:{column}:\n    \
+               {line}",
               i = i,
               line_number = line_number,
               line = format_tok_stream(line, FORMAT_LIMIT),
@@ -95,8 +96,8 @@ pub fn convert_token_stream_parser_error(
         }
         ErlParserErrorKind::Context(s) => writeln!(
           &mut result,
-          "    {i}: at line {line_number}:{column}, in {context}:\n\
-    {line}",
+          "    {i}: at line {line_number}:{column}, in {context}:\n    \
+           {line}",
           i = i,
           line_number = line_number,
           column = column_number,
@@ -105,8 +106,8 @@ pub fn convert_token_stream_parser_error(
         ),
         ErlParserErrorKind::Nom(e) => writeln!(
           &mut result,
-          "    {i}: at line {line_number}:{column}, in {nom_err:?}:
-    {line}",
+          "    {i}: at line {line_number}:{column}, in {nom_err:?}:\n    \
+           {line}",
           i = i,
           line_number = line_number,
           nom_err = e,
@@ -115,9 +116,9 @@ pub fn convert_token_stream_parser_error(
         ),
         _ => writeln!(
           &mut result,
-          "{kind}
-    {i}: at line {line_number}:{column}:
-    {line}",
+          "{kind}\n    \
+           {i}: at line {line_number}:{column}:\n    \
+           {line}",
           i = i,
           column = column_number,
           line = format_tok_stream(line, FORMAT_LIMIT),

@@ -53,7 +53,7 @@ impl IcErrorT for ErlError {
   }
 
   fn get_process_exit_code(&self) -> i32 {
-    1
+    crate::exit_codes::EXIT_ERRORS_FOUND
   }
 
   fn get_message(&self) -> &str {

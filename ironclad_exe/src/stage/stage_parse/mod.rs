@@ -31,14 +31,14 @@ impl ErlParseStage {
         let mut operation_timer = TimeStatsImpl::default();
 
         let source_file = project.get_source_file(path)?;
-        println!("FILE {}", source_file.file_name.to_string_lossy());
+        // println!("FILE {}", source_file.file_name.to_string_lossy());
 
         let module =
           ErlModuleImpl::from_module_source(project, &source_file, Some(compiler_opts.clone()))?;
         project.register_new_module(&module);
 
         operation_timer.stop_timer();
-        println!("FILE {} - {}", stage_time, source_file.file_name.to_string_lossy());
+        println!("FILE {} - {}", operation_timer, source_file.file_name.to_string_lossy());
 
         if module.has_errors() {
           module.print_errors()

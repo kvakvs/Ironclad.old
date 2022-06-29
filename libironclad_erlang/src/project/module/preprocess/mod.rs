@@ -227,7 +227,11 @@ fn on_else_if(state: &mut PreprocessState, cond: &AstNode) {
 }
 
 /// Handle `-include(Path)` preprocessor directive
-fn on_include(state: &mut PreprocessState, path: &str, ppnode: PreprocessorNode) -> IcResult<()> {
+fn on_include(
+  state: &mut PreprocessState,
+  path: &str,
+  ppnode: PreprocessorNode,
+) -> IcResult<Vec<Token>> {
   let literal_path = PathBuf::from(path);
   let project = &state.project;
   let found_path = project.find_include(ppnode.location.clone(), &literal_path, None)?;
@@ -236,22 +240,25 @@ fn on_include(state: &mut PreprocessState, path: &str, ppnode: PreprocessorNode)
     .file_cache
     .get_or_load(&found_path)
     .map_err(|e| IroncladError::from(e))?;
-  let tokens = ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)?;
-  state.result.extend(tokens.iter().cloned());
-  Ok(())
+
+  ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)
 }
 
 fn on_include_lib(
-  state: &mut PreprocessState,
-  path: &str,
-  ppnode: PreprocessorNode,
-) -> IcResult<()> {
+  _state: &mut PreprocessState,
+  _path: &str,
+  _ppnode: PreprocessorNode,
+) -> IcResult<Vec<Token>> {
   // let path = state.module.find_include_path(path)?;
   unimplemented!()
 }
 
 #[named]
-fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessState) -> IcResult<()> {
+fn preprocess_handle_ppnode(
+  input_tokens: &mut Vec<Token>,
+  ppnode: PreprocessorNode,
+  state: &mut PreprocessState,
+) -> IcResult<()> {
   let active = state.is_section_condition_true();
 
   match &ppnode.content {
@@ -265,9 +272,15 @@ fn preprocess_handle_ppnode(ppnode: PreprocessorNode, state: &mut PreprocessStat
     //------------------
     // Inclusion
     //------------------
-    PreprocessorNodeType::Include(path) if active => on_include(state, path, ppnode.clone())?,
+    PreprocessorNodeType::Include(path) if active => {
+      let included_tokens = on_include(state, path, ppnode.clone())?;
+      state.paste_tokens(input_tokens, &included_tokens);
+      state.itr.set_base(&input_tokens);
+    }
     PreprocessorNodeType::IncludeLib(path) if active => {
-      on_include_lib(state, path, ppnode.clone())?
+      let included_tokens = on_include_lib(state, path, ppnode.clone())?;
+      state.paste_tokens(input_tokens, &included_tokens);
+      state.itr.set_base(&input_tokens);
     }
     // PreprocessorNodeType::IncludedFile { .. } if active => unimplemented!(),
 
@@ -361,9 +374,9 @@ impl ErlModuleImpl {
     original_input: &str,
     project: &ErlProject,
     module: &ErlModule,
-    tokens: &[Token],
+    mut tokens: Vec<Token>,
   ) -> IcResult<Vec<Token>> {
-    let mut state = PreprocessState::new(project, module, tokens);
+    let mut state = PreprocessState::new(project, module, (tokens.as_ptr(), tokens.len()));
 
     while let Some(line) = state.itr.next() {
       if state.too_many_errors {
@@ -387,7 +400,7 @@ impl ErlModuleImpl {
             msg,
           ));
         }
-        preprocess_handle_ppnode(ppnode, &mut state)?;
+        preprocess_handle_ppnode(&mut tokens, ppnode, &mut state)?;
       } else {
         if state.is_section_condition_true() {
           // Grow the selection till we hit a start of a preprocessor directive or an attribute

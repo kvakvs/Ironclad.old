@@ -12,6 +12,7 @@ use libironclad_util::rw_hashmap::RwHashMap;
 use libironclad_util::rw_vec::RwVec;
 use libironclad_util::source_file::SourceFile;
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
@@ -115,6 +116,7 @@ impl ErlProjectImpl {
     // Try find in local search paths for file
     if let Some(from_file1) = &from_file {
       if let Some(opts_per_file) = self.project_inputs.compiler_opts_per_file.get(from_file1) {
+        println!("Per-module options search paths: {:?}", &opts_per_file.include_paths);
         if let Some(try_loc) = Self::find_include_in(find_file, &opts_per_file.include_paths) {
           return Ok(try_loc);
         }
@@ -122,6 +124,7 @@ impl ErlProjectImpl {
     }
 
     // Try find in global search paths
+    println!("Global search paths: {:?}", &self.project_inputs.compiler_opts.include_paths);
     if let Some(try_glob) =
       Self::find_include_in(find_file, &self.project_inputs.compiler_opts.include_paths)
     {
@@ -149,7 +152,7 @@ impl ErlProjectImpl {
 impl From<ProjectConf> for ErlProjectImpl {
   fn from(conf: ProjectConf) -> Self {
     let inputs = ErlProjectInputs {
-      compiler_opts: CompilerOptsImpl::new_from_maybe_opts(conf.compiler_opts).into(),
+      compiler_opts: CompilerOptsImpl::new_from_maybe_opts(conf.compiler_options).into(),
       compiler_opts_per_file: Default::default(),
       input_opts: InputOpts::from(conf.inputs),
       input_paths: RwVec::default(),
@@ -159,5 +162,12 @@ impl From<ProjectConf> for ErlProjectImpl {
       modules: RwHashMap::default(),
       file_cache: FileCache::default(),
     }
+  }
+}
+
+impl Display for ErlProjectImpl {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let paths = &self.project_inputs.compiler_opts.include_paths;
+    write!(f, "ErlProject[glob_include={:?}]", paths)
   }
 }

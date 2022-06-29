@@ -1,28 +1,34 @@
 //! Token array processing functions
 
 use crate::erl_syntax::token_stream::token::Token;
+use std::ptr::null;
 
 /// Iterate over token stream lines, by finding `Newline` tokens.
 /// Note: `Newline` tokens are removed in the preprocessor.
 #[derive(Clone)]
 pub(crate) struct TokenLinesIter<'a> {
   /// The array of tokens we use as input
-  pub base: &'a [Token],
+  pub base: (*const Token, usize),
   /// Position of slice start as integer index into base array
   pub pos: usize,
   /// The length of the resulting slice
   pub slice_len: usize,
+  _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> TokenLinesIter<'a> {
-  /// Create a new lines iterator for token stream, searching for `Newline` tokens
-  pub fn new(base: &'a [Token]) -> Self {
-    Self { base, slice_len: 0, pos: 0 }
+impl<'a> Default for TokenLinesIter<'a> {
+  fn default() -> Self {
+    Self {
+      base: (null(), 0),
+      pos: 0,
+      slice_len: 0,
+      _phantom: Default::default(),
+    }
   }
 }
 
 impl<'a> Iterator for TokenLinesIter<'a> {
-  type Item = &'a [Token];
+  type Item = &'static [Token];
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.eof() {
@@ -33,45 +39,75 @@ impl<'a> Iterator for TokenLinesIter<'a> {
     self.pos += self.slice_len;
 
     // Find next newline and return up to it
-    for i in self.pos..self.base.len() {
-      if self.base[i].is_eol() {
+    for i in self.pos..self.base.1 {
+      if self.read_base(i).is_eol() {
         // Found a newline, +1 to include it
-        let result = &self.base[self.pos..i + 1];
+        let result = self.slice_base(self.pos, i + 1);
         self.slice_len = result.len();
         return Some(result);
       }
     }
 
     // return everything that's remaining
-    let all_result = &self.base[self.pos..];
+    let all_result = self.slice_base_from(self.pos);
     self.slice_len = all_result.len();
     Some(all_result)
   }
 }
 
 impl<'a> TokenLinesIter<'a> {
+  fn read_base(&self, i: usize) -> &Token {
+    unsafe { &*self.base.0.add(i) }
+  }
+
+  /// Return slice from position `from` of length `len`
+  fn slice_base(&self, from: usize, len: usize) -> &'static [Token] {
+    unsafe { std::slice::from_raw_parts(self.base.0.add(from), len) }
+  }
+
+  /// Return remaining slice from position `from`
+  fn slice_base_from(&self, from: usize) -> &'static [Token] {
+    unsafe { std::slice::from_raw_parts(self.base.0.add(from), self.base.1 - from) }
+  }
+
+  /// Create a new lines iterator for token stream, searching for `Newline` tokens
+  pub fn new(base: (*const Token, usize)) -> Self {
+    Self {
+      base,
+      slice_len: 0,
+      pos: 0,
+      _phantom: Default::default(),
+    }
+  }
+
+  /// Override to a new token stream, in case when it needs to be modified while iterating.
+  /// Example: Include files are pasted into the stream
+  pub(crate) fn set_base(&mut self, new_base: &[Token]) {
+    self.base = (new_base.as_ptr(), new_base.len());
+  }
+
   /// Check whether we have reached the end of the input. Consider `pos` + `slice_len`, as the last
   /// returned slice.
   #[inline]
   pub fn eof(&self) -> bool {
-    self.pos + self.slice_len >= self.base.len()
+    self.pos + self.slice_len >= self.base.1
   }
 
   #[inline]
-  pub fn build_slice(&self) -> &'a [Token] {
-    &self.base[self.pos..self.pos + self.slice_len]
+  pub fn build_slice(&self) -> &'static [Token] {
+    unsafe { std::slice::from_raw_parts(self.base.0.add(self.pos), self.slice_len) }
   }
 
   /// Take current slice and expand its end to the next newline
-  pub fn expand_till_next_line(&mut self) -> Option<&'a [Token]> {
+  pub fn expand_till_next_line(&mut self) -> Option<&'static [Token]> {
     if self.eof() {
       return None;
     }
 
     // Scan tokens after pos till we find a newline
     let scan_start = self.pos + self.slice_len;
-    for i in scan_start..self.base.len() {
-      if self.base[i].is_eol() {
+    for i in scan_start..self.base.1 {
+      if self.read_base(i).is_eol() {
         // Add 1 to include the newline
         self.slice_len = self.slice_len + i - scan_start + 1;
         return Some(self.build_slice());

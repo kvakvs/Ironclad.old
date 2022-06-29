@@ -3,6 +3,8 @@
 use crate::colored::Colorize;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::typing::erl_integer::ErlInteger;
+use std::ptr::null;
 
 /// Token represents basic elements of source code
 #[derive(Clone)]
@@ -29,10 +31,15 @@ impl Token {
   /// Create a new symbol token
   #[inline]
   pub fn new(offset: *const u8, tt: TokenType) -> Self {
+    Self { offset, content: tt }
+  }
+
+  /// Create a new token for small integer
+  #[inline]
+  pub fn new_small(i: i64) -> Self {
     Self {
-      offset,
-      content: tt,
-      //last_in_line: false
+      offset: null(),
+      content: TokenType::Integer(ErlInteger::Small(i)),
     }
   }
 

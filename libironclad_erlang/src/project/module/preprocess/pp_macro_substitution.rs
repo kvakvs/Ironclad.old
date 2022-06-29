@@ -1,5 +1,6 @@
 //! Code for processing a line of tokens and pasting macro values instead of macro invocations.
 
+use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
@@ -8,6 +9,8 @@ use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::project::module::preprocess::pp_state::PreprocessState;
 use crate::project::module::preprocess::pp_tok_stream::TokenStream;
+use crate::source_loc::SourceLoc;
+use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 
@@ -38,6 +41,7 @@ fn paste_tokens(output: &mut Vec<Token>, pdef: &PreprocessorDefine, args: &[Vec<
 /// Given an input line of tokens, replace macro invocations with their actual body content.
 /// Also substitute the macro variables.
 /// Returns a wrapper struct with either original or substituted tokens.
+#[named]
 pub(crate) fn substitute_macro_invocations<'a>(
   original_input: &str,
   tokens: &'a [Token],
@@ -65,7 +69,10 @@ pub(crate) fn substitute_macro_invocations<'a>(
       if let Some(pdef) = state.module.root_scope.defines.get(&key) {
         paste_tokens(&mut substituted, &pdef, &args);
       } else {
-        unimplemented!("error macro not defined")
+        state.module.fatal_error(ErlError::preprocessor_error(
+          SourceLoc::unimplemented(file!(), function_name!()),
+          format!("Invocation of an undefined macro: {}", macro_name),
+        ));
       }
     } else {
       substituted.push(t.clone());

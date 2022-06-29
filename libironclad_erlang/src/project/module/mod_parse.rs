@@ -29,6 +29,8 @@ impl ErlModuleImpl {
   where
     T: Fn(ParserInput) -> ParserResult<AstNode>,
   {
+    println!("{}", project);
+
     let mut module_impl = ErlModuleImpl {
       source_file: src_file.clone(),
       ..ErlModuleImpl::default()

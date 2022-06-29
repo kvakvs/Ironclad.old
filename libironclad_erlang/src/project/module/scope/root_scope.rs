@@ -3,7 +3,8 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
+use crate::erl_syntax::preprocessor::pp_define::{PreprocessorDefine, PreprocessorDefineImpl};
+use crate::erl_syntax::token_stream::token::Token;
 use crate::project::module::scope::mod_attr::ModuleAttributes;
 use crate::project::project_impl::ErlProjectImpl;
 use crate::project::ErlProject;
@@ -49,7 +50,7 @@ pub type RootScope = Arc<RootScopeImpl>;
 
 impl Default for RootScopeImpl {
   fn default() -> Self {
-    RootScopeImpl {
+    let rsi = RootScopeImpl {
       defines: Default::default(),
       file_cache: FileCache::default(),
       project: ErlProjectImpl::default().into(),
@@ -61,7 +62,12 @@ impl Default for RootScopeImpl {
       exports: RwHashSet::default(),
       exported_types: RwHashSet::default(),
       imports: RwHashSet::default(),
-    }
+    };
+    rsi.defines.add(
+      MFArity::new_local("COMPILER_VSN", 0),
+      PreprocessorDefineImpl::new("COMPILER_VSN".to_string(), &[], &[Token::new_small(42)]),
+    );
+    rsi
   }
 }
 
