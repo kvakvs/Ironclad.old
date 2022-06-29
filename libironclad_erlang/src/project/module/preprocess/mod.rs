@@ -12,12 +12,14 @@ use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::{IcResult, IroncladError};
 use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::project::module::preprocess::pp_macro_substitution::substitute_macro_invocations;
 use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
+use libironclad_util::source_file::SourceFile;
 use pp_state::PreprocessState;
 use std::path::{Path, PathBuf};
 use std::slice;
@@ -398,22 +400,27 @@ impl ErlModuleImpl {
   /// eliminated, files included and macros substituted.
   #[named]
   pub fn preprocess_interpret(
-    original_input: &str,
+    source_file: &SourceFile,
     project: &ErlProject,
     module: &ErlModule,
     mut tokens: Vec<Token>,
   ) -> IcResult<Vec<Token>> {
+    let original_input = source_file.text.as_str();
     let mut state = PreprocessState::new(project, module, (tokens.as_ptr(), tokens.len()));
 
     while let Some(line) = state.itr.next() {
       if state.too_many_errors {
         break;
       }
+      print!(
+        "\rProgress: {:.02}% - {}",
+        state.itr.progress(),
+        source_file.file_name.to_string_lossy()
+      );
 
       if line_begins_with_preprocessor_or_attr(&line) {
         let line2 = expand_till_directive_end(line, &mut state);
-        let line3 =
-          pp_macro_substitution::substitute_macro_invocations(original_input, line2, &mut state);
+        let line3 = substitute_macro_invocations(original_input, line2, &mut state);
 
         let (tail, ppnode) = line3.parse_as_preprocessor(original_input);
 
@@ -435,8 +442,9 @@ impl ErlModuleImpl {
           let line2 = expand_till_directive_start(line, &mut state);
 
           // Substitute macro invocations in the line with their content
-          let line3 =
-            pp_macro_substitution::substitute_macro_invocations(original_input, line2, &mut state);
+          let line3 = substitute_macro_invocations(original_input, line2, &mut state);
+          // println!("{}", format_tok_stream(line3.as_slice(), line3.as_slice().len()));
+
           // Copy the line contents to result.
           state.result.extend(line3.as_slice().iter().cloned())
         }

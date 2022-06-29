@@ -108,8 +108,7 @@ impl ErlModuleImpl {
     // Stage 2 preprocessor: handle ifdefs, defines, includes etc
     // tokenize includes and paste in the token stream too
     //----------------------
-    let tok_stream2 =
-      ErlModuleImpl::preprocess_interpret(src_file.text.as_str(), project, module, tok_stream1)?;
+    let tok_stream2 = ErlModuleImpl::preprocess_interpret(src_file, project, module, tok_stream1)?;
     ErlModuleImpl::verify_integrity(&module)?;
 
     Ok(tok_stream2)

@@ -5,7 +5,7 @@ use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::exit_codes::erl_fatal_error;
 use crate::project::module::preprocess::pp_state::PreprocessState;
@@ -13,6 +13,7 @@ use crate::project::module::preprocess::pp_tok_stream::TokenStream;
 use crate::source_loc::SourceLoc;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
+use nom::combinator::recognize;
 use nom::Finish;
 
 fn has_any_macro_invocations(line: &[Token]) -> bool {
@@ -53,43 +54,46 @@ pub(crate) fn substitute_macro_invocations<'a>(
     return TokenStream::new_borrowed(tokens);
   }
 
-  let mut substituted = Vec::with_capacity(tokens.len());
-  let mut tokens_itr = tokens.iter().enumerate();
+  let mut output = Vec::with_capacity(tokens.len());
+  let mut index = 0usize;
+  let mut max_index = tokens.len();
 
-  while let Some((index, t)) = tokens_itr.next() {
+  while index < max_index {
+    let t = &tokens[index];
+
     if let TokenType::MacroInvocation(macro_name) = &t.content {
-      // println!("Found invocation of {}", &macro_name);
+      // Parse once to get the actual arguments grouped by the commas
+      // and parse twice to get the actual span of tokens affected
+      let (args, args_span) = parse_as_invocation_params(original_input, &tokens[index + 1..]);
 
-      let (tail, args) = parse_as_invocation_params(original_input, &tokens[index + 1..]);
-
-      // continue iterating the tail instead of the original input tokens
-      tokens_itr = tail.tokens.iter().enumerate();
-
+      // Look up the macro definition
       let key = MFArity::new_local(&macro_name, args.len());
 
       if let Some(pdef) = state.module.root_scope.defines.get(&key) {
-        paste_tokens(&mut substituted, &pdef, &args);
+        // Insert macro body and replace any macro variables with content
+        paste_tokens(&mut output, &pdef, &args);
       } else {
         erl_fatal_error(ErlError::preprocessor_error(
           SourceLoc::unimplemented(file!(), function_name!()),
           format!("Invocation of an undefined macro: {}", macro_name),
         ));
       }
+
+      // Skip input tokens consumed by parsing the arguments
+      index += args_span + 1;
     } else {
-      print!("{}", t);
-      substituted.push(t.clone());
+      output.push(t.clone());
+      index += 1;
     }
   }
 
-  TokenStream::new_owned(substituted)
+  TokenStream::new_owned(output)
 }
 
 /// Invoke parser producing a list of expressions? separated by commas
-/// Return value: Corressponding tokens, not the AST expressions! One vec of tokens per macro arg.
-fn parse_as_invocation_params<'a>(
-  original_input: &str,
-  tokens: &'a [Token],
-) -> (ParserInput<'a>, Vec<Vec<Token>>) {
+/// Return value: The tokens of arguments, grouped by the separating commas, and the span of the
+///               arguments list (used to skip the length of tokens)
+fn parse_as_invocation_params(original_input: &str, tokens: &[Token]) -> (Vec<Vec<Token>>, usize) {
   let parser_input = ParserInput::new_slice(tokens);
   let (tail, nodes_as_tokens) = panicking_parser_error_reporter(
     original_input,
@@ -97,5 +101,12 @@ fn parse_as_invocation_params<'a>(
     parse_macro_invocation_args(parser_input).finish(),
     false,
   );
-  (tail, nodes_as_tokens)
+
+  // Assume this cannot fail, if previous failed it should panic or something
+  let parser_input2 = ParserInput::new_slice(tokens);
+  let (_tail2, recognized_span) = recognize(parse_macro_invocation_args)(parser_input2)
+    .finish()
+    .unwrap();
+
+  (nodes_as_tokens, recognized_span.tokens.len())
 }

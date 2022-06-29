@@ -57,6 +57,11 @@ impl<'a> Iterator for TokenLinesIter<'a> {
 }
 
 impl<'a> TokenLinesIter<'a> {
+  /// Percentage of progress towards end
+  pub fn progress(&self) -> f64 {
+    (100.0 * (self.slice_start as f64)) / (self.base.1 as f64)
+  }
+
   /// Access the `Token` at index `i`
   #[inline]
   fn read_base(&self, i: usize) -> &Token {
