@@ -15,8 +15,8 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
   tok_double_angle_open, tok_double_vertical_bar, tok_hash, tok_keyword_begin, tok_keyword_end,
-  tok_left_arrow, tok_par_close, tok_par_open, tok_square_close, tok_square_open, tok_var,
-  tok_vertical_bar,
+  tok_left_arrow, tok_par_close, tok_par_open, tok_period, tok_square_close, tok_square_open,
+  tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_statement;
@@ -193,20 +193,31 @@ fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<
 }
 
 /// Parse a record builder expression
-fn parse_record_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  map(
-    terminated(
-      tuple((
-        opt(tok_var),
-        delimited(tok_hash, tok_atom, tok_curly_open),
-        separated_list0(tok_comma, record_builder_member::<STYLE>),
-      )),
-      tok_curly_close,
+fn parse_record_builder<const STYLE: usize>(
+  input: ParserInput,
+) -> ParserResult<(String, Vec<RecordBuilderMember>)> {
+  terminated(
+    pair(
+      delimited(tok_hash, tok_atom, tok_curly_open),
+      separated_list0(tok_comma, record_builder_member::<STYLE>),
     ),
-    |(base, tag, members)| {
-      AstNodeImpl::new_record_builder(SourceLoc::new(&input), base, tag, members)
-    },
+    tok_curly_close,
   )(input.clone())
+}
+
+/// Parse a record builder expression without a prefix expression just `# RECORDTAG { FIELDS }`
+fn parse_record_builder_no_base<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+  map(parse_record_builder::<STYLE>, |(tag, record_fields)| {
+    AstNodeImpl::new_record_builder(SourceLoc::new(&input), None, tag, record_fields)
+  })(input.clone())
+}
+
+/// Parse a record field access expression. Matches `# RECORDTAG "." FIELDTAG`
+/// Returns (record: String, field: String)
+fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String)> {
+  terminated(pair(delimited(tok_hash, tok_atom, tok_period), tok_atom), tok_curly_close)(
+    input.clone(),
+  )
 }
 
 /// Parses comma separated sequence of expressions
@@ -255,21 +266,25 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
     EXPR_STYLE_FULL => context(
       "parse expression (highest precedence)",
       alt((
-        parse_lambda,
-        parse_begin_end,
-        parse_try_catch,
-        parse_if_statement,
-        parse_case_statement,
-        parenthesized_expr::<STYLE>,
-        parse_list_of_exprs::<STYLE>,
-        parse_tuple_of_exprs::<STYLE>,
-        map_builder_of_exprs::<STYLE>,
-        parse_record_builder::<STYLE>,
-        parse_var,
-        parse_erl_literal,
-        parse_list_comprehension,
-        parse_binary_comprehension,
-        parse_binary,
+        alt((
+          parse_lambda,
+          parse_begin_end,
+          parse_try_catch,
+          parse_if_statement,
+          parse_case_statement,
+          parenthesized_expr::<STYLE>,
+          parse_list_of_exprs::<STYLE>,
+          parse_tuple_of_exprs::<STYLE>,
+          map_builder_of_exprs::<STYLE>,
+        )),
+        alt((
+          parse_record_builder_no_base::<STYLE>,
+          parse_var,
+          parse_erl_literal,
+          parse_list_comprehension,
+          parse_binary_comprehension,
+          parse_binary,
+        )),
       )),
     )(input),
     EXPR_STYLE_CONST_ONLY => context(
@@ -282,6 +297,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
         map_builder_of_exprs::<STYLE>,
+        parse_record_builder_no_base::<STYLE>,
         parse_erl_literal,
       )),
     )(input),
@@ -291,7 +307,7 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
         parenthesized_expr::<STYLE>,
         parse_list_of_exprs::<STYLE>,
         parse_tuple_of_exprs::<STYLE>,
-        parse_record_builder::<STYLE>,
+        parse_record_builder_no_base::<STYLE>,
         parse_var,
         parse_erl_literal,
         parse_binary,
@@ -537,15 +553,56 @@ pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
   map(
     context(
       "expression",
-      pair(
+      tuple((
         parse_expr_prec13::<{ EXPR_STYLE_FULL }>,
         opt(parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>),
-      ),
+        opt(parse_record_field_access),
+        opt(parse_record_builder::<{ EXPR_STYLE_FULL }>),
+      )),
     ),
-    |(expr, maybe_args): (AstNode, Option<Vec<AstNode>>)| -> AstNode {
+    |(expr, maybe_args, maybe_field_access, maybe_record_builder): (
+      AstNode,
+      Option<Vec<AstNode>>,
+      Option<(String, String)>,
+      Option<(String, Vec<RecordBuilderMember>)>,
+    )|
+     -> AstNode {
       if let Some(args) = maybe_args {
         let target = CallableTarget::new_expr(expr);
         AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
+      } else if let Some((tag, field)) = maybe_field_access {
+        AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
+      } else if let Some((tag, record_fields)) = maybe_record_builder {
+        AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
+      } else {
+        expr
+      }
+    },
+  )(input.clone())
+}
+
+/// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.
+pub fn parse_matchexpr(input: ParserInput) -> ParserResult<AstNode> {
+  // context("match expression", parse_expr_prec13::<{ EXPR_STYLE_MATCHEXPR }>)(input)
+  map(
+    context(
+      "match expression",
+      tuple((
+        parse_expr_prec13::<{ EXPR_STYLE_MATCHEXPR }>,
+        opt(parse_record_field_access),
+        opt(parse_record_builder::<{ EXPR_STYLE_MATCHEXPR }>),
+      )),
+    ),
+    |(expr, maybe_field_access, maybe_record_builder): (
+      AstNode,
+      Option<(String, String)>,
+      Option<(String, Vec<RecordBuilderMember>)>,
+    )|
+     -> AstNode {
+      if let Some((tag, field)) = maybe_field_access {
+        AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
+      } else if let Some((tag, record_fields)) = maybe_record_builder {
+        AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
       } else {
         expr
       }
@@ -561,9 +618,4 @@ pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
 /// Parse a constant-only (literal) expression.
 pub fn parse_constant_expr(input: ParserInput) -> ParserResult<AstNode> {
   context("constant-only expression", parse_expr_prec13::<{ EXPR_STYLE_CONST_ONLY }>)(input)
-}
-
-/// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.
-pub fn parse_matchexpr(input: ParserInput) -> ParserResult<AstNode> {
-  context("match expression", parse_expr_prec13::<{ EXPR_STYLE_MATCHEXPR }>)(input)
 }

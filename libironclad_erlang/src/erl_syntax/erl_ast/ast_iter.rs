@@ -15,7 +15,6 @@ impl IterableAstNodeT for AstNodeImpl {
   /// For all children of the current node, apply the apply_fn to each child, allowing to
   /// scan/recurse down the tree.
   /// Returns `AstChild` wrapped because some nodes are RefCells.
-  #[named]
   fn children(&self) -> Option<Vec<AstNode>> {
     match &self.content {
       AstNodeType::Empty { .. }
@@ -155,9 +154,11 @@ impl IterableAstNodeT for AstNodeImpl {
         Some(r)
       }
       AstNodeType::MapBuilder { .. } => unimplemented!("children() for map builder"),
-      _ => {
-        unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
-      }
+      // _ => {
+      //   unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
+      // }
+      AstNodeType::FnRef { .. } => unimplemented!(),
+      AstNodeType::RecordField { base, .. } => Some(vec![base.clone()]),
     }
   }
 }

@@ -57,6 +57,16 @@ impl AstNodeImpl {
     matches!(&self.content, AstNodeType::BinaryComprehension { .. })
   }
 
+  /// Checks whether an ErlAst node is a Record Field Accessor
+  pub fn is_record_field(&self) -> bool {
+    matches!(&self.content, AstNodeType::RecordField { .. })
+  }
+
+  /// Checks whether an ErlAst node is a Record Builder
+  pub fn is_record_builder(&self) -> bool {
+    matches!(&self.content, AstNodeType::RecordBuilder { .. })
+  }
+
   /// Checks whether an ErlAst node is a Function Application (a call)
   pub fn is_application(&self) -> bool {
     matches!(&self.content, AstNodeType::Apply(_))

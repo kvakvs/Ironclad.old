@@ -118,18 +118,22 @@ impl AstNodeImpl {
         }
         Ok(())
       }
-      AstNodeType::RecordBuilder { base, tag, members, .. } => {
-        variables.insert(tag.clone(), ErlTypeImpl::new_record_ref(tag.clone()));
+      AstNodeType::RecordBuilder { base: maybe_base, members, .. } => {
+        if let Some(base) = maybe_base {
+          Self::extract_variables(base, variables)?;
+        }
         for v in members {
           Self::extract_variables(&v.expr, variables)?;
         }
         Ok(())
       }
-
+      AstNodeType::RecordField { base, .. } => {
+        Self::extract_variables(base, variables)?;
+        Ok(())
+      }
       AstNodeType::Empty { .. } | AstNodeType::BinaryOp { .. } | AstNodeType::Lit { .. } => {
         Ok(()) // do nothing
       }
-
       AstNodeType::Type { .. }
       | AstNodeType::MFA { .. }
       | AstNodeType::ModuleRoot { .. }

@@ -129,13 +129,21 @@ pub enum AstNodeType {
   /// A map of some keys and some values, using `=>` syntax for construction
   RecordBuilder {
     /// The base variable name used for construction, must have same record type: `Var#recordtag{}`
-    base: Option<String>,
+    base: Option<AstNode>,
     /// The record tag `#recordtag{}`
     tag: String,
     /// Record members
     members: Vec<RecordBuilderMember>,
   },
-
+  /// A record field accessor
+  RecordField {
+    /// The base variable name used for construction, must have same record type: `Var#recordtag.field`
+    base: AstNode,
+    /// The record tag `#recordtag{}`
+    tag: String,
+    /// Field name in `Var#recordtag.field`
+    field: String,
+  },
   /// Comma-separated list of expressions, final expression is the result
   CommaExpr {
     /// Comma-expression elements

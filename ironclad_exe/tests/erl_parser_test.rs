@@ -199,6 +199,22 @@ fn parse_expr_based_numbers() -> IcResult<()> {
   Ok(())
 }
 
+/// Try parse record field accessors
+#[named]
+#[test]
+fn parse_expr_record_field_access() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse record field accessors");
+  let input = "{Var#record.field,\
+(Var)#record.field,\
+(functioncall())#record.field}";
+  let expr = test_util::parse_expr(function_name!(), input);
+  let tuple = expr.as_tuple();
+  assert!(tuple[0].is_record_field(), "Failed to parse Var#record.field");
+  assert!(tuple[1].is_record_field(), "Failed to parse (Var)#record.field");
+  assert!(tuple[2].is_record_field(), "Failed to parse (functioncall())#record.field");
+  Ok(())
+}
+
 /// Try parse an expression with parentheses and division
 #[named]
 #[test]
@@ -672,7 +688,7 @@ fn parse_record_construction() -> IcResult<()> {
   fn() ->\n\
     #tr{t=#t_fun{target={_Name, TotalArity}}} = Func.";
   let module = test_util::parse_module(function_name!(), input);
-  let root_scope = module.root_scope.clone();
+  let _root_scope = module.root_scope.clone();
   Ok(())
 }
 

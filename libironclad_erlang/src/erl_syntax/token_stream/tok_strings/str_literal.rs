@@ -1,6 +1,5 @@
 //! Parse double quoted strings
 
-use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::misc::ws_before;
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::shared;

@@ -341,6 +341,12 @@ pub(crate) fn tok_hash(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::Hash)), void_fn)(input)
 }
 
+/// Matches a `.` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_period(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Period)), void_fn)(input)
+}
+
 /// Matches a `/` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_forward_slash(input: ParserInput) -> ParserResult<()> {

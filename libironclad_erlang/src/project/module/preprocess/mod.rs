@@ -413,7 +413,7 @@ impl ErlModuleImpl {
         break;
       }
       print!(
-        "\rProgress: {:.02}% - {}",
+        "\rProgress: {:.02}% - {} ",
         state.itr.progress(),
         source_file.file_name.to_string_lossy()
       );

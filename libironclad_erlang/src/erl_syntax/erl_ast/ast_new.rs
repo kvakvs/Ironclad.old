@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty,
   FnDef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
-  ModuleRoot, RecordBuilder, TryCatch, Tuple, Var,
+  ModuleRoot, RecordBuilder, RecordField, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -141,11 +141,21 @@ impl AstNodeImpl {
   /// Create a new AST node for a record builder
   pub(crate) fn new_record_builder(
     location: SourceLoc,
-    base: Option<String>,
+    base: Option<AstNode>,
     tag: String,
     members: Vec<RecordBuilderMember>,
   ) -> AstNode {
     AstNodeImpl::construct_with_location(location, RecordBuilder { base, tag, members })
+  }
+
+  /// Create a new AST node for a record field access
+  pub(crate) fn new_record_field(
+    location: SourceLoc,
+    base: AstNode,
+    tag: String,
+    field: String,
+  ) -> AstNode {
+    AstNodeImpl::construct_with_location(location, RecordField { base, tag, field })
   }
 
   /// Create a new AST node for a comma-expression
