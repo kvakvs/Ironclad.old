@@ -53,6 +53,16 @@ impl AstNodeImpl {
     }
   }
 
+  /// Unwrap self as a small integer
+  pub fn as_small(&self) -> usize {
+    if let AstNodeType::Lit { value, .. } = &self.content {
+      if let Literal::Integer(s) = value.deref() {
+        return s.as_usize().unwrap();
+      }
+    }
+    panic!("Expected Lit(Integer()) AST node, but got {}", self)
+  }
+
   /// Unwrap a `ModuleRoot` node. Returns name and child nodes vector. Returns children first
   /// level only, for flat list of everything use `.children()` call.
   #[allow(dead_code)]

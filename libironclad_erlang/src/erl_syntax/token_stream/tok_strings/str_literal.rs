@@ -1,5 +1,6 @@
 //! Parse double quoted strings
 
+use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::misc::ws_before;
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::shared;
@@ -9,10 +10,10 @@ use crate::erl_syntax::token_stream::tok_strings::shared::{
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
-use nom::character::complete::{char, one_of};
+use nom::character::complete::{alphanumeric1, char, one_of};
 use nom::combinator::{map, recognize, value, verify};
 use nom::multi::{fold_many0, many0, many1};
-use nom::sequence::{delimited, terminated};
+use nom::sequence::{delimited, separated_pair, terminated};
 
 /// Parse a non-empty block of text that doesn't include \ or "
 fn parse_doublequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<&'a str> {
@@ -72,6 +73,11 @@ fn parse_int_unsigned_body(input: TokenizerInput) -> TokensResult<TokenizerInput
   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
 }
 
+/// Parse an any-base integer `0-9, a-z` (check is done when parsing is complete)
+fn parse_based_int_unsigned_body(input: TokenizerInput) -> TokensResult<TokenizerInput> {
+  recognize(many1(terminated(alphanumeric1, many0(char('_')))))(input)
+}
+
 // /// Matches + or -
 // fn parse_sign(input: TokenizerInput) -> TokensResult<TokenizerInput> {
 //   recognize(alt((char('-'), char('+'))))(input)
@@ -92,4 +98,16 @@ fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
 /// From Nom examples
 pub(crate) fn parse_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
   parse_int_decimal(input)
+}
+
+/// Parse a based integer `<BASE> # <NUMBER>`
+pub(crate) fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
+  map(
+    separated_pair(parse_int_unsigned_body, ws_before(char('#')), parse_based_int_unsigned_body),
+    |(base_str, value_str): (&str, &str)| -> ErlInteger {
+      let base = base_str.parse::<u32>().unwrap();
+      assert!(base >= 2 && base <= 36);
+      ErlInteger::new_from_string_radix(value_str, base).unwrap()
+    },
+  )(input)
 }

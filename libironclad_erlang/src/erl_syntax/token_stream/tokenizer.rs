@@ -7,7 +7,7 @@ use crate::erl_syntax::token_stream::misc::{
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
 use crate::erl_syntax::token_stream::tok_strings::str_literal::{
-  parse_doublequot_string, parse_int,
+  parse_based_int, parse_doublequot_string, parse_int,
 };
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token::Token;
@@ -32,7 +32,9 @@ fn tok_variable(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn tok_integer(input: TokenizerInput) -> TokensResult<Token> {
-  map(parse_int, |i| Token::new(input.as_ptr(), TokenType::Integer(i)))(input)
+  map(alt((parse_based_int, parse_int)), |i| {
+    Token::new(input.as_ptr(), TokenType::Integer(i))
+  })(input)
 }
 
 #[inline]
@@ -470,8 +472,8 @@ fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
     alt((
       alt((
         keyword_after,
-        keyword_and,
         keyword_andalso,
+        keyword_and, // must be after andalso
         keyword_begin,
         keyword_binaryand,
         keyword_binarynot,
@@ -494,8 +496,8 @@ fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
         keyword_maybe,
         keyword_not,
         keyword_of,
-        keyword_or,
         keyword_orelse,
+        keyword_or, // must be after orelse
         keyword_receive,
         keyword_rem,
         keyword_try,

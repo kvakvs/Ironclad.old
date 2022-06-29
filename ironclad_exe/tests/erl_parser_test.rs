@@ -91,19 +91,6 @@ fn parse_import_attr() -> IcResult<()> {
   Ok(())
 }
 
-// /// Try parse empty module forms collection (from empty input)
-// #[named]
-// #[test]
-// fn parse_empty_module_forms_collection() -> IcResult<()> {
-//   test_util::start(function_name!(), "Parse a whitespace only string as module forms collection");
-//   let input = "    \n   \r\n  ";
-//   let parser_input = ParserInput::new_str(input);
-//   let parse_result = parse_module_forms(parser_input.clone());
-//   let (_tail, forms) = panicking_parser_error_reporter(parser_input, parse_result.finish());
-//   println!("Parsed empty module forms collection: «{}»\nResult: {:?}", input, forms);
-//   Ok(())
-// }
-
 /// Try parse module forms collection with 2 functions in it
 #[named]
 #[test]
@@ -194,6 +181,21 @@ fn parse_expr_longer() -> IcResult<()> {
   let expr = test_util::parse_expr(function_name!(), "123 + 1 / (2 * hello)");
   println!("Parse \"123+1/(2*hello)\": {}", expr);
   assert!(matches!(&expr.content, BinaryOp { .. }));
+  Ok(())
+}
+
+/// Try parse an expression with parentheses and division
+#[named]
+#[test]
+fn parse_expr_based_numbers() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse 2-10-16-36 based decimals");
+  let input = "{2#10, 10#10, 16#fF, 36#Zz}";
+  let expr = test_util::parse_expr(function_name!(), input);
+  let tuple = expr.as_tuple();
+  assert_eq!(tuple[0].as_small(), 2);
+  assert_eq!(tuple[1].as_small(), 10);
+  assert_eq!(tuple[2].as_small(), 16 * 16 - 1);
+  assert_eq!(tuple[3].as_small(), 36 * 36 - 1);
   Ok(())
 }
 
@@ -685,4 +687,41 @@ fn parse_record_with_map() -> IcResult<()> {
   let _nodes = test_util::parse_module_unwrap(function_name!(), input);
   // println!("Parsed: «{}»\nAST: {}", input, &nodes.ast);
   Ok(())
+}
+
+/// Try parse a complex case with guards
+#[named]
+#[test]
+fn parse_case_with_guards() {
+  test_util::start(function_name!(), "parse a complex case with guards");
+  let input = "
+-define(tag_u, 1).
+encode1(Tag, Bytes) ->
+  case iolist_size(Bytes) of
+    Num when 2 =< Num, Num =< 8 ->
+      [((Num - 2) bsl 5) bor 2#00011000 bor Tag | Bytes];
+    Num when 8 < Num ->
+      [2#11111000 bor Tag, encode(?tag_u, Num - 9) | Bytes]
+  end.
+";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+/// Try parse a complex case with unary `not` operator
+#[named]
+#[test]
+fn parse_case_with_unary_op() {
+  test_util::start(function_name!(), "parse a complex case with unary op");
+  let input = "simplify_get_map_elements(Fail, Src, {list,[Key,Dst]},
+                          [{get_map_elements,Fail,Src,{list,List1}}|Acc]) ->
+    case are_keys_literals([Key]) andalso are_keys_literals(List1) andalso not is_reg_overwritten(Src, List1) andalso not is_reg_overwritten(Dst, List1) of
+        true ->
+            case member(Key, List1) of
+                true -> error;
+                false -> List = [Key,Dst|List1], {ok,[{get_map_elements,Fail,Src,{list,List}}|Acc]}
+            end;
+        false -> error
+    end;
+simplify_get_map_elements(_, _, _, _) -> error.";
+  let _m = test_util::parse_module(function_name!(), input);
 }

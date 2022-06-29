@@ -3,7 +3,7 @@ include_paths = ["test_project/src", "test_project/include"]    # default []
 
 [inputs]
 #include_paths = ["test_project/src", "test_project/include"] # default []
-files = ["beam_asm.erl"]                         # default ["*.erl"]
+files = ["*.erl"]                         # default ["*.erl"]
 directories = ["test_project/src"]        # default ["."]
 exclude_files = []          # TODO: not implemented; default []
 exclude_directories = []    # TODO: not implemented; default []

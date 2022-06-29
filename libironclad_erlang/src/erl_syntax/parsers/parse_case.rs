@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::{
   tok, tok_keyword_case, tok_keyword_end, tok_keyword_of, tok_keyword_when, tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_expr, parse_matchexpr, EXPR_STYLE_FULL,
+  parse_comma_sep_exprs1, parse_expr, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -27,7 +27,7 @@ pub(crate) fn parse_case_clause(
       parse_matchexpr,
       opt(preceded(
         tok_keyword_when,
-        context("case clause guard expression", cut(parse_expr)),
+        context("case clause guard expression", cut(parse_guardexpr)),
       )),
       // The body after ->
       preceded(
@@ -55,7 +55,7 @@ pub(crate) fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> 
       "case block",
       cut(map(
         tuple((
-          terminated(parse_expr, tok_keyword_of),
+          terminated(context("case block expression", cut(parse_expr)), tok_keyword_of),
           separated_list1(tok_semicolon, context("case block clause", cut(parse_case_clause))),
           tok_keyword_end,
         )),

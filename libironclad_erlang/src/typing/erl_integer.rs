@@ -1,7 +1,7 @@
 //! Support integers small and large
 
 use crate::typing::erl_integer::ErlInteger::{Big, Small};
-use num::{FromPrimitive, Signed, ToPrimitive};
+use num::{FromPrimitive, Num, Signed, ToPrimitive};
 use num_bigint::BigInt;
 use std::cmp::Ordering;
 use std::fmt::Formatter;
@@ -17,9 +17,13 @@ pub enum ErlInteger {
 }
 
 impl ErlInteger {
-  /// Creates from string
+  /// Creates from string with base
   pub(crate) fn new_from_string(input: &str) -> Option<Self> {
-    match input.parse::<BigInt>() {
+    Self::new_from_string_radix(input, 10)
+  }
+  /// Creates from string
+  pub(crate) fn new_from_string_radix(input: &str, radix: u32) -> Option<Self> {
+    match BigInt::from_str_radix(input, radix) {
       Ok(parsed) => {
         if let Some(small) = &parsed.to_i64() {
           // Encodes in 1 u64 word, so it fits small
