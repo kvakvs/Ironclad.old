@@ -8,6 +8,7 @@ extern crate libironclad_erlang;
 use std::process::exit;
 
 use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::exit_codes::{erl_fatal_error, erl_fatal_icerror};
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::project::ErlProject;
@@ -40,7 +41,9 @@ fn main_do() -> IcResult<()> {
 
   // Parse all ERL files and their included includes
   match ErlParseStage::run_parse_stage(&project) {
-    Err(e) => println!("Fatal: {}", e),
+    Err(e) => {
+      erl_fatal_icerror(e);
+    }
     _ => (),
   }
   Ok(())

@@ -116,7 +116,7 @@ impl<'a> TokenLinesIter<'a> {
         // Add 1 to include the newline
         self.slice_len = self.slice_len + i - scan_start + 1;
         let result = self.build_slice();
-        println!("itr: expand: {}", format_tok_stream(result, result.len()));
+        // println!("itr: expand: {}", format_tok_stream(result, result.len()));
         return Some(result);
       }
     }

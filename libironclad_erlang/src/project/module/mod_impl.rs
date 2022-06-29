@@ -139,13 +139,6 @@ impl ErlModuleImpl {
     self.errors.len() < self.compiler_options.max_errors_per_module
   }
 
-  /// Adds an error to vector of errors. Returns false when error list is full and the calling code
-  /// should attempt to stop.
-  pub fn fatal_error(&self, err: ErlError) -> bool {
-    println!("Fatal error: {}", err);
-    std::process::exit(crate::exit_codes::EXIT_FATAL);
-  }
-
   /// Adds an warning to vector of warnings.
   pub fn add_warning(&self, err: ErlError) {
     self.warnings.push(err);

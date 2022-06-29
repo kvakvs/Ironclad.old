@@ -239,7 +239,11 @@ fn on_include(
 
   if state.module.included_files.contains(&found_path_oss) {
     // Circular include detected
-    let msg = format!("Circular include detected: {}", found_path_oss.to_string_lossy());
+    let msg = format!(
+      "Circular include detected {} from {}",
+      found_path_oss.to_string_lossy(),
+      state.module.source_file.file_name.to_string_lossy()
+    );
     return Err(Box::new(ErlError::preprocessor_error(ppnode.location.clone(), msg)));
   }
 
