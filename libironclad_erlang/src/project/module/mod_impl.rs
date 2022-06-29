@@ -12,10 +12,12 @@ use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
+use libironclad_util::rw_hashset::RwHashSet;
 use libironclad_util::rw_vec::RwVec;
 use libironclad_util::source_file::{SourceFile, SourceFileImpl};
 use nom::Finish;
 use std::cell::RefCell;
+use std::ffi::OsString;
 use std::fmt;
 use std::fmt::Debug;
 use std::ptr::null;
@@ -42,6 +44,8 @@ pub struct ErlModuleImpl {
   pub errors: RwVec<ErlError>,
   /// Warnings which can accumulate but do not block the processing
   pub warnings: RwVec<ErlError>,
+  /// Collection of included files to prevent circular imports
+  pub included_files: RwHashSet<OsString>,
 }
 
 /// Wraps module into runtime-lockable refcount
@@ -57,6 +61,7 @@ impl Default for ErlModuleImpl {
       root_scope: RootScope::default(),
       errors: RwVec::with_capacity(CompilerOptsImpl::MAX_ERRORS_PER_MODULE * 110 / 100),
       warnings: RwVec::default(),
+      included_files: Default::default(),
     }
   }
 }

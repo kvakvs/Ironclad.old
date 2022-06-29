@@ -43,7 +43,7 @@ impl<'a> PreprocessState<'a> {
   /// Insert tokens vector contents at the current preprocessing state. The vector might be
   /// reallocated, so also update the `itr` iterator. This is used to include files.
   pub(crate) fn paste_tokens(&self, paste_into: &mut Vec<Token>, tokens: &[Token]) {
-    paste_into.splice(self.itr.pos..self.itr.pos, tokens.iter().cloned());
+    paste_into.splice(self.itr.slice_start..self.itr.slice_start, tokens.iter().cloned());
   }
 
   /// Pushes a new section to the stack, when a condition is encountered.

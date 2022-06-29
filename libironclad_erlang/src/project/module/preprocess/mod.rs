@@ -235,11 +235,21 @@ fn on_include(
   let literal_path = PathBuf::from(path);
   let project = &state.project;
   let found_path = project.find_include(ppnode.location.clone(), &literal_path, None)?;
-  println!("Found include at {}", found_path.to_string_lossy());
+  let found_path_oss = found_path.as_os_str().to_os_string();
+
+  if state.module.included_files.contains(&found_path_oss) {
+    // Circular include detected
+    let msg = format!("Circular include detected: {}", found_path_oss.to_string_lossy());
+    return Err(Box::new(ErlError::preprocessor_error(ppnode.location.clone(), msg)));
+  }
+
   let src_file = project
     .file_cache
     .get_or_load(&found_path)
     .map_err(|e| IroncladError::from(e))?;
+
+  // update included modules collection as to prevent circular includes
+  state.module.included_files.add(found_path_oss);
 
   ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)
 }
@@ -387,6 +397,7 @@ impl ErlModuleImpl {
         let line2 = expand_till_directive_end(line, &mut state);
         let line3 =
           pp_macro_substitution::substitute_macro_invocations(original_input, line2, &mut state);
+
         let (tail, ppnode) = line3.parse_as_preprocessor(original_input);
 
         // Any non-EOL token in the tail = the input was not consumed
@@ -405,7 +416,6 @@ impl ErlModuleImpl {
         if state.is_section_condition_true() {
           // Grow the selection till we hit a start of a preprocessor directive or an attribute
           let line2 = expand_till_directive_start(line, &mut state);
-          // println!("Expanded line: {}", format_tok_stream(line2, line2.len()));
 
           // Substitute macro invocations in the line with their content
           let line3 =
@@ -417,14 +427,6 @@ impl ErlModuleImpl {
     }
 
     final_state_check(&mut state);
-
-    // if !module.has_errors() {
-    //   println!(
-    //     "Preprocessor: output tokens:\n{}",
-    //     format_tok_stream(&state.result, state.result.len())
-    //   );
-    // }
-
     Ok(state.result)
   }
 }
