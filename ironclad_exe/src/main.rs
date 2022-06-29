@@ -8,7 +8,7 @@ extern crate libironclad_erlang;
 use std::process::exit;
 
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::exit_codes::{erl_fatal_error, erl_fatal_icerror};
+use libironclad_erlang::exit_codes::erl_fatal_icerror;
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::project::ErlProject;

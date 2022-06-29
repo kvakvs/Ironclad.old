@@ -6,7 +6,6 @@ use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::project_inputs::ErlProjectInputs;
-use crate::source_loc::SourceLoc;
 use libironclad_util::io::file_cache::FileCache;
 use libironclad_util::rw_hashmap::RwHashMap;
 use libironclad_util::rw_vec::RwVec;
@@ -93,45 +92,6 @@ impl ErlProjectImpl {
     file_list.push(abs_path);
 
     Ok(())
-  }
-
-  fn find_include_in(sample: &Path, try_dirs: &[String]) -> Option<PathBuf> {
-    for dir in try_dirs {
-      let try_path = Path::new(&dir).join(sample);
-      println!("Trying path: {}", try_path.to_string_lossy());
-      if try_path.exists() {
-        return Some(try_path);
-      }
-    }
-    None
-  }
-
-  /// Check include paths to find the file.
-  pub(crate) fn find_include(
-    &self,
-    location: SourceLoc,
-    find_file: &Path,
-    from_file: Option<PathBuf>,
-  ) -> IcResult<PathBuf> {
-    // Try find in local search paths for file
-    if let Some(from_file1) = &from_file {
-      if let Some(opts_per_file) = self.project_inputs.compiler_opts_per_file.get(from_file1) {
-        println!("Per-module options search paths: {:?}", &opts_per_file.include_paths);
-        if let Some(try_loc) = Self::find_include_in(find_file, &opts_per_file.include_paths) {
-          return Ok(try_loc);
-        }
-      }
-    }
-
-    // Try find in global search paths
-    println!("Global search paths: {:?}", &self.project_inputs.compiler_opts.include_paths);
-    if let Some(try_glob) =
-      Self::find_include_in(find_file, &self.project_inputs.compiler_opts.include_paths)
-    {
-      Ok(try_glob)
-    } else {
-      IroncladError::file_not_found(location, find_file, "searching for an -include() path")
-    }
   }
 
   /// Register a new module

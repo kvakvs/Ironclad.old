@@ -1,7 +1,7 @@
 //! State for preprocessor interpreter.
 
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::project::module::mod_impl::ErlModule;
 use crate::project::module::preprocess::pp_section::PreprocessorSection;
@@ -42,8 +42,16 @@ impl<'a> PreprocessState<'a> {
 
   /// Insert tokens vector contents at the current preprocessing state. The vector might be
   /// reallocated, so also update the `itr` iterator. This is used to include files.
-  pub(crate) fn paste_tokens(&self, paste_into: &mut Vec<Token>, tokens: &[Token]) {
-    paste_into.splice(self.itr.slice_start..self.itr.slice_start, tokens.iter().cloned());
+  pub(crate) fn paste_tokens(&self, paste_into: &mut Vec<Token>, mut tokens: Vec<Token>) {
+    tokens.push(Token::new_eol());
+
+    let paste_pos = self.itr.slice_start + self.itr.slice_len;
+    // println!(
+    //   "Pasting at {} <HERE> {}",
+    //   format_tok_stream(&paste_into[paste_pos - 20..paste_pos], 20),
+    //   format_tok_stream(&paste_into[paste_pos..paste_pos + 20], 20)
+    // );
+    paste_into.splice(paste_pos..paste_pos, tokens.iter().cloned());
   }
 
   /// Pushes a new section to the stack, when a condition is encountered.

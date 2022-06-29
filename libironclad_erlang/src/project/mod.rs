@@ -7,6 +7,7 @@ pub mod conf;
 pub mod input_opts;
 pub mod module;
 pub mod project_impl;
+pub mod project_include;
 pub mod project_inputs;
 
 /// Wrapper for shared access

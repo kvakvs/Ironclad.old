@@ -1,6 +1,6 @@
 //! Token array processing functions
 
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::token_stream::token::Token;
 use std::ptr::null;
 
 /// Iterate over token stream lines, by finding `Newline` tokens.

@@ -34,6 +34,12 @@ impl Token {
     Self { offset, content: tt }
   }
 
+  /// Create a new End of Line
+  #[inline]
+  pub fn new_eol() -> Self {
+    Self { offset: null(), content: TokenType::EOL }
+  }
+
   /// Create a new token for small integer
   #[inline]
   pub fn new_small(i: i64) -> Self {

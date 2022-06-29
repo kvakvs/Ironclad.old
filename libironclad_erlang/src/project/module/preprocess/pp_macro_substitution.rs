@@ -76,6 +76,7 @@ pub(crate) fn substitute_macro_invocations<'a>(
         ));
       }
     } else {
+      print!("{}", t);
       substituted.push(t.clone());
     }
   }

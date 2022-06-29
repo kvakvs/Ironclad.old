@@ -19,7 +19,7 @@ use crate::typing::erl_type::ErlType;
 use ::function_name::named;
 use libironclad_util::mfarity::MFArity;
 use pp_state::PreprocessState;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::slice;
 
 pub mod pp_macro_substitution;
@@ -226,6 +226,35 @@ fn on_else_if(state: &mut PreprocessState, cond: &AstNode) {
   }
 }
 
+fn generic_include(
+  state: &mut PreprocessState,
+  _ppnode: PreprocessorNode,
+  found_path: &Path,
+) -> IcResult<Vec<Token>> {
+  // let found_path_oss = found_path.as_os_str().to_os_string();
+
+  // if state.module.included_files.contains(&found_path_oss) {
+  //   // Circular include detected
+  //   let msg = format!(
+  //     "Circular include detected {} from {}",
+  //     found_path_oss.to_string_lossy(),
+  //     state.module.source_file.file_name.to_string_lossy()
+  //   );
+  //   return Err(Box::new(ErlError::preprocessor_error(ppnode.location.clone(), msg)));
+  // }
+
+  let src_file = state
+    .project
+    .file_cache
+    .get_or_load(&found_path)
+    .map_err(|e| IroncladError::from(e))?;
+
+  // // update included modules collection as to prevent circular includes
+  // state.module.included_files.add(found_path_oss);
+
+  ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)
+}
+
 /// Handle `-include(Path)` preprocessor directive
 fn on_include(
   state: &mut PreprocessState,
@@ -233,38 +262,22 @@ fn on_include(
   ppnode: PreprocessorNode,
 ) -> IcResult<Vec<Token>> {
   let literal_path = PathBuf::from(path);
-  let project = &state.project;
-  let found_path = project.find_include(ppnode.location.clone(), &literal_path, None)?;
-  let found_path_oss = found_path.as_os_str().to_os_string();
-
-  if state.module.included_files.contains(&found_path_oss) {
-    // Circular include detected
-    let msg = format!(
-      "Circular include detected {} from {}",
-      found_path_oss.to_string_lossy(),
-      state.module.source_file.file_name.to_string_lossy()
-    );
-    return Err(Box::new(ErlError::preprocessor_error(ppnode.location.clone(), msg)));
-  }
-
-  let src_file = project
-    .file_cache
-    .get_or_load(&found_path)
-    .map_err(|e| IroncladError::from(e))?;
-
-  // update included modules collection as to prevent circular includes
-  state.module.included_files.add(found_path_oss);
-
-  ErlModuleImpl::tokenize(&state.project, &state.module, &src_file)
+  let found_path = state
+    .project
+    .find_include(ppnode.location.clone(), &literal_path, None)?;
+  generic_include(state, ppnode, &found_path)
 }
 
 fn on_include_lib(
-  _state: &mut PreprocessState,
-  _path: &str,
-  _ppnode: PreprocessorNode,
+  state: &mut PreprocessState,
+  path: &str,
+  ppnode: PreprocessorNode,
 ) -> IcResult<Vec<Token>> {
-  // let path = state.module.find_include_path(path)?;
-  unimplemented!()
+  let literal_path = PathBuf::from(path);
+  let found_path = state
+    .project
+    .find_include(ppnode.location.clone(), &literal_path, None)?;
+  generic_include(state, ppnode, &found_path)
 }
 
 #[named]
@@ -288,12 +301,12 @@ fn preprocess_handle_ppnode(
     //------------------
     PreprocessorNodeType::Include(path) if active => {
       let included_tokens = on_include(state, path, ppnode.clone())?;
-      state.paste_tokens(input_tokens, &included_tokens);
+      state.paste_tokens(input_tokens, included_tokens);
       state.itr.set_base(&input_tokens);
     }
     PreprocessorNodeType::IncludeLib(path) if active => {
       let included_tokens = on_include_lib(state, path, ppnode.clone())?;
-      state.paste_tokens(input_tokens, &included_tokens);
+      state.paste_tokens(input_tokens, included_tokens);
       state.itr.set_base(&input_tokens);
     }
     // PreprocessorNodeType::IncludedFile { .. } if active => unimplemented!(),
