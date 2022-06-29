@@ -662,6 +662,18 @@ fn parse_record_with_module() -> IcResult<()> {
   Ok(())
 }
 
+#[named]
+#[test]
+fn parse_record_construction() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record construction");
+  let input = "\
+  fn() ->\n\
+    #tr{t=#t_fun{target={_Name, TotalArity}}} = Func.";
+  let module = test_util::parse_module(function_name!(), input);
+  let root_scope = module.root_scope.clone();
+  Ok(())
+}
+
 /// Try parse `-record(name, {fields})` with a map in it
 #[named]
 #[test]

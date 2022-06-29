@@ -65,6 +65,11 @@ impl IterableAstNodeT for AstNodeImpl {
         result.extend(generators.iter().cloned());
         Some(result)
       }
+      AstNodeType::BinaryComprehension { expr, generators, .. } => {
+        let mut result = vec![expr.clone()];
+        result.extend(generators.iter().cloned());
+        Some(result)
+      }
       AstNodeType::ListComprehensionGenerator { left, right, .. } => {
         Some(vec![left.clone(), right.clone()])
       }

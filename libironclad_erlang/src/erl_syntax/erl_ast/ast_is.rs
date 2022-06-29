@@ -52,6 +52,11 @@ impl AstNodeImpl {
     matches!(&self.content, AstNodeType::BinaryExpr { .. })
   }
 
+  /// Checks whether an ErlAst node is a Binary Comprehension
+  pub fn is_binary_comprehension(&self) -> bool {
+    matches!(&self.content, AstNodeType::BinaryComprehension { .. })
+  }
+
   /// Checks whether an ErlAst node is a Function Application (a call)
   pub fn is_application(&self) -> bool {
     matches!(&self.content, AstNodeType::Apply(_))
