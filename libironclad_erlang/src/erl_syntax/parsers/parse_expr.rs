@@ -19,7 +19,7 @@ use crate::erl_syntax::parsers::misc::{
   tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
-use crate::erl_syntax::parsers::parse_case::parse_case_statement;
+use crate::erl_syntax::parsers::parse_case::parse_case_expr;
 use crate::erl_syntax::parsers::parse_expr_op::{
   binop_add, binop_and, binop_andalso, binop_band, binop_bang, binop_bor, binop_bsl, binop_bsr,
   binop_bxor, binop_comma, binop_equals, binop_floatdiv, binop_greater, binop_greater_eq,
@@ -69,12 +69,22 @@ pub fn parse_parenthesized_list_of_exprs<const STYLE: usize>(
   )(input)
 }
 
-fn parse_list_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_list_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
     tuple((
       tok_square_open,
       parse_comma_sep_exprs0::<STYLE>,
-      opt(preceded(tok_vertical_bar, parse_expr_prec13::<STYLE>)),
+      opt(preceded(
+        tok_vertical_bar,
+        // match STYLE {
+        //   EXPR_STYLE_FULL => parse_expr,
+        //   // EXPR_STYLE_GUARD => parse_guardexpr,
+        //   EXPR_STYLE_MATCHEXPR => parse_matchexpr,
+        //   EXPR_STYLE_CONST_ONLY => parse_constant_expr,
+        //   _ => unreachable!(),
+        // },
+        parse_expr_prec13::<STYLE>,
+      )),
       tok_square_close,
     )),
     |(_open, elements, maybe_tail, _close)| {
@@ -150,7 +160,7 @@ fn parse_binary_comprehension(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
-fn parse_tuple_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_tuple_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(tok_curly_open, parse_comma_sep_exprs0::<STYLE>, tok_curly_close),
     |elements| AstNodeImpl::new_tuple(SourceLoc::new(&input), elements),
@@ -181,7 +191,7 @@ fn record_builder_member<const STYLE: usize>(
 
 /// Parse a map builder expression, which uses `=>` to assign the values.
 /// Contrary to a map matcher, which would use `:=`.
-fn map_builder_of_exprs<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_map_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       pair(tok_hash, tok_curly_open),
@@ -230,14 +240,10 @@ pub fn parse_comma_sep_exprs0<const STYLE: usize>(
 }
 
 /// Parses comma separated sequence of expressions, at least one or more
-pub fn parse_comma_sep_exprs1<const STYLE: usize>(
+pub fn parse_comma_sep_exprs1(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
-  separated_list1(
-    tok_comma,
-    // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-    parse_expr_prec13::<STYLE>,
-  )(input)
+  separated_list1(tok_comma, parse_expr)(input)
 }
 
 fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
@@ -269,11 +275,11 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
           parse_begin_end,
           parse_try_catch,
           parse_if_statement,
-          parse_case_statement,
+          parse_case_expr,
           parenthesized_expr::<STYLE>,
-          parse_list_of_exprs::<STYLE>,
-          parse_tuple_of_exprs::<STYLE>,
-          map_builder_of_exprs::<STYLE>,
+          parse_list_builder::<STYLE>,
+          parse_tuple_builder::<STYLE>,
+          parse_map_builder::<STYLE>,
         )),
         alt((
           parse_record_builder_no_base::<STYLE>,
@@ -289,12 +295,12 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       "parse expression (const only)",
       alt((
         parse_if_statement,
-        parse_case_statement,
+        parse_case_expr,
         parse_binary,
         parenthesized_expr::<STYLE>,
-        parse_list_of_exprs::<STYLE>,
-        parse_tuple_of_exprs::<STYLE>,
-        map_builder_of_exprs::<STYLE>,
+        parse_list_builder::<STYLE>,
+        parse_tuple_builder::<STYLE>,
+        parse_map_builder::<STYLE>,
         parse_record_builder_no_base::<STYLE>,
         parse_erl_literal,
       )),
@@ -303,8 +309,9 @@ fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResu
       "parse match expression (highest precedence)",
       alt((
         parenthesized_expr::<STYLE>,
-        parse_list_of_exprs::<STYLE>,
-        parse_tuple_of_exprs::<STYLE>,
+        parse_list_builder::<STYLE>,
+        parse_tuple_builder::<STYLE>,
+        parse_map_builder::<STYLE>,
         parse_record_builder_no_base::<STYLE>,
         parse_var,
         parse_erl_literal,

@@ -16,7 +16,7 @@ use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::separated_list1;
-use nom::sequence::{preceded, terminated, tuple};
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 
 /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
 pub(crate) fn parse_case_clause(
@@ -32,7 +32,7 @@ pub(crate) fn parse_case_clause(
       // The body after ->
       preceded(
         tok(TokenType::RightArr),
-        context("case clause body", cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>)),
+        context("case clause body", cut(parse_comma_sep_exprs1)),
       ),
     )),
     |(pattern, maybe_when, body)| {
@@ -46,22 +46,26 @@ pub(crate) fn parse_case_clause(
 }
 
 /// Parses `case EXPR of MATCH -> EXPR; ... end`
-pub(crate) fn parse_case_statement(input: ParserInput) -> ParserResult<AstNode> {
-  // let (input, _) = ws_before(tag("case".into()))(input)?;
-
+pub(crate) fn parse_case_expr(input: ParserInput) -> ParserResult<AstNode> {
+  let map_fn = |(expr, clauses): (AstNode, Vec<ErlCaseClause>)| -> AstNode {
+    AstNodeImpl::new_case_statement(SourceLoc::new(&input), expr, clauses)
+  };
   preceded(
     tok_keyword_case,
     context(
       "case block",
       cut(map(
-        tuple((
-          terminated(context("case block expression", cut(parse_expr)), tok_keyword_of),
-          separated_list1(tok_semicolon, context("case block clause", cut(parse_case_clause))),
+        terminated(
+          pair(
+            terminated(context("case block expression", cut(parse_expr)), tok_keyword_of),
+            context(
+              "case clauses list",
+              separated_list1(tok_semicolon, context("case block clause", cut(parse_case_clause))),
+            ),
+          ),
           tok_keyword_end,
-        )),
-        |(expr, clauses, _end0)| {
-          AstNodeImpl::new_case_statement(SourceLoc::new(&input), expr, clauses)
-        },
+        ),
+        map_fn,
       )),
     ),
   )(input.clone())

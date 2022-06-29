@@ -60,10 +60,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       preceded(
         tok(TokenType::RightArr),
         // Body as list of exprs
-        context(
-          "function clause body of a function definition",
-          cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
-        ),
+        context("function clause body of a function definition", cut(parse_comma_sep_exprs1)),
       ),
     )),
     |(maybe_name, args, when_expr, body)| {

@@ -10,6 +10,15 @@ pub trait IterableAstNodeT {
   fn children(&self) -> Option<Vec<AstNode>>;
 }
 
+#[inline]
+fn return_some_vec(vec: Vec<AstNode>) -> Option<Vec<AstNode>> {
+  if vec.is_empty() {
+    None
+  } else {
+    Some(vec)
+  }
+}
+
 impl IterableAstNodeT for AstNodeImpl {
   /// Const iterator on the AST tree
   /// For all children of the current node, apply the apply_fn to each child, allowing to
@@ -27,7 +36,7 @@ impl IterableAstNodeT for AstNodeImpl {
       AstNodeType::FnDef(fn_def) => fn_def.children(),
       AstNodeType::Apply(app) => app.children(),
 
-      AstNodeType::CaseStatement { expr, clauses, .. } => {
+      AstNodeType::CaseExpr { expr, clauses, .. } => {
         let mut r: Vec<AstNode> = vec![expr.clone()];
 
         for cc in clauses {
@@ -37,12 +46,7 @@ impl IterableAstNodeT for AstNodeImpl {
           }
           r.push(cc.body.clone());
         }
-
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
 
       AstNodeType::CClause(_loc, clause) => {
@@ -88,11 +92,7 @@ impl IterableAstNodeT for AstNodeImpl {
             r.extend(cc_children.iter().cloned())
           }
         }
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
       AstNodeType::CommaExpr { elements, .. } => {
         let mut r = Vec::default();
@@ -101,11 +101,7 @@ impl IterableAstNodeT for AstNodeImpl {
             r.extend(c.iter().cloned());
           }
         }
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
       AstNodeType::IfStatement { clauses, .. } => {
         let mut r = Vec::default();
@@ -114,11 +110,7 @@ impl IterableAstNodeT for AstNodeImpl {
             r.extend(c.iter().cloned());
           }
         }
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
       AstNodeType::BeginEnd { exprs } => {
         let mut r = Vec::default();
@@ -127,11 +119,7 @@ impl IterableAstNodeT for AstNodeImpl {
             r.extend(c.iter().cloned());
           }
         }
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
       AstNodeType::BinaryExpr { elements, .. } => {
         let mut r = Vec::default();
@@ -140,20 +128,24 @@ impl IterableAstNodeT for AstNodeImpl {
             r.push(expr_width.clone());
           }
         }
-        if r.is_empty() {
-          None
-        } else {
-          Some(r)
-        }
+        return_some_vec(r)
       }
       AstNodeType::RecordBuilder { members, .. } => {
         let mut r = Vec::default();
         for m in members {
           r.push(m.expr.clone());
         }
-        Some(r)
+        return_some_vec(r)
       }
-      AstNodeType::MapBuilder { .. } => unimplemented!("children() for map builder"),
+      AstNodeType::MapBuilder { members } => {
+        let mut r = Vec::default();
+        for m in members {
+          if let Some(c) = m.expr.children() {
+            r.extend(c.iter().cloned());
+          }
+        }
+        return_some_vec(r)
+      }
       // _ => {
       //   unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
       // }

@@ -1,9 +1,9 @@
 //! Creation code for ErlAst
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseStatement, CommaExpr, Empty,
-  FnDef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
-  ModuleRoot, RecordBuilder, RecordField, TryCatch, Tuple, Var,
+  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseExpr, CommaExpr, Empty, FnDef,
+  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot,
+  RecordBuilder, RecordField, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -126,6 +126,11 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, List { elements, tail })
   }
 
+  /// Create a new AST node for NIL
+  pub(crate) fn new_nil(location: SourceLoc) -> AstNode {
+    AstNodeImpl::construct_with_location(location, AstNodeType::Lit { value: Literal::Nil.into() })
+  }
+
   /// Create a new AST node for a tuple of some expressions
   pub(crate) fn new_tuple(location: SourceLoc, elements: Vec<AstNode>) -> AstNode {
     // TODO: Constant folding, detect list to be a literal list and fold it into a literal node
@@ -242,7 +247,7 @@ impl AstNodeImpl {
     expr: AstNode,
     clauses: Vec<ErlCaseClause>,
   ) -> AstNode {
-    AstNodeImpl::construct_with_location(location, CaseStatement { expr, clauses })
+    AstNodeImpl::construct_with_location(location, CaseExpr { expr, clauses })
   }
 
   /// Create a new function AST node, or a lambda AST node.

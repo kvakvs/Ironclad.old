@@ -140,7 +140,7 @@ impl AstNodeImpl {
       | AstNodeType::FnRef { .. }
       | AstNodeType::FnDef(_)
       | AstNodeType::CClause(_, _)
-      | AstNodeType::CaseStatement { .. }
+      | AstNodeType::CaseExpr { .. }
       | AstNodeType::Apply(_)
       | AstNodeType::UnaryOp { .. } => ErlError::unacceptable(
         node.location.clone(),

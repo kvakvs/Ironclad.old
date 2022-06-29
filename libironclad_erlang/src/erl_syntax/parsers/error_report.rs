@@ -2,9 +2,37 @@
 
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::format_tok_stream;
+use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::token_stream::token_type::TokenType;
+use nom::Offset;
+use std::fmt::Write;
+
+const FORMAT_LIMIT: usize = 200;
+
+fn on_print_context(
+  result: &mut String,
+  line: &[Token],
+  context: &str,
+  i: usize,
+  line_number: usize,
+  column_number: usize,
+) -> std::fmt::Result {
+  if !context.starts_with("[hidden]") {
+    writeln!(
+      result,
+      "    {i}: at line {line_number}:{column}, in {context}:\n    \
+           {line}",
+      i = i,
+      line_number = line_number,
+      column = column_number,
+      context = context,
+      line = format_tok_stream(line, FORMAT_LIMIT),
+    )
+  } else {
+    Ok(())
+  }
+}
 
 /// Transforms a `VerboseError` into a trace with input position information
 /// Copy from `nom::error::convert_error` to support token stream `&[Token]` errors.
@@ -14,10 +42,6 @@ pub fn convert_token_stream_parser_error(
   err: ErlParserError,
 ) -> String {
   // TODO: Same treatment for tokenizer errors, which also call nom's convert_error
-  use nom::Offset;
-  use std::fmt::Write;
-
-  const FORMAT_LIMIT: usize = 200;
   let mut result = String::new();
 
   for (i, (substring, kind)) in err.errors.iter().enumerate() {
@@ -94,17 +118,9 @@ pub fn convert_token_stream_parser_error(
             )
           }
         }
-        ErlParserErrorKind::Context(s) if !s.starts_with("[hidden]") => writeln!(
-          &mut result,
-          "    {i}: at line {line_number}:{column}, in {context}:\n    \
-           {line}",
-          i = i,
-          line_number = line_number,
-          column = column_number,
-          context = s,
-          line = format_tok_stream(line, FORMAT_LIMIT),
-        ),
-        ErlParserErrorKind::Context(_s) => Ok(()),
+        ErlParserErrorKind::Context(s) => {
+          on_print_context(&mut result, line, s, i, line_number, column_number)
+        }
         ErlParserErrorKind::Nom(e) => writeln!(
           &mut result,
           "    {i}: at line {line_number}:{column}, in {nom_err:?}:\n    \

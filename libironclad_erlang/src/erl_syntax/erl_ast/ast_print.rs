@@ -1,8 +1,8 @@
 //! Adds debug printing for AST trees in a somewhat more compact way
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
-  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CClause, CaseStatement, CommaExpr,
-  FnDef, FnRef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
+  Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CClause, CaseExpr, CommaExpr, FnDef,
+  FnRef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
   ModuleRoot, RecordBuilder, RecordField, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
@@ -40,7 +40,7 @@ impl std::fmt::Display for AstNodeImpl {
       },
       Var(var) => var.name.fmt(f),
       Apply(app) => app.fmt(f),
-      CaseStatement { expr, clauses, .. } => {
+      CaseExpr { expr, clauses, .. } => {
         write!(f, "case {} of", expr)?;
         Pretty::display_semicolon_separated(clauses.iter(), f)?;
         writeln!(f, "end")

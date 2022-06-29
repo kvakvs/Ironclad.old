@@ -4,7 +4,9 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string, ws_before};
+use crate::erl_syntax::parsers::misc::{
+  tok_atom, tok_float, tok_integer, tok_square_close, tok_square_open, tok_string, ws_before,
+};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
@@ -12,6 +14,7 @@ use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::map;
 use nom::error::context;
+use nom::sequence::pair;
 
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_string, |s| {
@@ -48,11 +51,18 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   })(input.clone())
 }
 
+fn parse_nil(input: ParserInput) -> ParserResult<AstNode> {
+  map(pair(tok_square_open, tok_square_close), |((), ())| {
+    AstNodeImpl::new_nil(SourceLoc::new(&input))
+  })(input.clone())
+}
+
 /// Read a literal value from input string
 pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
   context(
     "literal",
     ws_before(alt((
+      parse_nil,
       parse_float_to_ast,
       parse_int_to_ast,
       parse_atom_to_ast,

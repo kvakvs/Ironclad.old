@@ -49,7 +49,7 @@ pub fn parse_catch_clause(
       // when <Expression>
       opt(preceded(tok_keyword_when, parse_guardexpr)),
       // -> Expression
-      preceded(tok(TokenType::RightArr), parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
+      preceded(tok(TokenType::RightArr), parse_comma_sep_exprs1),
     )),
     |(exc_pattern, maybe_when, body)| {
       CatchClause::new(
@@ -64,10 +64,7 @@ pub fn parse_catch_clause(
 fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
   map(
     tuple((
-      context(
-        "try-catch block trial expression",
-        cut(parse_comma_sep_exprs1::<{ EXPR_STYLE_FULL }>),
-      ),
+      context("try-catch block trial expression", cut(parse_comma_sep_exprs1)),
       // Optional OF followed by match clauses
       opt(preceded(
         tok_keyword_of,

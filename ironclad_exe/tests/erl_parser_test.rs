@@ -218,6 +218,25 @@ fn parse_expr_record_field_access() {
   assert!(expr3.is_record_field(), "Failed to parse (functioncall())#record.field");
 }
 
+/// Try parse record builder
+#[named]
+#[test]
+fn parse_expr_record_builder_case() {
+  test_util::start(function_name!(), "Parse record builder in a case");
+  let input1 = "
+    case T#t_tuple.exact of
+      false ->
+          T#t_tuple{size=max(Index, Size),elements=Es};
+      true when Index =< Size ->
+          T#t_tuple{elements=Es};
+      true ->
+          none
+    end";
+
+  let expr1 = test_util::parse_expr(function_name!(), input1);
+  assert!(expr1.is_case_expr(), "Failed to parse a record builder");
+}
+
 /// Try parse an expression with parentheses and division
 #[named]
 #[test]
@@ -742,5 +761,28 @@ fn parse_case_with_unary_op() {
         false -> error
     end;
 simplify_get_map_elements(_, _, _, _) -> error.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_func_with_map_arg() {
+  test_util::start(function_name!(), "parse a function with empty map argument");
+  let input = "
+    lut_element_types(Index, Max, #{}) when Index > Max -> [].
+    lut_element_types(Index, Max, Es) -> ElementType = beam_types:get_tuple_element(Index, Es),
+      [ElementType | lut_element_types(Index + 1, Max, Es)].";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_func_with_list_decomposition() {
+  test_util::start(function_name!(), "parse a function with list decomposition argument");
+  let input = "
+    function_renumber([{function,Name,Arity,_Entry,Asm0}|Fs], St0, Acc) ->
+      {Asm,St} = renumber_labels(Asm0, [], St0),
+      function_renumber(Fs, St, [{function,Name,Arity,St#st.entry,Asm}|Acc]);
+    function_renumber([], St, Acc) -> {Acc,St}.";
   let _m = test_util::parse_module(function_name!(), input);
 }

@@ -71,4 +71,9 @@ impl AstNodeImpl {
   pub fn is_application(&self) -> bool {
     matches!(&self.content, AstNodeType::Apply(_))
   }
+
+  /// Checks whether an ErlAst node is a Case Expression
+  pub fn is_case_expr(&self) -> bool {
+    matches!(&self.content, AstNodeType::CaseExpr { .. })
+  }
 }

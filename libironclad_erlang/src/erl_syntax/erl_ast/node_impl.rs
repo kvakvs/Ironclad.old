@@ -81,7 +81,7 @@ pub enum AstNodeType {
   Apply(ErlApply),
 
   /// Case switch containing the argument to check, and case clauses
-  CaseStatement {
+  CaseExpr {
     /// Argument X in `case X of`
     expr: AstNode,
     /// All case clauses in order
