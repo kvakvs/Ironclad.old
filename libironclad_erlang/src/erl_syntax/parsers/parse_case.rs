@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::{
   tok, tok_keyword_case, tok_keyword_end, tok_keyword_of, tok_keyword_when, tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_expr, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
+  parse_comma_sep_exprs1, parse_expr, parse_guardexpr, parse_matchexpr,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;

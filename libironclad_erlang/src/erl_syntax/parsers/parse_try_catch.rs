@@ -11,7 +11,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_case::parse_case_clause;
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr, EXPR_STYLE_FULL,
+  parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;

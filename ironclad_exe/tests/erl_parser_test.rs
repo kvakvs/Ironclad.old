@@ -127,9 +127,8 @@ fn parse_atom_test() {
   let input = "{'a-a', b_b, c, '$d'}";
   let expr = test_util::parse_expr(function_name!(), input);
 
-  assert!(expr.is_tuple());
   let elements = expr.as_tuple();
-  assert_eq!(elements.len(), 4);
+  assert_eq!(elements.len(), 4, "Expected 4-tuple, received {}", &expr);
   assert_eq!(elements[0].as_atom(), "a-a");
   assert_eq!(elements[1].as_atom(), "b_b");
   assert_eq!(elements[2].as_atom(), "c");

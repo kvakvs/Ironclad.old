@@ -5,6 +5,7 @@ use ::function_name::named;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
@@ -35,69 +36,73 @@ use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::error::ic_error::IcResult;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
-use nom::combinator::{cut, map, opt};
+use nom::combinator::{consumed, cut, map, opt};
 use nom::error::context;
 use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 
-/// Full expression including comma operator, for function bodies
-pub const EXPR_STYLE_FULL: usize = 0;
-
-/// Full expression, also using comma and semicolon as boolean combinators: used in guard exprs
-pub const EXPR_STYLE_GUARD: usize = 1;
-
-/// Match expression: comma, semicolon not allowed, function calls not allowed, etc...
-pub const EXPR_STYLE_MATCHEXPR: usize = 2;
-
-/// Do not allow dynamic expression components: lambdas, function calls, variables etc
-pub const EXPR_STYLE_CONST_ONLY: usize = 3;
+/// Controls the parser behaviour and allowed operators.
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum ExprStyle {
+  /// Full expression including comma operator, for function bodies
+  Full,
+  /// Full expression, also using comma and semicolon as boolean combinators: used in guard exprs
+  Guard,
+  /// Match expression: comma, semicolon not allowed, function calls not allowed, etc...
+  MatchExpr,
+  /// Do not allow dynamic expression components: lambdas, function calls, variables etc
+  Const,
+}
 
 fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
-  map(tok_var, |n| AstNodeImpl::construct_without_location(Var(ErlVar::new(&n))))(input)
+  let mk_var = |(consumed_input, n): (ParserInput, String)| -> AstNode {
+    AstNodeImpl::construct_with_location(SourceLoc::new(&consumed_input), Var(ErlVar::new(&n)))
+  };
+
+  map(consumed(tok_var), mk_var)(input)
 }
 
 /// Parses a list of comma separated expressions in (parentheses)
-pub fn parse_parenthesized_list_of_exprs<const STYLE: usize>(
+pub fn parse_parenthesized_list_of_exprs(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
   delimited(
     tok_par_open,
-    context("function application arguments", cut(parse_comma_sep_exprs0::<STYLE>)),
+    context("function application arguments", cut(parse_comma_sep_exprs0)),
     tok_par_close,
   )(input)
 }
 
-fn parse_list_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
+  let build_fn = |(consumed_input, (elements, maybe_tail)): (
+    ParserInput,
+    (Vec<AstNode>, Option<AstNode>),
+  )|
+   -> AstNode {
+    AstNodeImpl::new_list(SourceLoc::new(&consumed_input), elements, maybe_tail)
+  };
+
   map(
-    tuple((
+    consumed(delimited(
       tok_square_open,
-      parse_comma_sep_exprs0::<STYLE>,
-      opt(preceded(
-        tok_vertical_bar,
-        // match STYLE {
-        //   EXPR_STYLE_FULL => parse_expr,
-        //   // EXPR_STYLE_GUARD => parse_guardexpr,
-        //   EXPR_STYLE_MATCHEXPR => parse_matchexpr,
-        //   EXPR_STYLE_CONST_ONLY => parse_constant_expr,
-        //   _ => unreachable!(),
-        // },
-        parse_expr_prec13::<STYLE>,
-      )),
+      pair(parse_comma_sep_exprs0, opt(preceded(tok_vertical_bar, parse_expr))),
       tok_square_close,
     )),
-    |(_open, elements, maybe_tail, _close)| {
-      AstNodeImpl::new_list(SourceLoc::new(&input), elements, maybe_tail)
-    },
+    build_fn,
   )(input.clone())
 }
 
 /// Parses a `Expr <- Expr` generator
 pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
-  map(separated_pair(parse_expr, tok_left_arrow, parse_expr), |(a, b)| {
+  let make_comp_gen = |(consumed_input, (a, b)): (ParserInput, (AstNode, AstNode))| -> AstNode {
     AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&input), a, b)
-  })(input.clone())
+  };
+  map(consumed(separated_pair(parse_expr, tok_left_arrow, parse_expr)), make_comp_gen)(
+    input.clone(),
+  )
 }
 
 /// Parses mix of generators and conditions for a list comprehension
@@ -112,18 +117,21 @@ pub fn parse_list_comprehension_exprs_and_generators(
 }
 
 fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
+  let mk_list_comp =
+    |(consumed_input, (expr, generators)): (ParserInput, (AstNode, Vec<AstNode>))| -> AstNode {
+      AstNodeImpl::new_list_comprehension(SourceLoc::new(&consumed_input), expr, generators)
+    };
+
   map(
-    separated_pair(
+    consumed(separated_pair(
       context("list comprehension output expression", parse_expr),
       tok_double_vertical_bar,
       context(
         "list comprehension generators",
         cut(parse_list_comprehension_exprs_and_generators),
       ),
-    ),
-    |(expr, generators): (AstNode, Vec<AstNode>)| -> AstNode {
-      AstNodeImpl::new_list_comprehension(SourceLoc::new(&input), expr, generators)
-    },
+    )),
+    mk_list_comp,
   )(input.clone())
 }
 
@@ -160,42 +168,35 @@ fn parse_binary_comprehension(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parse a sequence of curly braced expressions `"{" EXPR1 "," EXPR2 "," ... "}"`
-fn parse_tuple_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  map(
-    delimited(tok_curly_open, parse_comma_sep_exprs0::<STYLE>, tok_curly_close),
-    |elements| AstNodeImpl::new_tuple(SourceLoc::new(&input), elements),
-  )(input.clone())
+fn parse_tuple_builder(input: ParserInput) -> ParserResult<AstNode> {
+  map(delimited(tok_curly_open, parse_comma_sep_exprs0, tok_curly_close), |elements| {
+    AstNodeImpl::new_tuple(SourceLoc::new(&input), elements)
+  })(input.clone())
 }
 
 /// Parse one member of a map builder `keyExpr "=>" valueExpr`
-fn map_builder_member<const STYLE: usize>(input: ParserInput) -> ParserResult<MapBuilderMember> {
+fn map_builder_member(input: ParserInput) -> ParserResult<MapBuilderMember> {
   map(
-    separated_pair(
-      parse_expr_prec13::<STYLE>,
-      tok(TokenType::RightDoubleArr),
-      parse_expr_prec13::<STYLE>,
-    ),
+    separated_pair(parse_expr, tok(TokenType::RightDoubleArr), parse_expr),
     |(key, expr)| MapBuilderMember { key, expr },
   )(input)
 }
 
 /// Parse one member of a record builder `'field' = EXPR`
-fn record_builder_member<const STYLE: usize>(
-  input: ParserInput,
-) -> ParserResult<RecordBuilderMember> {
+fn record_builder_member(input: ParserInput) -> ParserResult<RecordBuilderMember> {
   map(
-    separated_pair(tok_atom, tok(TokenType::EqualSymbol), parse_expr_prec13::<STYLE>),
+    separated_pair(tok_atom, tok(TokenType::EqualSymbol), parse_expr),
     |(field, expr)| RecordBuilderMember { field, expr },
   )(input)
 }
 
 /// Parse a map builder expression, which uses `=>` to assign the values.
 /// Contrary to a map matcher, which would use `:=`.
-fn parse_map_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_map_builder(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       pair(tok_hash, tok_curly_open),
-      separated_list0(tok_comma, map_builder_member::<STYLE>),
+      separated_list0(tok_comma, map_builder_member),
       tok_curly_close,
     ),
     |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), members),
@@ -203,21 +204,19 @@ fn parse_map_builder<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 }
 
 /// Parse a record builder expression
-fn parse_record_builder<const STYLE: usize>(
-  input: ParserInput,
-) -> ParserResult<(String, Vec<RecordBuilderMember>)> {
+fn parse_record_builder(input: ParserInput) -> ParserResult<(String, Vec<RecordBuilderMember>)> {
   terminated(
     pair(
       delimited(tok_hash, tok_atom, tok_curly_open),
-      separated_list0(tok_comma, record_builder_member::<STYLE>),
+      separated_list0(tok_comma, record_builder_member),
     ),
     tok_curly_close,
   )(input.clone())
 }
 
 /// Parse a record builder expression without a prefix expression just `# RECORDTAG { FIELDS }`
-fn parse_record_builder_no_base<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_record_builder::<STYLE>, |(tag, record_fields)| {
+fn parse_record_builder_no_base(input: ParserInput) -> ParserResult<AstNode> {
+  map(parse_record_builder, |(tag, record_fields)| {
     AstNodeImpl::new_record_builder(SourceLoc::new(&input), None, tag, record_fields)
   })(input.clone())
 }
@@ -229,13 +228,13 @@ fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String
 }
 
 /// Parses comma separated sequence of expressions
-pub fn parse_comma_sep_exprs0<const STYLE: usize>(
+pub fn parse_comma_sep_exprs0(
   input: ParserInput,
 ) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
   separated_list0(
     tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-    parse_expr_prec13::<STYLE>,
+    parse_expr,
   )(input)
 }
 
@@ -246,8 +245,8 @@ pub fn parse_comma_sep_exprs1(
   separated_list1(tok_comma, parse_expr)(input)
 }
 
-fn parenthesized_expr<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  delimited(tok_par_open, parse_expr_prec13::<STYLE>, tok_par_close)(input)
+fn parenthesized_expr(input: ParserInput) -> ParserResult<AstNode> {
+  delimited(tok_par_open, parse_expr, tok_par_close)(input)
 }
 
 /// Parses a `begin-end` grouping
@@ -265,85 +264,46 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
-fn parse_expr_prec_primary<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  match STYLE {
-    EXPR_STYLE_FULL => context(
-      "[hidden] parse expression (highest precedence)",
+fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
+  context(
+    "[hidden] parse expression (highest precedence)",
+    alt((
       alt((
-        alt((
-          parse_lambda,
-          parse_begin_end,
-          parse_try_catch,
-          parse_if_statement,
-          parse_case_expr,
-          parenthesized_expr::<STYLE>,
-          parse_list_builder::<STYLE>,
-          parse_tuple_builder::<STYLE>,
-          parse_map_builder::<STYLE>,
-        )),
-        alt((
-          parse_record_builder_no_base::<STYLE>,
-          parse_var,
-          parse_erl_literal,
-          parse_list_comprehension,
-          parse_binary_comprehension,
-          parse_binary,
-        )),
-      )),
-    )(input),
-    EXPR_STYLE_CONST_ONLY => context(
-      "parse expression (const only)",
-      alt((
+        parse_lambda,
+        parse_begin_end,
+        parse_try_catch,
         parse_if_statement,
         parse_case_expr,
-        parse_binary,
-        parenthesized_expr::<STYLE>,
-        parse_list_builder::<STYLE>,
-        parse_tuple_builder::<STYLE>,
-        parse_map_builder::<STYLE>,
-        parse_record_builder_no_base::<STYLE>,
-        parse_erl_literal,
+        parenthesized_expr,
+        parse_list_builder,
+        parse_tuple_builder,
+        parse_map_builder,
       )),
-    )(input),
-    EXPR_STYLE_MATCHEXPR => context(
-      "parse match expression (highest precedence)",
       alt((
-        parenthesized_expr::<STYLE>,
-        parse_list_builder::<STYLE>,
-        parse_tuple_builder::<STYLE>,
-        parse_map_builder::<STYLE>,
-        parse_record_builder_no_base::<STYLE>,
+        parse_record_builder_no_base,
         parse_var,
         parse_erl_literal,
+        parse_list_comprehension,
+        parse_binary_comprehension,
         parse_binary,
       )),
-    )(input),
-    EXPR_STYLE_GUARD => context(
-      "parse guard expression (highest precedence)",
-      alt((parenthesized_expr::<STYLE>, parse_var, parse_erl_literal)),
-    )(input),
-    _ => panic!("STYLE={} not implemented in parse_expr", STYLE),
-  }
+    )),
+  )(input)
 }
 
 // TODO: Precedence 1: : (colon operator, for bit fields and module access?)
 // TODO: module:function notation and maybe tuple notation?
 /// Parse expr followed by a parentheses with 0 or more args, to become a function call
-fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  if STYLE == EXPR_STYLE_MATCHEXPR {
-    // Match expressions cannot contain module:function() style calls
-    return parse_expr_prec_primary::<STYLE>(input);
-  }
-
+fn parse_expr_prec01(input: ParserInput) -> ParserResult<AstNode> {
   map(
     tuple((
-      parse_expr_prec_primary::<STYLE>,
+      parse_expr_prec_primary,
       // An optional second expression after a ':', MUST be followed by parentheses with args
       opt(
         // A pair: optional second expr for function name, and mandatory args
         pair(
-          opt(preceded(tok_colon, parse_expr_prec_primary::<STYLE>)),
-          parse_parenthesized_list_of_exprs::<STYLE>,
+          opt(preceded(tok_colon, parse_expr_prec_primary)),
+          parse_parenthesized_list_of_exprs,
         ),
       ),
     )),
@@ -369,43 +329,43 @@ fn parse_expr_prec01<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
 
 // TODO: Precedence 2: # (record access operator)
 #[inline]
-fn parse_expr_prec02<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  parse_expr_prec01::<STYLE>(input)
+fn parse_expr_prec02(input: ParserInput) -> ParserResult<AstNode> {
+  parse_expr_prec01(input)
 }
 
 /// Precedence 3: Unary + - bnot not
-fn parse_expr_prec03<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec03(input: ParserInput) -> ParserResult<AstNode> {
   map(
-    pair(
+    consumed(pair(
       alt((unop_negative, unop_positive, unop_bnot, unop_not)),
-      parse_expr_prec02::<STYLE>,
-    ),
-    |(unop, expr)| ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), unop, expr),
+      parse_expr_prec02,
+    )),
+    mk_unary,
   )(input.clone())
-  .or_else(|_err| parse_expr_prec02::<STYLE>(input.clone()))
+  .or_else(|_err| parse_expr_prec02(input.clone()))
 }
 
 /// Precedence 4: / * div rem band and, left associative
-fn parse_expr_prec04<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec04(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more operators and higher prec exprs
-    pair(
-      parse_expr_prec03::<STYLE>,
+    consumed(pair(
+      parse_expr_prec03,
       many0(pair(
         alt((binop_floatdiv, binop_multiply, binop_intdiv, binop_rem, binop_band, binop_and)),
-        parse_expr_prec03::<STYLE>,
+        parse_expr_prec03,
       )),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    )),
+    mk_binop_left_assoc,
   )(input)
 }
 
 /// Precedence 5: + - bor bxor bsl bsr or xor, left associative
-fn parse_expr_prec05<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec05(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more operators and higher prec exprs
-    tuple((
-      parse_expr_prec04::<STYLE>,
+    consumed(tuple((
+      parse_expr_prec04,
       many0(pair(
         alt((
           binop_add,
@@ -417,31 +377,31 @@ fn parse_expr_prec05<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
           binop_subtract,
           binop_xor,
         )),
-        parse_expr_prec04::<STYLE>,
+        parse_expr_prec04,
       )),
-    )),
-    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    ))),
+    mk_binop_left_assoc,
   )(input)
 }
 
 /// Precedence 6: ++ --, right associative
-fn parse_expr_prec06<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec06(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more operators and higher prec exprs
-    pair(
-      parse_expr_prec05::<STYLE>,
-      many0(pair(alt((binop_list_append, binop_list_subtract)), parse_expr_prec05::<STYLE>)),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(SourceLoc::None, left, &tail),
+    consumed(pair(
+      parse_expr_prec05,
+      many0(pair(alt((binop_list_append, binop_list_subtract)), parse_expr_prec05)),
+    )),
+    mk_binop_right_assoc,
   )(input)
 }
 
 /// Precedence 7: == /= =< < >= > =:= =/=
-fn parse_expr_prec07<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec07(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more operators and higher prec exprs
-    pair(
-      parse_expr_prec06::<STYLE>,
+    consumed(pair(
+      parse_expr_prec06,
       many0(pair(
         alt((
           binop_hard_equals,
@@ -453,116 +413,101 @@ fn parse_expr_prec07<const STYLE: usize>(input: ParserInput) -> ParserResult<Ast
           binop_greater_eq,
           binop_greater,
         )),
-        parse_expr_prec06::<STYLE>,
+        parse_expr_prec06,
       )),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    )),
+    mk_binop_left_assoc,
   )(input)
 }
 
 /// Precedence 8: andalso
-fn parse_expr_prec08<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec08(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more ANDALSO operators and higher prec exprs
-    pair(
-      parse_expr_prec07::<STYLE>,
-      many0(pair(binop_andalso, parse_expr_prec07::<STYLE>)),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    consumed(pair(parse_expr_prec07, many0(pair(binop_andalso, parse_expr_prec07)))),
+    mk_binop_left_assoc,
   )(input)
+}
+
+#[inline]
+/// Call this with result of nom's `consumed()` combinator
+fn mk_binop_left_assoc(
+  (consumed_input, (left, tail)): (ParserInput, (AstNode, Vec<(ErlBinaryOp, AstNode)>)),
+) -> AstNode {
+  ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::new(&consumed_input), left, &tail)
 }
 
 /// Precedence 9: orelse
-fn parse_expr_prec09<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec09(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more ORELSE operators and higher prec exprs
-    pair(
-      parse_expr_prec08::<STYLE>,
-      many0(pair(binop_orelse, parse_expr_prec08::<STYLE>)),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    consumed(pair(parse_expr_prec08, many0(pair(binop_orelse, parse_expr_prec08)))),
+    mk_binop_left_assoc,
   )(input)
 }
 
+#[inline]
+fn mk_binop_right_assoc(
+  (consumed_input, (left, tail)): (ParserInput, (AstNode, Vec<(ErlBinaryOp, AstNode)>)),
+) -> AstNode {
+  ErlBinaryOperatorExpr::new_right_assoc(SourceLoc::new(&consumed_input), left, &tail)
+}
+
 /// Precedence 10: assignment/match = operator, and send operator "!", right associative
-fn parse_expr_prec10<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec10(input: ParserInput) -> ParserResult<AstNode> {
   map(
     // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
-    pair(
-      parse_expr_prec09::<STYLE>,
-      many0(pair(alt((binop_match, binop_bang)), parse_expr_prec09::<STYLE>)),
-    ),
-    |(left, tail)| ErlBinaryOperatorExpr::new_right_assoc(SourceLoc::None, left, &tail),
+    consumed(pair(
+      parse_expr_prec09,
+      many0(pair(alt((binop_match, binop_bang)), parse_expr_prec09)),
+    )),
+    mk_binop_right_assoc,
   )(input)
+}
+
+#[inline]
+/// Wrap values passed here with `consumed()` nom combinator
+fn mk_unary((consumed_input, (catch_op, expr)): (ParserInput, (ErlUnaryOp, AstNode))) -> AstNode {
+  ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&consumed_input), catch_op, expr)
 }
 
 /// Precedence 11: Catch operator, then continue to higher precedences
 /// This is also entry point to parse expression when you don't want to recognize comma and semicolon
-fn parse_expr_prec11<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec11(input: ParserInput) -> ParserResult<AstNode> {
   // Try parse (catch Expr) otherwise try next precedence level
-  map(pair(unop_catch, parse_expr_prec10::<STYLE>), |(catch_op, expr)| {
-    ErlUnaryOperatorExpr::new_ast(SourceLoc::new(&input), catch_op, expr)
-  })(input.clone())
-  .or_else(|_err| parse_expr_prec10::<STYLE>(input.clone()))
+  map(consumed(pair(unop_catch, parse_expr_prec10)), mk_unary)(input.clone())
+    .or_else(|_err| parse_expr_prec10(input.clone()))
 }
-
-// /// Public entry point to parse expression that cannot include comma or semicolon
-// #[inline]
-// pub fn parse_expr_no_comma_no_semi(input: ParserInput) -> ParserResult<AstNode> {
-//   Self::parse_expr_prec11(input)
-//   // println!("parse_expr_no_comma_no_semi: {}", input);
-//   // match Self::parse_prec11(input) {
-//   //   Ok((tail, result)) => {
-//   //     println!("OK r={}", result.deref());
-//   //     Ok((tail, result))
-//   //   }
-//   //   Err(e) => Err(e)
-//   // }
-// }
 
 /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
 /// Note that semicolon is not valid for regular code only allowed in guards.
 #[named]
-fn parse_expr_prec13<const STYLE: usize>(input: ParserInput) -> ParserResult<AstNode> {
-  match STYLE {
-    EXPR_STYLE_MATCHEXPR | EXPR_STYLE_FULL | EXPR_STYLE_CONST_ONLY =>
-    // Skip comma and semicolon operator
-    {
-      parse_expr_prec11::<STYLE>(input)
-    }
-
-    EXPR_STYLE_GUARD =>
+fn parse_expr_prec13(style: ExprStyle, input: ParserInput) -> ParserResult<AstNode> {
+  // Only guard style expressions allow comma/semicolon as binary ops
+  if style == ExprStyle::Guard {
     // Guard-style expressions allow both comma and semicolons
-    {
-      map(
-        // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
-        pair(
-          parse_expr_prec11::<STYLE>,
-          many0(pair(alt((binop_semicolon, binop_comma)), parse_expr_prec11::<STYLE>)),
-        ),
-        |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
-      )(input)
-    }
-
-    _ => unimplemented!("STYLE={} is not implemented in {}", STYLE, function_name!()),
+    map(
+      // Higher precedence expr, followed by 0 or more binary operators and higher prec exprs
+      pair(
+        parse_expr_prec11,
+        many0(pair(alt((binop_semicolon, binop_comma)), parse_expr_prec11)),
+      ),
+      |(left, tail)| ErlBinaryOperatorExpr::new_left_assoc(SourceLoc::None, left, &tail),
+    )(input)
+  } else {
+    parse_expr_prec11(input)
   }
 }
 
-// /// Parse an expression. Expression can also be a block which produces a value.
-// pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
-//   context("expression", parse_expr_prec13::<{ EXPR_STYLE_FULL }>)(input)
-// }
-
-/// Parse an expression OR a function application which is essentially `EXPR ( EXPRS... )`.
-pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_lowest_precedence(style: ExprStyle, input: ParserInput) -> ParserResult<AstNode> {
   map(
     context(
       "expression",
       tuple((
-        parse_expr_prec13::<{ EXPR_STYLE_FULL }>,
-        opt(parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_FULL }>),
+        |i| parse_expr_prec13(style, i),
+        opt(parse_parenthesized_list_of_exprs),
         opt(parse_record_field_access),
-        opt(parse_record_builder::<{ EXPR_STYLE_FULL }>),
+        opt(parse_record_builder),
       )),
     ),
     |(expr, maybe_args, maybe_field_access, maybe_record_builder): (
@@ -576,6 +521,7 @@ pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
         let target = CallableTarget::new_expr(expr);
         AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
       } else if let Some((tag, field)) = maybe_field_access {
+        // TODO: This goes to precedence02
         AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
       } else if let Some((tag, record_fields)) = maybe_record_builder {
         AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
@@ -586,41 +532,30 @@ pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
-/// Parse a match-expression. Match-expression cannot be a block or a function call, no comma and semicolon.
+/// Parse an expression OR a function application which is essentially `EXPR ( EXPRS... )`.
+#[inline]
+pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
+  parse_expr_lowest_precedence(ExprStyle::Full, input)
+}
+
+#[inline]
 pub fn parse_matchexpr(input: ParserInput) -> ParserResult<AstNode> {
-  // context("match expression", parse_expr_prec13::<{ EXPR_STYLE_MATCHEXPR }>)(input)
-  map(
-    context(
-      "match expression",
-      tuple((
-        parse_expr_prec13::<{ EXPR_STYLE_MATCHEXPR }>,
-        opt(parse_record_field_access),
-        opt(parse_record_builder::<{ EXPR_STYLE_MATCHEXPR }>),
-      )),
-    ),
-    |(expr, maybe_field_access, maybe_record_builder): (
-      AstNode,
-      Option<(String, String)>,
-      Option<(String, Vec<RecordBuilderMember>)>,
-    )|
-     -> AstNode {
-      if let Some((tag, field)) = maybe_field_access {
-        AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
-      } else if let Some((tag, record_fields)) = maybe_record_builder {
-        AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
-      } else {
-        expr
-      }
-    },
-  )(input.clone())
+  parse_expr_lowest_precedence(ExprStyle::MatchExpr, input)
 }
 
-/// Parse a guard expression.
+#[inline]
 pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
-  context("guard expression", parse_expr_prec13::<{ EXPR_STYLE_GUARD }>)(input)
+  parse_expr_lowest_precedence(ExprStyle::Guard, input)
 }
 
-/// Parse a constant-only (literal) expression.
+#[inline]
 pub fn parse_constant_expr(input: ParserInput) -> ParserResult<AstNode> {
-  context("constant-only expression", parse_expr_prec13::<{ EXPR_STYLE_CONST_ONLY }>)(input)
+  parse_expr_lowest_precedence(ExprStyle::Const, input)
+}
+
+/// After parse_expr ensure the value is valid for the selected style.
+pub fn check_expr(_style: ExprStyle, _ast: AstNode) -> IcResult<()> {
+  // TODO: Guard style: allow ; and , while other styles don't
+  // TODO: Const style: Disallow function calls, variables, etc
+  Ok(())
 }

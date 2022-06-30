@@ -8,8 +8,7 @@ use crate::erl_syntax::parsers::misc::{
   tok, tok_atom, tok_keyword_end, tok_keyword_fun, tok_keyword_when, tok_minus, tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_expr::{
-  parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs, EXPR_STYLE_FULL,
-  EXPR_STYLE_MATCHEXPR,
+  parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -50,7 +49,8 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
       // Function arguments
       context(
         "function clause arguments of a function definition",
-        parse_parenthesized_list_of_exprs::<{ EXPR_STYLE_MATCHEXPR }>,
+        // TODO: check result is a valid match expression
+        parse_parenthesized_list_of_exprs,
       ),
       // Optional: when <guard>
       context(
