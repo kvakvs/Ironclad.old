@@ -4,8 +4,7 @@ use crate::erl_syntax::erl_ast::expr_style::ExprStyle;
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
-use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
-use nom::combinator::verify;
+use crate::project::module::module_impl::ErlModuleImpl;
 
 impl ErlModuleImpl {
   /// Check that specs and exports match the fn defs
@@ -21,7 +20,6 @@ impl ErlModuleImpl {
         for f in forms.iter() {
           self.verify_parsed(f)?;
         }
-        Ok(())
       }
       AstNodeType::FnDef(fndef) => {
         for c in fndef.clauses.iter() {
@@ -30,7 +28,6 @@ impl ErlModuleImpl {
           }
           self.verify_parsed(&c.body)?;
         }
-        Ok(())
       }
 
       // AstNodeType::CClause(_, _) => {}
@@ -58,10 +55,11 @@ impl ErlModuleImpl {
       | AstNodeType::Type { .. }
       | AstNodeType::MFA { .. }
       | AstNodeType::Lit { .. }
-      | AstNodeType::Var(_) => Ok(()),
+      | AstNodeType::Var(_) => {}
       //-----------------------------------
       _ => unimplemented!("ErlModule::verify_parsed: don't know how to handle {:?}", ast.content),
     }
+    Ok(())
   }
 
   /// Check that expression nodes do not contain forbidden node types

@@ -2,7 +2,6 @@
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
-use ::function_name::named;
 
 /// A trait for AST nodes which can contain nested nodes
 pub trait IterableAstNodeT {
@@ -56,10 +55,10 @@ impl IterableAstNodeT for AstNodeImpl {
           Some(vec![clause.pattern.clone(), clause.body.clone()])
         }
       }
-      AstNodeType::BinaryOp { expr: binop_expr, .. } => {
+      AstNodeType::BinaryOp { binop_expr, .. } => {
         Some(vec![binop_expr.left.clone(), binop_expr.right.clone()])
       }
-      AstNodeType::UnaryOp { expr: unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
+      AstNodeType::UnaryOp { unop_expr, .. } => Some(vec![unop_expr.expr.clone()]),
       AstNodeType::List { elements, .. } => Some(elements.to_vec()),
       AstNodeType::Tuple { elements, .. } => Some(elements.to_vec()),
 

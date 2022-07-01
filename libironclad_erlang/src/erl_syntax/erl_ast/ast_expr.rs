@@ -26,8 +26,8 @@ impl AstNodeImpl {
           _ => LiteralBool::NotABoolean,
         }
       }
-      AstNodeType::BinaryOp { expr, .. } => expr.walk_boolean_litexpr(),
-      AstNodeType::UnaryOp { expr, .. } => expr.walk_boolean_litexpr(),
+      AstNodeType::BinaryOp { binop_expr: expr, .. } => expr.walk_boolean_litexpr(),
+      AstNodeType::UnaryOp { unop_expr: expr, .. } => expr.walk_boolean_litexpr(),
       // TODO: Allow comma and semicolon expr for guards?
       // ErlAst::CommaExpr { .. } => {}
       // ErlAst::IfStatement { .. } => {}

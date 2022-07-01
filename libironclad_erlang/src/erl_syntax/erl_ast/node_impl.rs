@@ -97,13 +97,13 @@ pub enum AstNodeType {
   /// Binary operation with two arguments
   BinaryOp {
     /// The contained binary A&B expression
-    expr: ErlBinaryOperatorExpr,
+    binop_expr: ErlBinaryOperatorExpr,
   },
 
   /// Unary operation with 1 argument
   UnaryOp {
     /// The contained unary &B expression
-    expr: ErlUnaryOperatorExpr,
+    unop_expr: ErlUnaryOperatorExpr,
   },
 
   /// A list of some expressions, TODO: constant folding convert into ErlAst::Lit(ErlLit::List())

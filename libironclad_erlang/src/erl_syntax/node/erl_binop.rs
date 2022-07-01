@@ -46,7 +46,7 @@ impl ErlBinaryOperatorExpr {
     let build_left_side = Self::new_right_assoc(loc.clone(), left, &tail[0..tail.len() - 1]);
 
     let bin_node = AstNodeType::BinaryOp {
-      expr: Self::new(build_left_side, *op, right.clone()),
+      binop_expr: Self::new(build_left_side, *op, right.clone()),
     };
     AstNodeImpl::construct_with_location(loc, bin_node)
   }
@@ -67,7 +67,7 @@ impl ErlBinaryOperatorExpr {
     let (op, first) = &tail[0];
     let build_right_side = Self::new_left_assoc(loc.clone(), first.clone(), &tail[1..tail.len()]);
 
-    let bin_node = AstNodeType::BinaryOp { expr: Self::new(left, *op, build_right_side) };
+    let bin_node = AstNodeType::BinaryOp { binop_expr: Self::new(left, *op, build_right_side) };
     AstNodeImpl::construct_with_location(loc, bin_node)
   }
 

@@ -37,7 +37,9 @@ impl AstNodeImpl {
         Some(val) => Ok(val),
       },
       Lit { value, .. } => Ok(ErlTypeImpl::new_singleton(value)),
-      BinaryOp { expr, .. } => expr.synthesize_binop_type(self.location.clone(), module, scope),
+      BinaryOp { binop_expr: expr, .. } => {
+        expr.synthesize_binop_type(self.location.clone(), module, scope)
+      }
       List { elements, tail, .. } => Self::synthesize_list_type(module, scope, elements, tail),
       Tuple { elements, .. } => Self::synthesize_tuple_type(module, scope, elements),
       other => unimplemented!("Don't know how to synthesize type from {:?}", other),

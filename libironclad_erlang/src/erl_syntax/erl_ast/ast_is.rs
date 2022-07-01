@@ -44,7 +44,7 @@ impl AstNodeImpl {
 
   /// Checks whether an ErlAst node is a Binary Op of given kind
   pub fn is_binop(&self, op: ErlBinaryOp) -> bool {
-    matches!(&self.content, AstNodeType::BinaryOp {expr, ..} if expr.operator == op)
+    matches!(&self.content, AstNodeType::BinaryOp {binop_expr, ..} if binop_expr.operator == op)
   }
 
   /// Checks whether an ErlAst node is a Binary Expression

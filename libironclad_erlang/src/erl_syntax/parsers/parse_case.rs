@@ -16,7 +16,7 @@ use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::separated_list1;
-use nom::sequence::{delimited, pair, preceded, terminated, tuple};
+use nom::sequence::{pair, preceded, terminated, tuple};
 
 /// Parses a `MATCH_EXPR when GUARD_EXPR -> EXPR` branch of a `case` or a `try of`
 pub(crate) fn parse_case_clause(

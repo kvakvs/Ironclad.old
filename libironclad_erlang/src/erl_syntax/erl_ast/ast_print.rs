@@ -47,10 +47,10 @@ impl std::fmt::Display for AstNodeImpl {
       }
       Lit { value: lit, .. } => lit.fmt(f),
 
-      BinaryOp { expr: binop_expr, .. } => {
+      BinaryOp { binop_expr, .. } => {
         write!(f, "({} {} {})", binop_expr.left, binop_expr.operator, binop_expr.right)
       }
-      UnaryOp { expr: unop_expr, .. } => {
+      UnaryOp { unop_expr, .. } => {
         write!(f, "({} {})", unop_expr.operator, unop_expr.expr)
       }
       MFA { mfarity: mfa, .. } => match &mfa.module {

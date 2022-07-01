@@ -18,7 +18,7 @@ pub struct ErlUnaryOperatorExpr {
 impl ErlUnaryOperatorExpr {
   /// Create an unary operator and wrap it with ErlAst::UnaryOp
   pub(crate) fn new_ast(loc: SourceLoc, operator: ErlUnaryOp, expr: AstNode) -> AstNode {
-    let unop_node = UnaryOp { expr: ErlUnaryOperatorExpr { expr, operator } };
+    let unop_node = UnaryOp { unop_expr: ErlUnaryOperatorExpr { expr, operator } };
     AstNodeImpl::construct_with_location(loc, unop_node)
   }
 

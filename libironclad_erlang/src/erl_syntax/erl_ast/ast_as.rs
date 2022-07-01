@@ -37,7 +37,7 @@ impl AstNodeImpl {
   #[allow(dead_code)]
   pub(crate) fn as_binop(&self) -> &ErlBinaryOperatorExpr {
     match &self.content {
-      AstNodeType::BinaryOp { expr, .. } => expr,
+      AstNodeType::BinaryOp { binop_expr: expr, .. } => expr,
       _ => panic!("Expected BinOp AST node, but got {}", self),
     }
   }

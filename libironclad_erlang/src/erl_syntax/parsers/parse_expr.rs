@@ -86,7 +86,7 @@ fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
 /// Parses a `Expr <- Expr` generator
 pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
   let make_comp_gen = |(consumed_input, (a, b)): (ParserInput, (AstNode, AstNode))| -> AstNode {
-    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&input), a, b)
+    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&consumed_input), a, b)
   };
   map(consumed(separated_pair(parse_expr, tok_left_arrow, parse_expr)), make_comp_gen)(
     input.clone(),
@@ -469,7 +469,6 @@ fn parse_expr_prec11(input: ParserInput) -> ParserResult<AstNode> {
 
 /// Lowest precedence 13, where we handle comma and semicolon as binary ops.
 /// Note that semicolon is not valid for regular code only allowed in guards.
-#[named]
 fn parse_expr_prec13(style: ExprStyle, input: ParserInput) -> ParserResult<AstNode> {
   // Only guard style expressions allow comma/semicolon as binary ops
   if style == ExprStyle::Guard {

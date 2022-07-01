@@ -75,7 +75,7 @@ impl AstNodeImpl {
     right: AstNode,
   ) -> AstNode {
     let binop_node = BinaryOp {
-      expr: ErlBinaryOperatorExpr { left, right, operator: op },
+      binop_expr: ErlBinaryOperatorExpr { left, right, operator: op },
     };
     AstNodeImpl::construct_with_location(location, binop_node)
   }
