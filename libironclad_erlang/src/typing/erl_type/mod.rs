@@ -65,6 +65,8 @@ pub enum ErlTypeImpl {
     elements: ErlType,
     /// Tail element if not NIL, otherwise None
     tail: Option<ErlType>,
+    /// Requirement that the list is non-empty
+    is_non_empty: bool,
   },
   /// Tuple-style strongly typed list of fixed size, with each element having own type
   StronglyTypedList {

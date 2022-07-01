@@ -46,7 +46,10 @@ impl SubtypeChecker {
       }
       // ErlType::Record { .. } => {}
       ErlTypeImpl::AnyList => Self::is_subtype_of_anylist(sub_ty),
-      ErlTypeImpl::List { elements: supertype_elements, tail: supertype_tail } => {
+      ErlTypeImpl::List {
+        elements: supertype_elements, tail: supertype_tail, ..
+      } => {
+        todo!("support non-empty attribute");
         Self::is_subtype_of_list(supertype_elements, supertype_tail, sub_ty)
       }
       ErlTypeImpl::StronglyTypedList { elements: supertype_elements, tail: supertype_tail } => {
@@ -171,7 +174,8 @@ impl SubtypeChecker {
   ) -> bool {
     match sub_ty {
       // For superlist to include a sublist
-      ErlTypeImpl::List { elements: subtype_elements, tail: subtype_tail } => {
+      ErlTypeImpl::List { elements: subtype_elements, tail: subtype_tail, .. } => {
+        todo!("support non-empty attribute");
         Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
           && subtype_elements.is_subtype_of(supertype_elements)
       }
@@ -195,7 +199,8 @@ impl SubtypeChecker {
   ) -> bool {
     match sub_ty {
       // For typed list to include a list
-      ErlTypeImpl::List { elements: subtype_elements, tail: subtype_tail } => {
+      ErlTypeImpl::List { elements: subtype_elements, tail: subtype_tail, .. } => {
+        todo!("support non-empty attribute");
         // Sublist type must be subtype of each superlist element
         Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
           && supertype_elements

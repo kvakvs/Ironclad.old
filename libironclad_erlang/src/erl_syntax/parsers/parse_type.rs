@@ -4,9 +4,9 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_hash,
-  tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon, tok_square_close,
-  tok_square_open, tok_var, tok_vertical_bar,
+  dash_atom, tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis,
+  tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_semicolon,
+  tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -241,6 +241,23 @@ impl ErlTypeParser {
     )(input)
   }
 
+  /// Parse a list of type and ellipsis, creating a nonempty list-type
+  fn type_of_nonempty_list(
+    input: ParserInput,
+  ) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
+    map(
+      delimited(
+        tok_square_open,
+        context(
+          "type arguments for a nonempty_list() type",
+          separated_pair(Self::alt_typevar_or_type, tok_comma, tok_ellipsis),
+        ),
+        tok_square_close,
+      ),
+      |(typevar, _ellip)| ErlTypeImpl::list_of(ErlTypeImpl::new_typevar(typevar), true),
+    )(input)
+  }
+
   /// Parse a tuple of types, returns a temporary tuple-type
   fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
     map(
@@ -326,6 +343,7 @@ impl ErlTypeParser {
   ) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
     alt((
       Self::int_range_type,
+      Self::type_of_nonempty_list,
       Self::type_of_list,
       Self::type_of_tuple,
       Self::type_of_map,

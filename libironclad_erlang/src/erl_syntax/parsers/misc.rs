@@ -383,6 +383,12 @@ pub(crate) fn tok_double_vertical_bar(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::DoubleVerticalBar)), void_fn)(input)
 }
 
+/// Matches a `...` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_ellipsis(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Ellipsis)), void_fn)(input)
+}
+
 /// Matches a `[` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_square_open(input: ParserInput) -> ParserResult<()> {

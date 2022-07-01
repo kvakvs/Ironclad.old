@@ -56,6 +56,8 @@ pub enum TokenType {
   HardNotEq,
   /// `=` equals symbol
   EqualSymbol,
+  /// For typespecs `...` is used for non-empty lists and for any-arity functions
+  Ellipsis,
   /// `=>` double right arrow
   RightDoubleArr,
   /// `->` single right arrow
@@ -137,6 +139,7 @@ impl TokenType {
       TokenType::DoubleAngleClose => "double closing angle bracket",
       TokenType::DoubleAngleOpen => "double opening angle bracket",
       TokenType::DoubleVerticalBar => "double vertical bar",
+      TokenType::Ellipsis => "ellipsis",
       TokenType::EOL => "end of line",
       TokenType::EqualEqual => "double equal",
       TokenType::EqualSymbol => "equals",
@@ -193,6 +196,7 @@ impl std::fmt::Display for TokenType {
       TokenType::DoubleAngleClose => write!(f, "»"),
       TokenType::DoubleAngleOpen => write!(f, "«"),
       TokenType::DoubleVerticalBar => write!(f, "∥"),
+      TokenType::Ellipsis => write!(f, "…"),
       TokenType::EOL => write!(f, "↵"),
       TokenType::EqualEqual => write!(f, "⩵"),
       TokenType::EqualSymbol => write!(f, "="),

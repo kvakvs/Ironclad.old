@@ -75,6 +75,11 @@ fn symbol_barbar(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 #[inline]
+fn symbol_ellipsis(input: TokenizerInput) -> TokensResult<Token> {
+  map(tag("..."), |_| Token::new(input.as_ptr(), TokenType::Ellipsis))(input)
+}
+
+#[inline]
 fn symbol_bar(input: TokenizerInput) -> TokensResult<Token> {
   map(char('|'), |_| Token::new(input.as_ptr(), TokenType::VerticalBar))(input)
 }
@@ -269,9 +274,9 @@ fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
       symbol_doubleangleclose, // >>
       symbol_greatereq,        // > =
       symbol_greaterthan,      // >
+      symbol_ellipsis,         // ...
       symbol_periodperiod,     // ..
       symbol_period,           // .
-      symbol_mul,              // *
     )),
     alt((
       symbol_leftarr,         // < -
@@ -296,6 +301,7 @@ fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
       symbol_equalsymbol,    // =
     )),
     alt((
+      symbol_mul,         // *
       symbol_hash,        // #
       symbol_barbar,      // ||
       symbol_bar,         // |

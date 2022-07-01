@@ -23,9 +23,15 @@ impl std::fmt::Display for ErlTypeImpl {
         Pretty::display_curly_list(fields.iter(), f)
       }
       ErlTypeImpl::AnyList => write!(f, "list()"),
-      ErlTypeImpl::List { elements, tail } => match tail {
+      ErlTypeImpl::List { elements, tail, is_non_empty } => match tail {
         Some(t) => write!(f, "list({}, {})", elements, t),
-        None => write!(f, "list({})", elements),
+        None => {
+          write!(f, "list({}", elements)?;
+          if *is_non_empty {
+            write!(f, ", ...")?;
+          }
+          write!(f, ")")
+        }
       },
       ErlTypeImpl::StronglyTypedList { elements, tail } => match tail {
         Some(t) => {

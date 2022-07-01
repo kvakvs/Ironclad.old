@@ -199,6 +199,19 @@ fn parse_spec_test() {
 
 #[named]
 #[test]
+fn parse_spec_ellipsis_test() {
+  test_util::start(function_name!(), "Parse a spec with an ellipsis");
+
+  let input = "-spec atom_table(bdict()) -> {non_neg_integer(), [[non_neg_integer(),...]]}.";
+  let module = test_util::parse_module(function_name!(), input);
+  assert!(module
+    .root_scope
+    .fn_specs
+    .contains(&MFArity::new_local("atom_table", 1)));
+}
+
+#[named]
+#[test]
 fn parse_int_range_test() {
   test_util::start(function_name!(), "Parse an integer range");
   let input = "-type reg_num() :: 0 .. 1023.";

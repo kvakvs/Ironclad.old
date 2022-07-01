@@ -148,9 +148,19 @@ impl ErlBinaryOperatorExpr {
         Self::synthesize_stronglist_append(location, scope, left, left_elements, left_tail, right)
       }
 
-      ErlTypeImpl::List { elements: left_elements, tail: left_tail } => {
-        Self::synthesize_list_of_t_append(location, scope, left, right, left_elements, left_tail)
-      }
+      ErlTypeImpl::List {
+        elements: left_elements,
+        tail: left_tail,
+        is_non_empty: left_non_empty,
+      } => Self::synthesize_list_of_t_append(
+        location,
+        scope,
+        left,
+        right,
+        left_elements,
+        left_tail,
+        *left_non_empty,
+      ),
 
       other_left => {
         // left is not a list
@@ -177,7 +187,8 @@ impl ErlBinaryOperatorExpr {
       ErlTypeImpl::AnyList => {
         panic!("Internal: Synthesize stronglist++anylist loses type precision")
       }
-      ErlTypeImpl::List { elements: right_elements, tail: right_tail } => {
+      ErlTypeImpl::List { elements: right_elements, tail: right_tail, .. } => {
+        todo!("support non-empty attribute");
         let elements: Vec<ErlType> = left_elements
           .iter()
           .map(|l_elem| ErlTypeImpl::new_union(&[l_elem.clone(), right_elements.clone()]))
@@ -215,6 +226,7 @@ impl ErlBinaryOperatorExpr {
     right: &ErlType,
     left_elements: &ErlType,
     left_tail: &Option<ErlType>,
+    left_non_empty: bool,
   ) -> IcResult<ErlType> {
     assert!(left_tail.is_none(), "Left operand for ++ must always be a proper list");
 
@@ -222,12 +234,20 @@ impl ErlBinaryOperatorExpr {
       ErlTypeImpl::AnyList => {
         panic!("Internal: Synthesize list(T)++anylist loses type precision")
       }
-      ErlTypeImpl::List { elements: right_elements, tail: right_tail } => {
+      ErlTypeImpl::List {
+        elements: right_elements,
+        tail: right_tail,
+        is_non_empty: right_non_empty,
+      } => {
         let union_t = ErlTypeImpl::new_union(&[left_elements.clone(), right_elements.clone()]);
 
         // Result type for ++ is union of left and right types, and right tail is applied as the
         // tail type for result
-        let result_type = ErlTypeImpl::List { elements: union_t, tail: right_tail.clone() };
+        let result_type = ErlTypeImpl::List {
+          elements: union_t,
+          tail: right_tail.clone(),
+          is_non_empty: *right_non_empty || left_non_empty,
+        };
         Ok(result_type.into())
       }
       other_right => {

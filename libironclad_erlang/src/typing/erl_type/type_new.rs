@@ -28,8 +28,9 @@ impl ErlTypeImpl {
   }
 
   /// Creates a type for a proper list with a NIL tail.
-  pub fn list_of(t: ErlType) -> ErlType {
-    let result = ErlTypeImpl::List { elements: t, tail: None };
+  /// If `is_ellipsis` is true, this adds the non-empty list requirement.
+  pub fn list_of(t: ErlType, is_ellipsis: bool) -> ErlType {
+    let result = ErlTypeImpl::List { elements: t, tail: None, is_non_empty: is_ellipsis };
     result.into()
   }
 
