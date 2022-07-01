@@ -33,7 +33,7 @@ pub enum TokenType {
   /// Float division `/` forward slash symbol
   ForwardSlash,
   /// Multiplication `*`
-  Mul,
+  Asterisk,
   /// `++` append list
   ListAppend,
   /// `--` set operation on list `A -- B`
@@ -90,6 +90,7 @@ pub enum TokenType {
   VerticalBar,
   /// `||` a double pipe symbol
   DoubleVerticalBar,
+  Underscore,
   /// A parsed string token_stream between `" TEXT "`
   Str(Arc<String>),
   /// `% text` a line comment block
@@ -128,6 +129,7 @@ impl TokenType {
   /// Explain the token type as text
   pub fn as_explanation_str(&self) -> &'static str {
     match self {
+      TokenType::Asterisk => "asterisk",
       TokenType::Atom(_) => "an atom literal",
       TokenType::Character(_) => "a character literal",
       TokenType::Colon => "colon",
@@ -161,7 +163,6 @@ impl TokenType {
       TokenType::MacroInvocation(_) => "a macro invocation",
       TokenType::MacroStringifyArg(_) => "a macro argument pasted as a string",
       TokenType::Minus => "minus",
-      TokenType::Mul => "asterisk",
       TokenType::NotEq => "not equal",
       TokenType::ParClose => "closing parenthesis",
       TokenType::ParOpen => "opening parenthesis",
@@ -176,6 +177,7 @@ impl TokenType {
       TokenType::SquareClose => "closing square bracket",
       TokenType::SquareOpen => "opening square bracket",
       TokenType::Str(_) => "a string literal",
+      TokenType::Underscore => "underscore",
       TokenType::Variable(_) => "a variable",
       TokenType::VerticalBar => "vertical bar",
     }
@@ -185,6 +187,7 @@ impl TokenType {
 impl std::fmt::Display for TokenType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self {
+      TokenType::Asterisk => write!(f, "*"),
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
       TokenType::Character(c) => write!(f, "${}", *c),
       TokenType::Colon => write!(f, ":"),
@@ -218,7 +221,6 @@ impl std::fmt::Display for TokenType {
       TokenType::MacroInvocation(macro_name) => write!(f, "?{}", macro_name),
       TokenType::MacroStringifyArg(macro_arg) => write!(f, "⁇{}", macro_arg),
       TokenType::Minus => write!(f, "-"),
-      TokenType::Mul => write!(f, "*"),
       TokenType::NotEq => write!(f, "≠"),
       TokenType::ParClose => write!(f, ")"),
       TokenType::ParOpen => write!(f, "("),
@@ -233,6 +235,7 @@ impl std::fmt::Display for TokenType {
       TokenType::SquareClose => write!(f, "]"),
       TokenType::SquareOpen => write!(f, "["),
       TokenType::Str(s) => Pretty::doublequot_string(f, s),
+      TokenType::Underscore => write!(f, "_"),
       TokenType::Variable(v) => v.fmt(f),
       TokenType::VerticalBar => write!(f, "∣"),
     }

@@ -389,6 +389,18 @@ pub(crate) fn tok_ellipsis(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::Ellipsis)), void_fn)(input)
 }
 
+/// Matches a `*` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_asterisk(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Asterisk)), void_fn)(input)
+}
+
+/// Matches a `_` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_underscore(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Underscore)), void_fn)(input)
+}
+
 /// Matches a `[` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_square_open(input: ParserInput) -> ParserResult<()> {

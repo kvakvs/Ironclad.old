@@ -1,6 +1,7 @@
 //! Defines an Erlang-type
 use crate::literal::Literal;
 use crate::typing::erl_integer::ErlInteger;
+use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::fn_type::FnType;
 use crate::typing::record_field_type::RecordFieldType;
@@ -9,6 +10,7 @@ use crate::typing::typevar::Typevar;
 use libironclad_util::mfarity::MFArity;
 use std::sync::Arc;
 
+pub mod binary_type;
 pub mod map_type;
 pub mod type_as;
 pub mod type_is;
@@ -88,12 +90,12 @@ pub enum ErlTypeImpl {
 
   /// Any binary of any size
   AnyBinary,
-  /// Binary of size and possibly with last byte incomplete
+  /// Binary with head element, and repeated tail element, both optional
   Binary {
-    /// Byte size
-    size: usize,
-    /// If non-zero, this represents a bit string
-    last_byte_bits: usize,
+    /// Start of the binary
+    head: Option<BinaryTypeHeadElement>,
+    /// Rest of the binary, repeated
+    tail: Option<BinaryTypeTailElement>,
   },
 
   /// Matches function references and lambdas

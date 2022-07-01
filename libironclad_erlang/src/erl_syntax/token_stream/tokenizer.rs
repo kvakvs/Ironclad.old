@@ -156,7 +156,7 @@ fn symbol_minus(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_mul(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('*'), |_| Token::new(input.as_ptr(), TokenType::Mul))(input)
+  map(char('*'), |_| Token::new(input.as_ptr(), TokenType::Asterisk))(input)
 }
 
 #[inline]
@@ -172,6 +172,11 @@ fn symbol_parclose(input: TokenizerInput) -> TokensResult<Token> {
 #[inline]
 fn symbol_paropen(input: TokenizerInput) -> TokensResult<Token> {
   map(char('('), |_| Token::new(input.as_ptr(), TokenType::ParOpen))(input)
+}
+
+#[inline]
+fn symbol_underscore(input: TokenizerInput) -> TokensResult<Token> {
+  map(char('_'), |_| Token::new(input.as_ptr(), TokenType::Underscore))(input)
 }
 
 #[inline]
@@ -288,6 +293,7 @@ fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
       symbol_noteq,           // / =
       symbol_parclose,        // )
       symbol_paropen,         // (
+      symbol_underscore,      // (
     )),
     alt((
       symbol_rightarr,       // - >

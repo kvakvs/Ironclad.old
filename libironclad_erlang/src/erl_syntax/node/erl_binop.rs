@@ -188,12 +188,12 @@ impl ErlBinaryOperatorExpr {
         panic!("Internal: Synthesize stronglist++anylist loses type precision")
       }
       ErlTypeImpl::List { elements: right_elements, tail: right_tail, .. } => {
-        todo!("support non-empty attribute");
         let elements: Vec<ErlType> = left_elements
           .iter()
           .map(|l_elem| ErlTypeImpl::new_union(&[l_elem.clone(), right_elements.clone()]))
           .collect();
         let result_list = ErlTypeImpl::StronglyTypedList { elements, tail: right_tail.clone() };
+        todo!("support non-empty attribute");
         Ok(result_list.into())
       }
       ErlTypeImpl::StronglyTypedList { elements: right_elements, tail: right_tail } => {

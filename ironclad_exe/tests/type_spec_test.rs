@@ -212,6 +212,31 @@ fn parse_spec_ellipsis_test() {
 
 #[named]
 #[test]
+fn parse_spec_binary_test() {
+  test_util::start(function_name!(), "Parse a spec with an ellipsis");
+
+  let input = "
+  -type type0() :: <<_:192>>.
+  -spec lambda_table1(bdict()) -> {non_neg_integer(), [<<_:192>>]}.
+  -spec lambda_table2(bdict()) -> {non_neg_integer(), [<<_:192, _:_*8>>]}.
+  -spec lambda_table3(bdict()) -> {non_neg_integer(), [<<_:_*192>>]}.";
+  let module = test_util::parse_module(function_name!(), input);
+  assert!(module
+    .root_scope
+    .fn_specs
+    .contains(&MFArity::new_local("lambda_table1", 1)));
+  assert!(module
+    .root_scope
+    .fn_specs
+    .contains(&MFArity::new_local("lambda_table2", 1)));
+  assert!(module
+    .root_scope
+    .fn_specs
+    .contains(&MFArity::new_local("lambda_table3", 1)));
+}
+
+#[named]
+#[test]
 fn parse_int_range_test() {
   test_util::start(function_name!(), "Parse an integer range");
   let input = "-type reg_num() :: 0 .. 1023.";

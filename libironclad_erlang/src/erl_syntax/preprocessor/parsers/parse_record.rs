@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::{
   tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
-use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
+use crate::erl_syntax::parsers::parse_type::parse_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
@@ -30,7 +30,7 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
       )),
       opt(preceded(
         tok(TokenType::ColonColon),
-        context("type ascription for a field", cut(ErlTypeParser::parse_type)),
+        context("type ascription for a field", cut(parse_type)),
       )),
     )),
     |(field_tag, opt_initializer, opt_type)| RecordField {

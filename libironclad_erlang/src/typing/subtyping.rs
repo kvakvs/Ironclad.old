@@ -200,12 +200,12 @@ impl SubtypeChecker {
     match sub_ty {
       // For typed list to include a list
       ErlTypeImpl::List { elements: subtype_elements, tail: subtype_tail, .. } => {
-        todo!("support non-empty attribute");
         // Sublist type must be subtype of each superlist element
         Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
           && supertype_elements
             .iter()
-            .all(|supt| subtype_elements.is_subtype_of(supt))
+            .all(|supt| subtype_elements.is_subtype_of(supt));
+        todo!("support non-empty attribute")
       }
       // For typed superlist to include another typed sublist
       ErlTypeImpl::StronglyTypedList { elements: subtype_elements, tail: subtype_tail } => {

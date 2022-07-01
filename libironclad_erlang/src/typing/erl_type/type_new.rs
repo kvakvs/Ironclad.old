@@ -2,6 +2,7 @@
 
 use crate::literal::Literal;
 use crate::typing::erl_integer::ErlInteger;
+use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::ErlTypeImpl::UserDefinedType;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
@@ -38,6 +39,14 @@ impl ErlTypeImpl {
   pub(crate) fn list_of_types(types: Vec<ErlType>) -> ErlType {
     let result = ErlTypeImpl::StronglyTypedList { elements: types, tail: None };
     result.into()
+  }
+
+  /// Creates a type for binary data
+  pub(crate) fn new_binary(
+    head: Option<BinaryTypeHeadElement>,
+    tail: Option<BinaryTypeTailElement>,
+  ) -> ErlType {
+    ErlTypeImpl::Binary { head, tail }.into()
   }
 
   /// Creates new function type with clauses

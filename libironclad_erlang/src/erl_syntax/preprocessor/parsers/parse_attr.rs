@@ -6,7 +6,7 @@ use crate::erl_syntax::parsers::misc::{
   tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
-use crate::erl_syntax::parsers::parse_type::ErlTypeParser;
+use crate::erl_syntax::parsers::parse_type::{parse_fn_spec, parse_type, parse_typevar_name};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -132,11 +132,7 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
 pub(crate) fn parse_parenthesized_list_of_vars(input: ParserInput) -> ParserResult<Vec<String>> {
-  delimited(
-    tok_par_open,
-    cut(separated_list0(tok_comma, ErlTypeParser::parse_typevar_name)),
-    tok_par_close,
-  )(input)
+  delimited(tok_par_open, cut(separated_list0(tok_comma, parse_typevar_name)), tok_par_close)(input)
 }
 
 /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
@@ -153,7 +149,7 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode
           cut(parse_parenthesized_list_of_vars),
         ),
         tok(TokenType::ColonColon),
-        context("type in a -type() definition attribute", cut(ErlTypeParser::parse_type)),
+        context("type in a -type() definition attribute", cut(parse_type)),
       )),
       period_eol_eof,
     ),
@@ -171,7 +167,7 @@ pub(crate) fn parse_any_module_attr(input: ParserInput) -> ParserResult<Preproce
     export_attr,
     import_attr,
     type_definition_attr,
-    ErlTypeParser::parse_fn_spec,
+    parse_fn_spec,
     // Generic parser will try consume any `-IDENT(EXPR).`
     parse_generic_attr,
     parse_generic_attr_no_parentheses,

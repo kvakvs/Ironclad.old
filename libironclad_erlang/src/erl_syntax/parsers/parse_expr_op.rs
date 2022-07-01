@@ -47,7 +47,7 @@ pub(crate) fn binop_bang(input: ParserInput) -> BinaryOpParserResult {
 }
 
 pub(crate) fn binop_multiply(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok(TokenType::Mul)), |_| ErlBinaryOp::Mul)(input)
+  map(ws_before(tok(TokenType::Asterisk)), |_| ErlBinaryOp::Mul)(input)
 }
 
 pub(crate) fn binop_add(input: ParserInput) -> BinaryOpParserResult {
