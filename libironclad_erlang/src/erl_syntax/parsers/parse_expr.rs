@@ -1,7 +1,5 @@
 //! Parse expressions and guard expressions (with added ;, operators)
 
-use ::function_name::named;
-
 use crate::erl_syntax::erl_ast::expr_style::ExprStyle;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
@@ -37,7 +35,6 @@ use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
-use crate::error::ic_error::IcResult;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{consumed, cut, map, opt};

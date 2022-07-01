@@ -1,5 +1,5 @@
 //! Defines libironclad options for a file
-use crate::erl_syntax::parsers::parser_scope::{ParserScopeImpl, PreprocessorDefinesMap};
+use crate::erl_syntax::parsers::preproc_defines::PreprocessorDefinesMap;
 use crate::project::conf::serializable_compiler_opts::SerializableCompilerOpts;
 use std::sync::Arc;
 
@@ -38,7 +38,7 @@ impl CompilerOptsImpl {
     // Overlay preprocessor defines
     let new_scope =
       // if let (Ok(r_result_scope), Ok(r_other_scope)) = (result.scope.read(), other.scope.read()) {
-        ParserScopeImpl::overlay(&result.scope, &other.scope);
+        PreprocessorDefinesMap::overlay(&result.scope, &other.scope);
     // } else {
     //   panic!("Can't lock scopes for merging")
     // };
@@ -50,7 +50,7 @@ impl CompilerOptsImpl {
     let self_default = Self::default();
     Self {
       include_paths: opts.include_paths.unwrap_or(self_default.include_paths),
-      scope: ParserScopeImpl::new_from_config(opts.defines, &self_default.scope),
+      scope: PreprocessorDefinesMap::new_from_config(opts.defines, &self_default.scope),
       max_errors_per_module: Self::MAX_ERRORS_PER_MODULE,
     }
   }

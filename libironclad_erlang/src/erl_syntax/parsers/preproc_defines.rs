@@ -4,13 +4,26 @@ use libironclad_util::mfarity::MFArity;
 use std::collections::HashMap;
 
 /// Collection of preprocessor defines with arity as key
-pub type PreprocessorDefinesMap = HashMap<MFArity, PreprocessorDefine>;
+#[derive(Default, Debug, Clone)]
+pub struct PreprocessorDefinesMap {
+  /// The data
+  pub data: HashMap<MFArity, PreprocessorDefine>,
+}
 
-#[deprecated]
-#[allow(missing_docs)]
-pub struct ParserScopeImpl {}
+impl FromIterator<(MFArity, PreprocessorDefine)> for PreprocessorDefinesMap {
+  fn from_iter<T>(iter: T) -> Self
+  where
+    T: IntoIterator<Item = (MFArity, PreprocessorDefine)>,
+  {
+    let mut data = HashMap::new();
+    for (arity, define) in iter {
+      data.insert(arity, define);
+    }
+    Self { data }
+  }
+}
 
-impl ParserScopeImpl {
+impl PreprocessorDefinesMap {
   /// Parse defines in the configuration file, or from command line specified as -DNAME or -DNAME=XXX
   pub(crate) fn new_from_config_lines(inputs: &[String]) -> PreprocessorDefinesMap {
     inputs
@@ -28,7 +41,7 @@ impl ParserScopeImpl {
     defaults: &PreprocessorDefinesMap,
   ) -> PreprocessorDefinesMap {
     if let Some(inputs) = &maybe_inputs {
-      Self::new_from_config_lines(inputs)
+      PreprocessorDefinesMap::new_from_config_lines(inputs)
     } else {
       defaults.clone()
     }
@@ -41,8 +54,8 @@ impl ParserScopeImpl {
   ) -> PreprocessorDefinesMap {
     let mut result = one.clone();
 
-    for (na, def) in another.iter() {
-      result.insert(na.clone(), def.clone());
+    for (na, def) in another.data.iter() {
+      result.data.insert(na.clone(), def.clone());
     }
 
     result

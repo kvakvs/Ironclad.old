@@ -1,7 +1,8 @@
 //! A type variable: name and a type pair.
 
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
-use std::fmt::Formatter;
+use libironclad_util::pretty::Pretty;
+use std::fmt::{Display, Formatter};
 
 /// Represents a function argument, a type variable in a typespec or a member of `when` clause
 /// in a function spec. Name is optional.
@@ -12,6 +13,9 @@ pub struct Typevar {
   /// Type of the typevar, or any()
   pub ty: ErlType,
 }
+
+/// Wrapper for typevar array to implement things like Display
+pub struct Typevars<'a>(&'a [Typevar]);
 
 impl Typevar {
   /// Construct a new typevar, with possibly a type, otherwise any() will be used.
@@ -57,13 +61,13 @@ impl Typevar {
 
   /// Merges lists a and b, by finding typevar names from a in b
   pub(crate) fn merge_lists(a: &[Typevar], b: &[Typevar]) -> Vec<Typevar> {
-    println!("Merge {:?} and {:?}", a, b);
-    let result = a
+    println!("Merge {} and {}", Typevars(a), Typevars(b));
+    let result: Vec<Typevar> = a
       .iter()
       .map(|each_a| Self::substitute_var_from_when_clause(each_a, b))
       .cloned()
       .collect();
-    println!("Merge result {:?}", result);
+    println!("Merge result {}", Typevars(&result));
     result
   }
 
@@ -74,12 +78,18 @@ impl Typevar {
   }
 }
 
-impl std::fmt::Display for Typevar {
+impl Display for Typevar {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match &self.name {
       Some(n) => write!(f, "{} :: ", n)?,
       None => {}
     }
     self.ty.fmt(f)
+  }
+}
+
+impl<'a> Display for Typevars<'a> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    Pretty::display_comma_separated(self.0.iter(), f)
   }
 }

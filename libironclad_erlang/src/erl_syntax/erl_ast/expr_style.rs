@@ -31,8 +31,26 @@ impl Display for ExprStyle {
 }
 
 impl AstNodeImpl {
+  /// Ensure the expression can be used as a guard expression.
+  #[inline]
+  pub fn verify_expr_is_guard(node: &AstNode) -> IcResult<()> {
+    Self::verify_expr_style(node, ExprStyle::Guard)
+  }
+
+  /// Ensure the expression can be used as match expression.
+  #[inline]
+  pub fn verify_expr_is_matchexpr(node: &AstNode) -> IcResult<()> {
+    Self::verify_expr_style(node, ExprStyle::MatchExpr)
+  }
+
+  /// Ensure the expression contains const expressions only.
+  #[inline]
+  pub fn verify_expr_is_const(node: &AstNode) -> IcResult<()> {
+    Self::verify_expr_style(node, ExprStyle::Const)
+  }
+
   /// Returns `()` if the expression style matches, or returns a detailed error.
-  pub fn verify_expr_style(node: &AstNode, style: ExprStyle) -> IcResult<()> {
+  fn verify_expr_style(node: &AstNode, style: ExprStyle) -> IcResult<()> {
     match &node.content {
       // AstNodeType::FnRef { .. } => {}
       AstNodeType::MFA { .. } => {
@@ -126,18 +144,6 @@ impl AstNodeImpl {
           );
         }
       }
-      AstNodeType::ListComprehensionGenerator { .. } => {
-        unreachable!("LC generators must not occur in the wild");
-      }
-      AstNodeType::CClause(_, _) => {
-        unreachable!("Case clauses must not occur in the wild");
-      }
-      AstNodeType::FnDef(_) => {
-        unreachable!("Function definitions must not occur in the wild");
-      }
-      AstNodeType::Type { .. } => {
-        unreachable!("Types must not occur in the wild");
-      }
       AstNodeType::TryCatch { .. } => {
         if style == ExprStyle::Const {
           return ErlError::unacceptable(
@@ -166,12 +172,21 @@ impl AstNodeImpl {
         }
       }
       //-----------------------------------
+      // Must not occur
+      //-----------------------------------
+      AstNodeType::CClause(_, _)
+      | AstNodeType::FnDef(_)
+      | AstNodeType::Type { .. }
+      | AstNodeType::ListComprehensionGenerator { .. } => {
+        unreachable!("Node must not occur in the wild: {:?}", &node.content);
+      }
+      //-----------------------------------
       // No check necessary, always success
       //-----------------------------------
       AstNodeType::Lit { .. } | AstNodeType::Empty { .. } => {}
-      // AstNodeType::ModuleForms { .. } => {}
+      AstNodeType::ModuleForms { .. } => {}
       _ => {
-        unimplemented!("AstNode::verify_expr_style: don't know how to verify {:?}", node.content)
+        unimplemented!("AstNode::verify_expr_style: don't know how to verify {:?}", &node.content)
       }
     }
     Ok(())
