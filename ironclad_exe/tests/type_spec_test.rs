@@ -4,8 +4,15 @@ extern crate libironclad_erlang;
 mod test_util;
 
 use ::function_name::named;
+use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
+use libironclad_erlang::erl_syntax::parsers::parse_type::parse_binary_t::{
+  binary_type_head_element, binary_type_tail_element,
+};
+use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
+use libironclad_erlang::erl_syntax::token_stream::token::format_tok_till_eol;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
+use nom::Finish;
 
 #[named]
 #[test]
@@ -212,7 +219,45 @@ fn parse_spec_ellipsis_test() {
 
 #[named]
 #[test]
-fn parse_spec_binary_test() {
+fn parse_spec_binary_head() {
+  test_util::start(function_name!(), "Parse a raw part of a binary spec");
+
+  // Ensure that _ token is parsed as `Underscore` otherwise the test will fail
+  let input0 = "_:192";
+  let tok = test_util::tokenize(input0);
+  println!("TOKENS {:?}", &tok);
+  let pinput = ParserInput::new_slice(&tok);
+  let (_t1, hd) = panicking_parser_error_reporter(
+    input0,
+    pinput.clone(),
+    binary_type_head_element(pinput.clone()).finish(),
+    true,
+  );
+  println!("parsed: {:?}", hd);
+}
+
+#[named]
+#[test]
+fn parse_spec_binary_tail() {
+  test_util::start(function_name!(), "Parse a raw part of a binary spec");
+
+  // Ensure that _ token is parsed as `Underscore` otherwise the test will fail
+  let input0 = "_:_*192";
+  let tok = test_util::tokenize(input0);
+  println!("TOKENS {:?}", &tok);
+  let pinput = ParserInput::new_slice(&tok);
+  let (_t1, hd) = panicking_parser_error_reporter(
+    input0,
+    pinput.clone(),
+    binary_type_tail_element(pinput.clone()).finish(),
+    true,
+  );
+  println!("parsed: {:?}", hd);
+}
+
+#[named]
+#[test]
+fn parse_spec_binary() {
   test_util::start(function_name!(), "Parse a spec with an ellipsis");
 
   let input = "

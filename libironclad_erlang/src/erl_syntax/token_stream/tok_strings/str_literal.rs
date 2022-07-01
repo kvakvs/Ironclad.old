@@ -70,6 +70,7 @@ pub(crate) fn parse_doublequot_string(input: TokenizerInput) -> TokensResult<Str
 
 fn parse_int_unsigned_body(input: TokenizerInput) -> TokensResult<TokenizerInput> {
   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
+  // recognize(many1(one_of("0123456789")))(input)
 }
 
 /// Parse an any-base integer `0-9, a-z` (check is done when parsing is complete)
@@ -93,14 +94,8 @@ fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
   )(input)
 }
 
-/// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
-/// From Nom examples
-pub(crate) fn parse_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
-  parse_int_decimal(input)
-}
-
 /// Parse a based integer `<BASE> # <NUMBER>`
-pub(crate) fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
+fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
   map(
     separated_pair(parse_int_unsigned_body, ws_before(char('#')), parse_based_int_unsigned_body),
     |(base_str, value_str): (&str, &str)| -> ErlInteger {
@@ -109,4 +104,10 @@ pub(crate) fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger>
       ErlInteger::new_from_string_radix(value_str, base).unwrap()
     },
   )(input)
+}
+
+/// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
+/// From Nom examples
+pub(crate) fn parse_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
+  alt((parse_based_int, parse_int_decimal))(input)
 }

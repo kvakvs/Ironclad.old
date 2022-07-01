@@ -6,7 +6,8 @@ use crate::erl_syntax::parsers::misc::{
   tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
-use crate::erl_syntax::parsers::parse_type::{parse_fn_spec, parse_type, parse_typevar_name};
+use crate::erl_syntax::parsers::parse_type::parse_fn_t::parse_fn_spec;
+use crate::erl_syntax::parsers::parse_type::{parse_type, parse_typevar_name};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;

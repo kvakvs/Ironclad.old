@@ -39,15 +39,15 @@ impl ErlModuleImpl {
       module_impl.compiler_options = o;
     }
     let module: ErlModule = module_impl.into();
-    let tok_stream2 = ErlModuleImpl::tokenize(project, &module, &src_file)?;
+    let tokens = ErlModuleImpl::tokenize(project, &module, &src_file)?;
 
     //----------------------
-    // Stage 3 real parsing begins: tokens to AST
+    // Real parsing begins: tokens to AST
     //----------------------
-    let (tail, forms) = if tok_stream2.is_empty() {
-      (ParserInput::new_slice(&tok_stream2), AstNodeImpl::new_module_forms(vec![]))
+    let (tail, forms) = if tokens.is_empty() {
+      (ParserInput::new_slice(&tokens), AstNodeImpl::new_module_forms(vec![]))
     } else {
-      let tokens_input = ParserInput::new(&src_file, &tok_stream2);
+      let tokens_input = ParserInput::new(&src_file, &tokens);
       panicking_parser_error_reporter(
         src_file.text.as_str(),
         tokens_input.clone(),

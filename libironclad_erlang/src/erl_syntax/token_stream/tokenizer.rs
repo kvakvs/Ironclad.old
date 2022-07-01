@@ -2,12 +2,12 @@
 
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::misc::{
-  bigcapacity_many0, ident_continuation, parse_macro_ident, varname, ws_before_mut, ws_mut,
+  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::token_stream::tok_strings::atom_literal::parse_tok_atom;
 use crate::erl_syntax::token_stream::tok_strings::str_literal::{
-  parse_based_int, parse_doublequot_string, parse_int,
+  parse_doublequot_string, parse_int,
 };
 use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::erl_syntax::token_stream::token::Token;
@@ -21,20 +21,25 @@ use nom::sequence::{preceded, terminated};
 use nom::Parser;
 
 #[inline]
-fn tok_atom(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_atom(input: TokenizerInput) -> TokensResult<Token> {
   map(parse_tok_atom, |s| Token::new(input.as_ptr(), TokenType::Atom(s)))(input)
 }
 
-#[inline]
-fn tok_variable(input: TokenizerInput) -> TokensResult<Token> {
-  map(varname, |v| Token::new(input.as_ptr(), TokenType::Variable(v)))(input)
+/// Produces a variable name token, or for lone underscores produces an `Underscore` token.
+fn tokenize_variable_name(input: TokenizerInput) -> TokensResult<Token> {
+  let mk_var = |v| {
+    if v == "_" {
+      Token::new(input.as_ptr(), TokenType::Underscore)
+    } else {
+      Token::new(input.as_ptr(), TokenType::Variable(v))
+    }
+  };
+  map(parse_varname, mk_var)(input)
 }
 
 #[inline]
-fn tok_integer(input: TokenizerInput) -> TokensResult<Token> {
-  map(alt((parse_based_int, parse_int)), |i| {
-    Token::new(input.as_ptr(), TokenType::Integer(i))
-  })(input)
+fn tokenize_integer(input: TokenizerInput) -> TokensResult<Token> {
+  map(parse_int, |i| Token::new(input.as_ptr(), TokenType::Integer(i)))(input)
 }
 
 #[inline]
@@ -240,7 +245,7 @@ fn symbol_squareopen(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 #[inline]
-fn tok_string(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_string(input: TokenizerInput) -> TokensResult<Token> {
   let map_fn = |s: String| Token::new(input.as_ptr(), TokenType::Str(s.into()));
   map(parse_doublequot_string, map_fn)(input)
 }
@@ -252,24 +257,27 @@ fn dollar_character(input: TokenizerInput) -> TokensResult<Char> {
 }
 
 #[inline]
-fn tok_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
   let map_fn = |c: Char| Token::new(input.as_ptr(), TokenType::Character(c));
   map(preceded(char('$'), dollar_character), map_fn)(input)
 }
 
 #[inline]
-fn tok_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
   let map_fn = |var_n| Token::new(input.as_ptr(), TokenType::MacroStringifyArg(var_n));
-  map(preceded(tag("??"), context("stringify macro argument", cut(varname))), map_fn)(input)
+  map(
+    preceded(tag("??"), context("stringify macro argument", cut(parse_varname))),
+    map_fn,
+  )(input)
 }
 
 #[inline]
-fn tok_macro_invocation(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_macro_invocation(input: TokenizerInput) -> TokensResult<Token> {
   let map_fn = |m| Token::new(input.as_ptr(), TokenType::MacroInvocation(m));
   map(preceded(char('?'), context("macro invocation", cut(parse_macro_ident))), map_fn)(input)
 }
 
-fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_other_symbols(input: TokenizerInput) -> TokensResult<Token> {
   alt((
     alt((
       symbol_comma,            // ,
@@ -293,7 +301,7 @@ fn tok_symbol(input: TokenizerInput) -> TokensResult<Token> {
       symbol_noteq,           // / =
       symbol_parclose,        // )
       symbol_paropen,         // (
-      symbol_underscore,      // (
+      symbol_underscore,      // _
     )),
     alt((
       symbol_rightarr,       // - >
@@ -467,7 +475,7 @@ fn keyword_xor(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 #[inline]
-fn tok_newline(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_newline(input: TokenizerInput) -> TokensResult<Token> {
   map(alt((tag("\r\n"), tag("\n"), tag("\r"))), |_| {
     Token::new(input.as_ptr(), TokenType::EOL)
   })(input)
@@ -479,7 +487,7 @@ fn word_break(input: &str) -> TokensResult<&str> {
   recognize(not(ident_continuation))(input)
 }
 
-fn tok_keyword(input: TokenizerInput) -> TokensResult<Token> {
+fn tokenize_keyword(input: TokenizerInput) -> TokensResult<Token> {
   terminated(
     alt((
       alt((
@@ -527,16 +535,15 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
   // Comments after the code are consumed by the outer ws_mut
   // Comments and spaces between the tokens are consumed by the inner ws_before_mut
   complete(ws_mut(bigcapacity_many0(ws_before_mut(alt((
-    //preprocessor_token,
-    tok_newline,
-    tok_macro_stringify_arg,
-    tok_macro_invocation,
-    tok_dollar_character,
-    tok_string,
-    tok_keyword,
-    tok_atom,
-    tok_variable,
-    tok_integer,
-    tok_symbol,
+    tokenize_newline,
+    tokenize_macro_stringify_arg,
+    tokenize_macro_invocation,
+    tokenize_dollar_character,
+    tokenize_string,
+    tokenize_keyword,
+    tokenize_atom,
+    tokenize_variable_name,
+    tokenize_integer,
+    tokenize_other_symbols,
   ))))))(input)
 }

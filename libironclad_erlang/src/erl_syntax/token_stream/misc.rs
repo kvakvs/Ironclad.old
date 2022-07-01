@@ -110,7 +110,8 @@ pub(crate) fn parse_macro_ident(input: TokenizerInput) -> TokensResult<String> {
 }
 
 /// Parse an identifier, starting with lowercase and also can be containing numbers and underscoress
-pub(crate) fn varname(input: TokenizerInput) -> TokensResult<String> {
+/// Note: This will also match a lone underscore, which is also an its own token.
+pub(crate) fn parse_varname(input: TokenizerInput) -> TokensResult<String> {
   map(
     recognize(pair(
       // a variable is a pair of UPPERCASE or _, followed by any alphanum or _
