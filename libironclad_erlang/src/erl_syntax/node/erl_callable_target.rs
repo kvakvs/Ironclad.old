@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
-use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;

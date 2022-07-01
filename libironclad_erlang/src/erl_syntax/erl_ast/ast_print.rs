@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CClause, CaseExpr, CommaExpr, FnDef,
   FnRef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
-  ModuleRoot, RecordBuilder, RecordField, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
+  ModuleForms, RecordBuilder, RecordField, TryCatch, Tuple, Type, UnaryOp, Var, MFA,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
@@ -19,7 +19,7 @@ impl std::fmt::Display for AstNodeImpl {
         Pretty::display_comma_separated(exprs.iter(), f)?;
         write!(f, " end")
       }
-      ModuleRoot { forms } => {
+      ModuleForms { forms } => {
         writeln!(f, "-module(...).")?;
         for form in forms.iter() {
           form.fmt(f)?;

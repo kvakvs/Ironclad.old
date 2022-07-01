@@ -16,21 +16,7 @@ use stage::stage_parse::ErlParseStage;
 
 pub mod stage;
 
-// /// Test default project created from "" empty config
-// fn test_empty_config_project() -> IcResult<()> {
-//   let default_project: ErlProject = match ProjectConf::from_string("") {
-//     Ok(dp) => ErlProjectImpl::from(dp).into(),
-//     Err(e) => return Err(Box::new(e)),
-//   };
-//   // println!("default {:?}", default_project);
-//   Ok(())
-// }
-
 fn main_do() -> IcResult<()> {
-  // if cfg!(debug_assertions) {
-  //   test_empty_config_project()?;
-  // }
-
   let project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
     Ok(erlp) => ErlProjectImpl::from(erlp).into(),
     Err(e) => return Err(Box::new(e)),

@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::error::ic_error::IcResult;
-use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};

@@ -4,7 +4,7 @@ use std::fmt::Formatter;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::error::ic_error::IcResult;
-use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;

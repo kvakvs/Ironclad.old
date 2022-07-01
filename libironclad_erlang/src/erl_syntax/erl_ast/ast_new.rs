@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseExpr, CommaExpr, Empty, FnDef,
-  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleRoot,
+  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms,
   RecordBuilder, RecordField, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
@@ -217,7 +217,7 @@ impl AstNodeImpl {
 
   /// Create a new `-module(m).` module attr.
   pub(crate) fn new_module_forms(forms: Vec<AstNode>) -> AstNode {
-    AstNodeImpl::construct_without_location(ModuleRoot { forms })
+    AstNodeImpl::construct_without_location(ModuleForms { forms })
   }
 
   /// Create a new try-catch AST node

@@ -136,7 +136,7 @@ impl AstNodeImpl {
       }
       AstNodeType::Type { .. }
       | AstNodeType::MFA { .. }
-      | AstNodeType::ModuleRoot { .. }
+      | AstNodeType::ModuleForms { .. }
       | AstNodeType::FnRef { .. }
       | AstNodeType::FnDef(_)
       | AstNodeType::CClause(_, _)

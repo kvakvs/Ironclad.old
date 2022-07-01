@@ -1,6 +1,6 @@
 //! Contains code for AST node implementation
 
-use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{FnDef, ModuleRoot};
+use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{FnDef, ModuleForms};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_apply::ErlApply;
@@ -42,7 +42,7 @@ pub enum AstNodeType {
   },
 
   /// Forms list, root of a module
-  ModuleRoot {
+  ModuleForms {
     /// Vector of module forms
     forms: Vec<AstNode>,
   },
@@ -244,7 +244,7 @@ impl AstNodeImpl {
       FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
         return Ok(this.clone());
       }
-      ModuleRoot { forms, .. } => {
+      ModuleForms { forms, .. } => {
         // Find first in forms for which `find_function_def` returns something
         let find_result = forms
           .iter()

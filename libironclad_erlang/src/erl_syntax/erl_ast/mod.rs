@@ -9,6 +9,7 @@ pub mod ast_is;
 pub mod ast_iter;
 pub mod ast_new;
 pub mod ast_print;
+pub mod expr_style;
 pub mod node_impl;
 
 /// An atomic-refcounted readonly AST node, suitable for sharing and cloning

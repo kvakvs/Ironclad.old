@@ -1,8 +1,8 @@
 //! Defines an Erlang module ready to be compiled
 
-pub mod mod_impl;
-pub mod mod_parse;
-pub mod mod_verify;
+pub mod module_impl;
+pub mod module_parse;
+pub mod module_verify;
 pub mod preprocess;
 pub mod scope;
 

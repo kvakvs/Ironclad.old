@@ -2,6 +2,7 @@
 
 use ::function_name::named;
 
+use crate::erl_syntax::erl_ast::expr_style::ExprStyle;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
 use crate::erl_syntax::erl_ast::AstNode;
@@ -43,19 +44,6 @@ use nom::combinator::{consumed, cut, map, opt};
 use nom::error::context;
 use nom::multi::{many0, separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
-
-/// Controls the parser behaviour and allowed operators.
-#[derive(Eq, PartialEq, Copy, Clone)]
-pub enum ExprStyle {
-  /// Full expression including comma operator, for function bodies
-  Full,
-  /// Full expression, also using comma and semicolon as boolean combinators: used in guard exprs
-  Guard,
-  /// Match expression: comma, semicolon not allowed, function calls not allowed, etc...
-  MatchExpr,
-  /// Do not allow dynamic expression components: lambdas, function calls, variables etc
-  Const,
-}
 
 fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
   let mk_var = |(consumed_input, n): (ParserInput, String)| -> AstNode {
@@ -534,28 +522,31 @@ fn parse_expr_lowest_precedence(style: ExprStyle, input: ParserInput) -> ParserR
 
 /// Parse an expression OR a function application which is essentially `EXPR ( EXPRS... )`.
 #[inline]
+/// Express the intent of parsing any expression.
 pub fn parse_expr(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_lowest_precedence(ExprStyle::Full, input)
 }
 
 #[inline]
+/// Express the intent of parsing a match expression.
+/// This does not do checking of what's parsed, and the result might contain pieces disallowed in
+/// match expressions. Run `AstNodeImpl::verify_expr_style` after the parse.
 pub fn parse_matchexpr(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_lowest_precedence(ExprStyle::MatchExpr, input)
 }
 
 #[inline]
+/// Express the intent of parsing a guard expression.
+/// This does not do checking of what's parsed, and the result might contain pieces disallowed in
+/// guards. Run `AstNodeImpl::verify_expr_style` after the parse.
 pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_lowest_precedence(ExprStyle::Guard, input)
 }
 
 #[inline]
+/// Express the intent of parsing a const expression.
+/// This does not do checking of what's parsed, and the result might contain non-const pieces.
+/// Run `AstNodeImpl::verify_expr_style` after the parse.
 pub fn parse_constant_expr(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_lowest_precedence(ExprStyle::Const, input)
-}
-
-/// After parse_expr ensure the value is valid for the selected style.
-pub fn check_expr(_style: ExprStyle, _ast: AstNode) -> IcResult<()> {
-  // TODO: Guard style: allow ; and , while other styles don't
-  // TODO: Const style: Disallow function calls, variables, etc
-  Ok(())
 }

@@ -11,7 +11,7 @@ use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::error::ic_error::{IcResult, IroncladError};
-use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use crate::project::module::preprocess::pp_macro_substitution::substitute_macro_invocations;
 use crate::project::ErlProject;
 use crate::record_def::RecordDefinition;

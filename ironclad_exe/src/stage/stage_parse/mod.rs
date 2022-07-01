@@ -1,7 +1,7 @@
 //! Parses Erlang source into AST
 
 use libironclad_erlang::error::ic_error::IcResult;
-use libironclad_erlang::project::module::mod_impl::ErlModuleImpl;
+use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::ErlProject;
 use libironclad_util::stats::time_stats::TimeStatsImpl;
 use std::path::Path;
@@ -36,6 +36,9 @@ impl ErlParseStage {
         let module =
           ErlModuleImpl::from_module_source(project, &source_file, Some(compiler_opts.clone()))?;
         project.register_new_module(&module);
+
+        // Check for possible errors, like expressions containing wrong types of nodes
+        module.verify_parsed_integrity()?;
 
         operation_timer.stop_timer();
         println!("FILE {} - {}", operation_timer, source_file.file_name.to_string_lossy());

@@ -12,7 +12,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token::format_tok_stream;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
-use crate::project::module::mod_impl::{ErlModule, ErlModuleImpl};
+use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
 use libironclad_util::source_file::SourceFile;
 use nom::Finish;

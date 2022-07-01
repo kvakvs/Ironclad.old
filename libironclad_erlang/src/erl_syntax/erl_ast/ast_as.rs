@@ -68,7 +68,7 @@ impl AstNodeImpl {
   #[allow(dead_code)]
   pub fn as_module(&self) -> &Vec<AstNode> {
     match &self.content {
-      AstNodeType::ModuleRoot { forms } => forms,
+      AstNodeType::ModuleForms { forms } => forms,
       _ => panic!("Expected ModuleRoot() AST node, but got {}", self),
     }
   }

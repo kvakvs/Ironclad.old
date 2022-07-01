@@ -7,7 +7,7 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IcResult;
-use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 

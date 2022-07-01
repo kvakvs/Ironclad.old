@@ -32,7 +32,7 @@ impl IterableAstNodeT for AstNodeImpl {
       | AstNodeType::Type { .. }
       | AstNodeType::Var { .. } => None,
 
-      AstNodeType::ModuleRoot { forms: f, .. } => Some(f.to_vec()),
+      AstNodeType::ModuleForms { forms: f, .. } => Some(f.to_vec()),
       AstNodeType::FnDef(fn_def) => fn_def.children(),
       AstNodeType::Apply(app) => app.children(),
 

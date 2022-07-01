@@ -4,7 +4,7 @@ use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
-use crate::project::module::mod_impl::ErlModule;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::project_inputs::ErlProjectInputs;
 use libironclad_util::io::file_cache::FileCache;
 use libironclad_util::rw_hashmap::RwHashMap;
