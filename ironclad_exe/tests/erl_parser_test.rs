@@ -785,3 +785,15 @@ fn parse_func_with_list_decomposition() {
     function_renumber([], St, Acc) -> {Acc,St}.";
   let _m = test_util::parse_module(function_name!(), input);
 }
+
+#[named]
+#[test]
+fn parse_func_with_funref() {
+  test_util::start(function_name!(), "parse a function with a function reference");
+  let input = "fix_swap(Fs, Opts) ->
+    case proplists:get_bool(no_swap, Opts) of
+        false -> Fs;
+        true -> fold_functions(fun swap_moves/1, Fs)
+    end.";
+  let _m = test_util::parse_module(function_name!(), input);
+}

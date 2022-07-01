@@ -29,6 +29,7 @@ impl IterableAstNodeT for AstNodeImpl {
       | AstNodeType::Lit { .. }
       | AstNodeType::MFA { .. }
       | AstNodeType::Type { .. }
+      | AstNodeType::FnRef { .. }
       | AstNodeType::Var { .. } => None,
 
       AstNodeType::ModuleForms { forms: f, .. } => Some(f.to_vec()),
@@ -148,7 +149,6 @@ impl IterableAstNodeT for AstNodeImpl {
       // _ => {
       //   unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
       // }
-      AstNodeType::FnRef { .. } => unimplemented!(),
       AstNodeType::RecordField { base, .. } => Some(vec![base.clone()]),
     }
   }

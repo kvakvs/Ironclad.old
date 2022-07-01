@@ -14,9 +14,9 @@ use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
-  tok_double_angle_open, tok_double_vertical_bar, tok_hash, tok_keyword_begin, tok_keyword_end,
-  tok_left_arrow, tok_par_close, tok_par_open, tok_period, tok_square_close, tok_square_open,
-  tok_var, tok_vertical_bar,
+  tok_double_angle_open, tok_double_vertical_bar, tok_forward_slash, tok_hash, tok_integer,
+  tok_keyword_begin, tok_keyword_end, tok_keyword_fun, tok_left_arrow, tok_par_close, tok_par_open,
+  tok_period, tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expr;
@@ -248,6 +248,27 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
+/// Parses `fun [module :] function / arity`
+fn parse_fn_reference(input: ParserInput) -> ParserResult<AstNode> {
+  map(
+    consumed(preceded(
+      tok_keyword_fun,
+      pair(
+        opt(terminated(tok_atom, tok_colon)),
+        separated_pair(tok_atom, tok_forward_slash, tok_integer),
+      ),
+    )),
+    |(consumed_input, (module, (function, arity)))| {
+      AstNodeImpl::new_fn_ref(
+        SourceLoc::new(&consumed_input),
+        module,
+        function,
+        arity.as_usize().unwrap(),
+      )
+    },
+  )(input)
+}
+
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
 fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
   context(
@@ -265,6 +286,7 @@ fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
         parse_map_builder,
       )),
       alt((
+        parse_fn_reference,
         parse_record_builder_no_base,
         parse_var,
         parse_erl_literal,

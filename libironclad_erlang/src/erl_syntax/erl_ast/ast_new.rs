@@ -2,8 +2,8 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BeginEnd, BinaryComprehension, BinaryExpr, BinaryOp, CaseExpr, CommaExpr, Empty, FnDef,
-  IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder, ModuleForms,
-  RecordBuilder, RecordField, TryCatch, Tuple, Var,
+  FnRef, IfStatement, List, ListComprehension, ListComprehensionGenerator, Lit, MapBuilder,
+  ModuleForms, RecordBuilder, RecordField, TryCatch, Tuple, Var,
 };
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -218,6 +218,17 @@ impl AstNodeImpl {
   /// Create a new `-module(m).` module attr.
   pub(crate) fn new_module_forms(forms: Vec<AstNode>) -> AstNode {
     AstNodeImpl::construct_without_location(ModuleForms { forms })
+  }
+
+  /// Create a new `fun module:func/arity`
+  pub(crate) fn new_fn_ref(
+    location: SourceLoc,
+    module: Option<String>,
+    function: String,
+    arity: usize,
+  ) -> AstNode {
+    let mfa = MFArity::new_opt(module, &function, arity);
+    AstNodeImpl::construct_with_location(location, FnRef { mfa })
   }
 
   /// Create a new try-catch AST node
