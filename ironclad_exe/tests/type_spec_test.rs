@@ -9,6 +9,7 @@ use libironclad_erlang::erl_syntax::parsers::parse_type::parse_binary_t::{
   binary_type_head_element, binary_type_tail_element,
 };
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
+use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_attr::parse_new_type_attr;
 use libironclad_erlang::erl_syntax::token_stream::token::format_tok_till_eol;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_util::mfarity::MFArity;
@@ -16,33 +17,42 @@ use nom::Finish;
 
 #[named]
 #[test]
-fn union_type_parse() -> IcResult<()> {
+fn union_type_parse() {
   test_util::start(function_name!(), "Parse a multiline union type");
+  // let input = "-type src() :: {term()}.";
   let input = "-type src() :: beam_reg() |
-	       {'literal',term()} |
-	       {'atom',atom()} |
-	       {'integer',integer()} |
-	       'nil' |
-	       {'float',float()}.";
-  let _module = test_util::parse_module(function_name!(), input);
-  Ok(())
+         {'literal',term()} |
+         {'atom',atom()} |
+         {'integer',integer()} |
+         'nil' |
+         {'float',float()}.";
+  // let _module = test_util::parse_module(function_name!(), input);
+  let tokens = test_util::tokenize(input);
+  println!("TOKENS {:?}", &tokens);
+  let p_input = ParserInput::new_slice(&tokens);
+  let (_tail, result) = panicking_parser_error_reporter(
+    input,
+    p_input.clone(),
+    parse_new_type_attr(p_input).finish(),
+    true,
+  );
+  println!("Parsed: {}", result);
 }
 
 #[named]
 #[test]
-fn fn_generic_attr_parse1() -> IcResult<()> {
+fn fn_generic_attr_parse1() {
   test_util::start(function_name!(), "Parse a generic attribute without args");
   let input = "- fgsfds.\n";
   let module = test_util::parse_module(function_name!(), input);
   let fgsattr = module.root_scope.attributes.get(&"fgsfds".to_string());
   assert!(fgsattr.is_some());
   assert_eq!(fgsattr.unwrap().len(), 1);
-  Ok(())
 }
 
 #[named]
 #[test]
-fn fn_generic_attr_parse2() -> IcResult<()> {
+fn fn_generic_attr_parse2() {
   test_util::start(function_name!(), "Parse a generic attribute line, consuming all as string");
   let input = "- bbbggg (ababagalamaga) .  ";
   let module = test_util::parse_module(function_name!(), input);
@@ -54,12 +64,11 @@ fn fn_generic_attr_parse2() -> IcResult<()> {
     .expr
     .unwrap()
     .is_atom_of("ababagalamaga"));
-  Ok(())
 }
 
 #[named]
 #[test]
-fn fn_typespec_parse_1() -> IcResult<()> {
+fn fn_typespec_parse_1() {
   test_util::start(function_name!(), "Parse typespec syntax for a 1-clause fn");
 
   let input = format!("-spec {}(A :: integer()) -> any().", function_name!());
@@ -87,12 +96,11 @@ fn fn_typespec_parse_1() -> IcResult<()> {
   // } else {
   //   panic!("Expected AST FnSpec node, but got {:?}", nodes)
   // }
-  Ok(())
 }
 
 #[named]
 #[test]
-fn fn_typespec_parse_2() -> IcResult<()> {
+fn fn_typespec_parse_2() {
   test_util::start(function_name!(), "Parse typespec syntax for a 2-clause fn");
 
   let input =
@@ -116,13 +124,11 @@ fn fn_typespec_parse_2() -> IcResult<()> {
   // } else {
   //   panic!("Expected AST FnSpec node, but got {:?}", nodes)
   // }
-
-  Ok(())
 }
 
 #[named]
 #[test]
-fn fn_typespec_parse_when() -> IcResult<()> {
+fn fn_typespec_parse_when() {
   test_util::start(function_name!(), "Parse when-part of a function type spec");
   let input = format!("-spec {}(atom()) -> A when A :: tuple(). ", function_name!());
   let module = test_util::parse_module(function_name!(), &input);
@@ -143,24 +149,21 @@ fn fn_typespec_parse_when() -> IcResult<()> {
     .get(&MFArity::new_local(&function_name!(), 1))
     .unwrap();
   println!("Spec found: {}", spec);
-
-  Ok(())
 }
 
 #[named]
 #[test]
-fn type_parse_union() -> IcResult<()> {
+fn type_parse_union() {
   test_util::start(function_name!(), "Parse a type union");
 
   let src = "atom() | 42 | integer()";
   let parsed = test_util::parse_type(function_name!(), &src);
   assert!(parsed.is_union());
-  Ok(())
 }
 
 #[named]
 #[test]
-fn fn_typespec_parse_union() -> IcResult<()> {
+fn fn_typespec_parse_union() {
   test_util::start(function_name!(), "Parse a function spec with type union in it");
 
   let input = format!(
@@ -175,8 +178,6 @@ fn fn_typespec_parse_union() -> IcResult<()> {
     .unwrap();
   // assert!(nodes[0].is_fn_spec());
   // TODO: Check that the spec parsed contains the unions as written
-
-  Ok(())
 }
 
 #[named]

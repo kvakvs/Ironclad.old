@@ -39,9 +39,7 @@ fn parse_fnclause_name<const REQUIRE_FN_NAME: bool>(
 
 /// Parses a named clause for a top level function
 /// * FN_NAME: true if the parser must require function name
-fn parse_fnclause<const REQUIRE_FN_NAME: bool>(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ErlFnClause, ErlParserError> {
+fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: ParserInput) -> ParserResult<ErlFnClause> {
   map(
     tuple((
       // Function clause name

@@ -4,7 +4,7 @@ use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open,
-  tok_par_close, tok_par_open,
+  tok_double_colon, tok_equal, tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::parse_type;
@@ -24,12 +24,9 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
   map(
     tuple((
       tok_atom,
+      opt(preceded(tok_equal, context("default value for a field", cut(parse_expr)))),
       opt(preceded(
-        tok(TokenType::EqualSymbol),
-        context("default value for a field", cut(parse_expr)),
-      )),
-      opt(preceded(
-        tok(TokenType::ColonColon),
+        tok_double_colon,
         context("type ascription for a field", cut(parse_type)),
       )),
     )),
@@ -67,9 +64,10 @@ fn record_definition_inner(input: ParserInput) -> ParserResult<PreprocessorNode>
 pub fn parse_record_def(input: ParserInput) -> ParserResult<PreprocessorNode> {
   delimited(
     |i1| dash_atom(i1, "record"),
-    context(
-      "record definition in a -record() attribute",
-      cut(delimited(tok_par_open, record_definition_inner, tok_par_close)),
+    delimited(
+      tok_par_open,
+      context("record definition in a -record() attribute", cut(record_definition_inner)),
+      tok_par_close,
     ),
     period_eol_eof,
   )(input)

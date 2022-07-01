@@ -23,9 +23,7 @@ use nom::multi::{many1, separated_list1};
 use nom::sequence::{preceded, terminated, tuple};
 
 /// Parse `Class:Error:Stack` triple into `ExceptionPattern`
-pub fn parse_exception_pattern(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ExceptionPattern, ErlParserError> {
+pub fn parse_exception_pattern(input: ParserInput) -> ParserResult<ExceptionPattern> {
   map(
     tuple((
       parse_matchexpr,
@@ -39,9 +37,7 @@ pub fn parse_exception_pattern(
 }
 
 /// Parses a repeated catch-clause part after `catch` keyword: `Expr when Expr -> Expr`
-pub fn parse_catch_clause(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, CatchClause, ErlParserError> {
+pub fn parse_catch_clause(input: ParserInput) -> ParserResult<CatchClause> {
   map(
     tuple((
       // Class:Error:Stacktrace

@@ -10,6 +10,7 @@ use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
+use nom::branch::alt;
 use nom::combinator::{eof, map, recognize};
 use nom::error::{context, convert_error};
 use nom::multi::many0;
@@ -45,7 +46,7 @@ pub fn tok_atom_of(value: &'static str) -> impl Fn(ParserInput) -> ParserResult<
 /// Matches a `<-> <atom>` pair
 #[inline]
 pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResult<'a, ()> {
-  map(pair(tok_minus, tok_atom_of(value)), void_fn)(input)
+  map(pair(tok_minus, ws_before(tok_atom_of(value))), void_fn)(input)
 }
 
 /// Recognizes one keyword of given keyword enum value
@@ -114,9 +115,10 @@ fn tok_string_1(input: ParserInput) -> ParserResult<Arc<String>> {
 /// Recognizes one variable name token, returns the string.
 #[inline]
 pub fn tok_var(input: ParserInput) -> ParserResult<String> {
-  ws_before(tok_var_1)(input)
+  ws_before(alt((tok_var_1, map(tok(TokenType::Underscore), |_| String::from("_")))))(input)
 }
 
+#[inline]
 fn tok_var_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
     Some(Token { content: TokenType::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
@@ -276,20 +278,27 @@ pub(crate) fn is_part_of(outer: &str, part: &str) -> bool {
   part_beg >= outer_beg && part_end <= outer_end
 }
 
+#[inline]
+fn eol_or_eof(input: ParserInput) -> ParserResult<ParserInput> {
+  alt((recognize(tok(TokenType::EOL)), eof))(input)
+}
+
 /// Recognize the macro end marker `) . \n <EOF>` as we trim the lines before feeding them into the
 /// macro parser, there will be an EOF.
+#[inline]
 pub(crate) fn parenthesis_period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
   context(
     "preprocessor directive or a module attribute: ') . <Newline>' expected",
-    recognize(tuple((tok_par_close, tok(TokenType::Period), tok(TokenType::EOL), eof))),
+    recognize(tuple((tok_par_close, tok_period, eol_or_eof))),
   )(input)
 }
 
 /// Match `. <EOF>` that serves as an end marker for parsing split lines as preprocessor directives.
+#[inline]
 pub(crate) fn period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
   context(
     "preprocessor directive or a module attribute: '. <Newline>' expected",
-    recognize(tuple((ws_before(tok(TokenType::Period)), tok(TokenType::EOL), eof))),
+    recognize(pair(tok_period, eol_or_eof)),
   )(input)
 }
 
@@ -371,6 +380,12 @@ pub(crate) fn tok_colon(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::Colon)), void_fn)(input)
 }
 
+/// Matches a `::` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_double_colon(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::ColonColon)), void_fn)(input)
+}
+
 /// Matches a `|` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_vertical_bar(input: ParserInput) -> ParserResult<()> {
@@ -399,6 +414,30 @@ pub(crate) fn tok_asterisk(input: ParserInput) -> ParserResult<()> {
 #[inline]
 pub(crate) fn tok_underscore(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::Underscore)), void_fn)(input)
+}
+
+/// Matches a `=` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_equal(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::EqualSymbol)), void_fn)(input)
+}
+
+/// Matches a `..` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_double_period(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::PeriodPeriod)), void_fn)(input)
+}
+
+/// Matches a `=>` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_right_darr(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::RightDoubleArr)), void_fn)(input)
+}
+
+/// Matches a `->` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_right_arrow(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::RightArr)), void_fn)(input)
 }
 
 /// Matches a `[` token with possibly a newline before it

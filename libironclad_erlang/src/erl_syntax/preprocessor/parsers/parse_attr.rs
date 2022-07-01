@@ -2,12 +2,13 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok, tok_any_keyword_or_atom, tok_atom, tok_comma, tok_forward_slash,
-  tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close, tok_square_open,
+  dash_atom, period_eol_eof, tok, tok_any_keyword_or_atom, tok_atom, tok_comma, tok_double_colon,
+  tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close,
+  tok_square_open, tok_var,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::parse_fn_t::parse_fn_spec;
-use crate::erl_syntax::parsers::parse_type::{parse_type, parse_typevar_name};
+use crate::erl_syntax::parsers::parse_type::parse_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -19,7 +20,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, separated_pair, tuple};
+use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
 
 /// Parse a `()` for a generic attribute `-<atom>().` and return empty `ErlAst`
 fn attr_body_empty_parens(input: ParserInput) -> ParserResult<Option<AstNode>> {
@@ -133,28 +134,36 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
 pub(crate) fn parse_parenthesized_list_of_vars(input: ParserInput) -> ParserResult<Vec<String>> {
-  delimited(tok_par_open, cut(separated_list0(tok_comma, parse_typevar_name)), tok_par_close)(input)
+  delimited(
+    tok_par_open,
+    context(
+      "type arguments in a -type() definition attribute",
+      cut(separated_list0(tok_comma, tok_var)),
+    ),
+    tok_par_close,
+  )(input)
 }
 
 /// Parses a `-type IDENT(ARG, ...) :: TYPE.` attribute.
 /// Dash `-` and trailing `.` are matched outside by the caller.
-pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
-  // print_input("type_definition_attr", input);
+pub fn parse_new_type_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     delimited(
       |i1| dash_atom(i1, "type"),
-      tuple((
-        tok_atom,
-        context(
-          "type arguments in a -type() definition attribute",
-          cut(parse_parenthesized_list_of_vars),
-        ),
-        tok(TokenType::ColonColon),
-        context("type in a -type() definition attribute", cut(parse_type)),
-      )),
+      context(
+        "new type definition",
+        cut(tuple((
+          tok_atom,
+          parse_parenthesized_list_of_vars,
+          preceded(
+            tok_double_colon,
+            context("type in a -type() definition attribute", cut(parse_type)),
+          ),
+        ))),
+      ),
       period_eol_eof,
     ),
-    |(type_name, type_args, _coloncolon, new_type)| {
+    |(type_name, type_args, new_type)| {
       PreprocessorNodeImpl::new_type_attr(SourceLoc::new(&input), type_name, type_args, new_type)
     },
   )(input.clone())
@@ -162,15 +171,18 @@ pub fn type_definition_attr(input: ParserInput) -> ParserResult<PreprocessorNode
 
 /// Any module attribute goes here
 pub(crate) fn parse_any_module_attr(input: ParserInput) -> ParserResult<PreprocessorNode> {
-  alt((
-    parse_record_def,
-    export_type_attr,
-    export_attr,
-    import_attr,
-    type_definition_attr,
-    parse_fn_spec,
-    // Generic parser will try consume any `-IDENT(EXPR).`
-    parse_generic_attr,
-    parse_generic_attr_no_parentheses,
-  ))(input)
+  context(
+    "any module attribute",
+    alt((
+      parse_record_def,
+      export_type_attr,
+      export_attr,
+      import_attr,
+      context("new type definition", parse_new_type_attr),
+      parse_fn_spec,
+      // Generic parser will try consume any `-IDENT(EXPR).`
+      parse_generic_attr,
+      parse_generic_attr_no_parentheses,
+    )),
+  )(input)
 }

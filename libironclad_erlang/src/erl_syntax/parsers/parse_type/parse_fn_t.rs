@@ -1,7 +1,9 @@
 //! Function type/spec parsing
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{dash_atom, tok, tok_atom, tok_semicolon};
+use crate::erl_syntax::parsers::misc::{
+  dash_atom, period_eol_eof, tok, tok_atom, tok_period, tok_right_arrow, tok_semicolon,
+};
 use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -33,7 +35,7 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
           context("function clause in a -spec() attribute", cut(parse_fn_spec_fnclause)),
         ),
       )),
-      tok(TokenType::Period), // TODO: Check for newline smh? Newline token?
+      period_eol_eof,
     ),
     |(name, clauses)| {
       let arity = clauses[0].arity();
@@ -49,31 +51,29 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
 }
 
 /// Parses a function clause args specs, return spec and optional `when`
-fn parse_fn_spec_fnclause(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, FnClauseType, ErlParserError> {
+fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
   map(
     tuple((
       // Function clause name
-      opt(tok_atom),
+      // opt(tok_atom),
       // Args list (list of type variables with some types possibly)
       context(
         "arguments list in a function clause spec",
         cut(parse_type::parse_parenthesized_arg_spec_list),
       ),
-      tok(TokenType::RightArr),
+      tok_right_arrow,
       // Return type for fn clause
       context(
         "return type in function clause spec",
-        cut(alt((
-          parse_type::parse_typevar_with_opt_type,
-          parse_type::parse_type_as_typevar,
-        ))),
+        alt((
+          parse_type::parse_typevar_with_opt_ascription,
+          context("return type", cut(parse_type::parse_type_into_typevar)),
+        )),
       ),
       // Optional: when <comma separated list of typevariables given types>
       context("when expression for typespec", opt(parse_type::parse_when_expr_for_type)),
     )),
-    |(_name, args, _arrow, ret_ty, when_expr)| {
+    |(args, _arrow, ret_ty, when_expr)| {
       // TODO: Check name equals function name, for module level functions
       if let Some(when_expr_val) = when_expr {
         FnClauseType::new(

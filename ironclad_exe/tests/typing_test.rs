@@ -170,9 +170,9 @@ fn typing_subtyping_list() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.List");
 
   let test3_any = ErlTypeImpl::AnyList;
-  let test3_l_num = ErlTypeImpl::list_of(ErlTypeImpl::number());
-  let test3_l_flt = ErlTypeImpl::list_of(ErlTypeImpl::float());
-  let test3_l_int = ErlTypeImpl::list_of(ErlTypeImpl::integer());
+  let test3_l_num = ErlTypeImpl::list_of(ErlTypeImpl::number(), false);
+  let test3_l_flt = ErlTypeImpl::list_of(ErlTypeImpl::float(), false);
+  let test3_l_int = ErlTypeImpl::list_of(ErlTypeImpl::integer(), false);
 
   assert!(test3_l_num.is_subtype_of(&test3_any)); // list(number()) is subtype of list()
   assert!(!test3_any.is_subtype_of(&test3_l_num)); // list() not subtype of list(number())

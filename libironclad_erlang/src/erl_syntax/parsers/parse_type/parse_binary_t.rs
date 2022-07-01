@@ -2,8 +2,8 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_asterisk, tok_comma, tok_double_angle_close, tok_double_angle_open, tok_integer,
-  tok_underscore,
+  tok, tok_asterisk, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
+  tok_integer, tok_underscore,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
@@ -16,17 +16,14 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
 
 /// Binary type optional starting element: `_ : INTEGER`
 pub fn binary_type_head_element(input: ParserInput) -> ParserResult<BinaryTypeHeadElement> {
-  map(preceded(pair(tok_underscore, tok(TokenType::Colon)), tok_integer), |width| {
+  map(preceded(pair(tok_underscore, tok_colon), tok_integer), |width| {
     BinaryTypeHeadElement(width.as_usize().unwrap())
   })(input)
 }
 
 pub fn binary_type_tail_element(input: ParserInput) -> ParserResult<BinaryTypeTailElement> {
   map(
-    preceded(
-      tuple((tok_underscore, tok(TokenType::Colon), tok_underscore, tok_asterisk)),
-      tok_integer,
-    ),
+    preceded(tuple((tok_underscore, tok_colon, tok_underscore, tok_asterisk)), tok_integer),
     |repeat| BinaryTypeTailElement(repeat.as_usize().unwrap()),
   )(input)
 }

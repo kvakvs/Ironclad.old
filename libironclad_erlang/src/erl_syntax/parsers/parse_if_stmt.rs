@@ -33,9 +33,7 @@ pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement
-pub(crate) fn parse_if_clause(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ErlIfClause, ErlParserError> {
+pub(crate) fn parse_if_clause(input: ParserInput) -> ParserResult<ErlIfClause> {
   map(
     pair(
       parse_expr,

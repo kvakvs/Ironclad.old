@@ -2,23 +2,24 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis, tok_hash, tok_square_close,
-  tok_square_open,
+  tok, tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis, tok_hash, tok_right_darr,
+  tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_type;
+use crate::erl_syntax::parsers::parse_type::parse_typevar_with_opt_ascription;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::typevar::Typevar;
-use nom::combinator::map;
+use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::multi::separated_list0;
 use nom::sequence::{delimited, pair, separated_pair};
 
 /// Parse a list of types, returns a temporary list-type
-pub fn type_of_list(input: ParserInput) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
+pub fn type_of_list(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_square_open,
@@ -33,15 +34,13 @@ pub fn type_of_list(input: ParserInput) -> nom::IResult<ParserInput, ErlType, Er
 }
 
 /// Parse a list of type and ellipsis, creating a nonempty list-type
-pub fn type_of_nonempty_list(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
+pub fn type_of_nonempty_list(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_square_open,
       context(
         "type arguments for a nonempty_list() type",
-        separated_pair(parse_type::alt_typevar_or_type, tok_comma, tok_ellipsis),
+        separated_pair(parse_typevar_with_opt_ascription, tok_comma, tok_ellipsis),
       ),
       tok_square_close,
     ),
@@ -50,7 +49,7 @@ pub fn type_of_nonempty_list(
 }
 
 /// Parse a tuple of types, returns a temporary tuple-type
-pub fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
+pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_curly_open,
@@ -64,12 +63,12 @@ pub fn type_of_tuple(input: ParserInput) -> nom::IResult<ParserInput, ErlType, E
   )(input)
 }
 
-fn map_member_type(input: ParserInput) -> nom::IResult<ParserInput, MapMemberType, ErlParserError> {
+fn map_member_type(input: ParserInput) -> ParserResult<MapMemberType> {
   map(
     separated_pair(
-      parse_type::alt_typevar_or_type,
-      tok(TokenType::RightDoubleArr),
-      parse_type::alt_typevar_or_type,
+      parse_typevar_with_opt_ascription,
+      tok_right_darr,
+      parse_typevar_with_opt_ascription,
     ),
     |(key, value)| MapMemberType {
       key: ErlTypeImpl::new_typevar(key),
@@ -84,7 +83,7 @@ fn comma_sep_map_members0(input: ParserInput) -> ParserResult<Vec<MapMemberType>
 }
 
 /// Parse a map of types, returns a map-type
-pub fn type_of_map(input: ParserInput) -> nom::IResult<ParserInput, ErlType, ErlParserError> {
+pub fn type_of_map(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       pair(tok_hash, tok_curly_open),

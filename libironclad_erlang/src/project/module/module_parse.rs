@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
-use crate::erl_syntax::parsers::parse_type::parse_type_node;
+use crate::erl_syntax::parsers::parse_type::parse_type_as_ast_node;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token::format_tok_stream;
 use crate::error::ic_error::IcResult;
@@ -115,6 +115,6 @@ impl ErlModuleImpl {
     source_file: &SourceFile,
     compiler_options: Option<CompilerOpts>,
   ) -> IcResult<ErlModule> {
-    Self::parse_helper(project, source_file.clone(), parse_type_node, compiler_options)
+    Self::parse_helper(project, source_file.clone(), parse_type_as_ast_node, compiler_options)
   }
 }

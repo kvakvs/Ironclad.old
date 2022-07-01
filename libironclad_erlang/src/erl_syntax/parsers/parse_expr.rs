@@ -51,9 +51,7 @@ fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a list of comma separated expressions in (parentheses)
-pub fn parse_parenthesized_list_of_exprs(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
+pub fn parse_parenthesized_list_of_exprs(input: ParserInput) -> ParserResult<Vec<AstNode>> {
   delimited(
     tok_par_open,
     context("function application arguments", cut(parse_comma_sep_exprs0)),
@@ -213,9 +211,7 @@ fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String
 }
 
 /// Parses comma separated sequence of expressions
-pub fn parse_comma_sep_exprs0(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
+pub fn parse_comma_sep_exprs0(input: ParserInput) -> ParserResult<Vec<AstNode>> {
   separated_list0(
     tok_comma,
     // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
@@ -224,9 +220,7 @@ pub fn parse_comma_sep_exprs0(
 }
 
 /// Parses comma separated sequence of expressions, at least one or more
-pub fn parse_comma_sep_exprs1(
-  input: ParserInput,
-) -> nom::IResult<ParserInput, Vec<AstNode>, ErlParserError> {
+pub fn parse_comma_sep_exprs1(input: ParserInput) -> ParserResult<Vec<AstNode>> {
   separated_list1(tok_comma, parse_expr)(input)
 }
 

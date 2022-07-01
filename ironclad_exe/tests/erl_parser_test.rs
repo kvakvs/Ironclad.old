@@ -630,10 +630,33 @@ fn parse_small_record_test() -> IcResult<()> {
   Ok(())
 }
 
-fn sample_record_input() -> &'static str {
-  "%%\n
-%% Generic compiler options, passed from the erl_compile module.\n
--record(options,
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_record_raw_parser_invocation() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition (raw parser invocation)");
+  let input = "-record(options,
+	 {includes=[] :: [file:filename()],	% Include paths (list of
+	 }).";
+  let tokens = test_util::tokenize(input);
+  let p_input = ParserInput::new_slice(&tokens);
+  let (_tail, _pnode) = panicking_parser_error_reporter(
+    input,
+    p_input.clone(),
+    parse_record_def(p_input.clone()).finish(),
+    true,
+  );
+  Ok(())
+}
+
+/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
+#[named]
+#[test]
+fn parse_record_test() -> IcResult<()> {
+  test_util::start(function_name!(), "parse a record definition");
+  let input = "%%\n
+    %% Generic compiler options, passed from the erl_compile module.\n
+    -record(options,
 	 {includes=[] :: [file:filename()],	% Include paths (list of
 						% absolute directory names).
 	  outdir=\".\"  :: file:filename(),	% Directory for result (absolute path).
@@ -648,36 +671,7 @@ fn sample_record_input() -> &'static str {
 	  outfile=\"\"  :: file:filename(),	% Name of output file (internal
 						% use in erl_compile.erl).
 	  cwd	      :: file:filename()	% Current working directory for erlc.
-	 }).\n"
-}
-
-/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
-#[named]
-#[test]
-fn parse_record_raw_parser_invocation() -> IcResult<()> {
-  test_util::start(function_name!(), "parse a record definition (raw parser invocation)");
-  let input = sample_record_input();
-  let tokens = test_util::tokenize(input);
-  let p_input = ParserInput::new_slice(&tokens);
-  let (_tail, _pnode) = panicking_parser_error_reporter(
-    input,
-    p_input.clone(),
-    parse_record_def(p_input.clone()).finish(),
-    true,
-  );
-  // let root_scope = module.root_scope.clone();
-  // let record_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
-  // assert_eq!(record_def.tag, "options");
-  // assert_eq!(record_def.fields.len(), 10);
-  Ok(())
-}
-
-/// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
-#[named]
-#[test]
-fn parse_record_test() -> IcResult<()> {
-  test_util::start(function_name!(), "parse a record definition");
-  let input = sample_record_input();
+	 }).\n";
   let module = test_util::parse_module(function_name!(), input);
   let root_scope = module.root_scope.clone();
   let record_def = root_scope.record_defs.get(&"options".to_string()).unwrap();
