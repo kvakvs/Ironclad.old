@@ -555,6 +555,17 @@ build_form(Id, Chunks0) when byte_size(Id) =:= 4, is_list(Chunks0) ->
 
 #[named]
 #[test]
+fn parse_fun_guard2() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse a function with a guard and record fields");
+  let input = "-spec opcode(non_neg_integer(), bdict()) -> bdict().
+      opcode(Op, Dict) when Dict#asm.highest_opcode >= Op -> Dict;
+      opcode(Op, Dict) -> Dict#asm{highest_opcode=Op}.";
+  let _module = test_util::parse_module(function_name!(), input);
+  Ok(())
+}
+
+#[named]
+#[test]
 fn parse_apply_with_module_and_without1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let src = "function_name()";

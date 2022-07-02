@@ -204,11 +204,11 @@ fn parse_record_builder_no_base(input: ParserInput) -> ParserResult<AstNode> {
   })(input.clone())
 }
 
-/// Parse a record field access expression. Matches `# RECORDTAG "." FIELDTAG`
-/// Returns (record: String, field: String)
-fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String)> {
-  pair(delimited(tok_hash, tok_atom, tok_period), tok_atom)(input.clone())
-}
+// /// Parse a record field access expression. Matches `# RECORDTAG "." FIELDTAG`
+// /// Returns (record: String, field: String)
+// fn parse_record_field_access(input: ParserInput) -> ParserResult<(String, String)> {
+//   pair(delimited(tok_hash, tok_atom, tok_period), tok_atom)(input.clone())
+// }
 
 /// Parses comma separated sequence of expressions
 pub fn parse_comma_sep_exprs0(input: ParserInput) -> ParserResult<Vec<AstNode>> {
@@ -328,10 +328,26 @@ fn parse_expr_prec01(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
+/// Constructs record field access AST node from `consumed()` nom parser result
+fn mk_record_access_op(
+  (consumed_input, (left, tag, field)): (ParserInput, (AstNode, String, String)),
+) -> AstNode {
+  let loc = SourceLoc::new(&consumed_input);
+  AstNodeImpl::new_record_field(loc, left, tag, field)
+}
+
 // TODO: Precedence 2: # (record access operator)
 #[inline]
 fn parse_expr_prec02(input: ParserInput) -> ParserResult<AstNode> {
-  parse_expr_prec01(input)
+  map(
+    consumed(tuple((
+      parse_expr_prec01,
+      preceded(tok_hash, tok_atom),
+      preceded(tok_period, tok_atom),
+    ))),
+    mk_record_access_op,
+  )(input.clone())
+  .or_else(|_err| parse_expr_prec01(input.clone()))
 }
 
 /// Precedence 3: Unary + - bnot not
@@ -506,23 +522,23 @@ fn parse_expr_lowest_precedence(style: ExprStyle, input: ParserInput) -> ParserR
       tuple((
         |i| parse_expr_prec13(style, i),
         opt(parse_parenthesized_list_of_exprs),
-        opt(parse_record_field_access),
+        // opt(parse_record_field_access),
         opt(parse_record_builder),
       )),
     ),
-    |(expr, maybe_args, maybe_field_access, maybe_record_builder): (
+    |(expr, maybe_args, maybe_record_builder): (
       AstNode,
       Option<Vec<AstNode>>,
-      Option<(String, String)>,
+      // Option<(String, String)>,
       Option<(String, Vec<RecordBuilderMember>)>,
     )|
      -> AstNode {
       if let Some(args) = maybe_args {
         let target = CallableTarget::new_expr(expr);
         AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
-      } else if let Some((tag, field)) = maybe_field_access {
-        // TODO: This goes to precedence02
-        AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
+      // } else if let Some((tag, field)) = maybe_field_access {
+      //   // TODO: This goes to precedence02
+      //   AstNodeImpl::new_record_field(SourceLoc::new(&input), expr, tag, field)
       } else if let Some((tag, record_fields)) = maybe_record_builder {
         AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
       } else {
