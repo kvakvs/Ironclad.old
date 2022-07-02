@@ -5,7 +5,8 @@ use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok, tok_atom, tok_period, tok_right_arrow, tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_type;
-use crate::erl_syntax::parsers::parse_type::parse_typevar_or_type;
+use crate::erl_syntax::parsers::parse_type::parse_t_util;
+use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -61,7 +62,7 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
       // Args list (list of type variables with some types possibly)
       context(
         "arguments list in a function clause spec",
-        cut(parse_type::parse_parenthesized_arg_spec_list),
+        cut(parse_t_util::parse_parenthesized_arg_spec_list),
       ),
       tok_right_arrow,
       // Return type for fn clause
@@ -69,11 +70,11 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
         "return type in function clause spec",
         alt((
           parse_typevar_or_type,
-          context("return type", cut(parse_type::parse_type_into_typevar)),
+          context("return type", cut(parse_t_util::parse_type_into_typevar)),
         )),
       ),
       // Optional: when <comma separated list of typevariables given types>
-      context("when expression for typespec", opt(parse_type::parse_when_expr_for_type)),
+      context("when expression for typespec", opt(parse_t_util::parse_when_expr_for_type)),
     )),
     |(args, _arrow, ret_ty, when_expr)| {
       // TODO: Check name equals function name, for module level functions

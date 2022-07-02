@@ -6,7 +6,7 @@ use crate::erl_syntax::parsers::misc::{
   tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_type;
-use crate::erl_syntax::parsers::parse_type::{
+use crate::erl_syntax::parsers::parse_type::parse_t_util::{
   list0_types_or_ascribed_typevars, parse_typevar_or_type,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;

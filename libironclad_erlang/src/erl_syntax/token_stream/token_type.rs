@@ -19,6 +19,8 @@ pub enum TokenType {
   /// `;` a semicolon
   Semicolon,
   /// `:` a colon
+  Assign,
+  /// `:=` assignment operator for maps
   Colon,
   /// `::` a double colon
   ColonColon,
@@ -129,6 +131,7 @@ impl TokenType {
   /// Explain the token type as text
   pub fn as_explanation_str(&self) -> &'static str {
     match self {
+      TokenType::Assign => "map field assignment operator :=",
       TokenType::Asterisk => "asterisk",
       TokenType::Atom(_) => "an atom literal",
       TokenType::Character(_) => "a character literal",
@@ -187,6 +190,7 @@ impl TokenType {
 impl std::fmt::Display for TokenType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match &self {
+      TokenType::Assign => write!(f, "≔"), // unicode EQUALS COLON 8789
       TokenType::Asterisk => write!(f, "*"),
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
       TokenType::Character(c) => write!(f, "${}", *c),

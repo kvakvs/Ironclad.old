@@ -3,6 +3,7 @@
 pub mod parse_binary_t;
 pub mod parse_container_t;
 pub mod parse_fn_t;
+pub mod parse_t_util;
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
@@ -35,68 +36,6 @@ use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 use nom::Parser;
 
-/// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
-fn parse_coloncolon_ascription(input: ParserInput) -> ParserResult<ErlType> {
-  preceded(tok_double_colon, parse_type)(input)
-}
-
-/// Parse a capitalized type variable name with an optional `:: type()` part:
-/// `A :: type()` or `A`
-fn parse_typevar_with_opt_ascription(input: ParserInput) -> ParserResult<Typevar> {
-  map(
-    pair(
-      tok_var,
-      opt(context("type ascription for a type variable", parse_coloncolon_ascription)),
-    ),
-    |(tv_name, maybe_type)| Typevar::new(Some(tv_name), maybe_type),
-  )(input)
-}
-
-/// Parse a capitalized type variable name with an optional `:: type()` part:
-/// `A :: type()` or `A`, or just a type `type()`.
-fn parse_typevar_or_type(input: ParserInput) -> ParserResult<Typevar> {
-  alt((parse_typevar_with_opt_ascription, parse_type_into_typevar))(input)
-}
-
-#[inline]
-fn parse_type_into_typevar(input: ParserInput) -> ParserResult<Typevar> {
-  map(parse_type, |t| Typevar::from_erltype(&t))(input)
-}
-
-/// Parses a list of comma separated typevars enclosed in (parentheses)
-pub(crate) fn parse_parenthesized_arg_spec_list(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  delimited(tok_par_open, list0_types_or_ascribed_typevars, tok_par_close)(input)
-}
-
-/// Parse a `when` clause where unspecced typevars can be given type ascriptions, like:
-/// `-spec fun(A) -> A when A :: atom().`
-pub(crate) fn parse_when_expr_for_type(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  preceded(tok_keyword_when, parse_comma_sep_typeargs1)(input)
-}
-
-#[allow(dead_code)]
-fn parse_typearg(input: ParserInput) -> ParserResult<Typevar> {
-  map(parse_type, |t| Typevar::from_erltype(&t))(input)
-}
-
-/// Parses a comma separated list of 0 or more type arguments.
-/// A parametrized type accepts other types or typevar names
-fn list0_types_or_ascribed_typevars(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  separated_list0(
-    tok_comma,
-    context("parsing items of a type arguments list (empty allowed)", parse_typevar_or_type),
-  )(input)
-}
-
-/// Parses a comma separated list of 1 or more type arguments.
-/// A parametrized type accepts other types or typevar names
-fn parse_comma_sep_typeargs1(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  separated_list1(
-    tok_comma,
-    context("parsing items of a type arguments list (non-empty)", parse_typevar_or_type),
-  )(input)
-}
-
 /// Parse a user defined type with `name()` and 0 or more typevar args.
 /// Optional with module name `module:name()`.
 fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
@@ -106,7 +45,10 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
       tok_atom,
       delimited(
         tok_par_open,
-        context("type arguments for a user-defined type", list0_types_or_ascribed_typevars),
+        context(
+          "type arguments for a user-defined type",
+          parse_t_util::list0_types_or_ascribed_typevars,
+        ),
         tok_par_close,
       ),
     )),

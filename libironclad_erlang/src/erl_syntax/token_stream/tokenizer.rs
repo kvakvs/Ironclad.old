@@ -225,6 +225,11 @@ fn symbol_coloncolon(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 #[inline]
+fn symbol_assign(input: TokenizerInput) -> TokensResult<Token> {
+  map(tag(":="), |_| Token::new(input.as_ptr(), TokenType::Assign))(input)
+}
+
+#[inline]
 fn symbol_colon(input: TokenizerInput) -> TokensResult<Token> {
   map(char(':'), |_| Token::new(input.as_ptr(), TokenType::Colon))(input)
 }
@@ -320,11 +325,14 @@ fn tokenize_other_symbols(input: TokenizerInput) -> TokensResult<Token> {
       symbol_barbar,      // ||
       symbol_bar,         // |
       symbol_semicolon,   // ;
-      symbol_coloncolon,  // ::
-      symbol_colon,       // :
       symbol_send,        // !
       symbol_squareclose, // ]
       symbol_squareopen,  // [
+    )),
+    alt((
+      symbol_coloncolon, // ::
+      symbol_assign,     // :=
+      symbol_colon,      // :
     )),
   ))(input)
 }
