@@ -266,8 +266,9 @@ fn parse_spec_binary() {
   let input = "
   -type type0() :: <<_:192>>.
   -spec lambda_table1(bdict()) -> {non_neg_integer(), [<<_:192>>]}.
-  -spec lambda_table2(bdict()) -> {non_neg_integer(), [<<_:192, _:_*8>>]}.
-  -spec lambda_table3(bdict()) -> {non_neg_integer(), [<<_:_*192>>]}.";
+  -spec lambda_table2(bdict()) -> {non_neg_integer(), [<<_:_*192>>]}.
+  -spec lambda_table3(bdict()) -> {non_neg_integer(), [<<_:192, _:_*8>>]}.
+  ";
   let module = test_util::parse_module(function_name!(), input);
   assert!(module
     .root_scope

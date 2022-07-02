@@ -12,7 +12,7 @@ use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use nom::branch::alt;
-use nom::combinator::{cut, map};
+use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
 use nom::Parser;
@@ -32,13 +32,13 @@ pub fn binary_type_tail_element(input: ParserInput) -> ParserResult<BinaryTypeTa
   )(input)
 }
 
-#[inline]
-fn binary_type_head(input: ParserInput) -> ParserResult<ErlType> {
-  map(
-    context("binary type with head element only", binary_type_head_element),
-    |head| ErlTypeImpl::new_binary(Some(head), None),
-  )(input)
-}
+// #[inline]
+// fn binary_type_head(input: ParserInput) -> ParserResult<ErlType> {
+//   map(
+//     context("binary type with head element only", binary_type_head_element),
+//     |head| ErlTypeImpl::new_binary(Some(head), None),
+//   )(input)
+// }
 
 #[inline]
 fn binary_type_tail(input: ParserInput) -> ParserResult<ErlType> {
@@ -53,9 +53,9 @@ fn binary_type_head_tail(input: ParserInput) -> ParserResult<ErlType> {
   map(
     context(
       "binary type with head and tail elements",
-      separated_pair(binary_type_head_element, tok_comma, binary_type_tail_element),
+      pair(binary_type_head_element, opt(preceded(tok_comma, binary_type_tail_element))),
     ),
-    |(head, tail)| ErlTypeImpl::new_binary(Some(head), Some(tail)),
+    |(head, tail)| ErlTypeImpl::new_binary(Some(head), tail),
   )(input)
 }
 
@@ -76,7 +76,7 @@ pub fn binary_type(input: ParserInput) -> ParserResult<ErlType> {
     tok_double_angle_open,
     context(
       "binary type",
-      alt((binary_type_head, binary_type_tail, binary_type_head_tail))
+      cut(alt((binary_type_tail, binary_type_head_tail)))
         .or(|i| misc::alt_failed(i, &[LangConstruct::BinaryType])),
     ),
     tok_double_angle_close,
