@@ -4,17 +4,16 @@ use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_asterisk, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
-  tok_integer, tok_underscore,
+  tok_asterisk, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open, tok_integer,
+  tok_underscore,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
-use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
+use nom::sequence::{delimited, pair, preceded, tuple};
 use nom::Parser;
 
 /// Binary type optional starting element: `_ : INTEGER`

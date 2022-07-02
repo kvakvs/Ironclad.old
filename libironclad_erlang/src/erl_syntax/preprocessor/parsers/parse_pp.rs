@@ -5,6 +5,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::preprocessor::parsers::parse_attr::parse_any_module_attr;
 use crate::erl_syntax::preprocessor::parsers::parse_def_undef::{
   define_directive, undef_directive,
@@ -15,7 +16,6 @@ use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::{
 };
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token::Token;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt, recognize};

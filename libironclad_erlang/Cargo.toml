@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 libironclad_util = { path = "../libironclad_util" }
+libironclad_macro = { path = "../libironclad_macro" }
 
 colored = "2"
 derivative = "2"

@@ -1,6 +1,6 @@
 //! Preprocessor definition, sometimes with args
 
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
 use libironclad_util::mfarity::MFArity;
 use libironclad_util::pretty::Pretty;
 use std::sync::Arc;

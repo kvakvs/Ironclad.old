@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordField;
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::typing::erl_type::ErlType;
 use libironclad_util::mfarity::MFArity;
 

@@ -3,10 +3,10 @@
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::token::Token;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
-use crate::erl_syntax::token_stream::token::Token;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::exit_codes::erl_fatal_error;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::preprocess::pp_state::PreprocessState;

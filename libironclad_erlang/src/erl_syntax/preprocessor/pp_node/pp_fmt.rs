@@ -1,8 +1,8 @@
 //! Printing preprocessor AST nodes
 
+use crate::erl_syntax::parsers::token_stream::token::format_tok_stream;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
-use crate::erl_syntax::token_stream::token::format_tok_stream;
 use ::function_name::named;
 use libironclad_util::pretty::Pretty;
 

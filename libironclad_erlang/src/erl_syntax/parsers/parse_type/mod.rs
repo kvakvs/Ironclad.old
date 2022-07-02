@@ -7,32 +7,26 @@ pub mod parse_t_util;
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_colon,
-  tok_double_period, tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_var,
-  tok_vertical_bar,
+  tok_atom, tok_colon, tok_curly_close, tok_curly_open, tok_double_period, tok_hash, tok_integer,
+  tok_par_close, tok_par_open, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
 use crate::erl_syntax::parsers::parse_type::parse_container_t::{
   type_of_list, type_of_map, type_of_nonempty_list, type_of_tuple,
 };
-use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
-use crate::typing::typevar::Typevar;
-use ::function_name::named;
 use nom::branch::alt;
-use nom::combinator::{consumed, cut, fail, map, map_res, opt, success};
+use nom::combinator::{map, opt};
 use nom::error::context;
-use nom::multi::{separated_list0, separated_list1};
+use nom::multi::separated_list1;
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 use nom::Parser;
 
@@ -88,7 +82,6 @@ fn atom_literal_type(input: ParserInput) -> ParserResult<ErlType> {
 }
 
 /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
-#[named]
 fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<ErlType> {
     misc::alt_failed(

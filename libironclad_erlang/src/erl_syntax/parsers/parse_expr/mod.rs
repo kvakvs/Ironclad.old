@@ -8,43 +8,21 @@ use crate::erl_syntax::erl_ast::expr_style::ExprStyle;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
-use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
-use crate::erl_syntax::node::erl_callable_target::CallableTarget;
-use crate::erl_syntax::node::erl_map::MapBuilderMember;
-use crate::erl_syntax::node::erl_record::RecordBuilderMember;
-use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
-  tok_double_angle_open, tok_double_vertical_bar, tok_forward_slash, tok_hash, tok_integer,
+  tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
+  tok_double_angle_open, tok_double_vertical_bar, tok_forward_slash, tok_integer,
   tok_keyword_begin, tok_keyword_end, tok_keyword_fun, tok_left_arrow, tok_par_close, tok_par_open,
-  tok_period, tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
+  tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
 };
-use crate::erl_syntax::parsers::parse_binary::parse_binary;
-use crate::erl_syntax::parsers::parse_case::parse_case_expr;
-use crate::erl_syntax::parsers::parse_expr_op::{
-  binop_add, binop_and, binop_andalso, binop_band, binop_bang, binop_bor, binop_bsl, binop_bsr,
-  binop_bxor, binop_comma, binop_equals, binop_floatdiv, binop_greater, binop_greater_eq,
-  binop_hard_equals, binop_hard_not_equals, binop_intdiv, binop_less, binop_less_eq,
-  binop_list_append, binop_list_subtract, binop_match, binop_multiply, binop_not_equals, binop_or,
-  binop_orelse, binop_rem, binop_semicolon, binop_subtract, binop_xor, unop_bnot, unop_catch,
-  unop_negative, unop_not, unop_positive,
-};
-use crate::erl_syntax::parsers::parse_fn::parse_lambda;
-use crate::erl_syntax::parsers::parse_if_stmt::parse_if_statement;
-use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
-use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
-use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{consumed, cut, map, opt};
 use nom::error::context;
-use nom::multi::{many0, separated_list0, separated_list1};
-use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
+use nom::multi::{separated_list0, separated_list1};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 
 fn parse_var(input: ParserInput) -> ParserResult<AstNode> {
   let mk_var = |(consumed_input, n): (ParserInput, String)| -> AstNode {

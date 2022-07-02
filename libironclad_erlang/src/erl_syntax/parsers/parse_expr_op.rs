@@ -7,8 +7,8 @@ use crate::erl_syntax::parsers::misc::{
   tok, tok_comma, tok_forward_slash, tok_keyword, tok_minus, tok_semicolon, ws_before,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use nom::combinator::map;
 
 type UnaryOpParserResult<'a> = ParserResult<'a, ErlUnaryOp>;

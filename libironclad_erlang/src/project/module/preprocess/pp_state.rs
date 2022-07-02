@@ -1,8 +1,8 @@
 //! State for preprocessor interpreter.
 
+use crate::erl_syntax::parsers::token_stream::token::Token;
+use crate::erl_syntax::parsers::token_stream::token_line_iter::TokenLinesIter;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token::Token;
-use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::preprocess::pp_section::PreprocessorSection;
 use crate::project::ErlProject;

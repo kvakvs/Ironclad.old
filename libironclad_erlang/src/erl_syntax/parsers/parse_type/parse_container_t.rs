@@ -2,20 +2,17 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis, tok_hash, tok_right_darr,
+  tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis, tok_hash, tok_right_darr,
   tok_square_close, tok_square_open,
 };
-use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parse_type::parse_t_util::{
   list0_types_or_ascribed_typevars, parse_typevar_or_type,
 };
-use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::typevar::Typevar;
-use nom::combinator::{cut, map};
+use nom::combinator::map;
 use nom::error::context;
 use nom::multi::separated_list0;
 use nom::sequence::{delimited, pair, separated_pair, terminated};

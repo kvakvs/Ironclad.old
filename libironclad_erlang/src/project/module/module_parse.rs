@@ -8,7 +8,7 @@ use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::format_tok_stream;
+use crate::erl_syntax::parsers::token_stream::token::format_tok_stream;
 use crate::error::ic_error::IcResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};

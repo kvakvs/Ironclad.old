@@ -4,11 +4,11 @@ use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
+use crate::erl_syntax::parsers::token_stream::tok_input::TokenizerInput;
+use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
-use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::tok_input::TokenizerInput;
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use ::function_name::named;
 use nom::branch::alt;
@@ -303,6 +303,8 @@ pub(crate) fn period_eol_eof(input: ParserInput) -> ParserResult<ParserInput> {
   )(input)
 }
 
+// make_tok_match_fn!(tok_minus, Minus);
+
 /// Matches a `-` token with possibly a newline before it
 #[inline]
 pub(crate) fn tok_minus(input: ParserInput) -> ParserResult<()> {
@@ -433,6 +435,12 @@ pub(crate) fn tok_double_period(input: ParserInput) -> ParserResult<()> {
 #[inline]
 pub(crate) fn tok_right_darr(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok(TokenType::RightDoubleArr)), void_fn)(input)
+}
+
+/// Matches a `:=` token with possibly a newline before it
+#[inline]
+pub(crate) fn tok_assign(input: ParserInput) -> ParserResult<()> {
+  map(ws_before(tok(TokenType::Assign)), void_fn)(input)
 }
 
 /// Matches a `->` token with possibly a newline before it

@@ -1,10 +1,10 @@
 //! Complex support code to parse 'delimited' atom strings and atoms in general
 //! String parsing code from Nom examples.
 
-use crate::erl_syntax::token_stream::misc::{parse_ident, ws_before_mut};
-use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
-use crate::erl_syntax::token_stream::tok_strings::shared::{parse_u32, StringFragment};
-use crate::erl_syntax::token_stream::tok_strings::{shared, Char};
+use crate::erl_syntax::parsers::token_stream::misc::{parse_ident, ws_before_mut};
+use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
+use crate::erl_syntax::parsers::token_stream::tok_strings::shared::{parse_u32, StringFragment};
+use crate::erl_syntax::parsers::token_stream::tok_strings::{shared, Char};
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
 use nom::character::complete::char;

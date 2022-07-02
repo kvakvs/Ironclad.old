@@ -3,8 +3,10 @@
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::tok_input::{TokenizerError, TokenizerInput, TokensResult};
-use crate::erl_syntax::token_stream::token::Token;
+use crate::erl_syntax::parsers::token_stream::tok_input::{
+  TokenizerError, TokenizerInput, TokensResult,
+};
+use crate::erl_syntax::parsers::token_stream::token::Token;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, anychar, char};

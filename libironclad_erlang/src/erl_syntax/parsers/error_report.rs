@@ -2,9 +2,9 @@
 
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
-use crate::erl_syntax::token_stream::token_line_iter::TokenLinesIter;
-use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::parsers::token_stream::token_line_iter::TokenLinesIter;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use nom::Offset;
 use std::fmt::Write;
 

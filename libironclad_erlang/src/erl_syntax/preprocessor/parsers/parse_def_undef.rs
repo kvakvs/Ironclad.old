@@ -6,11 +6,11 @@ use crate::erl_syntax::parsers::misc::{
   ws_before,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::misc::any_token;
 use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::tok_macro_ident;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::comma_sep_macro_idents;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::misc::any_token;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
 use nom::combinator::{map, opt};

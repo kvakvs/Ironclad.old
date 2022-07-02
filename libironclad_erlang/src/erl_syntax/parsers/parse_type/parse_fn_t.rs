@@ -2,16 +2,13 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok, tok_atom, tok_period, tok_right_arrow, tok_semicolon,
+  dash_atom, period_eol_eof, tok_atom, tok_right_arrow, tok_semicolon,
 };
-use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parse_type::parse_t_util;
 use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
-use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlTypeImpl;
 use crate::typing::fn_clause_type::FnClauseType;

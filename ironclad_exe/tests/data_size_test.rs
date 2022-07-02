@@ -6,8 +6,8 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
-use libironclad_erlang::erl_syntax::token_stream::token::Token;
-use libironclad_erlang::erl_syntax::token_stream::token_type::TokenType;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token::Token;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
 
 #[named]
 #[test]

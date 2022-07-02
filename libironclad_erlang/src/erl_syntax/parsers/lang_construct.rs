@@ -4,6 +4,7 @@ use libironclad_util::pretty::Pretty;
 use std::fmt::{Display, Formatter};
 
 /// Format language structures for error reporting
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum LangConstruct {
   Variable,

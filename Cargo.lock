@@ -126,6 +126,7 @@ dependencies = [
  "function_name",
  "glob",
  "lazy_static",
+ "libironclad_macro",
  "libironclad_util",
  "nom",
  "num",
@@ -133,6 +134,13 @@ dependencies = [
  "serde",
  "serde_derive",
  "toml",
+]
+
+[[package]]
+name = "libironclad_macro"
+version = "2022.7.0"
+dependencies = [
+ "syn",
 ]
 
 [[package]]

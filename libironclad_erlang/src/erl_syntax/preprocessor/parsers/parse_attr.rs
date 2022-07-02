@@ -2,7 +2,7 @@
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok, tok_any_keyword_or_atom, tok_atom, tok_comma, tok_double_colon,
+  dash_atom, period_eol_eof, tok_any_keyword_or_atom, tok_atom, tok_comma, tok_double_colon,
   tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_square_close,
   tok_square_open, tok_var,
 };
@@ -13,7 +13,6 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;

@@ -2,8 +2,8 @@
 
 use crate::erl_syntax::parsers::lang_construct::{LangConstruct, LangConstructs};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use nom::error::ErrorKind;
 use std::fmt::{Debug, Display, Formatter};
 

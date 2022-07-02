@@ -1,8 +1,8 @@
 //! Input is broken into tokens
 
 use crate::colored::Colorize;
-use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::typing::erl_integer::ErlInteger;
 use std::ptr::null;
 

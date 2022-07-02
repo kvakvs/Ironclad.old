@@ -805,3 +805,22 @@ fn parse_func_with_funref() {
     end.";
   let _m = test_util::parse_module(function_name!(), input);
 }
+
+#[named]
+#[test]
+fn parse_func_with_maps_and_recs() {
+  test_util::start(function_name!(), "parse a function with maps and records access");
+  let input = "
+    %% Returns the index for an atom (adding it to the atom table if necessary).
+    %%    atom(Atom, Dict) -> {Index,Dict'}
+    -spec atom(atom(), bdict()) -> {pos_integer(), bdict()}.
+
+    atom(Atom, #asm{atoms=Atoms}=Dict) when is_atom(Atom) ->
+      case Atoms of
+          #{ Atom := Index} -> {Index,Dict};
+          _ ->
+              NextIndex = maps:size(Atoms) + 1,
+              {NextIndex,Dict#asm{atoms=Atoms#{Atom=>NextIndex}}}
+      end.";
+  let _m = test_util::parse_module(function_name!(), input);
+}

@@ -26,6 +26,7 @@ pub mod parser_error;
 pub mod parser_input;
 pub mod parser_input_slice;
 pub mod preproc_defines;
+pub mod token_stream;
 
 /// Parses an attribute or a function def
 pub(crate) fn parse_one_module_form(input: ParserInput) -> ParserResult<AstNode> {

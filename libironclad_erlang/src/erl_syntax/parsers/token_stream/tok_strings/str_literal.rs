@@ -1,9 +1,9 @@
 //! Parse double quoted strings
 
-use crate::erl_syntax::token_stream::misc::ws_before;
-use crate::erl_syntax::token_stream::tok_input::{TokenizerInput, TokensResult};
-use crate::erl_syntax::token_stream::tok_strings::shared;
-use crate::erl_syntax::token_stream::tok_strings::shared::{
+use crate::erl_syntax::parsers::token_stream::misc::ws_before;
+use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
+use crate::erl_syntax::parsers::token_stream::tok_strings::shared;
+use crate::erl_syntax::parsers::token_stream::tok_strings::shared::{
   parse_escaped_whitespace, StringFragment,
 };
 use crate::typing::erl_integer::ErlInteger;

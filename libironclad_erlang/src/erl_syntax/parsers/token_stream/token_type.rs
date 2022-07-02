@@ -1,8 +1,8 @@
 //! Type tags for tokens
 
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
+use crate::erl_syntax::parsers::token_stream::tok_strings::Char;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::keyword::Keyword;
-use crate::erl_syntax::token_stream::tok_strings::Char;
 use crate::typing::erl_integer::ErlInteger;
 use libironclad_util::pretty::Pretty;
 use std::sync::Arc;

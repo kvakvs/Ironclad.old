@@ -1,8 +1,7 @@
 //! Contains implementations required for custom nom input to work
 
-use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
 use crate::project::module::module_impl::ErlModule;
-use crate::project::module::scope::root_scope::RootScope;
 use libironclad_util::source_file::SourceFile;
 use nom::Needed;
 use std::iter::Enumerate;

@@ -3,7 +3,7 @@
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open,
+  dash_atom, period_eol_eof, tok_atom, tok_comma, tok_curly_close, tok_curly_open,
   tok_double_colon, tok_equal, tok_par_close, tok_par_open,
 };
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
@@ -11,7 +11,6 @@ use crate::erl_syntax::parsers::parse_type::parse_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;

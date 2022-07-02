@@ -3,8 +3,8 @@
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
-use libironclad_erlang::erl_syntax::token_stream::token::Token;
-use libironclad_erlang::erl_syntax::token_stream::tokenizer::tokenize_source;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token::Token;
+use libironclad_erlang::erl_syntax::parsers::token_stream::tokenizer::tokenize_source;
 use libironclad_erlang::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
 use libironclad_erlang::typing::erl_type::ErlType;
