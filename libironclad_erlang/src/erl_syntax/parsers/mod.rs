@@ -11,6 +11,7 @@ use nom::multi::many0;
 
 pub mod defs;
 pub mod error_report;
+pub mod lang_construct;
 pub mod misc;
 pub mod parse_binary;
 pub mod parse_case;

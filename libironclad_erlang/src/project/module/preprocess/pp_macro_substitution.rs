@@ -8,6 +8,7 @@ use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
 use crate::erl_syntax::token_stream::token::Token;
 use crate::erl_syntax::token_stream::token_type::TokenType;
 use crate::exit_codes::erl_fatal_error;
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::preprocess::pp_state::PreprocessState;
 use crate::project::module::preprocess::pp_tok_stream::TokenStream;
 use crate::source_loc::SourceLoc;
@@ -64,7 +65,8 @@ pub(crate) fn substitute_macro_invocations<'a>(
     if let TokenType::MacroInvocation(macro_name) = &t.content {
       // Parse once to get the actual arguments grouped by the commas
       // and parse twice to get the actual span of tokens affected
-      let (args, args_span) = parse_as_invocation_params(original_input, &tokens[index + 1..]);
+      let (args, args_span) =
+        parse_as_invocation_params(original_input, state.module.clone(), &tokens[index + 1..]);
 
       // Look up the macro definition
       let key = MFArity::new_local(&macro_name, args.len());
@@ -93,8 +95,12 @@ pub(crate) fn substitute_macro_invocations<'a>(
 /// Invoke parser producing a list of expressions? separated by commas
 /// Return value: The tokens of arguments, grouped by the separating commas, and the span of the
 ///               arguments list (used to skip the length of tokens)
-fn parse_as_invocation_params(original_input: &str, tokens: &[Token]) -> (Vec<Vec<Token>>, usize) {
-  let parser_input = ParserInput::new_slice(tokens);
+fn parse_as_invocation_params(
+  original_input: &str,
+  module: ErlModule,
+  tokens: &[Token],
+) -> (Vec<Vec<Token>>, usize) {
+  let parser_input = ParserInput::new_slice(module.clone(), tokens);
   let (_tail, nodes_as_tokens) = panicking_parser_error_reporter(
     original_input,
     parser_input.clone(),
@@ -103,7 +109,7 @@ fn parse_as_invocation_params(original_input: &str, tokens: &[Token]) -> (Vec<Ve
   );
 
   // Assume this cannot fail, if previous failed it should panic or something
-  let parser_input2 = ParserInput::new_slice(tokens);
+  let parser_input2 = ParserInput::new_slice(module, tokens);
   let (_tail2, recognized_span) = recognize(parse_macro_invocation_args)(parser_input2)
     .finish()
     .unwrap();

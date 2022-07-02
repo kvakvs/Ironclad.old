@@ -9,11 +9,29 @@ use libironclad_erlang::erl_syntax::parsers::parse_type::parse_binary_t::{
   binary_type_head_element, binary_type_tail_element,
 };
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
-use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_attr::parse_new_type_attr;
-use libironclad_erlang::erl_syntax::token_stream::token::format_tok_till_eol;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
+
+#[named]
+#[test]
+fn minimal_failing_test() {
+  test_util::start(function_name!(), "...");
+  let input = "-type src() :: {term()}.";
+  // let _module = test_util::parse_module(function_name!(), input);
+  let tokens = test_util::tokenize(input);
+  println!("TOKENS {:?}", &tokens);
+  let module = ErlModuleImpl::new_default();
+  let p_input = ParserInput::new_slice(module, &tokens);
+  let (_tail, result) = panicking_parser_error_reporter(
+    input,
+    p_input.clone(),
+    libironclad_erlang::erl_syntax::preprocessor::parsers::parse_attr::parse_new_type_attr(p_input)
+      .finish(),
+    true,
+  );
+  println!("Parsed: {}", result);
+}
 
 #[named]
 #[test]
@@ -27,13 +45,15 @@ fn union_type_parse() {
          'nil' |
          {'float',float()}.";
   // let _module = test_util::parse_module(function_name!(), input);
+  let module = ErlModuleImpl::new_default();
   let tokens = test_util::tokenize(input);
   println!("TOKENS {:?}", &tokens);
-  let p_input = ParserInput::new_slice(&tokens);
+  let p_input = ParserInput::new_slice(module, &tokens);
   let (_tail, result) = panicking_parser_error_reporter(
     input,
     p_input.clone(),
-    parse_new_type_attr(p_input).finish(),
+    libironclad_erlang::erl_syntax::preprocessor::parsers::parse_attr::parse_new_type_attr(p_input)
+      .finish(),
     true,
   );
   println!("Parsed: {}", result);
@@ -224,10 +244,11 @@ fn parse_spec_binary_head() {
   test_util::start(function_name!(), "Parse a raw part of a binary spec");
 
   // Ensure that _ token is parsed as `Underscore` otherwise the test will fail
+  let module = ErlModuleImpl::new_default();
   let input0 = "_:192";
   let tok = test_util::tokenize(input0);
   println!("TOKENS {:?}", &tok);
-  let pinput = ParserInput::new_slice(&tok);
+  let pinput = ParserInput::new_slice(module, &tok);
   let (_t1, hd) = panicking_parser_error_reporter(
     input0,
     pinput.clone(),
@@ -243,10 +264,11 @@ fn parse_spec_binary_tail() {
   test_util::start(function_name!(), "Parse a raw part of a binary spec");
 
   // Ensure that _ token is parsed as `Underscore` otherwise the test will fail
+  let module = ErlModuleImpl::new_default();
   let input0 = "_:_*192";
   let tok = test_util::tokenize(input0);
   println!("TOKENS {:?}", &tok);
-  let pinput = ParserInput::new_slice(&tok);
+  let pinput = ParserInput::new_slice(module, &tok);
   let (_t1, hd) = panicking_parser_error_reporter(
     input0,
     pinput.clone(),

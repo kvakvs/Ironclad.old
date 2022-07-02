@@ -6,7 +6,9 @@ use crate::erl_syntax::parsers::misc::{
   tok_square_close, tok_square_open,
 };
 use crate::erl_syntax::parsers::parse_type;
-use crate::erl_syntax::parsers::parse_type::parse_typevar_with_opt_ascription;
+use crate::erl_syntax::parsers::parse_type::{
+  list0_typevars_with_opt_ascription, parse_typevar_with_opt_ascription,
+};
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::token_type::TokenType;
@@ -23,7 +25,7 @@ pub fn type_of_list(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_square_open,
-      context("type arguments for a list() type", parse_type::comma_sep_typeargs0),
+      context("type arguments for a list() type", list0_typevars_with_opt_ascription),
       tok_square_close,
     ),
     |elements| {
@@ -53,7 +55,7 @@ pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_curly_open,
-      context("a tuple() type", parse_type::comma_sep_typeargs0),
+      context("a tuple() type", list0_typevars_with_opt_ascription),
       tok_curly_close,
     ),
     |elements| {

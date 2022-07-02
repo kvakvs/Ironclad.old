@@ -6,11 +6,18 @@ pub mod parse_fn_t;
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
+use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::lang_construct::LangConstruct;
+use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_colon,
   tok_double_period, tok_hash, tok_integer, tok_keyword_when, tok_par_close, tok_par_open, tok_var,
   tok_vertical_bar,
+};
+use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
+use crate::erl_syntax::parsers::parse_type::parse_container_t::{
+  type_of_list, type_of_map, type_of_nonempty_list, type_of_tuple,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -20,11 +27,13 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::typevar::Typevar;
+use ::function_name::named;
 use nom::branch::alt;
-use nom::combinator::{cut, map, opt};
+use nom::combinator::{consumed, cut, fail, map, map_res, opt, success};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
+use nom::Parser;
 
 /// Parse part of typevar: `:: type()`, this is to be wrapped in `branch::opt()` by the caller
 fn parse_coloncolon_ascription(input: ParserInput) -> ParserResult<ErlType> {
@@ -50,7 +59,7 @@ fn parse_type_into_typevar(input: ParserInput) -> ParserResult<Typevar> {
 
 /// Parses a list of comma separated typevars enclosed in (parentheses)
 pub(crate) fn parse_parenthesized_arg_spec_list(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  delimited(tok_par_open, comma_sep_typeargs0, tok_par_close)(input)
+  delimited(tok_par_open, list0_typevars_with_opt_ascription, tok_par_close)(input)
 }
 
 /// Parse a `when` clause where unspecced typevars can be given type ascriptions, like:
@@ -66,7 +75,7 @@ fn parse_typearg(input: ParserInput) -> ParserResult<Typevar> {
 
 /// Parses a comma separated list of 0 or more type arguments.
 /// A parametrized type accepts other types or typevar names
-fn comma_sep_typeargs0(input: ParserInput) -> ParserResult<Vec<Typevar>> {
+fn list0_typevars_with_opt_ascription(input: ParserInput) -> ParserResult<Vec<Typevar>> {
   separated_list0(
     tok_comma,
     context(
@@ -97,7 +106,7 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
       tok_atom,
       delimited(
         tok_par_open,
-        context("type arguments for a user-defined type", comma_sep_typeargs0),
+        context("type arguments for a user-defined type", list0_typevars_with_opt_ascription),
         tok_par_close,
       ),
     )),
@@ -137,31 +146,50 @@ fn atom_literal_type(input: ParserInput) -> ParserResult<ErlType> {
 }
 
 /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
-fn parse_nonunion_type(input: ParserInput) -> ParserResult<ErlType> {
-  alt((
-    context("user defined type", parse_user_type),
-    parse_binary_t::binary_type,
-    context("integer range", int_range_type),
-    parse_container_t::type_of_nonempty_list,
-    parse_container_t::type_of_list,
-    parse_container_t::type_of_tuple,
-    parse_container_t::type_of_map,
-    record_ref,
-    int_literal_type,
-    atom_literal_type,
-  ))(input)
+#[named]
+fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<ErlType> {
+    misc::alt_failed(
+      i,
+      &[
+        LangConstruct::UserType,
+        LangConstruct::IntegerRangeType,
+        LangConstruct::ListType,
+        LangConstruct::TupleType,
+        LangConstruct::MapType,
+        LangConstruct::RecordRefType,
+        LangConstruct::IntegerLiteralType,
+        LangConstruct::AtomLiteralType,
+      ],
+    )
+  };
+  context(
+    "non-union type parser",
+    alt((
+      context("user defined type", parse_user_type),
+      binary_type,
+      context("integer range", int_range_type),
+      context("non-empty list type", type_of_nonempty_list),
+      context("list type", type_of_list),
+      context("tuple type", type_of_tuple),
+      context("map type", type_of_map),
+      context("record reference type", record_ref),
+      context("integer literal type", int_literal_type),
+      context("atom literal type", atom_literal_type),
+    ))
+    .or(alt_failed),
+  )(input.clone())
 }
 
 /// Parse any Erlang type, simple types like `atom()` with some `(args)` possibly, but could also be
 /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
 pub(crate) fn parse_type(input: ParserInput) -> ParserResult<ErlType> {
-  map(
-    separated_list1(tok_vertical_bar, context("non-union type parser", parse_nonunion_type)),
-    |types| ErlTypeImpl::new_union(&types),
-  )(input)
+  map(separated_list1(tok_vertical_bar, parse_nonunion_type), |types| {
+    ErlTypeImpl::new_union(&types)
+  })(input)
 }
 
-/// Wraps parsed type into a type-AST-node
+/// Wraps parsed type into a type-AST-node, testing only
 pub fn parse_type_as_ast_node(input: ParserInput) -> ParserResult<AstNode> {
   map(parse_type, |t| {
     AstNodeImpl::construct_with_location(SourceLoc::new(&input), AstNodeType::Type { ty: t })

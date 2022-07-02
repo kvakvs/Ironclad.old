@@ -1,5 +1,6 @@
 //! Defines a special new error type for parser errors, compatible with Nom
 
+use crate::erl_syntax::parsers::lang_construct::{LangConstruct, LangConstructs};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::token_stream::keyword::Keyword;
 use crate::erl_syntax::token_stream::token_type::TokenType;
@@ -9,6 +10,8 @@ use std::fmt::{Debug, Display, Formatter};
 /// Produced by failing parsers
 #[derive(Debug, Clone)]
 pub enum ErlParserErrorKind {
+  /// A list of language structures expected, but not found. Reported for failed `alt()` parsers
+  LanguageConstructsExpected(Vec<LangConstruct>),
   /// A standard Nom error wrapped
   Nom(ErrorKind),
   /// Added by `context()` parser combinator
@@ -150,6 +153,14 @@ impl<'a> ErlParserError<'a> {
       errors: vec![(input, ErlParserErrorKind::ModuleStartAttributeExpected)],
     }
   }
+
+  /// Create a "none of the constructs matched" error
+  #[inline]
+  pub fn alt(input: ParserInput<'a>, constr: &[LangConstruct]) -> Self {
+    ErlParserError {
+      errors: vec![(input, ErlParserErrorKind::LanguageConstructsExpected(constr.into()))],
+    }
+  }
 }
 
 impl Display for ErlParserErrorKind {
@@ -168,6 +179,13 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::VariableExpected => write!(f, "A variable name expected"),
       ErlParserErrorKind::ModuleStartAttributeExpected => {
         write!(f, "Module start attribute -module(NAME) expected")
+      }
+      ErlParserErrorKind::LanguageConstructsExpected(structures) => {
+        write!(
+          f,
+          "Could not parse any of the following constructs: {}",
+          LangConstructs(&structures)
+        )
       }
       _ => unimplemented!("Don't know how to format {:?}", self),
     }

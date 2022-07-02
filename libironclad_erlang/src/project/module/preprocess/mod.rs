@@ -421,8 +421,9 @@ impl ErlModuleImpl {
       if line_begins_with_preprocessor_or_attr(&line) {
         let line2 = expand_till_directive_end(line, &mut state);
         let line3 = substitute_macro_invocations(original_input, line2, &mut state);
+        println!("LINE {}", format_tok_stream(line3.as_slice(), line3.as_slice().len()));
 
-        let (tail, ppnode) = line3.parse_as_preprocessor(original_input);
+        let (tail, ppnode) = line3.parse_as_preprocessor(original_input, state.module.clone());
 
         // Any non-EOL token in the tail = the input was not consumed
         let tail_non_eol = tail.tokens.iter().any(|t| !t.is_eol());

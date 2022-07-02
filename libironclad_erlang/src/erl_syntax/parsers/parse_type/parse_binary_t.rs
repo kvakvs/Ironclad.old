@@ -1,6 +1,8 @@
 //! Binary types parsing
 
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::lang_construct::LangConstruct;
+use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{
   tok, tok_asterisk, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
   tok_integer, tok_underscore,
@@ -13,6 +15,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::sequence::{delimited, pair, preceded, separated_pair, tuple};
+use nom::Parser;
 
 /// Binary type optional starting element: `_ : INTEGER`
 pub fn binary_type_head_element(input: ParserInput) -> ParserResult<BinaryTypeHeadElement> {
@@ -21,6 +24,7 @@ pub fn binary_type_head_element(input: ParserInput) -> ParserResult<BinaryTypeHe
   })(input)
 }
 
+/// Binary type optional tail element: `_ : _ * INTEGER`
 pub fn binary_type_tail_element(input: ParserInput) -> ParserResult<BinaryTypeTailElement> {
   map(
     preceded(tuple((tok_underscore, tok_colon, tok_underscore, tok_asterisk)), tok_integer),
@@ -72,7 +76,8 @@ pub fn binary_type(input: ParserInput) -> ParserResult<ErlType> {
     tok_double_angle_open,
     context(
       "binary type",
-      cut(alt((binary_type_head, binary_type_tail, binary_type_head_tail))),
+      alt((binary_type_head, binary_type_tail, binary_type_head_tail))
+        .or(|i| misc::alt_failed(i, &[LangConstruct::BinaryType])),
     ),
     tok_double_angle_close,
   )(input)

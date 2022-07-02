@@ -1,6 +1,7 @@
 //! Helper functions for Nom parsing
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::error_report;
+use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
@@ -516,4 +517,13 @@ pub(crate) fn tok_keyword_try(input: ParserInput) -> ParserResult<()> {
 #[inline]
 pub(crate) fn tok_keyword_else(input: ParserInput) -> ParserResult<()> {
   map(ws_before(tok_keyword(Keyword::Else)), void_fn)(input)
+}
+
+/// Produce a compiler error reporting alt variants expected, and none was found.
+pub fn alt_failed<'a, T>(
+  input: ParserInput<'a>,
+  expected_structures: &'a [LangConstruct],
+) -> ParserResult<'a, T> {
+  let err = ErlParserError::alt(input, expected_structures);
+  Err(nom::Err::Error(err))
 }

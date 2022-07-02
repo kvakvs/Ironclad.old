@@ -6,6 +6,8 @@ use crate::erl_syntax::node::erl_binary_element::{
   BinaryElement, TypeSpecifier, ValueEndianness, ValueSignedness, ValueType, ValueWidth,
 };
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::lang_construct::LangConstruct;
+use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{
   tok_atom_of, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
   tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_var,
@@ -17,19 +19,34 @@ use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
-use nom::combinator::{cut, map, opt};
+use nom::combinator::{cut, map, opt, value};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::Parser;
 use std::ops::Deref;
 
 /// Parse a literal value, variable, or an expression in parentheses.
-fn bin_element_value(input: ParserInput) -> ParserResult<AstNode> {
-  alt((
-    map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(&input), &v)),
-    parse_erl_literal,
-    delimited(tok_par_open, parse_expr, tok_par_close),
-  ))(input.clone())
+fn bin_element_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<AstNode> {
+    misc::alt_failed(
+      i,
+      &[
+        LangConstruct::Variable,
+        LangConstruct::Literal,
+        LangConstruct::ParenthesizedExpression,
+      ],
+    )
+  };
+  context(
+    "element of a binary value",
+    alt((
+      map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(&input), &v)),
+      parse_erl_literal,
+      delimited(tok_par_open, parse_expr, tok_par_close),
+    ))
+    .or(alt_failed),
+  )(input.clone())
 }
 
 /// Parse a `:Number`, `:Variable` or `:(Expr)` for bit width
@@ -48,37 +65,83 @@ fn bin_element_width(input: ParserInput) -> ParserResult<ValueWidth> {
   })(input)
 }
 
-fn bin_element_typespec_type(input: ParserInput) -> ParserResult<TypeSpecifier> {
-  alt((
-    map(tok_atom_of("integer"), |_| TypeSpecifier::Type(ValueType::Integer)),
-    map(tok_atom_of("float"), |_| TypeSpecifier::Type(ValueType::Float)),
-    map(alt((tok_atom_of("bytes"), tok_atom_of("binary"))), |_| {
-      TypeSpecifier::Type(ValueType::Bytes)
-    }),
-    map(alt((tok_atom_of("bitstring"), tok_atom_of("bits"))), |_| {
-      TypeSpecifier::Type(ValueType::Bitstring)
-    }),
-    map(tok_atom_of("utf8"), |_| TypeSpecifier::Type(ValueType::Utf8)),
-    map(tok_atom_of("utf16"), |_| TypeSpecifier::Type(ValueType::Utf16)),
-    map(tok_atom_of("utf32"), |_| TypeSpecifier::Type(ValueType::Utf32)),
-  ))(input)
+fn bin_element_typespec_type<'a>(input: ParserInput<'a>) -> ParserResult<TypeSpecifier> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
+    misc::alt_failed(
+      i,
+      &[
+        LangConstruct::AtomOf("integer"),
+        LangConstruct::AtomOf("float"),
+        LangConstruct::AtomOf("bytes"),
+        LangConstruct::AtomOf("binary"),
+        LangConstruct::AtomOf("bitstring"),
+        LangConstruct::AtomOf("bits"),
+        LangConstruct::AtomOf("utf8"),
+        LangConstruct::AtomOf("utf16"),
+        LangConstruct::AtomOf("utf32"),
+      ],
+    )
+  };
+
+  context(
+    "spec for a binary element",
+    alt((
+      value(TypeSpecifier::Type(ValueType::Integer), tok_atom_of("integer")),
+      value(TypeSpecifier::Type(ValueType::Float), tok_atom_of("float")),
+      value(TypeSpecifier::Type(ValueType::Bytes), tok_atom_of("bytes")),
+      value(TypeSpecifier::Type(ValueType::Bytes), tok_atom_of("binary")),
+      value(TypeSpecifier::Type(ValueType::Bitstring), tok_atom_of("bitstring")),
+      value(TypeSpecifier::Type(ValueType::Bitstring), tok_atom_of("bits")),
+      value(TypeSpecifier::Type(ValueType::Utf8), tok_atom_of("utf8")),
+      value(TypeSpecifier::Type(ValueType::Utf16), tok_atom_of("utf16")),
+      value(TypeSpecifier::Type(ValueType::Utf32), tok_atom_of("utf32")),
+    ))
+    .or(alt_failed),
+  )(input)
 }
 
-fn bin_element_typespec_signedness(input: ParserInput) -> ParserResult<TypeSpecifier> {
-  alt((
-    map(tok_atom_of("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
-    map(tok_atom_of("unsigned"), |_| {
-      TypeSpecifier::Signedness(ValueSignedness::Unsigned)
-    }),
-  ))(input)
+fn bin_element_typespec_signedness<'a>(input: ParserInput<'a>) -> ParserResult<TypeSpecifier> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
+    misc::alt_failed(
+      i,
+      &[
+        LangConstruct::AtomOf("signed"),
+        LangConstruct::AtomOf("unsigned"),
+      ],
+    )
+  };
+  context(
+    "binary element sign choice",
+    alt((
+      map(tok_atom_of("signed"), |_| TypeSpecifier::Signedness(ValueSignedness::Signed)),
+      map(tok_atom_of("unsigned"), |_| {
+        TypeSpecifier::Signedness(ValueSignedness::Unsigned)
+      }),
+    ))
+    .or(alt_failed),
+  )(input)
 }
 
-fn bin_element_typespec_endianness(input: ParserInput) -> ParserResult<TypeSpecifier> {
-  alt((
-    map(tok_atom_of("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
-    map(tok_atom_of("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
-    map(tok_atom_of("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
-  ))(input)
+fn bin_element_typespec_endianness<'a>(input: ParserInput<'a>) -> ParserResult<TypeSpecifier> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
+    misc::alt_failed(
+      i,
+      &[
+        LangConstruct::AtomOf("big"),
+        LangConstruct::AtomOf("little"),
+        LangConstruct::AtomOf("native"),
+      ],
+    )
+  };
+  context(
+    "binary element endianness choice",
+    alt((
+      map(tok_atom_of("big"), |_| TypeSpecifier::Endianness(ValueEndianness::Big)),
+      map(tok_atom_of("little"), |_| TypeSpecifier::Endianness(ValueEndianness::Little)),
+      map(tok_atom_of("native"), |_| TypeSpecifier::Endianness(ValueEndianness::Native)),
+    ))
+    .or(alt_failed),
+  )(input)
 }
 
 fn bin_element_typespec_unit(input: ParserInput) -> ParserResult<TypeSpecifier> {

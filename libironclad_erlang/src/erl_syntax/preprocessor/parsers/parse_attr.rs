@@ -134,13 +134,9 @@ pub(crate) fn import_attr(input: ParserInput) -> ParserResult<PreprocessorNode> 
 
 /// Parses a list of comma separated variables `(VAR1, VAR2, ...)`
 pub(crate) fn parse_parenthesized_list_of_vars(input: ParserInput) -> ParserResult<Vec<String>> {
-  delimited(
-    tok_par_open,
-    context(
-      "type arguments in a -type() definition attribute",
-      cut(separated_list0(tok_comma, tok_var)),
-    ),
-    tok_par_close,
+  context(
+    "type arguments in a -type() definition attribute",
+    cut(delimited(tok_par_open, separated_list0(tok_comma, tok_var), tok_par_close)),
   )(input)
 }
 

@@ -1,6 +1,7 @@
 //! Contains implementations required for custom nom input to work
 
 use crate::erl_syntax::token_stream::token::{format_tok_stream, Token};
+use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::root_scope::RootScope;
 use libironclad_util::source_file::SourceFile;
 use nom::Needed;
@@ -15,7 +16,7 @@ pub struct ParserInput<'a> {
   /// Access to filename and source text, if value is defined
   pub source_file: Option<SourceFile>,
   /// Scope for the parser to update/query
-  pub scope: RootScope,
+  pub module: ErlModule,
   /// The token stream
   pub tokens: &'a [Token],
 }
@@ -67,21 +68,17 @@ impl<'a> ParserInput<'a> {
     (snd as usize - fst as usize) / size_of::<Token>()
   }
 
-  pub(crate) fn new(source_file: &SourceFile, tokens: &'a [Token]) -> Self {
+  pub(crate) fn new(source_file: &SourceFile, module: ErlModule, tokens: &'a [Token]) -> Self {
     Self {
       source_file: Some(source_file.clone()),
-      scope: RootScope::default(),
+      module,
       tokens,
     }
   }
 
   /// Use when you only have slice
-  pub fn new_slice(tokens: &'a [Token]) -> Self {
-    Self {
-      source_file: None,
-      scope: RootScope::default(),
-      tokens,
-    }
+  pub fn new_slice(module: ErlModule, tokens: &'a [Token]) -> Self {
+    Self { source_file: None, module, tokens }
   }
 
   pub(crate) fn is_empty(&self) -> bool {
@@ -116,7 +113,7 @@ impl<'a> ParserInput<'a> {
     Self {
       source_file: None,
       tokens: input,
-      scope: RootScope::default(),
+      module: self.module.clone(),
     }
   }
   //

@@ -28,6 +28,7 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
     // all between -spec and .
     delimited(
       |i1| dash_atom(i1, "spec"),
+      // TODO: Can be wrapped with parentheses
       tuple((
         context("function name in a -spec() attribute", cut(tok_atom)),
         separated_list1(

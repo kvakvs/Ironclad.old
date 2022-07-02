@@ -5,6 +5,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_preproc_directive;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::erl_syntax::token_stream::token::Token;
+use crate::project::module::module_impl::ErlModule;
 use nom::Finish;
 
 enum TokenStreamData<'a> {
@@ -28,8 +29,12 @@ impl<'a> TokenStream<'a> {
   }
 
   /// Invoke parser producing a preprocessor node
-  pub fn parse_as_preprocessor(&self, original_input: &str) -> (ParserInput, PreprocessorNode) {
-    let parser_input = ParserInput::new_slice(self.as_slice());
+  pub fn parse_as_preprocessor(
+    &self,
+    original_input: &str,
+    module: ErlModule,
+  ) -> (ParserInput, PreprocessorNode) {
+    let parser_input = ParserInput::new_slice(module, self.as_slice());
     let (tail, ppnode) = panicking_parser_error_reporter(
       original_input,
       parser_input.clone(),

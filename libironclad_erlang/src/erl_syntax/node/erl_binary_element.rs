@@ -20,7 +20,7 @@ pub enum ValueWidth {
 
 /// Added to `BinaryTypeSpecifier` to define how to insert a value
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ValueType {
   Integer,
   Float,
@@ -35,7 +35,7 @@ pub enum ValueType {
 
 /// Added to `BinaryTypeSpecifier` to define presence of sign-bit and special rules for negative values
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ValueSignedness {
   Signed,
   Unsigned,
@@ -43,7 +43,7 @@ pub enum ValueSignedness {
 
 /// Added to `BinaryTypeSpecifier` to define byte order
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ValueEndianness {
   Big,
   Little,
@@ -53,7 +53,7 @@ pub enum ValueEndianness {
 /// Type specifier, one element added to any binary expression element after a `/`:
 /// like so `X:4/little-signed-integer-unit:8`
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum TypeSpecifier {
   Type(ValueType),
   Signedness(ValueSignedness),
