@@ -15,26 +15,6 @@ use nom::Finish;
 
 #[named]
 #[test]
-fn minimal_failing_test() {
-  test_util::start(function_name!(), "...");
-  let input = "-type src() :: {term()}.";
-  // let _module = test_util::parse_module(function_name!(), input);
-  let tokens = test_util::tokenize(input);
-  println!("TOKENS {:?}", &tokens);
-  let module = ErlModuleImpl::new_default();
-  let p_input = ParserInput::new_slice(module, &tokens);
-  let (_tail, result) = panicking_parser_error_reporter(
-    input,
-    p_input.clone(),
-    libironclad_erlang::erl_syntax::preprocessor::parsers::parse_attr::parse_new_type_attr(p_input)
-      .finish(),
-    true,
-  );
-  println!("Parsed: {}", result);
-}
-
-#[named]
-#[test]
 fn union_type_parse() {
   test_util::start(function_name!(), "Parse a multiline union type");
   // let input = "-type src() :: {term()}.";

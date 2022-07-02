@@ -52,6 +52,12 @@ fn parse_typevar_with_opt_ascription(input: ParserInput) -> ParserResult<Typevar
   )(input)
 }
 
+/// Parse a capitalized type variable name with an optional `:: type()` part:
+/// `A :: type()` or `A`, or just a type `type()`.
+fn parse_typevar_or_type(input: ParserInput) -> ParserResult<Typevar> {
+  alt((parse_typevar_with_opt_ascription, parse_type_into_typevar))(input)
+}
+
 #[inline]
 fn parse_type_into_typevar(input: ParserInput) -> ParserResult<Typevar> {
   map(parse_type, |t| Typevar::from_erltype(&t))(input)
@@ -59,7 +65,7 @@ fn parse_type_into_typevar(input: ParserInput) -> ParserResult<Typevar> {
 
 /// Parses a list of comma separated typevars enclosed in (parentheses)
 pub(crate) fn parse_parenthesized_arg_spec_list(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  delimited(tok_par_open, list0_typevars_with_opt_ascription, tok_par_close)(input)
+  delimited(tok_par_open, list0_types_or_ascribed_typevars, tok_par_close)(input)
 }
 
 /// Parse a `when` clause where unspecced typevars can be given type ascriptions, like:
@@ -75,13 +81,10 @@ fn parse_typearg(input: ParserInput) -> ParserResult<Typevar> {
 
 /// Parses a comma separated list of 0 or more type arguments.
 /// A parametrized type accepts other types or typevar names
-fn list0_typevars_with_opt_ascription(input: ParserInput) -> ParserResult<Vec<Typevar>> {
+fn list0_types_or_ascribed_typevars(input: ParserInput) -> ParserResult<Vec<Typevar>> {
   separated_list0(
     tok_comma,
-    context(
-      "parsing items of a type arguments list (empty allowed)",
-      parse_typevar_with_opt_ascription,
-    ),
+    context("parsing items of a type arguments list (empty allowed)", parse_typevar_or_type),
   )(input)
 }
 
@@ -90,10 +93,7 @@ fn list0_typevars_with_opt_ascription(input: ParserInput) -> ParserResult<Vec<Ty
 fn parse_comma_sep_typeargs1(input: ParserInput) -> ParserResult<Vec<Typevar>> {
   separated_list1(
     tok_comma,
-    context(
-      "parsing items of a type arguments list (non-empty)",
-      parse_typevar_with_opt_ascription,
-    ),
+    context("parsing items of a type arguments list (non-empty)", parse_typevar_or_type),
   )(input)
 }
 
@@ -106,7 +106,7 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
       tok_atom,
       delimited(
         tok_par_open,
-        context("type arguments for a user-defined type", list0_typevars_with_opt_ascription),
+        context("type arguments for a user-defined type", list0_types_or_ascribed_typevars),
         tok_par_close,
       ),
     )),

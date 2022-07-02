@@ -5,6 +5,7 @@ use crate::erl_syntax::parsers::misc::{
   dash_atom, period_eol_eof, tok, tok_atom, tok_period, tok_right_arrow, tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_type;
+use crate::erl_syntax::parsers::parse_type::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -67,7 +68,7 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
       context(
         "return type in function clause spec",
         alt((
-          parse_type::parse_typevar_with_opt_ascription,
+          parse_typevar_or_type,
           context("return type", cut(parse_type::parse_type_into_typevar)),
         )),
       ),

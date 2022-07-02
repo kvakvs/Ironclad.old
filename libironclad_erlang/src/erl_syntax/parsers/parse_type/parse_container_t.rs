@@ -7,7 +7,7 @@ use crate::erl_syntax::parsers::misc::{
 };
 use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parse_type::{
-  list0_typevars_with_opt_ascription, parse_typevar_with_opt_ascription,
+  list0_types_or_ascribed_typevars, parse_typevar_or_type,
 };
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -18,14 +18,14 @@ use crate::typing::typevar::Typevar;
 use nom::combinator::{cut, map};
 use nom::error::context;
 use nom::multi::separated_list0;
-use nom::sequence::{delimited, pair, separated_pair};
+use nom::sequence::{delimited, pair, separated_pair, terminated};
 
 /// Parse a list of types, returns a temporary list-type
 pub fn type_of_list(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_square_open,
-      context("type arguments for a list() type", list0_typevars_with_opt_ascription),
+      context("type arguments for a list() type", list0_types_or_ascribed_typevars),
       tok_square_close,
     ),
     |elements| {
@@ -42,11 +42,11 @@ pub fn type_of_nonempty_list(input: ParserInput) -> ParserResult<ErlType> {
       tok_square_open,
       context(
         "type arguments for a nonempty_list() type",
-        separated_pair(parse_typevar_with_opt_ascription, tok_comma, tok_ellipsis),
+        terminated(parse_typevar_or_type, pair(tok_comma, tok_ellipsis)),
       ),
       tok_square_close,
     ),
-    |(typevar, _ellip)| ErlTypeImpl::list_of(ErlTypeImpl::new_typevar(typevar), true),
+    |typevar| ErlTypeImpl::list_of(ErlTypeImpl::new_typevar(typevar), true),
   )(input)
 }
 
@@ -55,7 +55,7 @@ pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
   map(
     delimited(
       tok_curly_open,
-      context("a tuple() type", list0_typevars_with_opt_ascription),
+      context("a tuple() type", list0_types_or_ascribed_typevars),
       tok_curly_close,
     ),
     |elements| {
@@ -67,11 +67,7 @@ pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
 
 fn map_member_type(input: ParserInput) -> ParserResult<MapMemberType> {
   map(
-    separated_pair(
-      parse_typevar_with_opt_ascription,
-      tok_right_darr,
-      parse_typevar_with_opt_ascription,
-    ),
+    separated_pair(parse_typevar_or_type, tok_right_darr, parse_typevar_or_type),
     |(key, value)| MapMemberType {
       key: ErlTypeImpl::new_typevar(key),
       value: ErlTypeImpl::new_typevar(value),

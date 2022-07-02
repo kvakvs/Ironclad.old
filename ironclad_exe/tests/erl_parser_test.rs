@@ -15,6 +15,7 @@ use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::literal::Literal;
+use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 
@@ -253,7 +254,8 @@ fn parse_expr_lc1() -> IcResult<()> {
   test_util::start(function_name!(), "Parse an expr with list comprehension");
   let input = "[F || F <- Fs0 ] \n";
   let tokens = test_util::tokenize(input);
-  let p_input = ParserInput::new_slice(&tokens);
+  let module = ErlModuleImpl::new_default();
+  let p_input = ParserInput::new_slice(module, &tokens);
   let (_tail, expr) = panicking_parser_error_reporter(
     input,
     p_input.clone(),
@@ -638,8 +640,9 @@ fn parse_record_raw_parser_invocation() -> IcResult<()> {
   let input = "-record(options,
 	 {includes=[] :: [file:filename()],	% Include paths (list of
 	 }).";
+  let module = ErlModuleImpl::new_default();
   let tokens = test_util::tokenize(input);
-  let p_input = ParserInput::new_slice(&tokens);
+  let p_input = ParserInput::new_slice(module, &tokens);
   let (_tail, _pnode) = panicking_parser_error_reporter(
     input,
     p_input.clone(),
