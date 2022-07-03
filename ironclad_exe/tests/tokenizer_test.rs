@@ -29,3 +29,13 @@ fn test_tok_comment() {
   let tokens = panicking_tokenizer_error_reporter(input, tokenize_source(input).finish());
   tokens.into_iter().for_each(|t| print!("{} ", t));
 }
+
+#[test]
+#[named]
+fn test_tok_integer() {
+  test_util::start(function_name!(), "Tokenize integers");
+
+  let input = "16#8000, -16#8000";
+  let tokens = panicking_tokenizer_error_reporter(input, tokenize_source(input).finish());
+  tokens.into_iter().for_each(|t| print!("{} ", t));
+}

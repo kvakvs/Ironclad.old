@@ -2,22 +2,24 @@
 
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::erl_syntax::parsers::token_stream::misc::{
-  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before_mut, ws_mut,
+  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before,
+  ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::parsers::token_stream::tok_strings::atom_literal::parse_tok_atom;
 use crate::erl_syntax::parsers::token_stream::tok_strings::str_literal::{
-  parse_doublequot_string, parse_int,
+  parse_doublequot_string, parse_float, parse_int_any_base, parse_int_decimal,
 };
 use crate::erl_syntax::parsers::token_stream::tok_strings::Char;
 use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{anychar, char};
 use nom::combinator::{complete, cut, map, not, peek, recognize};
 use nom::error::context;
-use nom::sequence::{preceded, terminated};
+use nom::sequence::{preceded, separated_pair, terminated};
 use nom::Parser;
 
 #[inline]
@@ -37,9 +39,30 @@ fn tokenize_variable_name(input: TokenizerInput) -> TokensResult<Token> {
   map(parse_varname, mk_var)(input)
 }
 
+fn tokenize_single_integer(input: TokenizerInput) -> TokensResult<Token> {
+  map(parse_int_any_base, |i: ErlInteger| {
+    Token::new(input.as_ptr(), TokenType::Integer(i))
+  })(input)
+}
+
+fn tokenize_two_integers_with_dot(input: TokenizerInput) -> TokensResult<Token> {
+  map(
+    recognize(separated_pair(parse_int_decimal, char('.'), parse_int_decimal)),
+    |fstr| {
+      let f = fstr.parse::<f64>().unwrap();
+      Token::new(input.as_ptr(), TokenType::Float(f))
+    },
+  )(input)
+}
+
 #[inline]
 fn tokenize_integer(input: TokenizerInput) -> TokensResult<Token> {
-  map(parse_int, |i| Token::new(input.as_ptr(), TokenType::Integer(i)))(input)
+  alt((tokenize_two_integers_with_dot, tokenize_single_integer))(input)
+}
+
+#[inline]
+fn tokenize_float(input: TokenizerInput) -> TokensResult<Token> {
+  map(parse_float, |f: f64| Token::new(input.as_ptr(), TokenType::Float(f)))(input)
 }
 
 #[inline]
@@ -552,6 +575,7 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
     tokenize_atom,
     tokenize_variable_name,
     tokenize_integer,
+    tokenize_float,
     tokenize_other_symbols,
   ))))))(input)
 }

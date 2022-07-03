@@ -265,6 +265,8 @@ impl AstNodeImpl {
     )
   }
 
+  /// Take an `AstNode` of `RecordField`, `RecordBuilder` and `MapBuilder`, and set its base.
+  /// Returns a new modified clone.
   pub fn set_base(&self, new_base: Option<AstNode>) -> AstNode {
     match &self.content {
       AstNodeType::RecordField { tag, field, .. } => Self {

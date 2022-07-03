@@ -10,9 +10,10 @@ use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
 use nom::character::complete::{alphanumeric1, char, one_of};
-use nom::combinator::{map, recognize, value, verify};
+use nom::combinator::{map, opt, recognize, value, verify};
 use nom::multi::{fold_many0, many0, many1};
-use nom::sequence::{delimited, separated_pair, terminated};
+use nom::number::complete::recognize_float;
+use nom::sequence::{delimited, pair, separated_pair, terminated};
 
 /// Parse a non-empty block of text that doesn't include \ or "
 fn parse_doublequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<&'a str> {
@@ -70,7 +71,6 @@ pub(crate) fn parse_doublequot_string(input: TokenizerInput) -> TokensResult<Str
 
 fn parse_int_unsigned_body(input: TokenizerInput) -> TokensResult<TokenizerInput> {
   recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
-  // recognize(many1(one_of("0123456789")))(input)
 }
 
 /// Parse an any-base integer `0-9, a-z` (check is done when parsing is complete)
@@ -83,31 +83,38 @@ fn parse_based_int_unsigned_body(input: TokenizerInput) -> TokensResult<Tokenize
 //   recognize(alt((char('-'), char('+'))))(input)
 // }
 
-/// Parse a decimal integer
-fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
-  map(
-    // ws_before_mut(recognize(pair(opt(parse_sign), parse_int_unsigned_body))),
-    parse_int_unsigned_body,
-    |num| {
-      ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
-    },
-  )(input)
+/// Parse a decimal integer, without a base prefix and sign
+pub fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
+  map(recognize(pair(opt(char('-')), parse_int_unsigned_body)), |num| {
+    ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
+  })(input)
 }
 
-/// Parse a based integer `<BASE> # <NUMBER>`
+/// Parse a based integer `<BASE> # <NUMBER>` where base is `2..36`
 fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
   map(
-    separated_pair(parse_int_unsigned_body, ws_before(char('#')), parse_based_int_unsigned_body),
-    |(base_str, value_str): (&str, &str)| -> ErlInteger {
+    pair(
+      opt(char('-')),
+      separated_pair(parse_int_unsigned_body, char('#'), parse_based_int_unsigned_body),
+    ),
+    |(sign, (base_str, value_str)): (Option<_>, (&str, &str))| -> ErlInteger {
       let base = base_str.parse::<u32>().unwrap();
       assert!(base >= 2 && base <= 36);
-      ErlInteger::new_from_string_radix(value_str, base).unwrap()
+      let value = if sign.is_some() { format!("-{}", value_str) } else { value_str.to_string() };
+      ErlInteger::new_from_string_radix(&value, base).unwrap()
     },
   )(input)
 }
 
-/// Parse an integer without a sign. Signs apply as unary operators. Output is a string.
-/// From Nom examples
-pub(crate) fn parse_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
+/// Parse an integer without a sign. Supports based integers with `<RADIX> # <BODY>` and decimals.
+/// Sign is not parsed.
+pub(crate) fn parse_int_any_base(input: TokenizerInput) -> TokensResult<ErlInteger> {
   alt((parse_based_int, parse_int_decimal))(input)
+}
+
+/// Recognize a float in the input and try parse it as `f64`.
+pub(crate) fn parse_float(input: TokenizerInput) -> TokensResult<f64> {
+  // TODO: handle a parse error or, better, fail the parser?
+  let mk_float = |fstr: TokenizerInput| fstr.parse::<f64>().unwrap();
+  map(recognize_float, mk_float)(input)
 }

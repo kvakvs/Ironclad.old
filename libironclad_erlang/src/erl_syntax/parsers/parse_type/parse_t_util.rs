@@ -37,6 +37,7 @@ pub fn parse_typevar_or_type(input: ParserInput) -> ParserResult<Typevar> {
   alt((parse_typevar_with_opt_ascription, parse_type_into_typevar))(input)
 }
 
+/// Parses a type and wraps it into an anonymous type variable
 #[inline]
 pub fn parse_type_into_typevar(input: ParserInput) -> ParserResult<Typevar> {
   map(parse_type::parse_type, |t| Typevar::from_erltype(&t))(input)

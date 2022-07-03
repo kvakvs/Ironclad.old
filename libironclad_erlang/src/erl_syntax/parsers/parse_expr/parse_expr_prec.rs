@@ -6,13 +6,11 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
-use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_atom, tok_colon, tok_hash, tok_period};
+use crate::erl_syntax::parsers::misc::tok_colon;
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expr;
-use crate::erl_syntax::parsers::parse_expr;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_map::parse_map_builder_no_base;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_record::{
   parse_record_builder_no_base, parse_record_field_access_no_base,
@@ -290,6 +288,7 @@ fn parse_expr_prec13(style: ExprStyle, input: ParserInput) -> ParserResult<AstNo
   }
 }
 
+/// Parse an expression from the beginning of precedence ladder
 pub fn parse_expr_lowest_precedence(style: ExprStyle, input: ParserInput) -> ParserResult<AstNode> {
   map(
     context(
