@@ -33,13 +33,25 @@ fn map_builder_match(input: ParserInput) -> ParserResult<MapBuilderMember> {
 
 /// Parse a map builder expression, which uses `=>` to assign the values.
 /// Contrary to a map matcher, which would use `:=`.
-pub fn parse_map_builder(input: ParserInput) -> ParserResult<AstNode> {
+pub fn parse_map_builder_no_base(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       pair(tok_hash, tok_curly_open),
       separated_list0(tok_comma, alt((map_builder_assign, map_builder_match))),
       tok_curly_close,
     ),
-    |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), members),
+    |members| AstNodeImpl::new_map_builder(SourceLoc::new(&input), None, members),
   )(input.clone())
 }
+
+// /// Parse a map builder expression
+// pub fn parse_map_builder_with_base(input: ParserInput) -> ParserResult<AstNode> {
+//   map(
+//     consumed(tuple((
+//       parse_expr_prec01,
+//       preceded(tok_hash, tok_atom),
+//       preceded(tok_period, tok_atom),
+//     ))),
+//     mk_record_access_op,
+//   )(input)
+// }

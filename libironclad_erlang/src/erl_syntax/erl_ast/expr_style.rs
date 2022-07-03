@@ -105,7 +105,7 @@ impl AstNodeImpl {
           Self::verify_expr_style(e, style)?;
         }
       }
-      AstNodeType::MapBuilder { members } => {
+      AstNodeType::MapBuilder { members, .. } => {
         for m in members.iter() {
           Self::verify_expr_style(&m.key, style)?;
           Self::verify_expr_style(&m.expr, style)?;

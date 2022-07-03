@@ -68,7 +68,10 @@ impl std::fmt::Display for AstNodeImpl {
       }
       Tuple { elements, .. } => Pretty::display_curly_list(elements.iter(), f),
       Type { ty, .. } => ty.fmt(f),
-      MapBuilder { members } => {
+      MapBuilder { base, members } => {
+        if let Some(b) = base {
+          write!(f, "{}", b)?;
+        }
         write!(f, "#{{")?;
         Pretty::display_comma_separated(members.iter(), f)?;
         write!(f, "}}")
@@ -81,7 +84,12 @@ impl std::fmt::Display for AstNodeImpl {
         Pretty::display_comma_separated(members.iter(), f)?;
         write!(f, "}}")
       }
-      RecordField { base, tag, field } => write!(f, "{}#{}.{}", base, tag, field),
+      RecordField { base, tag, field } => {
+        if let Some(b) = base {
+          write!(f, "{}", b)?;
+        }
+        write!(f, "#{}.{}", tag, field)
+      }
       ListComprehension { expr, generators, .. } => {
         write!(f, "[{} || ", expr)?;
         Pretty::display_comma_separated(generators.iter(), f)?;

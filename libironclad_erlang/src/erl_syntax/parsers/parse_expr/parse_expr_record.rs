@@ -5,15 +5,15 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_hash,
+  tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_period,
 };
 use crate::erl_syntax::parsers::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
-use nom::combinator::map;
+use nom::combinator::{consumed, map};
 use nom::multi::separated_list0;
-use nom::sequence::{delimited, pair, separated_pair, terminated};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 
 /// Parse one member of a record builder `'field' = EXPR`
 fn record_builder_member(input: ParserInput) -> ParserResult<RecordBuilderMember> {
@@ -24,9 +24,7 @@ fn record_builder_member(input: ParserInput) -> ParserResult<RecordBuilderMember
 }
 
 /// Parse a record builder expression
-pub fn parse_record_builder(
-  input: ParserInput,
-) -> ParserResult<(String, Vec<RecordBuilderMember>)> {
+fn record_builder_tag_body(input: ParserInput) -> ParserResult<(String, Vec<RecordBuilderMember>)> {
   terminated(
     pair(
       delimited(tok_hash, tok_atom, tok_curly_open),
@@ -38,7 +36,35 @@ pub fn parse_record_builder(
 
 /// Parse a record builder expression without a prefix expression just `# RECORDTAG { FIELDS }`
 pub fn parse_record_builder_no_base(input: ParserInput) -> ParserResult<AstNode> {
-  map(parse_record_builder, |(tag, record_fields)| {
+  map(record_builder_tag_body, |(tag, record_fields)| {
     AstNodeImpl::new_record_builder(SourceLoc::new(&input), None, tag, record_fields)
   })(input.clone())
 }
+
+/// Parse a record field access expression, without a base, evaluates to record field index
+pub(crate) fn parse_record_field_access_no_base(input: ParserInput) -> ParserResult<AstNode> {
+  let mk_field_index =
+    |(consumed_input, (tag, field)): (ParserInput, (String, String))| -> AstNode {
+      AstNodeImpl::new_record_field(SourceLoc::new(&consumed_input), None, tag, field)
+    };
+  map(
+    consumed(tuple((preceded(tok_hash, tok_atom), preceded(tok_period, tok_atom)))),
+    mk_field_index,
+  )(input)
+}
+
+// /// Parse a record field access expression with a base, evaluates to field value
+// pub fn parse_record_field_access_with_base(input: ParserInput) -> ParserResult<AstNode> {
+//   let mk_field_access =
+//     |(consumed_input, (left, tag, field)): (ParserInput, (AstNode, String, String))| -> AstNode {
+//       AstNodeImpl::new_record_field(SourceLoc::new(&consumed_input), Some(left), tag, field)
+//     };
+//   map(
+//     consumed(tuple((
+//       parse_expr_prec01,
+//       preceded(tok_hash, tok_atom),
+//       preceded(tok_period, tok_atom),
+//     ))),
+//     mk_field_access,
+//   )(input)
+// }

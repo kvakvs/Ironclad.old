@@ -13,7 +13,15 @@ use crate::erl_syntax::parsers::misc::{tok_atom, tok_colon, tok_hash, tok_period
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expr;
 use crate::erl_syntax::parsers::parse_expr;
-use crate::erl_syntax::parsers::parse_expr::{parse_expr_map, parse_expr_record};
+use crate::erl_syntax::parsers::parse_expr::parse_expr_map::parse_map_builder_no_base;
+use crate::erl_syntax::parsers::parse_expr::parse_expr_record::{
+  parse_record_builder_no_base, parse_record_field_access_no_base,
+};
+use crate::erl_syntax::parsers::parse_expr::{
+  parenthesized_expr, parse_begin_end, parse_binary_comprehension, parse_fn_reference,
+  parse_list_builder, parse_list_comprehension, parse_parenthesized_list_of_exprs,
+  parse_tuple_builder, parse_var,
+};
 use crate::erl_syntax::parsers::parse_expr_op::{
   binop_add, binop_and, binop_andalso, binop_band, binop_bang, binop_bor, binop_bsl, binop_bsr,
   binop_bxor, binop_comma, binop_equals, binop_floatdiv, binop_greater, binop_greater_eq,
@@ -41,22 +49,22 @@ fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
     alt((
       alt((
         parse_lambda,
-        parse_expr::parse_begin_end,
+        parse_begin_end,
         parse_try_catch,
         parse_if_statement,
         parse_case_expr,
-        parse_expr::parenthesized_expr,
-        parse_expr::parse_list_builder,
-        parse_expr::parse_tuple_builder,
-        parse_expr_map::parse_map_builder,
+        parenthesized_expr,
+        parse_list_builder,
+        parse_tuple_builder,
       )),
       alt((
-        parse_expr::parse_fn_reference,
-        parse_expr_record::parse_record_builder_no_base,
-        parse_expr::parse_var,
+        parse_fn_reference,
+        parse_map_builder_no_base,
+        parse_record_builder_no_base,
+        parse_var,
         parse_erl_literal,
-        parse_expr::parse_list_comprehension,
-        parse_expr::parse_binary_comprehension,
+        parse_list_comprehension,
+        parse_binary_comprehension,
         parse_binary,
       )),
     )),
@@ -75,7 +83,7 @@ fn parse_expr_prec01(input: ParserInput) -> ParserResult<AstNode> {
         // A pair: optional second expr for function name, and mandatory args
         pair(
           opt(preceded(tok_colon, parse_expr_prec_primary)),
-          parse_expr::parse_parenthesized_list_of_exprs,
+          parse_parenthesized_list_of_exprs,
         ),
       ),
     )),
@@ -99,24 +107,20 @@ fn parse_expr_prec01(input: ParserInput) -> ParserResult<AstNode> {
   )(input.clone())
 }
 
-/// Constructs record field access AST node from `consumed()` nom parser result
-fn mk_record_access_op(
-  (consumed_input, (left, tag, field)): (ParserInput, (AstNode, String, String)),
-) -> AstNode {
-  let loc = SourceLoc::new(&consumed_input);
-  AstNodeImpl::new_record_field(loc, left, tag, field)
-}
-
-// TODO: Precedence 2: # (record access operator)
+// TODO: Precedence 2: # (record/map access operator)
 #[inline]
 fn parse_expr_prec02(input: ParserInput) -> ParserResult<AstNode> {
+  let set_base = |(base, node): (AstNode, AstNode)| -> AstNode { node.set_base(Some(base)) };
   map(
-    consumed(tuple((
+    pair(
       parse_expr_prec01,
-      preceded(tok_hash, tok_atom),
-      preceded(tok_period, tok_atom),
-    ))),
-    mk_record_access_op,
+      alt((
+        parse_record_field_access_no_base,
+        parse_record_builder_no_base,
+        parse_map_builder_no_base,
+      )),
+    ),
+    set_base,
   )(input.clone())
   .or_else(|_err| parse_expr_prec01(input.clone()))
 }
@@ -290,23 +294,12 @@ pub fn parse_expr_lowest_precedence(style: ExprStyle, input: ParserInput) -> Par
   map(
     context(
       "expression",
-      tuple((
-        |i| parse_expr_prec13(style, i),
-        opt(parse_expr::parse_parenthesized_list_of_exprs),
-        opt(parse_expr_record::parse_record_builder),
-      )),
+      tuple((|i| parse_expr_prec13(style, i), opt(parse_parenthesized_list_of_exprs))),
     ),
-    |(expr, maybe_args, maybe_record_builder): (
-      AstNode,
-      Option<Vec<AstNode>>,
-      Option<(String, Vec<RecordBuilderMember>)>,
-    )|
-     -> AstNode {
+    |(expr, maybe_args): (AstNode, Option<Vec<AstNode>>)| -> AstNode {
       if let Some(args) = maybe_args {
         let target = CallableTarget::new_expr(expr);
         AstNodeImpl::new_application(SourceLoc::new(&input), target, args)
-      } else if let Some((tag, record_fields)) = maybe_record_builder {
-        AstNodeImpl::new_record_builder(SourceLoc::new(&input), Some(expr), tag, record_fields)
       } else {
         expr
       }

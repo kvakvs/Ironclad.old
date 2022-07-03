@@ -139,8 +139,12 @@ impl AstNodeImpl {
   }
 
   /// Create a new AST node for a map builder
-  pub(crate) fn new_map_builder(location: SourceLoc, members: Vec<MapBuilderMember>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, MapBuilder { members })
+  pub(crate) fn new_map_builder(
+    location: SourceLoc,
+    base: Option<AstNode>,
+    members: Vec<MapBuilderMember>,
+  ) -> AstNode {
+    AstNodeImpl::construct_with_location(location, MapBuilder { base, members })
   }
 
   /// Create a new AST node for a record builder
@@ -156,7 +160,7 @@ impl AstNodeImpl {
   /// Create a new AST node for a record field access
   pub(crate) fn new_record_field(
     location: SourceLoc,
-    base: AstNode,
+    base: Option<AstNode>,
     tag: String,
     field: String,
   ) -> AstNode {

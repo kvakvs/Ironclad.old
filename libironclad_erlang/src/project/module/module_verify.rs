@@ -71,7 +71,10 @@ impl ErlModuleImpl {
           self.verify_parsed(e)?;
         }
       }
-      AstNodeType::MapBuilder { members } => {
+      AstNodeType::MapBuilder { base, members, .. } => {
+        if let Some(b) = base {
+          self.verify_parsed(b)?;
+        }
         for m in members.iter() {
           self.verify_parsed(&m.key)?;
           self.verify_parsed(&m.expr)?;
@@ -140,7 +143,9 @@ impl ErlModuleImpl {
         }
       }
       AstNodeType::RecordField { base, .. } => {
-        self.verify_parsed(base)?;
+        if let Some(b) = base {
+          self.verify_parsed(b)?;
+        }
       }
       //-----------------------------------
       AstNodeType::CaseExpr { expr, clauses } => {

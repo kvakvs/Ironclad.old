@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use std::fmt::Formatter;
 
 /// Operation for a map member
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MapMemberOperation {
   /// Value goes into the map member: `Key => Value`
   Assign,
@@ -13,7 +13,7 @@ pub enum MapMemberOperation {
 }
 
 /// Defines a member of map construction AST node in `#{ key => value }`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MapBuilderMember {
   pub operation: MapMemberOperation,
   /// The key to the map, an expression

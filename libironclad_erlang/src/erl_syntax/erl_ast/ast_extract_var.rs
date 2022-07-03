@@ -128,7 +128,9 @@ impl AstNodeImpl {
         Ok(())
       }
       AstNodeType::RecordField { base, .. } => {
-        Self::extract_variables(base, variables)?;
+        if let Some(b) = base {
+          Self::extract_variables(b, variables)?;
+        }
         Ok(())
       }
       AstNodeType::Empty { .. } | AstNodeType::BinaryOp { .. } | AstNodeType::Lit { .. } => {

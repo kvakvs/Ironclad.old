@@ -122,6 +122,8 @@ pub enum AstNodeType {
 
   /// A map of some keys and some values, using `=>` syntax for construction
   MapBuilder {
+    /// Value used to start the construction, must be a map
+    base: Option<AstNode>,
     /// Map keys, matching values by index
     members: Vec<MapBuilderMember>,
   },
@@ -135,10 +137,11 @@ pub enum AstNodeType {
     /// Record members
     members: Vec<RecordBuilderMember>,
   },
-  /// A record field accessor
+  /// A record field accessor, or record field index.
   RecordField {
-    /// The base variable name used for construction, must have same record type: `Var#recordtag.field`
-    base: AstNode,
+    /// The base variable name used for construction, must have same record type: `Var#recordtag.field`.
+    /// Having base as `None` evaluates this to record field index instead of value.
+    base: Option<AstNode>,
     /// The record tag `#recordtag{}`
     tag: String,
     /// Field name in `Var#recordtag.field`
@@ -260,5 +263,40 @@ impl AstNodeImpl {
       this.location.clone(),
       TypeError::FunctionNotFound { mfa: funarity.clone() },
     )
+  }
+
+  pub fn set_base(&self, new_base: Option<AstNode>) -> AstNode {
+    match &self.content {
+      AstNodeType::RecordField { tag, field, .. } => Self {
+        location: self.location.clone(),
+        content: AstNodeType::RecordField {
+          base: new_base,
+          tag: tag.clone(),
+          field: field.clone(),
+        },
+      }
+      .into(),
+
+      AstNodeType::RecordBuilder { tag, members, .. } => Self {
+        location: self.location.clone(),
+        content: AstNodeType::RecordBuilder {
+          base: new_base,
+          tag: tag.clone(),
+          members: members.clone(),
+        },
+      }
+      .into(),
+
+      AstNodeType::MapBuilder { members, .. } => Self {
+        location: self.location.clone(),
+        content: AstNodeType::MapBuilder { base: new_base, members: members.clone() },
+      }
+      .into(),
+
+      _ => panic!(
+        "Can't set base for {}, only can for RecordField, RecordBuilder and MapBuilder",
+        &self
+      ),
+    }
   }
 }

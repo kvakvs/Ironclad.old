@@ -30,7 +30,7 @@ impl std::fmt::Display for RecordField {
 }
 
 /// Defines a member of map construction AST node in `#{ key => value }`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RecordBuilderMember {
   /// The record field name
   pub field: String,

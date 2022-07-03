@@ -137,8 +137,11 @@ impl IterableAstNodeT for AstNodeImpl {
         }
         return_some_vec(r)
       }
-      AstNodeType::MapBuilder { members } => {
-        let mut r = Vec::default();
+      AstNodeType::MapBuilder { members, base } => {
+        let mut r = Vec::with_capacity(members.len() + 1);
+        if let Some(b) = base {
+          r.push(b.clone());
+        }
         for m in members {
           if let Some(c) = m.expr.children() {
             r.extend(c.iter().cloned());
@@ -149,7 +152,13 @@ impl IterableAstNodeT for AstNodeImpl {
       // _ => {
       //   unimplemented!("{}:{}(): Can't process {:?}", file!(), function_name!(), self.content)
       // }
-      AstNodeType::RecordField { base, .. } => Some(vec![base.clone()]),
+      AstNodeType::RecordField { base, .. } => {
+        if let Some(b) = base {
+          return_some_vec(vec![b.clone()])
+        } else {
+          None
+        }
+      }
     }
   }
 }
