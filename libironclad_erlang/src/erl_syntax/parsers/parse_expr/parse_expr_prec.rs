@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::tok_colon;
+use crate::erl_syntax::parsers::misc::{tok_colon, tok_hash};
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expression;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_list::{
@@ -88,6 +88,7 @@ fn parse_expr_prec_primary<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> 
         parse_fn_reference,
         parse_map_builder_no_base,
         parse_record_builder_no_base,
+        parse_record_field_access_no_base,
         parse_var,
         parse_erl_literal,
         parse_list_comprehension,
@@ -137,16 +138,31 @@ fn parse_expr_prec01(input: ParserInput) -> ParserResult<AstNode> {
 
 // TODO: Precedence 2: # (record/map access operator)
 #[inline]
-fn parse_expr_prec02(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec02<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
   let set_base = |(base, node): (AstNode, AstNode)| -> AstNode { node.set_base(Some(base)) };
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<AstNode> {
+    misc::alt_failed(
+      i,
+      "# symbol after an expression",
+      &[
+        LangConstruct::RecordField,
+        LangConstruct::Record,
+        LangConstruct::Map,
+      ],
+    )
+  };
   map(
     pair(
       parse_expr_prec01,
-      alt((
-        parse_record_field_access_no_base,
-        parse_record_builder_no_base,
-        parse_map_builder_no_base,
-      )),
+      context(
+        "# symbol after an expression",
+        alt((
+          parse_record_field_access_no_base,
+          parse_record_builder_no_base,
+          parse_map_builder_no_base,
+        ))
+        .or(alt_failed),
+      ),
     ),
     set_base,
   )(input.clone())

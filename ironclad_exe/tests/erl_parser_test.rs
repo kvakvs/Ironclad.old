@@ -849,7 +849,15 @@ fn parse_func_with_list_decomposition1() {
 #[test]
 fn parse_record_field_with_base() {
   test_util::start(function_name!(), "parse a record field access with base expr");
-  let input = "f() -> St0#st.lmap";
+  let input = "f() -> St0#st.lmap.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_record_field_no_base() {
+  test_util::start(function_name!(), "parse a record field access without base expr");
+  let input = "f() -> #st.lmap.";
   let _m = test_util::parse_module(function_name!(), input);
 }
 
@@ -857,7 +865,15 @@ fn parse_record_field_with_base() {
 #[test]
 fn parse_record_builder_with_base() {
   test_util::start(function_name!(), "parse a record builder with base expr");
-  let input = "f() -> St0#st{lmap = 123}";
+  let input = "f() -> St0#st{lmap = 123}.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_record_builder_no_base() {
+  test_util::start(function_name!(), "parse a record builder without base expr");
+  let input = "f() -> #st{lmap = 123}.";
   let _m = test_util::parse_module(function_name!(), input);
 }
 
@@ -865,6 +881,14 @@ fn parse_record_builder_with_base() {
 #[test]
 fn parse_map_builder_with_base() {
   test_util::start(function_name!(), "parse a map builder with base expr");
-  let input = "f() -> St0#{lmap => 123}";
+  let input = "f() -> St0#{lmap => 123}.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_map_builder_no_base() {
+  test_util::start(function_name!(), "parse a map builder without base expr");
+  let input = "f() -> #{lmap => 123}.";
   let _m = test_util::parse_module(function_name!(), input);
 }
