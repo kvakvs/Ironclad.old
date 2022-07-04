@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{tok, tok_keyword_end, tok_keyword_if, tok_semicolon};
-use crate::erl_syntax::parsers::parse_expr::parse_expr;
+use crate::erl_syntax::parsers::parse_expr::{parse_expr, parse_guardexpr};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
@@ -35,7 +35,7 @@ pub(crate) fn parse_if_expression(input: ParserInput) -> ParserResult<AstNode> {
 pub(crate) fn parse_if_clause(input: ParserInput) -> ParserResult<ErlIfClause> {
   map(
     pair(
-      parse_expr,
+      parse_guardexpr,
       // The body after ->
       preceded(tok(TokenType::RightArr), parse_expr),
     ),

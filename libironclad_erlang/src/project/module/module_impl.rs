@@ -96,22 +96,23 @@ impl ErlModuleImpl {
     //----------------------
     // Stage 1 tokenize the input
     //----------------------
-    let mut tok_stream1 =
-      ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
+    let mut tokens = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
 
     // Inject a mandatory EOL if the stream doesn't end with one
-    if !Token::ends_with(&tok_stream1, &[TokenType::EOL]) {
-      tok_stream1.push(Token::new(null::<u8>(), TokenType::EOL));
+    if !Token::ends_with(&tokens, &[TokenType::EOL]) {
+      tokens.push(Token::new(null::<u8>(), TokenType::EOL));
     }
 
     //----------------------
     // Stage 2 preprocessor: handle ifdefs, defines, includes etc
     // tokenize includes and paste in the token stream too
     //----------------------
-    let tok_stream2 = ErlModuleImpl::preprocess_interpret(src_file, project, module, tok_stream1)?;
+    module.setup_preprocessor();
+    let tokens_preprocessed =
+      ErlModuleImpl::preprocess_interpret(src_file, project, module, tokens)?;
     module.verify_preprocessed_integrity()?;
 
-    Ok(tok_stream2)
+    Ok(tokens_preprocessed)
   }
 
   /// Generic tokenizer for any Nom entry point

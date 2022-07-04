@@ -2,7 +2,8 @@
 
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::erl_syntax::parsers::token_stream::misc::{
-  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before_mut, ws_mut,
+  bigcapacity_many0, ident_continuation, line_comment, parse_macro_ident, parse_varname,
+  ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::parsers::token_stream::tok_strings::atom_literal::parse_tok_atom;
@@ -20,6 +21,11 @@ use nom::combinator::{complete, cut, map, not, peek, recognize};
 use nom::error::context;
 use nom::sequence::{preceded, separated_pair, terminated};
 use nom::Parser;
+
+#[inline]
+fn tokenize_line_comment(input: TokenizerInput) -> TokensResult<Token> {
+  map(line_comment, |_| Token::new(input.as_ptr(), TokenType::EOL))(input)
+}
 
 #[inline]
 fn tokenize_atom(input: TokenizerInput) -> TokensResult<Token> {
@@ -178,7 +184,10 @@ fn symbol_listsubtract(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_minus(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('-'), |_| Token::new(input.as_ptr(), TokenType::Minus))(input)
+  // Minus NOT followed by another minus, or > symbol
+  map(char('-').and(not(alt((char('-'), char('>'))))), |_| {
+    Token::new(input.as_ptr(), TokenType::Minus)
+  })(input)
 }
 
 #[inline]
@@ -223,7 +232,8 @@ fn symbol_hash(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn symbol_plus(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('+'), |_| Token::new(input.as_ptr(), TokenType::Plus))(input)
+  // Plus NOT followed by another plus
+  map(char('+').and(not(char('+'))), |_| Token::new(input.as_ptr(), TokenType::Plus))(input)
 }
 
 #[inline]
@@ -324,7 +334,6 @@ fn tokenize_other_symbols(input: TokenizerInput) -> TokensResult<Token> {
       symbol_leftdoublearr,   // < =
       symbol_lessthan,        // <
       symbol_listappend,      // ++
-      symbol_plus,            // +
       symbol_noteq,           // / =
       symbol_parclose,        // )
       symbol_paropen,         // (
@@ -333,7 +342,6 @@ fn tokenize_other_symbols(input: TokenizerInput) -> TokensResult<Token> {
     alt((
       symbol_rightarr,       // - >
       symbol_listsubtract,   // - -
-      symbol_minus,          // -
       symbol_rightdoublearr, // = >
       symbol_lessthaneq,     // = <
       symbol_equalequal,     // = =
@@ -356,6 +364,14 @@ fn tokenize_other_symbols(input: TokenizerInput) -> TokensResult<Token> {
       symbol_assign,     // :=
       symbol_colon,      // :
     )),
+  ))(input)
+}
+
+/// Do plus and minus separate from other symbols, before we try integers and floats
+fn tokenize_plus_minus(input: TokenizerInput) -> TokensResult<Token> {
+  alt((
+    symbol_plus,  // +
+    symbol_minus, // -
   ))(input)
 }
 
@@ -565,6 +581,7 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
   // Comments after the code are consumed by the outer ws_mut
   // Comments and spaces between the tokens are consumed by the inner ws_before_mut
   complete(ws_mut(bigcapacity_many0(ws_before_mut(alt((
+    tokenize_line_comment,
     tokenize_newline,
     tokenize_macro_stringify_arg,
     tokenize_macro_invocation,
@@ -573,6 +590,7 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
     tokenize_keyword,
     tokenize_atom,
     tokenize_variable_name,
+    tokenize_plus_minus,
     tokenize_integer,
     tokenize_float,
     tokenize_other_symbols,

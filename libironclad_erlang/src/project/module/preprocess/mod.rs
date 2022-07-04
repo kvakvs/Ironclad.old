@@ -396,6 +396,24 @@ fn final_state_check(state: &mut PreprocessState) {
 }
 
 impl ErlModuleImpl {
+  /// Add predefined symbols for current module
+  pub fn setup_preprocessor(&self) {
+    let add0 = |name: &str, value: &[Token]| {
+      self.root_scope.defines.add(
+        MFArity::new_local(name, 0),
+        PreprocessorDefineImpl::new(name.to_string(), &[], value),
+      );
+    };
+    add0("COMPILER_VSN", &[Token::new_small(42)]);
+    add0(
+      "FILE",
+      &[Token::new_string(
+        self.source_file.file_name.to_string_lossy().to_string(),
+      )],
+    );
+    add0("MODULE", &[Token::new_atom(self.name.read().unwrap().clone())])
+  }
+
   /// Filter through the tokens array and produce a new token array with preprocessor directives
   /// eliminated, files included and macros substituted.
   #[named]

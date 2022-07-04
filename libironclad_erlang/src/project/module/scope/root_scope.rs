@@ -50,7 +50,7 @@ pub type RootScope = Arc<RootScopeImpl>;
 
 impl Default for RootScopeImpl {
   fn default() -> Self {
-    let rsi = RootScopeImpl {
+    RootScopeImpl {
       defines: Default::default(),
       file_cache: FileCache::default(),
       project: ErlProjectImpl::default().into(),
@@ -62,12 +62,7 @@ impl Default for RootScopeImpl {
       exports: RwHashSet::default(),
       exported_types: RwHashSet::default(),
       imports: RwHashSet::default(),
-    };
-    rsi.defines.add(
-      MFArity::new_local("COMPILER_VSN", 0),
-      PreprocessorDefineImpl::new("COMPILER_VSN".to_string(), &[], &[Token::new_small(42)]),
-    );
-    rsi
+    }
   }
 }
 

@@ -37,13 +37,19 @@ fn space_only<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>>
 
 /// Recognizes 0 or more whitespaces and line comments
 #[inline]
-fn spaces_or_comments0<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
-  recognize(many0(alt((
-    //multispace1,
-    space_only,
-    line_comment,
-  ))))(input)
+fn many0_spaces<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+  recognize(many0(space_only))(input)
 }
+
+// /// Recognizes 0 or more whitespaces and line comments
+// #[inline]
+// fn spaces_or_comments0<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+//   recognize(many0(alt((
+//     //multispace1,
+//     space_only,
+//     line_comment,
+//   ))))(input)
+// }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
 /// whitespace, returning the output of `inner`.
@@ -55,7 +61,7 @@ where
   InnerFn: Fn(TokenizerInput<'a>) -> TokensResult<Out>,
 {
   preceded::<TokenizerInput<'a>, TokenizerInput<'a>, Out, TokenizerError, _, InnerFn>(
-    spaces_or_comments0,
+    many0_spaces,
     inner,
   )
 }
@@ -69,7 +75,7 @@ pub(crate) fn ws_before_mut<'a, InnerFn: 'a, Out>(
 where
   InnerFn: FnMut(TokenizerInput<'a>) -> TokensResult<Out>,
 {
-  preceded(spaces_or_comments0, inner)
+  preceded(many0_spaces, inner)
 }
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
@@ -81,7 +87,7 @@ pub(crate) fn ws_mut<'a, InnerFn: 'a, Out>(
 where
   InnerFn: FnMut(TokenizerInput<'a>) -> TokensResult<Out>,
 {
-  delimited(spaces_or_comments0, inner, spaces_or_comments0)
+  delimited(many0_spaces, inner, many0_spaces)
 }
 
 #[inline]

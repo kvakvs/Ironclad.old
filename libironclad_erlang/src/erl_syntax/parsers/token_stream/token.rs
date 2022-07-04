@@ -49,6 +49,18 @@ impl Token {
     }
   }
 
+  /// Create a new token for string
+  #[inline]
+  pub fn new_string(s: String) -> Self {
+    Self { offset: null(), content: TokenType::Str(s.into()) }
+  }
+
+  /// Create a new token for atom
+  #[inline]
+  pub fn new_atom(s: String) -> Self {
+    Self { offset: null(), content: TokenType::Atom(s) }
+  }
+
   /// Check whether the token is a newline token
   #[inline]
   pub fn is_eol(&self) -> bool {

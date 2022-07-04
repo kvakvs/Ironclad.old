@@ -10,10 +10,10 @@ use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::is_not;
 use nom::character::complete::{alphanumeric1, char, one_of};
-use nom::combinator::{map, opt, recognize, value, verify};
+use nom::combinator::{map, recognize, value, verify};
 use nom::multi::{fold_many0, many0, many1};
 use nom::number::complete::recognize_float;
-use nom::sequence::{delimited, pair, separated_pair, terminated};
+use nom::sequence::{delimited, separated_pair, terminated};
 
 /// Parse a non-empty block of text that doesn't include \ or "
 fn parse_doublequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<&'a str> {
@@ -85,23 +85,20 @@ fn parse_based_int_unsigned_body(input: TokenizerInput) -> TokensResult<Tokenize
 
 /// Parse a decimal integer, without a base prefix and sign
 pub fn parse_int_decimal(input: TokenizerInput) -> TokensResult<ErlInteger> {
-  map(recognize(pair(opt(char('-')), parse_int_unsigned_body)), |num| {
+  let mk_int = |num: &str| -> ErlInteger {
     ErlInteger::new_from_string(num).unwrap_or_else(|| panic!("Can't parse {} as integer", num))
-  })(input)
+  };
+  map(parse_int_unsigned_body, mk_int)(input)
 }
 
 /// Parse a based integer `<BASE> # <NUMBER>` where base is `2..36`
 fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
   map(
-    pair(
-      opt(char('-')),
-      separated_pair(parse_int_unsigned_body, char('#'), parse_based_int_unsigned_body),
-    ),
-    |(sign, (base_str, value_str)): (Option<_>, (&str, &str))| -> ErlInteger {
+    separated_pair(parse_int_unsigned_body, char('#'), parse_based_int_unsigned_body),
+    |(base_str, value_str): (&str, &str)| -> ErlInteger {
       let base = base_str.parse::<u32>().unwrap();
       assert!(base >= 2 && base <= 36);
-      let value = if sign.is_some() { format!("-{}", value_str) } else { value_str.to_string() };
-      ErlInteger::new_from_string_radix(&value, base).unwrap()
+      ErlInteger::new_from_string_radix(value_str, base).unwrap()
     },
   )(input)
 }

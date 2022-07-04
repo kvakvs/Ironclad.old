@@ -46,7 +46,11 @@ impl std::fmt::Display for ErlTypeImpl {
       },
       ErlTypeImpl::Nil => write!(f, "[]"),
       ErlTypeImpl::AnyMap => write!(f, "map()"),
-      ErlTypeImpl::Map { .. } => unimplemented!("Display type for map"),
+      ErlTypeImpl::Map { members } => {
+        write!(f, "#{{").unwrap();
+        Pretty::display_comma_separated(members.iter(), f).unwrap();
+        write!(f, "}}")
+      }
       ErlTypeImpl::AnyBinary => write!(f, "binary()"),
       ErlTypeImpl::Binary { .. } => unimplemented!("Display type for binary"),
       ErlTypeImpl::AnyFn => write!(f, "function()"),

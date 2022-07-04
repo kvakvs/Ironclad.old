@@ -94,7 +94,6 @@ fn _construct_fndef(location: SourceLoc, fnclauses: Vec<ErlFnClause>) -> AstNode
 
 /// Parse function definition
 pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
-  // print_input("parse_fndef", input);
   map(
     delimited(
       // does not begin with - (that would be a mis-parsed attribute)

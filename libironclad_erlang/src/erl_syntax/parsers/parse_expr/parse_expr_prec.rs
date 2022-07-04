@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{tok_colon, tok_hash};
+use crate::erl_syntax::parsers::misc::tok_colon;
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expression;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_list::{

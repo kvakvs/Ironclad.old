@@ -17,6 +17,7 @@ use nom::error::{context, convert_error};
 use nom::multi::many0;
 use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
+use std::cmp::max;
 use std::sync::Arc;
 
 #[inline]
@@ -169,40 +170,6 @@ where
   preceded(many0(erl_whitespace), inner)
 }
 
-// /// A combinator that takes a parser `inner` and produces a parser that also consumes leading
-// /// whitespace, returning the output of `inner`.
-// pub(crate) fn ws_before_mut<'a, InnerFn: 'a, Out>(
-//   inner: InnerFn,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
-// where
-//   InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
-// {
-//   preceded(many0(erl_whitespace), inner)
-// }
-
-// /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
-// /// trailing whitespace, returning the output of `inner`.
-// #[allow(dead_code)]
-// pub(crate) fn ws<'a, InnerFn: 'a, Out>(
-//   inner: InnerFn,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
-// where
-//   InnerFn: Fn(ParserInput<'a>) -> ParserResult<Out>,
-// {
-//   delimited(spaces_or_comments0, inner, spaces_or_comments0)
-// }
-
-// /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
-// /// trailing whitespace, returning the output of `inner`.
-// pub(crate) fn ws_mut<'a, InnerFn: 'a, Out>(
-//   inner: InnerFn,
-// ) -> impl FnMut(ParserInput<'a>) -> ParserResult<Out>
-// where
-//   InnerFn: FnMut(ParserInput<'a>) -> ParserResult<Out>,
-// {
-//   delimited(spaces_or_comments0, inner, multispace0)
-// }
-
 /// Print detailed error with source pointers, and panic.
 /// Set `require_empty_tail` to true to panic if the parse did not consume the whole input.
 #[named]
@@ -218,7 +185,7 @@ pub fn panicking_parser_error_reporter<'a, Out>(
       if trim_tail != 0 {
         panic!(
           "Parser: Not all input was consumed: tail=«{}»",
-          format_tok_stream(tail.tokens, 50)
+          format_tok_stream(tail.tokens, max::<usize>(200, tail.tokens.len())),
         )
       }
       (tail, out)

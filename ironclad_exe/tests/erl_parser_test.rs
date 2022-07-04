@@ -838,11 +838,36 @@ fn parse_func_with_maps_and_recs() {
 fn parse_func_with_list_decomposition1() {
   test_util::start(function_name!(), "parse a function with list decomposition argument");
   let input = "
-    function_renumber([{function,Name,Arity,_Entry,Asm0}|Fs], St0, Acc) ->
-      {Asm,St} = renumber_labels(Asm0, [], St0),
-      function_renumber(Fs, St, [{function,Name,Arity,St#st.entry,Asm}|Acc]);
-    function_renumber([], St, Acc) -> {Acc,St}.";
+    renumber_labels([{label,Old}|Is], [{label,New}|_]=Acc, #st{lmap=D0}=St) ->
+        D = [{Old,New}|D0],
+        renumber_labels(Is, Acc, St#st{lmap=D});
+    renumber_labels([{label,Old}|Is], Acc, St0) ->
+        New = St0#st.lc,
+        D = [{Old,New}|St0#st.lmap],
+        renumber_labels(Is, [{label,New}|Acc], St0#st{lmap=D,lc=New+1});
+    renumber_labels([{func_info,_,_,_}=Fi|Is], Acc, St0) ->
+        renumber_labels(Is, [Fi|Acc], St0#st{entry=St0#st.lc});
+    renumber_labels([I|Is], Acc, St0) ->
+        renumber_labels(Is, [I|Acc], St0);
+    renumber_labels([], Acc, St) -> {Acc,St}.
+    ";
   let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn test_test1() {
+  test_util::start(function_name!(), "Narrow a failing test");
+  {
+    let input2 = "St0#st{lmap=D,lc=New+1}";
+    let expr2 = test_util::parse_expr(function_name!(), input2);
+    println!("EXPR2: {:?}", expr2);
+  }
+  {
+    let input1 = "f()->St0#st{lmap=D,lc=New+1}.";
+    let m1 = test_util::parse_module(function_name!(), input1);
+    println!("MOD1: {:?}", m1.ast.borrow());
+  }
 }
 
 #[named]

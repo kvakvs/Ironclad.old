@@ -5,11 +5,10 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_period,
+  tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_equal, tok_hash, tok_period,
 };
-use crate::erl_syntax::parsers::parse_expr;
+use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{consumed, map};
 use nom::multi::separated_list0;
@@ -17,10 +16,9 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple
 
 /// Parse one member of a record builder `'field' = EXPR`
 fn record_builder_member(input: ParserInput) -> ParserResult<RecordBuilderMember> {
-  map(
-    separated_pair(tok_atom, tok(TokenType::EqualSymbol), parse_expr::parse_expr),
-    |(field, expr)| RecordBuilderMember { field, expr },
-  )(input)
+  map(separated_pair(tok_atom, tok_equal, parse_expr), |(field, expr)| {
+    RecordBuilderMember { field, expr }
+  })(input)
 }
 
 /// Parse a record builder expression
