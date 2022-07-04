@@ -3,7 +3,7 @@
 
 use crate::erl_syntax::erl_op::{ErlBinaryOp, ErlUnaryOp};
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_keyword, ws_before};
+use crate::erl_syntax::parsers::misc::ws_before;
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
@@ -14,15 +14,15 @@ type UnaryOpParserResult<'a> = ParserResult<'a, ErlUnaryOp>;
 type BinaryOpParserResult<'a> = ParserResult<'a, ErlBinaryOp>;
 
 pub(crate) fn unop_catch(input: ParserInput) -> UnaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::Catch)), |_| ErlUnaryOp::Catch)(input)
+  map(keyword_catch, |_| ErlUnaryOp::Catch)(input)
 }
 
 pub(crate) fn unop_not(input: ParserInput) -> UnaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::Not)), |_| ErlUnaryOp::Not)(input)
+  map(keyword_not, |_| ErlUnaryOp::Not)(input)
 }
 
 pub(crate) fn unop_bnot(input: ParserInput) -> UnaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryNot)), |_| ErlUnaryOp::BinaryNot)(input)
+  map(keyword_bnot, |_| ErlUnaryOp::BinaryNot)(input)
 }
 
 pub(crate) fn unop_positive(input: ParserInput) -> UnaryOpParserResult {
@@ -38,19 +38,19 @@ pub(crate) fn binop_floatdiv(input: ParserInput) -> BinaryOpParserResult {
 }
 
 pub(crate) fn binop_intdiv(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::IntegerDiv)), |_| ErlBinaryOp::IntegerDiv)(input)
+  map(keyword_integerdiv, |_| ErlBinaryOp::IntegerDiv)(input)
 }
 
 pub(crate) fn binop_bang(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_send), |_| ErlBinaryOp::Send)(input)
+  map(tok_send, |_| ErlBinaryOp::Send)(input)
 }
 
 pub(crate) fn binop_multiply(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_asterisk), |_| ErlBinaryOp::Mul)(input)
+  map(tok_asterisk, |_| ErlBinaryOp::Mul)(input)
 }
 
 pub(crate) fn binop_add(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_plus), |_| ErlBinaryOp::Add)(input)
+  map(tok_plus, |_| ErlBinaryOp::Add)(input)
 }
 
 pub(crate) fn binop_subtract(input: ParserInput) -> BinaryOpParserResult {
@@ -58,95 +58,91 @@ pub(crate) fn binop_subtract(input: ParserInput) -> BinaryOpParserResult {
 }
 
 pub(crate) fn binop_list_append(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_plus_plus), |_| ErlBinaryOp::ListAppend)(input)
+  map(tok_plus_plus, |_| ErlBinaryOp::ListAppend)(input)
 }
 
 pub(crate) fn binop_list_subtract(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_minus_minus), |_| ErlBinaryOp::ListSubtract)(input)
+  map(tok_minus_minus, |_| ErlBinaryOp::ListSubtract)(input)
 }
 
 pub(crate) fn binop_rem(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::Rem)), |_| ErlBinaryOp::Remainder)(input)
+  map(keyword_rem, |_| ErlBinaryOp::Remainder)(input)
 }
 
 pub(crate) fn binop_and(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::And)), |_| ErlBinaryOp::And)(input)
+  map(keyword_and, |_| ErlBinaryOp::And)(input)
 }
 
 pub(crate) fn binop_band(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryAnd)), |_| ErlBinaryOp::BinaryAnd)(input)
+  map(keyword_band, |_| ErlBinaryOp::BinaryAnd)(input)
 }
 
 pub(crate) fn binop_or(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::Or)), |_| ErlBinaryOp::Or)(input)
+  map(keyword_or, |_| ErlBinaryOp::Or)(input)
 }
 
 pub(crate) fn binop_orelse(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::OrElse)), |_| ErlBinaryOp::OrElse)(input)
+  map(keyword_orelse, |_| ErlBinaryOp::OrElse)(input)
 }
 
 pub(crate) fn binop_andalso(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::AndAlso)), |_| ErlBinaryOp::AndAlso)(input)
+  map(keyword_andalso, |_| ErlBinaryOp::AndAlso)(input)
 }
 
 pub(crate) fn binop_bor(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryOr)), |_| ErlBinaryOp::BinaryOr)(input)
+  map(keyword_bor, |_| ErlBinaryOp::BinaryOr)(input)
 }
 
 pub(crate) fn binop_xor(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::Xor)), |_| ErlBinaryOp::Xor)(input)
+  map(keyword_xor, |_| ErlBinaryOp::Xor)(input)
 }
 
 pub(crate) fn binop_bxor(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryXor)), |_| ErlBinaryOp::BinaryXor)(input)
+  map(keyword_bxor, |_| ErlBinaryOp::BinaryXor)(input)
 }
 
 pub(crate) fn binop_bsl(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryShiftLeft)), |_| {
-    ErlBinaryOp::BinaryShiftLeft
-  })(input)
+  map(keyword_bsl, |_| ErlBinaryOp::BinaryShiftLeft)(input)
 }
 
 pub(crate) fn binop_bsr(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_keyword(Keyword::BinaryShiftRight)), |_| {
-    ErlBinaryOp::BinaryShiftRight
-  })(input)
+  map(keyword_bsr, |_| ErlBinaryOp::BinaryShiftRight)(input)
 }
 
 pub(crate) fn binop_equals(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_equal_equal), |_| ErlBinaryOp::Eq)(input)
+  map(tok_equal_equal, |_| ErlBinaryOp::Eq)(input)
 }
 
 pub(crate) fn binop_hard_equals(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_hard_equal), |_| ErlBinaryOp::HardEq)(input)
+  map(tok_hard_equal, |_| ErlBinaryOp::HardEq)(input)
 }
 
 pub(crate) fn binop_not_equals(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_not_equal), |_| ErlBinaryOp::NotEq)(input)
+  map(tok_not_equal, |_| ErlBinaryOp::NotEq)(input)
 }
 
 pub(crate) fn binop_hard_not_equals(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_hard_not_equal), |_| ErlBinaryOp::HardNotEq)(input)
+  map(tok_hard_not_equal, |_| ErlBinaryOp::HardNotEq)(input)
 }
 
 pub(crate) fn binop_less(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_angle_open), |_| ErlBinaryOp::Less)(input)
+  map(tok_angle_open, |_| ErlBinaryOp::Less)(input)
 }
 
 pub(crate) fn binop_less_eq(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_less_eq), |_| ErlBinaryOp::LessEq)(input)
+  map(tok_less_eq, |_| ErlBinaryOp::LessEq)(input)
 }
 
 pub(crate) fn binop_greater(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_angle_close), |_| ErlBinaryOp::Greater)(input)
+  map(tok_angle_close, |_| ErlBinaryOp::Greater)(input)
 }
 
 pub(crate) fn binop_greater_eq(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_greater_eq), |_| ErlBinaryOp::GreaterEq)(input)
+  map(tok_greater_eq, |_| ErlBinaryOp::GreaterEq)(input)
 }
 
 pub(crate) fn binop_match(input: ParserInput) -> BinaryOpParserResult {
-  map(ws_before(tok_equal_symbol), |_| ErlBinaryOp::Match)(input)
+  map(tok_equal_symbol, |_| ErlBinaryOp::Match)(input)
 }
 
 pub(crate) fn binop_comma(input: ParserInput) -> BinaryOpParserResult {

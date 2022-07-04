@@ -5,7 +5,6 @@ use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{dash_atom, period_eol_eof, tok_atom, tok_atom_of, tok_var};
 use crate::erl_syntax::parsers::misc_tok::*;
-use crate::erl_syntax::parsers::misc_tok::{tok_keyword_else, tok_keyword_if};
 use crate::erl_syntax::parsers::parse_expr::{parse_constant_expr, parse_expr};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
@@ -59,11 +58,7 @@ use nom::sequence::{delimited, pair, preceded, terminated};
 /// Parse a `-if(EXPR).\n` and return a temporary node
 pub fn if_condition(input: ParserInput) -> ParserResult<bool> {
   map(
-    delimited(
-      tok_keyword_if,
-      delimited(tok_par_open, parse_expr, tok_par_close),
-      period_eol_eof,
-    ),
+    delimited(keyword_if, delimited(tok_par_open, parse_expr, tok_par_close), period_eol_eof),
     // Builds a temporary If node with erl expression in it
     |expr| match expr.walk_boolean_litexpr() {
       LiteralBool::False => false,
@@ -105,7 +100,7 @@ pub(crate) fn ifdef_directive(input: ParserInput) -> ParserResult<PreprocessorNo
 pub(crate) fn if_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     preceded(
-      pair(tok_minus, alt((tok_keyword_if, tok_atom_of("if")))),
+      pair(tok_minus, alt((keyword_if, tok_atom_of("if")))),
       context(
         "-if() directive",
         cut(terminated(
@@ -158,7 +153,7 @@ pub(crate) fn ifndef_directive(input: ParserInput) -> ParserResult<PreprocessorN
 pub(crate) fn else_directive(input: ParserInput) -> ParserResult<PreprocessorNode> {
   map(
     preceded(
-      pair(tok_minus, alt((tok_keyword_else, tok_atom_of("else")))),
+      pair(tok_minus, alt((keyword_else, tok_atom_of("else")))),
       context(
         "-else() directive",
         cut(terminated(opt(pair(tok_par_open, tok_par_close)), period_eol_eof)),

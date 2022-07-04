@@ -50,7 +50,7 @@ pub(crate) fn parse_parenthesized_arg_spec_list(input: ParserInput) -> ParserRes
 /// Parse a `when` clause where unspecced typevars can be given type ascriptions, like:
 /// `-spec fun(A) -> A when A :: atom().`
 pub(crate) fn parse_when_expr_for_type(input: ParserInput) -> ParserResult<Vec<Typevar>> {
-  preceded(tok_keyword_when, parse_comma_sep_typeargs1)(input)
+  preceded(keyword_when, parse_comma_sep_typeargs1)(input)
 }
 
 #[allow(dead_code)]

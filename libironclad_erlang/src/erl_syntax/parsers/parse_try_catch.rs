@@ -39,7 +39,7 @@ pub fn parse_catch_clause(input: ParserInput) -> ParserResult<CatchClause> {
       // Class:Error:Stacktrace
       parse_exception_pattern,
       // when <Expression>
-      opt(preceded(tok_keyword_when, parse_guardexpr)),
+      opt(preceded(keyword_when, parse_guardexpr)),
       // -> Expression
       preceded(tok_right_arrow, parse_comma_sep_exprs1),
     )),
@@ -59,12 +59,12 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
       context("try-catch block trial expression", cut(parse_comma_sep_exprs1)),
       // Optional OF followed by match clauses
       opt(preceded(
-        tok_keyword_of,
+        keyword_of,
         context("try block: 'of' clauses", cut(many1(parse_case_clause))),
       )),
       // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
       preceded(
-        tok_keyword_catch,
+        keyword_catch,
         context(
           "try block: 'catch' clauses",
           cut(separated_list1(tok_semicolon, parse_catch_clause)),
@@ -86,10 +86,10 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
 /// Parses a `try-catch` or a `try-of-catch` block
 pub(crate) fn parse_try_catch_expression(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    tok_keyword_try,
+    keyword_try,
     context(
       "try-end or try-of-end block",
-      cut(terminated(parse_try_catch_inner, tok_keyword_end)),
+      cut(terminated(parse_try_catch_inner, keyword_end)),
     ),
   )(input)
 }

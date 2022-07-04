@@ -16,6 +16,7 @@ use nom::error::context;
 use nom::multi::many0;
 use nom::sequence::{delimited, pair, preceded, separated_pair};
 
+/// Parse a list of expressions with optional tail
 pub fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
   let build_fn = |(consumed_input, (head, (mut elements, maybe_tail))): (
     ParserInput,

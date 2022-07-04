@@ -43,17 +43,6 @@ pub fn dash_atom<'a>(input: ParserInput<'a>, value: &'static str) -> ParserResul
   map(pair(tok_minus, ws_before(tok_atom_of(value))), void_fn)(input)
 }
 
-/// Recognizes one keyword of given keyword enum value
-/// Use `tok_keyword_<name>` to match with possible whitespace
-pub fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
-  move |input: ParserInput| -> ParserResult<()> {
-    match input.tokens.iter().next() {
-      Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),
-      _ => Err(nom::Err::Error(ErlParserError::keyword_expected(input, k))),
-    }
-  }
-}
-
 /// Recognizes one integer token, returns the integer.
 #[inline]
 pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {

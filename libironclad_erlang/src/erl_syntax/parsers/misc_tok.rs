@@ -1,7 +1,7 @@
 //! Token helpers
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_keyword, ws_before};
+use crate::erl_syntax::parsers::misc::ws_before;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
@@ -29,7 +29,7 @@ macro_rules! make_tok_fn {
     // The macro will expand into the contents of this block.
     paste::item! {
         #[inline]
-        pub fn [< $tok_name >] (input: ParserInput) -> ParserResult<()> {
+        pub(crate) fn [< $tok_name >] (input: ParserInput) -> ParserResult<()> {
             map(ws_before(tok(TokenType :: $tok_type)), void_fn)(input)
         }
     }
@@ -95,67 +95,57 @@ make_tok_fn!(tok_right_arrow, TokenType::RightArr);
 make_tok_fn!(tok_square_open, TokenType::SquareOpen);
 make_tok_fn!(tok_square_close, TokenType::SquareClose);
 
+/// Match an end of line token
 #[inline]
 pub fn tok_eol(input: ParserInput) -> ParserResult<()> {
   map(tok(TokenType::EOL), void_fn)(input)
 }
 
-/// Matches a `when` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_when(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::When)), void_fn)(input)
+/// Recognizes one keyword of given keyword enum value
+/// Use `tok_keyword_<name>` to match with possible whitespace
+fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
+  move |input: ParserInput| -> ParserResult<()> {
+    match input.tokens.iter().next() {
+      Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),
+      _ => Err(nom::Err::Error(ErlParserError::keyword_expected(input, k))),
+    }
+  }
 }
 
-/// Matches a `case` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_case(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Case)), void_fn)(input)
+macro_rules! make_keyword_fn {
+  // Arguments are module name and function name of function to test bench
+  ($tok_name:ident, Keyword :: $kw_type:ident) => {
+    // The macro will expand into the contents of this block.
+    paste::item! {
+        #[inline]
+        pub(crate) fn [< $tok_name >](input: ParserInput) -> ParserResult<()> {
+          map(ws_before(tok_keyword(Keyword :: $kw_type)), void_fn)(input)
+        }
+    }
+  };
 }
 
-/// Matches a `of` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_of(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Of)), void_fn)(input)
-}
-
-/// Matches a `if` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_if(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::If)), void_fn)(input)
-}
-
-/// Matches a `begin` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_begin(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Begin)), void_fn)(input)
-}
-
-/// Matches a `end` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_end(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::End)), void_fn)(input)
-}
-
-/// Matches a `fun` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_fun(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Fun)), void_fn)(input)
-}
-
-/// Matches a `catch` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_catch(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Catch)), void_fn)(input)
-}
-
-/// Matches a `try` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_try(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Try)), void_fn)(input)
-}
-
-/// Matches a `else` keyword with possibly a newline before it
-#[inline]
-pub(crate) fn tok_keyword_else(input: ParserInput) -> ParserResult<()> {
-  map(ws_before(tok_keyword(Keyword::Else)), void_fn)(input)
-}
+make_keyword_fn!(keyword_and, Keyword::And);
+make_keyword_fn!(keyword_andalso, Keyword::AndAlso);
+make_keyword_fn!(keyword_band, Keyword::BinaryAnd);
+make_keyword_fn!(keyword_begin, Keyword::Begin);
+make_keyword_fn!(keyword_bnot, Keyword::BinaryNot);
+make_keyword_fn!(keyword_bor, Keyword::BinaryOr);
+make_keyword_fn!(keyword_bsl, Keyword::BinaryShiftLeft);
+make_keyword_fn!(keyword_bsr, Keyword::BinaryShiftRight);
+make_keyword_fn!(keyword_bxor, Keyword::BinaryXor);
+make_keyword_fn!(keyword_case, Keyword::Case);
+make_keyword_fn!(keyword_catch, Keyword::Catch);
+make_keyword_fn!(keyword_else, Keyword::Else);
+make_keyword_fn!(keyword_end, Keyword::End);
+make_keyword_fn!(keyword_fun, Keyword::Fun);
+make_keyword_fn!(keyword_if, Keyword::If);
+make_keyword_fn!(keyword_integerdiv, Keyword::IntegerDiv);
+make_keyword_fn!(keyword_not, Keyword::Not);
+make_keyword_fn!(keyword_of, Keyword::Of);
+make_keyword_fn!(keyword_or, Keyword::Or);
+make_keyword_fn!(keyword_orelse, Keyword::OrElse);
+make_keyword_fn!(keyword_rem, Keyword::Rem);
+make_keyword_fn!(keyword_try, Keyword::Try);
+make_keyword_fn!(keyword_when, Keyword::When);
+make_keyword_fn!(keyword_xor, Keyword::Xor);

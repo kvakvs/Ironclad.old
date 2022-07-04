@@ -90,12 +90,12 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
     |exprs: Vec<AstNode>| -> AstNode { AstNodeImpl::new_begin_end(SourceLoc::new(&input), exprs) };
   map(
     delimited(
-      tok_keyword_begin,
+      keyword_begin,
       context(
         "contents of a begin-end expression",
         cut(separated_list1(tok_comma, parse_expr)),
       ),
-      tok_keyword_end,
+      keyword_end,
     ),
     map_fn,
   )(input.clone())
@@ -105,7 +105,7 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
 fn parse_fn_reference(input: ParserInput) -> ParserResult<AstNode> {
   map(
     consumed(preceded(
-      tok_keyword_fun,
+      keyword_fun,
       pair(
         opt(terminated(tok_atom, tok_colon)),
         separated_pair(tok_atom, tok_forward_slash, tok_integer),

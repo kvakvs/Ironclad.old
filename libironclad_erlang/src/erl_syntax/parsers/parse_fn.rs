@@ -51,7 +51,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: ParserInput) -> ParserResu
       // Optional: when <guard>
       context(
         "`when` expression of a function clause",
-        opt(preceded(tok_keyword_when, context("function's guard", cut(parse_guardexpr)))),
+        opt(preceded(keyword_when, context("function's guard", cut(parse_guardexpr)))),
       ),
       preceded(
         tok_right_arrow,
@@ -112,10 +112,10 @@ pub(crate) fn parse_lambda(input: ParserInput) -> ParserResult<AstNode> {
   // Lambda is made of "fun" keyword, followed by multiple ";" separated clauses
   map(
     preceded(
-      tok_keyword_fun,
+      keyword_fun,
       terminated(
         context("", separated_list1(tok_semicolon, parse_fnclause::<false>)),
-        tok_keyword_end,
+        keyword_end,
       ),
     ),
     |t| _construct_fndef(SourceLoc::new(&input), t),

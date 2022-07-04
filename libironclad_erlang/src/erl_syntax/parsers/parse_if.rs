@@ -32,13 +32,13 @@ fn parse_if_clause(input: ParserInput) -> ParserResult<ErlIfClause> {
 /// Parses `if COND -> EXPR; ... end`
 pub(crate) fn parse_if_expression(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
-    tok_keyword_if,
+    keyword_if,
     context(
       "if-end expression",
       cut(map(
         terminated(
           separated_list1(tok_semicolon, context("if block clause", parse_if_clause)),
-          tok_keyword_end,
+          keyword_end,
         ),
         |clauses| AstNodeImpl::new_if_statement(SourceLoc::new(&input), clauses),
       )),

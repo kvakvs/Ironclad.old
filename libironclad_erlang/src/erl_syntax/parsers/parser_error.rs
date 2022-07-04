@@ -11,7 +11,12 @@ use std::fmt::{Debug, Display, Formatter};
 #[derive(Debug, Clone)]
 pub enum ErlParserErrorKind {
   /// A list of language structures expected, but not found. Reported for failed `alt()` parsers
-  LanguageConstructsExpected { context: &'static str, constructs: Vec<LangConstruct> },
+  LanguageConstructsExpected {
+    /// The context where this was attempted
+    context: &'static str,
+    /// The expected construct types
+    constructs: Vec<LangConstruct>,
+  },
   /// A standard Nom error wrapped
   Nom(ErrorKind),
   /// Added by `context()` parser combinator
