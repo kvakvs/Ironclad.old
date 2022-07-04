@@ -32,8 +32,10 @@ pub enum Literal {
     tail: Option<Box<Literal>>,
   },
 
-  /// An empty list
+  /// An empty list `[]`
   Nil,
+  /// An empty binary `<< >>`
+  EmptyBinary,
 
   /// A list containing only unicode codepoints is-a(List)
   String(Arc<String>),
@@ -68,6 +70,9 @@ impl Hash for Literal {
       Literal::Nil => {
         "[]".hash(state);
       }
+      Literal::EmptyBinary => {
+        "<<>>".hash(state);
+      }
       Literal::String(s) => {
         's'.hash(state);
         s.hash(state);
@@ -100,6 +105,7 @@ impl Literal {
       Literal::Float(_) => ErlTypeImpl::float(),
       Literal::Atom(_) => ErlTypeImpl::atom(),
       Literal::Bool(_) => ErlTypeImpl::boolean(),
+      Literal::EmptyBinary => ErlTypeImpl::new_binary(None, None),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,

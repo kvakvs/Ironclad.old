@@ -1,10 +1,7 @@
 //! Parsing types for containers: list, tuple and map.
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok_comma, tok_curly_close, tok_curly_open, tok_ellipsis, tok_hash, tok_right_darr,
-  tok_square_close, tok_square_open,
-};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type::parse_t_util::{
   list0_types_or_ascribed_typevars, parse_typevar_or_type,
 };

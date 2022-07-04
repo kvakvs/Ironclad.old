@@ -8,10 +8,8 @@ use crate::erl_syntax::node::erl_binary_element::{
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{
-  tok_atom_of, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open,
-  tok_forward_slash, tok_integer, tok_minus, tok_par_close, tok_par_open, tok_var,
-};
+use crate::erl_syntax::parsers::misc::{tok_atom_of, tok_integer, tok_var};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parser_input::ParserInput;

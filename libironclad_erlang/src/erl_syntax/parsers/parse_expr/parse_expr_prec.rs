@@ -10,7 +10,7 @@ use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::tok_colon;
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
 use crate::erl_syntax::parsers::parse_case::parse_case_expression;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_list::{
@@ -33,9 +33,9 @@ use crate::erl_syntax::parsers::parse_expr_op::{
   unop_negative, unop_not, unop_positive,
 };
 use crate::erl_syntax::parsers::parse_fn::parse_lambda;
-use crate::erl_syntax::parsers::parse_if_stmt::parse_if_expression;
+use crate::erl_syntax::parsers::parse_if::parse_if_expression;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
-use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
+use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch_expression;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -77,7 +77,7 @@ fn parse_expr_prec_primary<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> 
       alt((
         parse_lambda,
         parse_begin_end,
-        parse_try_catch,
+        parse_try_catch_expression,
         parse_if_expression,
         parse_case_expression,
         parenthesized_expr,

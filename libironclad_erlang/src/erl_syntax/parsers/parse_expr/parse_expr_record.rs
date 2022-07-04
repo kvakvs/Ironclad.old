@@ -4,9 +4,8 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok_atom, tok_comma, tok_curly_close, tok_curly_open, tok_equal, tok_hash, tok_period,
-};
+use crate::erl_syntax::parsers::misc::tok_atom;
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;
@@ -16,7 +15,7 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple
 
 /// Parse one member of a record builder `'field' = EXPR`
 fn record_builder_member(input: ParserInput) -> ParserResult<RecordBuilderMember> {
-  map(separated_pair(tok_atom, tok_equal, parse_expr), |(field, expr)| {
+  map(separated_pair(tok_atom, tok_equal_symbol, parse_expr), |(field, expr)| {
     RecordBuilderMember { field, expr }
   })(input)
 }

@@ -5,10 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_catch_clause::CatchClause;
 use crate::erl_syntax::node::erl_exception_pattern::ExceptionPattern;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok, tok_colon, tok_keyword_catch, tok_keyword_end, tok_keyword_of, tok_keyword_try,
-  tok_keyword_when, tok_semicolon,
-};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_case::parse_case_clause;
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_matchexpr,
@@ -44,7 +41,7 @@ pub fn parse_catch_clause(input: ParserInput) -> ParserResult<CatchClause> {
       // when <Expression>
       opt(preceded(tok_keyword_when, parse_guardexpr)),
       // -> Expression
-      preceded(tok(TokenType::RightArr), parse_comma_sep_exprs1),
+      preceded(tok_right_arrow, parse_comma_sep_exprs1),
     )),
     |(exc_pattern, maybe_when, body)| {
       CatchClause::new(
@@ -87,11 +84,11 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 /// Parses a `try-catch` or a `try-of-catch` block
-pub(crate) fn parse_try_catch(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_try_catch_expression(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
     tok_keyword_try,
     context(
-      "try-catch or try-of block",
+      "try-end or try-of-end block",
       cut(terminated(parse_try_catch_inner, tok_keyword_end)),
     ),
   )(input)

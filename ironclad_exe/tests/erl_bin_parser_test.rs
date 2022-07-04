@@ -44,3 +44,23 @@ fn parse_nested_bin() -> IcResult<()> {
   assert!(ast1.is_binary_comprehension());
   Ok(())
 }
+
+#[named]
+#[test]
+fn parse_if_with_binaries() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse some binary and empty binary inside if");
+
+  let input1 = "
+  resolve_inst({bs_match_string=I,[F,Ms,{u,Bits},{u,Off}]},_,Strings,_) ->
+      Len = (Bits+7) div 8,
+      String = if
+  		 Len > 0 ->
+  		     <<_:Off/binary,Bin:Len/binary,_/binary>> = Strings,
+  		     Bin;
+  		 true -> <<>>
+  	     end,
+      {test,I,F,[Ms,Bits,String]}.
+    ";
+  let _m1 = test_util::parse_module(function_name!(), input1);
+  Ok(())
+}

@@ -1,9 +1,8 @@
 //! Function type/spec parsing
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok_atom, tok_right_arrow, tok_semicolon,
-};
+use crate::erl_syntax::parsers::misc::{dash_atom, period_eol_eof, tok_atom};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type::parse_t_util;
 use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;

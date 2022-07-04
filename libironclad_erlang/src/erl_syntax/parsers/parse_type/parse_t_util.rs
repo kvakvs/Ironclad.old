@@ -1,9 +1,8 @@
 //! Helper functions for parsing types
 
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok_comma, tok_double_colon, tok_keyword_when, tok_par_close, tok_par_open, tok_var,
-};
+use crate::erl_syntax::parsers::misc::tok_var;
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::typing::erl_type::ErlType;

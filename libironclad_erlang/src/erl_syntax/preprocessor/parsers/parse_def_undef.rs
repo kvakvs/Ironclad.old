@@ -2,9 +2,9 @@
 
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  dash_atom, parenthesis_period_eol_eof, period_eol_eof, tok_comma, tok_par_close, tok_par_open,
-  ws_before,
+  dash_atom, parenthesis_period_eol_eof, period_eol_eof, ws_before,
 };
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::misc::any_token;
 use crate::erl_syntax::preprocessor::parsers::parse_if_ifdef::tok_macro_ident;

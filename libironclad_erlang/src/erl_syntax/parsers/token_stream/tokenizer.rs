@@ -132,7 +132,7 @@ fn symbol_greatereq(input: TokenizerInput) -> TokensResult<Token> {
 #[inline]
 fn symbol_greaterthan(input: TokenizerInput) -> TokensResult<Token> {
   map(char('>').and(not(char('='))), |_| {
-    Token::new(input.as_ptr(), TokenType::GreaterThan)
+    Token::new(input.as_ptr(), TokenType::AngleClose)
   })(input)
 }
 
@@ -164,7 +164,7 @@ fn symbol_leftdoublearr(input: TokenizerInput) -> TokensResult<Token> {
 #[inline]
 fn symbol_lessthan(input: TokenizerInput) -> TokensResult<Token> {
   // TODO? and not =, -, etc
-  map(char('<'), |_| Token::new(input.as_ptr(), TokenType::LessThan))(input)
+  map(char('<'), |_| Token::new(input.as_ptr(), TokenType::AngleOpen))(input)
 }
 
 #[inline]

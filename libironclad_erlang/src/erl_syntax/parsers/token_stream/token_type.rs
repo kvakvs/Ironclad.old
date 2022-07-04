@@ -47,11 +47,11 @@ pub enum TokenType {
   /// `=<` less than or equal to
   LessThanEq,
   /// `<` less than, opening angle bracket
-  LessThan,
+  AngleOpen,
   /// `>=` greater than or equal to
   GreaterEq,
   /// `>` greater than, closing angle bracket
-  GreaterThan,
+  AngleClose,
   /// `==` exact equality with type
   HardEq,
   /// `=/=` exact inequality with type
@@ -151,7 +151,7 @@ impl TokenType {
       TokenType::Float(_) => "a floating point literal",
       TokenType::ForwardSlash => "forward slash",
       TokenType::GreaterEq => "greater than or equal to",
-      TokenType::GreaterThan => "greater than / opening angle bracket",
+      TokenType::AngleClose => "greater than / opening angle bracket",
       TokenType::HardEq => "exactly equal",
       TokenType::HardNotEq => "exactly not equal",
       TokenType::Hash => "hash symbol",
@@ -159,7 +159,7 @@ impl TokenType {
       TokenType::Keyword(_) => "a keyword",
       TokenType::LeftArr => "left arrow",
       TokenType::LeftDoubleArr => "double left arrow",
-      TokenType::LessThan => "less than / closing angle bracket",
+      TokenType::AngleOpen => "less than / closing angle bracket",
       TokenType::LessThanEq => "less than or equal to",
       TokenType::ListAppend => "double plus",
       TokenType::ListSubtract => "double minus",
@@ -210,7 +210,7 @@ impl std::fmt::Display for TokenType {
       TokenType::Float(flt) => flt.fmt(f),
       TokenType::ForwardSlash => write!(f, "/"),
       TokenType::GreaterEq => write!(f, "≥"),
-      TokenType::GreaterThan => write!(f, ">"),
+      TokenType::AngleClose => write!(f, ">"),
       TokenType::HardEq => write!(f, "≡"),
       TokenType::HardNotEq => write!(f, "≢"),
       TokenType::Hash => write!(f, "#"),
@@ -218,7 +218,7 @@ impl std::fmt::Display for TokenType {
       TokenType::Keyword(kw) => write!(f, " {}", kw),
       TokenType::LeftArr => write!(f, "←"),
       TokenType::LeftDoubleArr => write!(f, "⇐"),
-      TokenType::LessThan => write!(f, "<"),
+      TokenType::AngleOpen => write!(f, "<"),
       TokenType::LessThanEq => write!(f, "≤"),
       TokenType::ListAppend => write!(f, "⊕"),
       TokenType::ListSubtract => write!(f, "⊖"),

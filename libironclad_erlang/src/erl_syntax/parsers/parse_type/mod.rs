@@ -10,10 +10,8 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{
-  tok_atom, tok_colon, tok_curly_close, tok_curly_open, tok_double_period, tok_hash, tok_integer,
-  tok_par_close, tok_par_open, tok_vertical_bar,
-};
+use crate::erl_syntax::parsers::misc::{tok_atom, tok_integer};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
 use crate::erl_syntax::parsers::parse_type::parse_container_t::{
   type_of_list, type_of_map, type_of_nonempty_list, type_of_tuple,

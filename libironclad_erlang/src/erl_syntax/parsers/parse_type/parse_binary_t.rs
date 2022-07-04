@@ -3,10 +3,8 @@
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{
-  tok_asterisk, tok_colon, tok_comma, tok_double_angle_close, tok_double_angle_open, tok_integer,
-  tok_underscore,
-};
+use crate::erl_syntax::parsers::misc::tok_integer;
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};

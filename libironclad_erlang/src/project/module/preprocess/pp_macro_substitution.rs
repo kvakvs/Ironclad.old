@@ -6,7 +6,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
-use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefine;
+use crate::erl_syntax::preprocessor::pp_define::{PreprocessorDefine, PreprocessorDefineImpl};
 use crate::exit_codes::erl_fatal_error;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::preprocess::pp_state::PreprocessState;
@@ -41,6 +41,38 @@ fn paste_tokens(output: &mut Vec<Token>, pdef: &PreprocessorDefine, args: &[Vec<
   }
 }
 
+#[named]
+#[inline]
+fn lookup_and_paste_macro<'a>(
+  macro_name: &String,
+  tokens: &'a [Token],
+  index: usize,
+  output: &mut Vec<Token>,
+  original_input: &str,
+  state: &mut PreprocessState<'a>,
+) -> usize {
+  // Parse once to get the actual arguments grouped by the commas
+  // and parse twice to get the actual span of tokens affected
+  let (args, args_span) =
+    parse_as_invocation_params(original_input, state.module.clone(), &tokens[index + 1..]);
+
+  // Look up the macro definition
+  let key = MFArity::new_local(&macro_name, args.len());
+
+  if let Some(pdef) = state.module.root_scope.defines.get(&key) {
+    // Insert macro body and replace any macro variables with content
+    paste_tokens(output, &pdef, &args);
+  } else {
+    erl_fatal_error(ErlError::preprocessor_error(
+      SourceLoc::unimplemented(file!(), function_name!()),
+      format!("Invocation of an undefined macro: {}", macro_name),
+    ));
+  }
+
+  // Skip input tokens consumed by parsing the arguments
+  index + args_span + 1
+}
+
 /// Given an input line of tokens, replace macro invocations with their actual body content.
 /// Also substitute the macro variables.
 /// Returns a wrapper struct with either original or substituted tokens.
@@ -63,26 +95,14 @@ pub(crate) fn substitute_macro_invocations<'a>(
     let t = &tokens[index];
 
     if let TokenType::MacroInvocation(macro_name) = &t.content {
-      // Parse once to get the actual arguments grouped by the commas
-      // and parse twice to get the actual span of tokens affected
-      let (args, args_span) =
-        parse_as_invocation_params(original_input, state.module.clone(), &tokens[index + 1..]);
-
-      // Look up the macro definition
-      let key = MFArity::new_local(&macro_name, args.len());
-
-      if let Some(pdef) = state.module.root_scope.defines.get(&key) {
-        // Insert macro body and replace any macro variables with content
-        paste_tokens(&mut output, &pdef, &args);
+      if macro_name == "LINE" {
+        let pdef = PreprocessorDefineImpl::new("LINE".to_string(), &[], &[Token::new_small(0)]);
+        paste_tokens(&mut output, &pdef, &[]);
+        index += 1;
       } else {
-        erl_fatal_error(ErlError::preprocessor_error(
-          SourceLoc::unimplemented(file!(), function_name!()),
-          format!("Invocation of an undefined macro: {}", macro_name),
-        ));
+        index =
+          lookup_and_paste_macro(macro_name, tokens, index, &mut output, original_input, state);
       }
-
-      // Skip input tokens consumed by parsing the arguments
-      index += args_span + 1;
     } else {
       output.push(t.clone());
       index += 1;

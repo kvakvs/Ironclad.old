@@ -2,10 +2,8 @@
 
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  dash_atom, period_eol_eof, tok_atom, tok_comma, tok_curly_close, tok_curly_open,
-  tok_double_colon, tok_equal, tok_par_close, tok_par_open,
-};
+use crate::erl_syntax::parsers::misc::{dash_atom, period_eol_eof, tok_atom};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_expr::parse_expr;
 use crate::erl_syntax::parsers::parse_type::parse_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -23,7 +21,10 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
   map(
     tuple((
       tok_atom,
-      opt(preceded(tok_equal, context("default value for a field", cut(parse_expr)))),
+      opt(preceded(
+        tok_equal_symbol,
+        context("default value for a field", cut(parse_expr)),
+      )),
       opt(preceded(
         tok_double_colon,
         context("type ascription for a field", cut(parse_type)),

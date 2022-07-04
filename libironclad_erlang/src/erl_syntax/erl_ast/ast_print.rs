@@ -134,6 +134,7 @@ impl std::fmt::Display for Literal {
       Literal::Bool(b) => b.fmt(f),
       Literal::List { elements, .. } => Pretty::display_square_list(elements.iter(), f),
       Literal::Nil => write!(f, "[]"),
+      Literal::EmptyBinary => write!(f, "<<>>"),
       Literal::String(s) => write!(f, "\"{}\"", s),
       Literal::Tuple(t) => Pretty::display_curly_list(t.iter(), f),
     }

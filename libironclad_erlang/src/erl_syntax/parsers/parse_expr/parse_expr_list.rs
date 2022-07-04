@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
+use crate::erl_syntax::parsers::misc_tok::{
   tok_comma, tok_double_vertical_bar, tok_square_close, tok_square_open, tok_vertical_bar,
 };
 use crate::erl_syntax::parsers::parse_expr::{

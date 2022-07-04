@@ -4,9 +4,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok_assign, tok_comma, tok_curly_close, tok_curly_open, tok_hash, tok_right_darr,
-};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_expr;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;

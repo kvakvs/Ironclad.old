@@ -11,12 +11,8 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Var;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_var::ErlVar;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
-  tok_double_angle_open, tok_double_vertical_bar, tok_forward_slash, tok_integer,
-  tok_keyword_begin, tok_keyword_end, tok_keyword_fun, tok_left_arrow, tok_par_close, tok_par_open,
-  tok_var,
-};
+use crate::erl_syntax::parsers::misc::{tok_atom, tok_integer, tok_var};
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;
 use nom::branch::alt;
@@ -95,7 +91,10 @@ pub(crate) fn parse_begin_end(input: ParserInput) -> ParserResult<AstNode> {
   map(
     delimited(
       tok_keyword_begin,
-      context("contents of a begin...end block", cut(separated_list1(tok_comma, parse_expr))),
+      context(
+        "contents of a begin-end expression",
+        cut(separated_list1(tok_comma, parse_expr)),
+      ),
       tok_keyword_end,
     ),
     map_fn,

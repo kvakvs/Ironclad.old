@@ -4,10 +4,8 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_keyword_end, tok_keyword_fun, tok_keyword_when, tok_minus, tok_period,
-  tok_semicolon,
-};
+use crate::erl_syntax::parsers::misc::tok_atom;
+use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs,
 };
@@ -56,7 +54,7 @@ fn parse_fnclause<const REQUIRE_FN_NAME: bool>(input: ParserInput) -> ParserResu
         opt(preceded(tok_keyword_when, context("function's guard", cut(parse_guardexpr)))),
       ),
       preceded(
-        tok(TokenType::RightArr),
+        tok_right_arrow,
         // Body as list of exprs
         context("function clause body of a function definition", cut(parse_comma_sep_exprs1)),
       ),

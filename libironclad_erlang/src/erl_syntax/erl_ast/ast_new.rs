@@ -87,6 +87,13 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 
+  /// Create a new literal AST node of an empty binary
+  #[allow(dead_code)]
+  pub(crate) fn new_empty_binary(location: SourceLoc) -> AstNode {
+    let lit_node = Lit { value: Literal::EmptyBinary.into() };
+    AstNodeImpl::construct_with_location(location, lit_node)
+  }
+
   /// Create a new literal AST node of an atom
   #[allow(dead_code)]
   pub(crate) fn new_lit_atom(location: SourceLoc, val: &str) -> AstNode {
@@ -277,6 +284,10 @@ impl AstNodeImpl {
 
   /// Create a new binary expression
   pub(crate) fn new_binary_expr(location: SourceLoc, elements: Vec<BinaryElement>) -> AstNode {
-    AstNodeImpl::construct_with_location(location, BinaryExpr { elements })
+    if elements.is_empty() {
+      AstNodeImpl::new_empty_binary(location)
+    } else {
+      AstNodeImpl::construct_with_location(location, BinaryExpr { elements })
+    }
   }
 }
