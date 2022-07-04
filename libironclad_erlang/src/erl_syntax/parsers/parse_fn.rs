@@ -5,7 +5,8 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{
-  tok, tok_atom, tok_keyword_end, tok_keyword_fun, tok_keyword_when, tok_minus, tok_semicolon,
+  tok, tok_atom, tok_keyword_end, tok_keyword_fun, tok_keyword_when, tok_minus, tok_period,
+  tok_semicolon,
 };
 use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_guardexpr, parse_parenthesized_list_of_exprs,
@@ -103,7 +104,7 @@ pub fn parse_fndef(input: ParserInput) -> ParserResult<AstNode> {
         // if parse fails under here, will show this context message in error
         context("function clause of a function definition", parse_fnclause::<true>),
       ),
-      tok(TokenType::Period),
+      tok_period,
     ),
     |t| _construct_fndef(SourceLoc::new(&input), t),
   )(input.clone())

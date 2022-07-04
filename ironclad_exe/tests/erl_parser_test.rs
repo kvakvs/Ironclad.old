@@ -543,12 +543,29 @@ finalize_fun_table_1(Chunk, _) -> Chunk.";
 #[test]
 fn parse_fun_guard() -> IcResult<()> {
   test_util::start(function_name!(), "Parse a function with a guard");
-  let input = "%% Build an IFF form.
-build_form(Id, Chunks0) when byte_size(Id) =:= 4, is_list(Chunks0) ->
-    Chunks = list_to_binary(Chunks0),
-    Size = byte_size(Chunks),
-    0 = Size rem 4,				% Assertion: correct padding?
-    <<\"FOR1\",(Size+4):32,Id/binary,Chunks/binary>>.";
+  let input = "
+  %% Build an IFF form.
+  build_form(Id, Chunks0) 
+  % when byte_size(Id) =:= 4, is_list(Chunks0) 
+  ->
+      %Chunks = list_to_binary(Chunks0),
+      %Size = byte_size(Chunks),
+      0 = Size rem 4\t\t\t\t% Assertion: correct padding?
+      %, <<\"FOR1\",(Size+4):32,Id/binary,Chunks/binary>>
+      .";
+  let _module = test_util::parse_module(function_name!(), input);
+  Ok(())
+}
+
+#[named]
+#[test]
+fn parse_rem_expr() -> IcResult<()> {
+  test_util::start(
+    function_name!(),
+    "Parse an expression with a remainder; \
+          Ensure final period allows stray newlines before it",
+  );
+  let input = "f() -> 0 = Size rem 4\n.";
   let _module = test_util::parse_module(function_name!(), input);
   Ok(())
 }

@@ -39,6 +39,7 @@ impl ErlModuleImpl {
     }
     let module: ErlModule = module_impl.into();
     let tokens = ErlModuleImpl::tokenize(project, &module, &src_file)?;
+    // println!("{}", format_tok_stream(&tokens, tokens.len()));
 
     //----------------------
     // Real parsing begins: tokens to AST
