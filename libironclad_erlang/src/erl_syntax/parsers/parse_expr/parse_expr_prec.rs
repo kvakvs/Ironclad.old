@@ -8,17 +8,21 @@ use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::lang_construct::LangConstruct;
+use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::tok_colon;
 use crate::erl_syntax::parsers::parse_binary::parse_binary;
-use crate::erl_syntax::parsers::parse_case::parse_case_expr;
+use crate::erl_syntax::parsers::parse_case::parse_case_expression;
+use crate::erl_syntax::parsers::parse_expr::parse_expr_list::{
+  parse_list_builder, parse_list_comprehension,
+};
 use crate::erl_syntax::parsers::parse_expr::parse_expr_map::parse_map_builder_no_base;
 use crate::erl_syntax::parsers::parse_expr::parse_expr_record::{
   parse_record_builder_no_base, parse_record_field_access_no_base,
 };
 use crate::erl_syntax::parsers::parse_expr::{
   parenthesized_expr, parse_begin_end, parse_binary_comprehension, parse_fn_reference,
-  parse_list_builder, parse_list_comprehension, parse_parenthesized_list_of_exprs,
-  parse_tuple_builder, parse_var,
+  parse_parenthesized_list_of_exprs, parse_tuple_builder, parse_var,
 };
 use crate::erl_syntax::parsers::parse_expr_op::{
   binop_add, binop_and, binop_andalso, binop_band, binop_bang, binop_bor, binop_bsl, binop_bsr,
@@ -29,7 +33,7 @@ use crate::erl_syntax::parsers::parse_expr_op::{
   unop_negative, unop_not, unop_positive,
 };
 use crate::erl_syntax::parsers::parse_fn::parse_lambda;
-use crate::erl_syntax::parsers::parse_if_stmt::parse_if_statement;
+use crate::erl_syntax::parsers::parse_if_stmt::parse_if_expression;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parse_try_catch::parse_try_catch;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -39,9 +43,34 @@ use nom::combinator::{consumed, map, opt};
 use nom::error::context;
 use nom::multi::many0;
 use nom::sequence::{pair, preceded, tuple};
+use nom::Parser;
 
 /// Priority 0: (Parenthesized expressions), numbers, variables, negation (unary ops)
-fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
+fn parse_expr_prec_primary<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
+  let alt_failed = |i: ParserInput<'a>| -> ParserResult<AstNode> {
+    misc::alt_failed(
+      i,
+      "expression",
+      &[
+        LangConstruct::Lambda,
+        LangConstruct::BeginEnd,
+        LangConstruct::TryCatch,
+        LangConstruct::IfExpression,
+        LangConstruct::CaseExpression,
+        LangConstruct::ParenthesizedExpression,
+        LangConstruct::List,
+        LangConstruct::Tuple,
+        LangConstruct::FunctionReference,
+        LangConstruct::Map,
+        LangConstruct::Record,
+        LangConstruct::Variable,
+        LangConstruct::Literal,
+        LangConstruct::ListComprehension,
+        LangConstruct::BinaryComprehension,
+        LangConstruct::Binary,
+      ],
+    )
+  };
   context(
     "[hidden] parse expression (highest precedence)",
     alt((
@@ -49,8 +78,8 @@ fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
         parse_lambda,
         parse_begin_end,
         parse_try_catch,
-        parse_if_statement,
-        parse_case_expr,
+        parse_if_expression,
+        parse_case_expression,
         parenthesized_expr,
         parse_list_builder,
         parse_tuple_builder,
@@ -65,7 +94,8 @@ fn parse_expr_prec_primary(input: ParserInput) -> ParserResult<AstNode> {
         parse_binary_comprehension,
         parse_binary,
       )),
-    )),
+    ))
+    .or(alt_failed),
   )(input)
 }
 

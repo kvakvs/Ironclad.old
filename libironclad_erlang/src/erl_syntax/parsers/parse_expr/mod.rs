@@ -1,5 +1,6 @@
 //! Parse expressions and guard expressions (with added ;, operators)
 
+pub mod parse_expr_list;
 pub mod parse_expr_map;
 pub mod parse_expr_prec;
 pub mod parse_expr_record;
@@ -14,7 +15,7 @@ use crate::erl_syntax::parsers::misc::{
   tok_atom, tok_colon, tok_comma, tok_curly_close, tok_curly_open, tok_double_angle_close,
   tok_double_angle_open, tok_double_vertical_bar, tok_forward_slash, tok_integer,
   tok_keyword_begin, tok_keyword_end, tok_keyword_fun, tok_left_arrow, tok_par_close, tok_par_open,
-  tok_square_close, tok_square_open, tok_var, tok_vertical_bar,
+  tok_var,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;
@@ -41,87 +42,17 @@ pub fn parse_parenthesized_list_of_exprs(input: ParserInput) -> ParserResult<Vec
   )(input)
 }
 
-fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
-  let build_fn = |(consumed_input, (elements, maybe_tail)): (
-    ParserInput,
-    (Vec<AstNode>, Option<AstNode>),
-  )|
-   -> AstNode {
-    AstNodeImpl::new_list(SourceLoc::new(&consumed_input), elements, maybe_tail)
-  };
-
-  map(
-    consumed(delimited(
-      tok_square_open,
-      pair(parse_comma_sep_exprs0, opt(preceded(tok_vertical_bar, parse_expr))),
-      tok_square_close,
-    )),
-    build_fn,
-  )(input.clone())
-}
-
-/// Parses a `Expr <- Expr` generator
-pub fn parse_list_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
-  let make_comp_gen = |(consumed_input, (a, b)): (ParserInput, (AstNode, AstNode))| -> AstNode {
-    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&consumed_input), a, b)
-  };
-  map(consumed(separated_pair(parse_expr, tok_left_arrow, parse_expr)), make_comp_gen)(
-    input.clone(),
-  )
-}
-
-/// Parses mix of generators and conditions for a list comprehension
-pub fn parse_list_comprehension_exprs_and_generators(
-  input: ParserInput,
-) -> ParserResult<Vec<AstNode>> {
-  separated_list1(
-    tok_comma,
-    // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
-    alt((parse_list_comprehension_generator, parse_expr)),
-  )(input)
-}
-
-fn parse_list_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
-  let mk_list_comp =
-    |(consumed_input, (expr, generators)): (ParserInput, (AstNode, Vec<AstNode>))| -> AstNode {
-      AstNodeImpl::new_list_comprehension(SourceLoc::new(&consumed_input), expr, generators)
-    };
-
-  map(
-    consumed(separated_pair(
-      context("list comprehension output expression", parse_expr),
-      tok_double_vertical_bar,
-      context(
-        "list comprehension generators",
-        cut(parse_list_comprehension_exprs_and_generators),
-      ),
-    )),
-    mk_list_comp,
-  )(input.clone())
-}
-
 fn parse_binary_comprehension_1(input: ParserInput) -> ParserResult<AstNode> {
   map(
     separated_pair(
       context("binary comprehension output expression", parse_expr),
       tok_double_vertical_bar,
-      context(
-        "binary comprehension generators",
-        cut(parse_list_comprehension_exprs_and_generators),
-      ),
+      context("binary comprehension generators", cut(parse_comprehension_exprs_and_generators)),
     ),
     |(expr, generators): (AstNode, Vec<AstNode>)| -> AstNode {
       AstNodeImpl::new_binary_comprehension(SourceLoc::new(&input), expr, generators)
     },
   )(input.clone())
-}
-
-/// Public for testing. Parses a list comprehension syntax `[ OUTPUT | GENERATORS ]`
-pub fn parse_list_comprehension(input: ParserInput) -> ParserResult<AstNode> {
-  context(
-    "list comprehension",
-    delimited(tok_square_open, parse_list_comprehension_1, tok_square_close),
-  )(input)
 }
 
 /// Parses a binary comprehension syntax `<< OUTPUT || VAR1 <- GENERATOR1, COND1 ... >>`
@@ -221,4 +152,23 @@ pub fn parse_guardexpr(input: ParserInput) -> ParserResult<AstNode> {
 /// Run `AstNodeImpl::verify_expr_style` after the parse.
 pub fn parse_constant_expr(input: ParserInput) -> ParserResult<AstNode> {
   parse_expr_prec::parse_expr_lowest_precedence(ExprStyle::Const, input)
+}
+
+/// Parses a `Expr <- Expr` generator for a list or binary comprehension
+fn parse_comprehension_generator(input: ParserInput) -> ParserResult<AstNode> {
+  let make_comp_gen = |(consumed_input, (a, b)): (ParserInput, (AstNode, AstNode))| -> AstNode {
+    AstNodeImpl::new_list_comprehension_generator(SourceLoc::new(&consumed_input), a, b)
+  };
+  map(consumed(separated_pair(parse_expr, tok_left_arrow, parse_expr)), make_comp_gen)(
+    input.clone(),
+  )
+}
+
+/// Parses mix of generators and conditions for a list or binary comprehension
+pub fn parse_comprehension_exprs_and_generators(input: ParserInput) -> ParserResult<Vec<AstNode>> {
+  separated_list1(
+    tok_comma,
+    // descend into precedence 11 instead of parse_expr, to ignore comma and semicolon
+    alt((parse_comprehension_generator, parse_expr)),
+  )(input)
 }

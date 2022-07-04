@@ -1,8 +1,6 @@
 mod test_util;
 
 use ::function_name::named;
-use libironclad_erlang::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
-use libironclad_erlang::erl_syntax::parsers::token_stream::token::Token;
 use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
 use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::typing::erl_integer::ErlInteger;

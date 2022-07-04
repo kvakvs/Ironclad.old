@@ -31,6 +31,7 @@ fn bin_element_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<AstNode> {
     misc::alt_failed(
       i,
+      "binary element",
       &[
         LangConstruct::Variable,
         LangConstruct::Literal,
@@ -69,6 +70,7 @@ fn bin_element_typespec_type<'a>(input: ParserInput<'a>) -> ParserResult<TypeSpe
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
     misc::alt_failed(
       i,
+      "binary element type spec",
       &[
         LangConstruct::AtomOf("integer"),
         LangConstruct::AtomOf("float"),
@@ -104,6 +106,7 @@ fn bin_element_typespec_signedness<'a>(input: ParserInput<'a>) -> ParserResult<T
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
     misc::alt_failed(
       i,
+      "binary element signedness",
       &[
         LangConstruct::AtomOf("signed"),
         LangConstruct::AtomOf("unsigned"),
@@ -126,6 +129,7 @@ fn bin_element_typespec_endianness<'a>(input: ParserInput<'a>) -> ParserResult<T
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<TypeSpecifier> {
     misc::alt_failed(
       i,
+      "binary element byte order",
       &[
         LangConstruct::AtomOf("big"),
         LangConstruct::AtomOf("little"),

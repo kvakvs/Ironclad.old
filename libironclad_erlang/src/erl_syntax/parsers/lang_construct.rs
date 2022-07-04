@@ -11,6 +11,19 @@ pub enum LangConstruct {
   Literal,
   ParenthesizedExpression,
   AtomOf(&'static str),
+  Lambda,
+  BeginEnd,
+  TryCatch,
+  IfExpression,
+  CaseExpression,
+  List,
+  Tuple,
+  FunctionReference,
+  Map,
+  Record,
+  ListComprehension,
+  BinaryComprehension,
+  Binary,
   //------------------
   // Type constructs
   //------------------
@@ -32,6 +45,19 @@ impl Display for LangConstruct {
       LangConstruct::Variable => write!(f, "variable"),
       LangConstruct::Literal => write!(f, "literal value"),
       LangConstruct::ParenthesizedExpression => write!(f, "parenthesized expression"),
+      LangConstruct::Lambda => write!(f, "a lambda expression"),
+      LangConstruct::BeginEnd => write!(f, "begin-end expression"),
+      LangConstruct::TryCatch => write!(f, "try-catch expression"),
+      LangConstruct::IfExpression => write!(f, "if expression"),
+      LangConstruct::CaseExpression => write!(f, "case expression"),
+      LangConstruct::List => write!(f, "list"),
+      LangConstruct::Tuple => write!(f, "tuple"),
+      LangConstruct::FunctionReference => write!(f, "function reference"),
+      LangConstruct::Map => write!(f, "map"),
+      LangConstruct::Record => write!(f, "record"),
+      LangConstruct::ListComprehension => write!(f, "list comprehension"),
+      LangConstruct::BinaryComprehension => write!(f, "binary comprehension"),
+      LangConstruct::Binary => write!(f, "binary"),
       //------------------
       // Type constructs
       //------------------

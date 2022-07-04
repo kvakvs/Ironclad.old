@@ -530,8 +530,9 @@ pub(crate) fn tok_keyword_else(input: ParserInput) -> ParserResult<()> {
 /// Produce a compiler error reporting alt variants expected, and none was found.
 pub fn alt_failed<'a, T>(
   input: ParserInput<'a>,
+  parse_context: &'static str,
   expected_structures: &'a [LangConstruct],
 ) -> ParserResult<'a, T> {
-  let err = ErlParserError::alt(input, expected_structures);
+  let err = ErlParserError::alt(input, parse_context, expected_structures);
   Err(nom::Err::Error(err))
 }

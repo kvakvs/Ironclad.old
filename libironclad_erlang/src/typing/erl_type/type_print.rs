@@ -19,28 +19,28 @@ impl std::fmt::Display for ErlTypeImpl {
       ErlTypeImpl::AnyTuple => write!(f, "tuple()"),
       ErlTypeImpl::Tuple { elements } => Pretty::display_curly_list(elements.iter(), f),
       ErlTypeImpl::Record { tag, fields } => {
-        write!(f, "#{}", tag)?;
+        write!(f, "#{}", tag).unwrap();
         Pretty::display_curly_list(fields.iter(), f)
       }
       ErlTypeImpl::AnyList => write!(f, "list()"),
       ErlTypeImpl::List { elements, tail, is_non_empty } => match tail {
         Some(t) => write!(f, "list({}, {})", elements, t),
         None => {
-          write!(f, "list({}", elements)?;
+          write!(f, "list({}", elements).unwrap();
           if *is_non_empty {
-            write!(f, ", ...")?;
+            write!(f, ", ...").unwrap();
           }
           write!(f, ")")
         }
       },
       ErlTypeImpl::StronglyTypedList { elements, tail } => match tail {
         Some(t) => {
-          write!(f, "strong_list(")?;
-          Pretty::display_comma_separated(elements.iter(), f)?;
+          write!(f, "strong_list(").unwrap();
+          Pretty::display_comma_separated(elements.iter(), f).unwrap();
           write!(f, " | {})", t)
         }
         None => {
-          write!(f, "strong_list")?;
+          write!(f, "strong_list").unwrap();
           Pretty::display_paren_list(elements.iter(), f)
         }
       },
@@ -51,7 +51,7 @@ impl std::fmt::Display for ErlTypeImpl {
       ErlTypeImpl::Binary { .. } => unimplemented!("Display type for binary"),
       ErlTypeImpl::AnyFn => write!(f, "function()"),
       ErlTypeImpl::Fn(fntype) => {
-        write!(f, "fun ")?;
+        write!(f, "fun ").unwrap();
         Pretty::display_semicolon_separated(fntype.clauses().iter(), f)
       }
       ErlTypeImpl::FnRef { fun } => write!(f, "fun {}", fun),
@@ -63,7 +63,7 @@ impl std::fmt::Display for ErlTypeImpl {
       ErlTypeImpl::Singleton { val } => val.fmt(f),
       ErlTypeImpl::Union(u) => Pretty::display_separated(u.types.iter(), "|", f),
       ErlTypeImpl::UserDefinedType { name, args } => {
-        name.fmt(f)?;
+        name.fmt(f).unwrap();
         Pretty::display_paren_list(args.iter(), f)
       }
       ErlTypeImpl::Typevar(tv) => tv.fmt(f),

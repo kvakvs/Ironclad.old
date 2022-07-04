@@ -21,9 +21,9 @@ impl Pretty {
       if first {
         first = false;
       } else {
-        sep.fmt(f)?;
+        sep.fmt(f).unwrap();
       }
-      entry.fmt(f)?;
+      entry.fmt(f).unwrap();
     }
     Ok(())
   }
@@ -58,8 +58,8 @@ impl Pretty {
     Iter: Iterator<Item = &'a T>,
     T: Display + 'a,
   {
-    write!(f, "[")?;
-    Pretty::display_comma_separated(elems_iter, f)?;
+    write!(f, "[").unwrap();
+    Pretty::display_comma_separated(elems_iter, f).unwrap();
     write!(f, "]")
   }
 
@@ -69,8 +69,8 @@ impl Pretty {
     Iter: Iterator<Item = &'a T>,
     T: Display + 'a,
   {
-    write!(f, "(")?;
-    Pretty::display_comma_separated(elems_iter, f)?;
+    write!(f, "(").unwrap();
+    Pretty::display_comma_separated(elems_iter, f).unwrap();
     write!(f, ")")
   }
 
@@ -80,18 +80,18 @@ impl Pretty {
     Iter: Iterator<Item = &'a T>,
     T: Display + 'a,
   {
-    write!(f, "{{")?;
-    Pretty::display_comma_separated(elems_iter, f)?;
+    write!(f, "{{").unwrap();
+    Pretty::display_comma_separated(elems_iter, f).unwrap();
     write!(f, "}}")
   }
 
   /// Display a `\" {text} \"` with special characters quoted.
   pub fn doublequot_string(f: &mut Formatter, s: &str) -> std::fmt::Result {
-    write!(f, "\"")?;
+    write!(f, "\"").unwrap();
     for (_i, ch) in s.chars().enumerate() {
       match ch {
         '\"' | '\\' => write!(f, "\\{}", ch)?,
-        _ => ch.fmt(f)?,
+        _ => ch.fmt(f).unwrap(),
       }
     }
     write!(f, "\"")
@@ -99,11 +99,11 @@ impl Pretty {
 
   /// Display a `\' {text} \'` with special characters quoted.
   pub fn singlequot_string(f: &mut Formatter, s: &str) -> std::fmt::Result {
-    write!(f, "\'")?;
+    write!(f, "\'").unwrap();
     for (_i, ch) in s.chars().enumerate() {
       match ch {
         '\'' | '\\' => write!(f, "\\{}", ch)?,
-        _ => ch.fmt(f)?,
+        _ => ch.fmt(f).unwrap(),
       }
     }
     write!(f, "\'")

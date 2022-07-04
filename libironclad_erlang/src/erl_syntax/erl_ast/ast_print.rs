@@ -15,22 +15,22 @@ impl std::fmt::Display for AstNodeImpl {
     match &self.content {
       AstNodeType::Empty { comment } => writeln!(f, "%% {}", comment),
       BeginEnd { exprs } => {
-        write!(f, "begin ")?;
-        Pretty::display_comma_separated(exprs.iter(), f)?;
+        write!(f, "begin ").unwrap();
+        Pretty::display_comma_separated(exprs.iter(), f).unwrap();
         write!(f, " end")
       }
       ModuleForms { forms } => {
-        writeln!(f, "-module(...).")?;
+        writeln!(f, "-module(...).").unwrap();
         for form in forms.iter() {
-          form.fmt(f)?;
+          form.fmt(f).unwrap();
         }
         writeln!(f, "%%% end module",)
       }
       FnRef { mfa, .. } => write!(f, "fun {}", mfa),
       FnDef(erl_fndef) => {
-        write!(f, "def-fun {} {{", erl_fndef.funarity.name)?;
+        write!(f, "def-fun {} {{", erl_fndef.funarity.name).unwrap();
         for fc in erl_fndef.clauses.iter() {
-          write!(f, "{};", fc)?;
+          write!(f, "{};", fc).unwrap();
         }
         writeln!(f, "}}")
       }
@@ -41,8 +41,8 @@ impl std::fmt::Display for AstNodeImpl {
       Var(var) => var.name.fmt(f),
       Apply(app) => app.fmt(f),
       CaseExpr { expr, clauses, .. } => {
-        write!(f, "case {} of", expr)?;
-        Pretty::display_semicolon_separated(clauses.iter(), f)?;
+        write!(f, "case {} of", expr).unwrap();
+        Pretty::display_semicolon_separated(clauses.iter(), f).unwrap();
         writeln!(f, "end")
       }
       Lit { value: lit, .. } => lit.fmt(f),
@@ -59,10 +59,10 @@ impl std::fmt::Display for AstNodeImpl {
       },
       CommaExpr { elements, .. } => Pretty::display_comma_separated(elements.iter(), f),
       List { elements, tail: maybe_tail, .. } => {
-        write!(f, "[")?;
-        Pretty::display_comma_separated(elements.iter(), f)?;
+        write!(f, "[").unwrap();
+        Pretty::display_comma_separated(elements.iter(), f).unwrap();
         if let Some(tail) = maybe_tail {
-          write!(f, " | {}", tail)?;
+          write!(f, " | {}", tail).unwrap();
         }
         write!(f, "]")
       }
@@ -70,55 +70,55 @@ impl std::fmt::Display for AstNodeImpl {
       Type { ty, .. } => ty.fmt(f),
       MapBuilder { base, members } => {
         if let Some(b) = base {
-          write!(f, "{}", b)?;
+          write!(f, "{}", b).unwrap();
         }
-        write!(f, "#{{")?;
-        Pretty::display_comma_separated(members.iter(), f)?;
+        write!(f, "#{{").unwrap();
+        Pretty::display_comma_separated(members.iter(), f).unwrap();
         write!(f, "}}")
       }
       RecordBuilder { base, tag, members } => {
         if let Some(base_var) = base {
-          write!(f, "{}", base_var)?;
+          write!(f, "{}", base_var).unwrap();
         }
-        write!(f, "#{}{{", tag)?;
-        Pretty::display_comma_separated(members.iter(), f)?;
+        write!(f, "#{}{{", tag).unwrap();
+        Pretty::display_comma_separated(members.iter(), f).unwrap();
         write!(f, "}}")
       }
       RecordField { base, tag, field } => {
         if let Some(b) = base {
-          write!(f, "{}", b)?;
+          write!(f, "{}", b).unwrap();
         }
         write!(f, "#{}.{}", tag, field)
       }
       ListComprehension { expr, generators, .. } => {
-        write!(f, "[{} || ", expr)?;
-        Pretty::display_comma_separated(generators.iter(), f)?;
+        write!(f, "[{} || ", expr).unwrap();
+        Pretty::display_comma_separated(generators.iter(), f).unwrap();
         write!(f, "]")
       }
       BinaryComprehension { expr, generators, .. } => {
-        write!(f, "<<{} || ", expr)?;
-        Pretty::display_comma_separated(generators.iter(), f)?;
+        write!(f, "<<{} || ", expr).unwrap();
+        Pretty::display_comma_separated(generators.iter(), f).unwrap();
         write!(f, ">>")
       }
       ListComprehensionGenerator { left, right, .. } => {
         write!(f, "{} <- {}", left, right)
       }
       TryCatch { body, of_branches, catch_clauses, .. } => {
-        write!(f, "try {}", body)?;
+        write!(f, "try {}", body).unwrap();
         if let Some(ofb) = of_branches {
-          write!(f, "of")?;
-          Pretty::display_semicolon_separated(ofb.iter(), f)?;
+          write!(f, "of").unwrap();
+          Pretty::display_semicolon_separated(ofb.iter(), f).unwrap();
         }
         Pretty::display_semicolon_separated(catch_clauses.iter(), f)
       }
       IfStatement { clauses, .. } => {
-        write!(f, "if ")?;
-        Pretty::display_semicolon_separated(clauses.iter(), f)?;
+        write!(f, "if ").unwrap();
+        Pretty::display_semicolon_separated(clauses.iter(), f).unwrap();
         write!(f, " end")
       }
       BinaryExpr { elements, .. } => {
-        write!(f, "<<")?;
-        Pretty::display_comma_separated(elements.iter(), f)?;
+        write!(f, "<<").unwrap();
+        Pretty::display_comma_separated(elements.iter(), f).unwrap();
         write!(f, ">>")
       }
     }

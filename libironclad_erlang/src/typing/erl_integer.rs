@@ -46,10 +46,18 @@ impl ErlInteger {
   }
 
   /// Convert to an usize
-  pub(crate) fn as_usize(&self) -> Option<usize> {
+  pub fn as_usize(&self) -> Option<usize> {
     match self {
       Small(small) => Some(*small as usize),
       Big(big) => big.to_usize(),
+    }
+  }
+
+  /// Convert to an isize
+  pub fn as_isize(&self) -> Option<isize> {
+    match self {
+      Small(small) => Some(*small as isize),
+      Big(big) => big.to_isize(),
     }
   }
 }

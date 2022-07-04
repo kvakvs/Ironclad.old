@@ -11,7 +11,7 @@ use std::fmt::{Debug, Display, Formatter};
 #[derive(Debug, Clone)]
 pub enum ErlParserErrorKind {
   /// A list of language structures expected, but not found. Reported for failed `alt()` parsers
-  LanguageConstructsExpected(Vec<LangConstruct>),
+  LanguageConstructsExpected { context: &'static str, constructs: Vec<LangConstruct> },
   /// A standard Nom error wrapped
   Nom(ErrorKind),
   /// Added by `context()` parser combinator
@@ -156,9 +156,19 @@ impl<'a> ErlParserError<'a> {
 
   /// Create a "none of the constructs matched" error
   #[inline]
-  pub fn alt(input: ParserInput<'a>, constr: &[LangConstruct]) -> Self {
+  pub fn alt(
+    input: ParserInput<'a>,
+    parse_context: &'static str,
+    constr: &[LangConstruct],
+  ) -> Self {
     ErlParserError {
-      errors: vec![(input, ErlParserErrorKind::LanguageConstructsExpected(constr.into()))],
+      errors: vec![(
+        input,
+        ErlParserErrorKind::LanguageConstructsExpected {
+          context: parse_context,
+          constructs: constr.into(),
+        },
+      )],
     }
   }
 }
@@ -180,11 +190,12 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::ModuleStartAttributeExpected => {
         write!(f, "Module start attribute -module(NAME) expected")
       }
-      ErlParserErrorKind::LanguageConstructsExpected(structures) => {
+      ErlParserErrorKind::LanguageConstructsExpected { context, constructs } => {
         write!(
           f,
-          "Could not parse any of the following constructs: {}",
-          LangConstructs(&structures)
+          "While parsing {}, could not recognize any of the expected constructs: {}",
+          context,
+          LangConstructs(&constructs)
         )
       }
       _ => unimplemented!("Don't know how to format {:?}", self),

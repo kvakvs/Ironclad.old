@@ -2,8 +2,7 @@
 
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::erl_syntax::parsers::token_stream::misc::{
-  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before,
-  ws_before_mut, ws_mut,
+  bigcapacity_many0, ident_continuation, parse_macro_ident, parse_varname, ws_before_mut, ws_mut,
 };
 use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::parsers::token_stream::tok_strings::atom_literal::parse_tok_atom;

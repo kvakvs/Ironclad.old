@@ -76,7 +76,7 @@ pub fn binary_type(input: ParserInput) -> ParserResult<ErlType> {
     context(
       "binary type",
       cut(alt((binary_type_tail, binary_type_head_tail)))
-        .or(|i| misc::alt_failed(i, &[LangConstruct::BinaryType])),
+        .or(|i| misc::alt_failed(i, "binary type", &[LangConstruct::BinaryType])),
     ),
     tok_double_angle_close,
   )(input)

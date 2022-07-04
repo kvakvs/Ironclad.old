@@ -9,7 +9,7 @@ use libironclad_erlang::erl_syntax::parsers::parse_type::parse_binary_t::{
   binary_type_head_element, binary_type_tail_element,
 };
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
-use libironclad_erlang::project::module::module_impl::{ErlModule, ErlModuleImpl};
+use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
 

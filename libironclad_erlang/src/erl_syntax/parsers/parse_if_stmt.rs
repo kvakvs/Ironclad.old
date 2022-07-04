@@ -15,7 +15,7 @@ use nom::sequence::{pair, preceded, terminated};
 use nom::{combinator::cut, error::context};
 
 /// Parses `if COND -> EXPR; ... end`
-pub(crate) fn parse_if_statement(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_if_expression(input: ParserInput) -> ParserResult<AstNode> {
   preceded(
     tok_keyword_if,
     context(

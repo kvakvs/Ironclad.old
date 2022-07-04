@@ -12,7 +12,7 @@ use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
-use nom::combinator::map;
+use nom::combinator::{consumed, map};
 use nom::error::context;
 use nom::sequence::pair;
 
@@ -52,9 +52,10 @@ fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
 }
 
 fn parse_nil(input: ParserInput) -> ParserResult<AstNode> {
-  map(pair(tok_square_open, tok_square_close), |((), ())| {
-    AstNodeImpl::new_nil(SourceLoc::new(&input))
-  })(input.clone())
+  let make_nil = |(consumed_input, ((), ())): (ParserInput, ((), ()))| -> AstNode {
+    AstNodeImpl::new_nil(SourceLoc::new(&consumed_input))
+  };
+  map(consumed(pair(tok_square_open, tok_square_close)), make_nil)(input.clone())
 }
 
 /// Read a literal value from input string

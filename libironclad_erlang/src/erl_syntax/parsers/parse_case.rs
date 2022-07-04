@@ -43,7 +43,7 @@ pub(crate) fn parse_case_clause(input: ParserInput) -> ParserResult<ErlCaseClaus
 }
 
 /// Parses `case EXPR of MATCH -> EXPR; ... end`
-pub(crate) fn parse_case_expr(input: ParserInput) -> ParserResult<AstNode> {
+pub(crate) fn parse_case_expression(input: ParserInput) -> ParserResult<AstNode> {
   let map_fn = |(expr, clauses): (AstNode, Vec<ErlCaseClause>)| -> AstNode {
     AstNodeImpl::new_case_statement(SourceLoc::new(&input), expr, clauses)
   };

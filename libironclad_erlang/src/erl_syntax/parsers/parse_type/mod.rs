@@ -86,6 +86,7 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
   let alt_failed = |i: ParserInput<'a>| -> ParserResult<ErlType> {
     misc::alt_failed(
       i,
+      "a non-union type",
       &[
         LangConstruct::UserType,
         LangConstruct::IntegerRangeType,

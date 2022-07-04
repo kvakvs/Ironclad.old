@@ -10,7 +10,7 @@ use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::{
   Apply, BinaryOp, ListComprehension, Lit,
 };
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
-use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_list_comprehension;
+use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_expr_list::parse_list_comprehension;
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
 use libironclad_erlang::error::ic_error::IcResult;
@@ -784,18 +784,6 @@ fn parse_func_with_map_arg() {
 
 #[named]
 #[test]
-fn parse_func_with_list_decomposition() {
-  test_util::start(function_name!(), "parse a function with list decomposition argument");
-  let input = "
-    function_renumber([{function,Name,Arity,_Entry,Asm0}|Fs], St0, Acc) ->
-      {Asm,St} = renumber_labels(Asm0, [], St0),
-      function_renumber(Fs, St, [{function,Name,Arity,St#st.entry,Asm}|Acc]);
-    function_renumber([], St, Acc) -> {Acc,St}.";
-  let _m = test_util::parse_module(function_name!(), input);
-}
-
-#[named]
-#[test]
 fn parse_func_with_funref() {
   test_util::start(function_name!(), "parse a function with a function reference");
   let input = "fix_swap(Fs, Opts) ->
@@ -825,5 +813,25 @@ fn parse_func_with_maps_and_recs() {
       case Atoms of #{ Atom := Index} -> {Index,Dict};
           _ -> NextIndex = maps:size(Atoms) + 1, {NextIndex,Dict#asm{atoms=Atoms#{Atom=>NextIndex}}}
       end.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_func_with_list_decomposition1() {
+  test_util::start(function_name!(), "parse a function with list decomposition argument");
+  let input = "
+    function_renumber([{function,Name,Arity,_Entry,Asm0}|Fs], St0, Acc) ->
+      {Asm,St} = renumber_labels(Asm0, [], St0),
+      function_renumber(Fs, St, [{function,Name,Arity,St#st.entry,Asm}|Acc]);
+    function_renumber([], St, Acc) -> {Acc,St}.";
+  let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn parse_func_with_list_decomposition2() {
+  test_util::start(function_name!(), "parse a function with some list decomps");
+  let input = "f() -> [1|St0#st.lmap]";
   let _m = test_util::parse_module(function_name!(), input);
 }
