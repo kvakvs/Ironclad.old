@@ -135,6 +135,11 @@ impl Literal {
   //     Literal::Tuple(_) => super_ty.is_tuple(),
   //   }
   // }
+
+  /// Check for empty binary literal
+  pub fn is_binary_lit(&self) -> bool {
+    matches!(self, Literal::EmptyBinary)
+  }
 }
 
 impl Eq for Literal {}

@@ -49,7 +49,11 @@ impl AstNodeImpl {
 
   /// Checks whether an ErlAst node is a Binary Expression
   pub fn is_binary(&self) -> bool {
-    matches!(&self.content, AstNodeType::BinaryExpr { .. })
+    match &self.content {
+      AstNodeType::BinaryExpr { .. } => true,
+      AstNodeType::Lit { value } => value.is_binary_lit(),
+      _ => false,
+    }
   }
 
   /// Checks whether an ErlAst node is a Binary Comprehension

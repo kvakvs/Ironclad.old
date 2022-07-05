@@ -10,7 +10,7 @@ use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{tok_atom_of, tok_integer, tok_var};
 use crate::erl_syntax::parsers::misc_tok::*;
-use crate::erl_syntax::parsers::parse_expr::parse_expr;
+use crate::erl_syntax::parsers::parse_expr::{parenthesized_expr, parse_expr};
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::literal::Literal;
@@ -42,7 +42,7 @@ fn bin_element_value<'a>(input: ParserInput<'a>) -> ParserResult<AstNode> {
     alt((
       map(tok_var, |v| AstNodeImpl::new_var(SourceLoc::new(&input), &v)),
       parse_erl_literal,
-      delimited(tok_par_open, parse_expr, tok_par_close),
+      parenthesized_expr,
     ))
     .or(alt_failed),
   )(input.clone())
