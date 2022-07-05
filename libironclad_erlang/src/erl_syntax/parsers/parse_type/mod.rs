@@ -21,10 +21,11 @@ use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::record_field_type::RecordFieldType;
 use nom::branch::alt;
 use nom::combinator::{map, opt};
 use nom::error::context;
-use nom::multi::separated_list1;
+use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 use nom::Parser;
 
@@ -50,11 +51,28 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
   )(input)
 }
 
-/// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing
+/// Parse one record reference element, pinning field to a type, subtype of the parent's field.
+fn record_field_pin(input: ParserInput) -> ParserResult<RecordFieldType> {
+  map(separated_pair(tok_atom, tok_double_colon, parse_type), |(field, ty)| {
+    RecordFieldType::new(field, ty)
+  })(input)
+}
+
+/// Parse a record type reference with `#tagname{}`, does not define a record, refers to an existing.
+/// Record reference is allowed to pin certain fields to subtypes of parent record.
 fn record_ref(input: ParserInput) -> ParserResult<ErlType> {
+  let mk_record_ref = |(tag, fields): (String, Vec<RecordFieldType>)| -> ErlType {
+    ErlTypeImpl::new_record_ref(tag, fields)
+  };
   map(
-    preceded(tok_hash, terminated(tok_atom, pair(tok_curly_open, tok_curly_close))),
-    ErlTypeImpl::new_record_ref,
+    preceded(
+      tok_hash,
+      pair(
+        tok_atom,
+        delimited(tok_curly_open, separated_list0(tok_comma, record_field_pin), tok_curly_close),
+      ),
+    ),
+    mk_record_ref,
   )(input)
 }
 

@@ -8,6 +8,7 @@ use crate::typing::erl_type::ErlTypeImpl::UserDefinedType;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::fn_type::FnType;
+use crate::typing::record_field_type::RecordFieldType;
 use crate::typing::type_union::TypeUnion;
 use crate::typing::typevar::Typevar;
 use libironclad_util::mfarity::MFArity;
@@ -129,8 +130,8 @@ impl ErlTypeImpl {
   }
 
   /// Construct a new record reference by tag name
-  pub(crate) fn new_record_ref(tag: String) -> ErlType {
-    ErlTypeImpl::RecordRef { tag }.into()
+  pub(crate) fn new_record_ref(tag: String, pins: Vec<RecordFieldType>) -> ErlType {
+    ErlTypeImpl::RecordRef { tag, pins }.into()
   }
 
   /// Construct a new integer range

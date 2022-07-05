@@ -141,6 +141,8 @@ pub enum ErlTypeImpl {
   RecordRef {
     /// Record tag
     tag: String,
+    /// Pin field type to a subtype of parent field
+    pins: Vec<RecordFieldType>,
   },
 }
 

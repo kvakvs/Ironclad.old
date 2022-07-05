@@ -63,7 +63,11 @@ impl std::fmt::Display for ErlTypeImpl {
       ErlTypeImpl::Pid => write!(f, "pid()"),
       ErlTypeImpl::Reference => write!(f, "reference()"),
       ErlTypeImpl::Port => write!(f, "port()"),
-      ErlTypeImpl::RecordRef { tag } => write!(f, "#{}{{}}", tag),
+      ErlTypeImpl::RecordRef { tag, pins } => {
+        write!(f, "#{}{{", tag).unwrap();
+        Pretty::display_comma_separated(pins.iter(), f).unwrap();
+        write!(f, "}}")
+      }
       ErlTypeImpl::Singleton { val } => val.fmt(f),
       ErlTypeImpl::Union(u) => Pretty::display_separated(u.types.iter(), "|", f),
       ErlTypeImpl::UserDefinedType { name, args } => {

@@ -42,10 +42,7 @@ fn record_definition_one_field(input: ParserInput) -> ParserResult<RecordField> 
 fn record_definition_fields(input: ParserInput) -> ParserResult<Vec<RecordField>> {
   delimited(
     tok_curly_open,
-    separated_list0(
-      tok_comma,
-      context("record definition field", cut(record_definition_one_field)),
-    ),
+    separated_list0(tok_comma, context("record definition field", record_definition_one_field)),
     tok_curly_close,
   )(input)
 }

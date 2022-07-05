@@ -9,6 +9,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::typing::erl_type::map_type::MapMemberType;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
 use crate::typing::typevar::Typevar;
+use nom::branch::alt;
 use nom::combinator::map;
 use nom::error::context;
 use nom::multi::separated_list0;
@@ -61,7 +62,7 @@ pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
 
 fn map_member_type(input: ParserInput) -> ParserResult<MapMemberType> {
   map(
-    separated_pair(parse_typevar_or_type, tok_right_darr, parse_typevar_or_type),
+    separated_pair(parse_typevar_or_type, alt((tok_assign, tok_right_darr)), parse_typevar_or_type),
     |(key, value)| MapMemberType {
       key: ErlTypeImpl::new_typevar(key),
       value: ErlTypeImpl::new_typevar(value),
