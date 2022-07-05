@@ -80,6 +80,7 @@ pub fn parse_comma_sep_exprs1(input: ParserInput) -> ParserResult<Vec<AstNode>> 
   separated_list1(tok_comma, parse_expr)(input)
 }
 
+/// Parse an expression in parentheses `"(" EXPR ")"`
 pub fn parenthesized_expr(input: ParserInput) -> ParserResult<AstNode> {
   delimited(tok_par_open, parse_expr, tok_par_close)(input)
 }

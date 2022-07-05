@@ -856,22 +856,6 @@ fn parse_func_with_list_decomposition1() {
 
 #[named]
 #[test]
-fn test_test1() {
-  test_util::start(function_name!(), "Narrow a failing test");
-  {
-    let input2 = "St0#st{lmap=D,lc=New+1}";
-    let expr2 = test_util::parse_expr(function_name!(), input2);
-    println!("EXPR2: {:?}", expr2);
-  }
-  {
-    let input1 = "f()->St0#st{lmap=D,lc=New+1}.";
-    let m1 = test_util::parse_module(function_name!(), input1);
-    println!("MOD1: {:?}", m1.ast.borrow());
-  }
-}
-
-#[named]
-#[test]
 fn parse_record_field_with_base() {
   test_util::start(function_name!(), "parse a record field access with base expr");
   let input = "f() -> St0#st.lmap.";
@@ -916,4 +900,17 @@ fn parse_map_builder_no_base() {
   test_util::start(function_name!(), "parse a map builder without base expr");
   let input = "f() -> #{lmap => 123}.";
   let _m = test_util::parse_module(function_name!(), input);
+}
+
+#[named]
+#[test]
+fn test_test1() {
+  test_util::start(function_name!(), "Narrow a failing test");
+  let input2 = "module(File, #b_module{name=Mod,exports=Exp,attributes=Attr,body=Fs}) ->
+    io:format(File, \"module ~p.\\n\", [Mod]),
+    io:format(File, \"exports ~p.\\n\", [Exp]),
+    io:format(File, \"attributes ~p.\\n\\n\", [Attr]),
+    PP = [beam_ssa_pp:format_function(F) || F <- Fs],
+    io:put_chars(File, lists:join($\n, PP)).";
+  let _ = test_util::parse_module(function_name!(), input2);
 }

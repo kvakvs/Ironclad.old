@@ -15,6 +15,7 @@ pub enum MapMemberOperation {
 /// Defines a member of map construction AST node in `#{ key => value }`
 #[derive(Debug, Clone)]
 pub struct MapBuilderMember {
+  /// The operation (syntax `=>` for assign, and `:=` for match)
   pub operation: MapMemberOperation,
   /// The key to the map, an expression
   pub key: AstNode,

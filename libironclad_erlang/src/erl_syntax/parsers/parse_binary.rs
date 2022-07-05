@@ -10,7 +10,7 @@ use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
 use crate::erl_syntax::parsers::misc::{tok_atom_of, tok_integer, tok_var};
 use crate::erl_syntax::parsers::misc_tok::*;
-use crate::erl_syntax::parsers::parse_expr::{parenthesized_expr, parse_expr};
+use crate::erl_syntax::parsers::parse_expr::parenthesized_expr;
 use crate::erl_syntax::parsers::parse_lit::parse_erl_literal;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::literal::Literal;
@@ -20,7 +20,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map, opt, value};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::sequence::{preceded, terminated, tuple};
 use nom::Parser;
 use std::ops::Deref;
 

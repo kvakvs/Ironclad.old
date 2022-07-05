@@ -8,7 +8,6 @@ use crate::erl_syntax::parsers::parse_expr::{
   parse_comma_sep_exprs1, parse_expr, parse_guardexpr, parse_matchexpr,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;

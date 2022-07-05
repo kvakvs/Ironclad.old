@@ -193,7 +193,13 @@ impl std::fmt::Display for TokenType {
       TokenType::Assign => write!(f, "≔"), // unicode EQUALS COLON 8789
       TokenType::Asterisk => write!(f, "*"),
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
-      TokenType::Character(c) => write!(f, "${}", *c),
+      TokenType::Character(c) => {
+        if *c >= ' ' {
+          write!(f, "${}", *c)
+        } else {
+          write!(f, "${:x}", *c as usize)
+        }
+      }
       TokenType::Colon => write!(f, ":"),
       TokenType::ColonColon => write!(f, "∷"),
       TokenType::Comma => write!(f, ","),

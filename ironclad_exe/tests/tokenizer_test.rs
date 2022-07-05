@@ -62,3 +62,27 @@ fn test_tok_integer() {
   }
   tokens.into_iter().for_each(|t| print!("{} ", t));
 }
+
+#[named]
+#[test]
+fn tok_dollar_char_test() {
+  test_util::start(function_name!(), "Tokenize $characters");
+  {
+    let input1 = "$\\n";
+    let tok1 = test_util::tokenize(input1);
+    assert!(
+      tok1[0].is_char_of('\n'),
+      "Expected $\\n to tokenize to Char(\\n) but received {:?}",
+      tok1[0]
+    );
+  }
+  {
+    let input2 = "$|";
+    let tok2 = test_util::tokenize(input2);
+    assert!(
+      tok2[0].is_char_of('|'),
+      "Expected $| to tokenize to Char(|) but received {:?}",
+      tok2[0]
+    );
+  }
+}

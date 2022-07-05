@@ -5,13 +5,12 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_if_clause::ErlIfClause;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc_tok::*;
-use crate::erl_syntax::parsers::parse_expr::{parse_comma_sep_exprs1, parse_expr, parse_guardexpr};
+use crate::erl_syntax::parsers::parse_expr::{parse_comma_sep_exprs1, parse_guardexpr};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{consumed, map};
 use nom::multi::separated_list1;
-use nom::sequence::{pair, preceded, separated_pair, terminated};
+use nom::sequence::{preceded, separated_pair, terminated};
 use nom::{combinator::cut, error::context};
 
 /// Parses a `Condition -> ...` branch of `if COND -> EXPR; ... end` statement

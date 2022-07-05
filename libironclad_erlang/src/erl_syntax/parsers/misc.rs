@@ -11,15 +11,14 @@ use nom::sequence::{pair, preceded, tuple};
 use nom::Slice;
 
 use crate::erl_syntax::parsers::defs::ParserResult;
+use crate::erl_syntax::parsers::error_report;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
-use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::erl_syntax::parsers::token_stream::tok_input::TokenizerInput;
 use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
-use crate::erl_syntax::parsers::{error_report, misc_tok};
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::typing::erl_integer::ErlInteger;
 

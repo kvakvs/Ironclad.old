@@ -90,6 +90,15 @@ impl Token {
     }
   }
 
+  /// Check whether the token is a character
+  #[inline]
+  pub fn is_char_of(&self, ch: char) -> bool {
+    match &self.content {
+      TokenType::Character(c) => *c == ch,
+      _ => false,
+    }
+  }
+
   /// Check whether the token is a macro invocation
   #[inline]
   pub fn is_macro_invocation(&self) -> bool {

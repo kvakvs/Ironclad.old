@@ -76,7 +76,6 @@ fn lookup_and_paste_macro<'a>(
 /// Given an input line of tokens, replace macro invocations with their actual body content.
 /// Also substitute the macro variables.
 /// Returns a wrapper struct with either original or substituted tokens.
-#[named]
 pub(crate) fn substitute_macro_invocations<'a>(
   original_input: &str,
   tokens: &'a [Token],
