@@ -288,10 +288,10 @@ fn tokenize_string(input: TokenizerInput) -> TokensResult<Token> {
 }
 
 #[inline]
-fn dollar_character(input: TokenizerInput) -> TokensResult<Char> {
-  let map_fn = |s: TokenizerInput| s.chars().next().unwrap();
-  let map_backquot_fn = |c: Char| -> Char {
-    match c {
+fn dollar_escaped_character(input: TokenizerInput) -> TokensResult<Token> {
+  // let map_fn = |s: TokenizerInput| s.chars().next().unwrap();
+  let map_backquot_fn = |c: Char| -> Token {
+    let value = match c {
       'n' => '\n',
       'r' => '\r',
       't' => '\t',
@@ -303,18 +303,23 @@ fn dollar_character(input: TokenizerInput) -> TokensResult<Char> {
       _ => panic!(
         "Unexpected backquoted character, only allowed: \\n \\r \\t \\b \\f \\a \\e and \\\\"
       ),
-    }
+    };
+    Token::new(input.as_ptr(), TokenType::EscapedCharacter { value, in_source: c })
   };
+
   // Recognize a $ \\ <character> to produce a \n \r \t \b \f \a \e and \
   // or a $ <character> to produce the character itself.
-  alt((map(preceded(char('\\'), anychar), map_backquot_fn), anychar))(input)
+  map(anychar, map_backquot_fn)(input)
 }
 
 /// Parse a `$`-prefixed character, or `$\`-prefixed character, and produce `Character()` token
 #[inline]
 fn tokenize_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
-  let map_fn = |c: Char| Token::new(input.as_ptr(), TokenType::Character(c));
-  map(preceded(char('$'), dollar_character), map_fn)(input)
+  let any_character_fn = |c: Char| Token::new(input.as_ptr(), TokenType::Character(c));
+  preceded(
+    char('$'),
+    alt((preceded(char('\\'), dollar_escaped_character), map(anychar, any_character_fn))),
+  )(input)
 }
 
 /// Parse a stringify token `??<ARGNAME>` to paste macro parameter as a string when pasting the macro.

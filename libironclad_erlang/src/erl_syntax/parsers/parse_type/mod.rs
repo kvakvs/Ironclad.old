@@ -10,7 +10,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{tok_atom, tok_integer};
+use crate::erl_syntax::parsers::misc::{tok_any_keyword_or_atom, tok_atom, tok_integer};
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
 use crate::erl_syntax::parsers::parse_type::parse_container_t::{
@@ -35,7 +35,7 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
   map(
     tuple((
       opt(terminated(tok_atom, tok_colon)),
-      tok_atom,
+      tok_any_keyword_or_atom,
       delimited(
         tok_par_open,
         context(

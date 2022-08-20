@@ -13,8 +13,6 @@ pub struct Token {
   pub offset: *const u8,
   /// The token itself
   pub content: TokenType,
-  // /// True for the last item in line before `\n`. Field updated during preprocessing.
-  // pub last_in_line: bool,
 }
 
 impl Token {

@@ -6,7 +6,10 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string, ws_before};
 use crate::erl_syntax::parsers::misc_tok::*;
+use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::token::Token;
+use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
@@ -14,6 +17,7 @@ use nom::branch::alt;
 use nom::combinator::{consumed, map};
 use nom::error::context;
 use nom::sequence::pair;
+use nom::Slice;
 
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   map(tok_string, |s| {
@@ -64,6 +68,29 @@ fn parse_empty_binary(input: ParserInput) -> ParserResult<AstNode> {
   map(consumed(pair(tok_double_angle_open, tok_double_angle_close)), make_empty)(input.clone())
 }
 
+fn tok_character_1(input: ParserInput) -> ParserResult<AstNode> {
+  match input.tokens.iter().next() {
+    Some(Token { content: TokenType::Character(c), .. }) => {
+      let node = AstNodeImpl::new_lit_character(SourceLoc::new(&input), *c);
+      Ok((input.slice(1..), node))
+    }
+    Some(Token {
+      content: TokenType::EscapedCharacter { value, in_source },
+      ..
+    }) => {
+      let node = AstNodeImpl::new_lit_escaped_character(SourceLoc::new(&input), *value, *in_source);
+      Ok((input.slice(1..), node))
+    }
+    _other => Err(nom::Err::Error(ErlParserError::character_literal_expected(input))),
+  }
+}
+
+/// Recognizes a character token
+#[inline]
+fn parse_character(input: ParserInput) -> ParserResult<AstNode> {
+  ws_before(tok_character_1)(input)
+}
+
 /// Read a literal value from input string
 pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
   context(
@@ -75,6 +102,7 @@ pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
       parse_int_to_ast,
       parse_atom_to_ast,
       parse_string_to_ast,
+      parse_character,
     ))),
   )(input)
 }

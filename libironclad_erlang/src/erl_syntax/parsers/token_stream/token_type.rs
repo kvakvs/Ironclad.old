@@ -99,6 +99,13 @@ pub enum TokenType {
   Comment(Arc<String>),
   /// A `$`-prefixed any character
   Character(Char),
+  /// A $-prefixed character with backquote `\something`
+  EscapedCharacter {
+    /// Decoded value
+    value: char,
+    /// As it is in the source code
+    in_source: char,
+  },
   /// A parsed atom token_stream either lowercase `atom` or quoted between `' TEXT '`
   Atom(String),
   /// A variable name starting with `_` or a capital letter
@@ -131,10 +138,12 @@ impl TokenType {
   /// Explain the token type as text
   pub fn as_explanation_str(&self) -> &'static str {
     match self {
+      TokenType::AngleClose => "greater than / opening angle bracket",
+      TokenType::AngleOpen => "less than / closing angle bracket",
       TokenType::Assign => "map field assignment operator :=",
       TokenType::Asterisk => "asterisk",
       TokenType::Atom(_) => "an atom literal",
-      TokenType::Character(_) => "a character literal",
+      TokenType::Character(_) => "a dollar-prefixed character literal",
       TokenType::Colon => "colon",
       TokenType::ColonColon => "double colon",
       TokenType::Comma => "comma",
@@ -148,10 +157,10 @@ impl TokenType {
       TokenType::EOL => "end of line",
       TokenType::EqualEqual => "double equal",
       TokenType::EqualSymbol => "equals",
+      TokenType::EscapedCharacter { .. } => "a dollar-prefixed character literal with backquote",
       TokenType::Float(_) => "a floating point literal",
       TokenType::ForwardSlash => "forward slash",
       TokenType::GreaterEq => "greater than or equal to",
-      TokenType::AngleClose => "greater than / opening angle bracket",
       TokenType::HardEq => "exactly equal",
       TokenType::HardNotEq => "exactly not equal",
       TokenType::Hash => "hash symbol",
@@ -159,7 +168,6 @@ impl TokenType {
       TokenType::Keyword(_) => "a keyword",
       TokenType::LeftArr => "left arrow",
       TokenType::LeftDoubleArr => "double left arrow",
-      TokenType::AngleOpen => "less than / closing angle bracket",
       TokenType::LessThanEq => "less than or equal to",
       TokenType::ListAppend => "double plus",
       TokenType::ListSubtract => "double minus",
@@ -193,13 +201,8 @@ impl std::fmt::Display for TokenType {
       TokenType::Assign => write!(f, "≔"), // unicode EQUALS COLON 8789
       TokenType::Asterisk => write!(f, "*"),
       TokenType::Atom(a) => Pretty::singlequot_string(f, a),
-      TokenType::Character(c) => {
-        if *c >= ' ' {
-          write!(f, "${}", *c)
-        } else {
-          write!(f, "${:x}", *c as usize)
-        }
-      }
+      TokenType::Character(c) => write!(f, "${}", *c),
+      TokenType::EscapedCharacter { in_source: original, .. } => write!(f, "$\\{}", original),
       TokenType::Colon => write!(f, ":"),
       TokenType::ColonColon => write!(f, "∷"),
       TokenType::Comma => write!(f, ","),

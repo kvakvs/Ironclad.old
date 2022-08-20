@@ -128,15 +128,17 @@ impl std::fmt::Display for AstNodeImpl {
 impl std::fmt::Display for Literal {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      Literal::Integer(i) => i.fmt(f),
-      Literal::Float(flt) => flt.fmt(f),
       Literal::Atom(a) => write!(f, "'{}'", a),
       Literal::Bool(b) => b.fmt(f),
+      Literal::EmptyBinary => write!(f, "<<>>"),
+      Literal::Float(flt) => flt.fmt(f),
+      Literal::Integer(i) => i.fmt(f),
       Literal::List { elements, .. } => Pretty::display_square_list(elements.iter(), f),
       Literal::Nil => write!(f, "[]"),
-      Literal::EmptyBinary => write!(f, "<<>>"),
       Literal::String(s) => write!(f, "\"{}\"", s),
       Literal::Tuple(t) => Pretty::display_curly_list(t.iter(), f),
+      Literal::Character(c) => write!(f, "${}", c),
+      Literal::EscapedCharacter { in_source, .. } => write!(f, "$\\{}", in_source),
     }
   }
 }

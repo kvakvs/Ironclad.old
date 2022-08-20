@@ -17,6 +17,11 @@ pub enum Literal {
 
   /// Atom literal, also includes atoms 'true' and 'false'
   Atom(String),
+  /// Character literal
+  Character(char),
+  /// Character literal, escaped with `\`
+  EscapedCharacter { value: char, in_source: char },
+
   // TODO: String/list lit, tuple lit, map lit, binary lit, etc
   /// A boolean value true or false atom, is-a(Atom)
   Bool(bool),
@@ -81,6 +86,14 @@ impl Hash for Literal {
         'T'.hash(state);
         elements.hash(state);
       }
+      Literal::Character(c) => {
+        '$'.hash(state);
+        c.hash(state);
+      }
+      Literal::EscapedCharacter { value, .. } => {
+        '$'.hash(state);
+        value.hash(state);
+      }
     }
   }
 
@@ -118,6 +131,8 @@ impl Literal {
         let element_types = items.iter().map(|it| it.synthesize_type()).collect();
         ErlTypeImpl::Tuple { elements: element_types }.into()
       } // other => unimplemented!("Don't know how to synthesize type for {}", other),
+      Literal::Character(_) => ErlTypeImpl::integer(),
+      Literal::EscapedCharacter { .. } => ErlTypeImpl::integer(),
     }
   }
 

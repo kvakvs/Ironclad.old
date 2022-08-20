@@ -101,6 +101,24 @@ impl AstNodeImpl {
     AstNodeImpl::construct_with_location(location, lit_node)
   }
 
+  /// Create a new literal AST node of a character
+  pub(crate) fn new_lit_character(location: SourceLoc, c: char) -> AstNode {
+    let lit_node = Lit { value: Literal::Character(c).into() };
+    AstNodeImpl::construct_with_location(location, lit_node)
+  }
+
+  /// Create a new literal AST node of a character, escaped with `\`
+  pub(crate) fn new_lit_escaped_character(
+    location: SourceLoc,
+    value: char,
+    in_source: char,
+  ) -> AstNode {
+    let lit_node = Lit {
+      value: Literal::EscapedCharacter { value, in_source }.into(),
+    };
+    AstNodeImpl::construct_with_location(location, lit_node)
+  }
+
   /// Create a new literal AST node of a floating point number
   #[allow(dead_code)]
   pub(crate) fn new_lit_float(location: SourceLoc, val: &str) -> AstNode {

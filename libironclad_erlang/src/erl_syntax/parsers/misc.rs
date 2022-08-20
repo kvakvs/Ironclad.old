@@ -2,6 +2,7 @@
 use std::cmp::max;
 use std::sync::Arc;
 
+use crate::erl_syntax::erl_ast::AstNode;
 use ::function_name::named;
 use nom::branch::alt;
 use nom::combinator::{eof, map, recognize};

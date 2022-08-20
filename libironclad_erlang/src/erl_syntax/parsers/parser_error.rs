@@ -39,6 +39,8 @@ pub enum ErlParserErrorKind {
   FloatLiteralExpected,
   /// A string literal is needed
   StringLiteralExpected,
+  /// A character literal is needed
+  CharacterLiteralExpected,
   /// A variable started with `_` or a capital letter (or a typename) is needed
   VariableExpected,
   /// Expected a `-module(NAME).` attribute
@@ -140,6 +142,14 @@ impl<'a> ErlParserError<'a> {
   pub fn string_literal_expected(input: ParserInput<'a>) -> Self {
     ErlParserError {
       errors: vec![(input, ErlParserErrorKind::StringLiteralExpected)],
+    }
+  }
+
+  /// Create a "character literal expected" error
+  #[inline]
+  pub fn character_literal_expected(input: ParserInput<'a>) -> Self {
+    ErlParserError {
+      errors: vec![(input, ErlParserErrorKind::CharacterLiteralExpected)],
     }
   }
 

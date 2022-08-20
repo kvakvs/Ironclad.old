@@ -906,11 +906,9 @@ fn parse_map_builder_no_base() {
 #[test]
 fn test_test1() {
   test_util::start(function_name!(), "Narrow a failing test");
-  let input2 = "module(File, #b_module{name=Mod,exports=Exp,attributes=Attr,body=Fs}) ->
-    io:format(File, \"module ~p.\\n\", [Mod]),
-    io:format(File, \"exports ~p.\\n\", [Exp]),
-    io:format(File, \"attributes ~p.\\n\\n\", [Attr]),
-    PP = [beam_ssa_pp:format_function(F) || F <- Fs],
-    io:put_chars(File, lists:join($\n, PP)).";
+  let input2 = "
+  -type literal_value() :: atom() | integer() | float() | list() |
+                         nil() | tuple() | map() | binary() | fun().
+";
   let _ = test_util::parse_module(function_name!(), input2);
 }
