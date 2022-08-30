@@ -59,7 +59,10 @@ fn parse_try_catch_inner(input: ParserInput) -> ParserResult<AstNode> {
       // Optional OF followed by match clauses
       opt(preceded(
         keyword_of,
-        context("try block: 'of' clauses", cut(many1(parse_case_clause))),
+        context(
+          "try block: 'of' clauses",
+          cut(separated_list1(tok_semicolon, parse_case_clause)),
+        ),
       )),
       // Followed by 1 or more `catch Class:Exception:Stack -> ...` clauses
       preceded(

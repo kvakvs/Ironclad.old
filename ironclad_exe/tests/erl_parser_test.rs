@@ -412,6 +412,32 @@ fn parse_fn_try_catch() -> IcResult<()> {
   Ok(())
 }
 
+#[named]
+#[test]
+fn parse_fn_try_of_catch() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse a function with try-of/catch");
+
+  let source = r#"opt_function(Id, StMap) ->
+    #opt_st{anno=Anno,ssa=Linear0,cnt=Count0} = OptSt0 = map_get(Id, StMap),
+    ParamInfo = maps:get(parameter_info, Anno, #{}),
+    try opt_blks(Linear0, ParamInfo, StMap, unchanged, Count0, []) of
+        {Linear,Count} ->
+            OptSt = OptSt0#opt_st{ssa=Linear,cnt=Count},
+            StMap#{Id := OptSt};
+        none ->
+            StMap
+    catch
+        Class:Error:Stack ->
+            #b_local{name=#b_literal{val=Name},arity=Arity} = Id,
+            io:fwrite("Function: ~w/~w\n", [Name,Arity]),
+            erlang:raise(Class, Error, Stack)
+    end.
+"#;
+  let module = test_util::parse_module(function_name!(), source);
+  println!("Parsed result: {}", module.ast.borrow());
+  Ok(())
+}
+
 /// Try parse a function apply expr. This can be any expression immediately followed by
 /// a parenthesized comma expression.
 #[named]
@@ -904,17 +930,10 @@ fn parse_map_builder_no_base() {
 
 #[named]
 #[test]
-fn test_test1() {
-  test_util::start(function_name!(), "Narrow a failing test");
+fn parse_fntype_type() {
+  test_util::start(function_name!(), "Parse a fun() type with args and return type");
   let input2 = "
   -spec f() -> fun((b_blk()|terminator(), any()) -> any()).
 ";
-  //   let input2 = "
-  //   -spec fold_instrs(Fun, Labels, Acc0, Blocks) -> any() when
-  //       Fun :: fun((b_blk()|terminator(), any()) -> any()),
-  //       Labels :: [label()],
-  //       Acc0 :: any(),
-  //       Blocks :: block_map().
-  // ";
   let _ = test_util::parse_module(function_name!(), input2);
 }
