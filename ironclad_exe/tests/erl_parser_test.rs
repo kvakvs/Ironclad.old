@@ -434,7 +434,22 @@ fn parse_fn_try_of_catch() -> IcResult<()> {
     end.
 "#;
   let module = test_util::parse_module(function_name!(), source);
-  println!("Parsed result: {}", module.ast.borrow());
+  Ok(())
+}
+
+#[named]
+#[test]
+fn parse_multiple_str_literals() -> IcResult<()> {
+  test_util::start(function_name!(), "Parse a multiple string literal without ++");
+
+  let source = r#"f() -> 
+     io_lib:format("binary is used in call to ~s which doesn't support "
+                   "context reuse", [format_call(Call)]).
+"#;
+  //   let source = r#"
+  // format_opt_info_1({binary_created, #b_set{op=call,args=[Call|_]}, false}) ->
+  // "#;
+  let module = test_util::parse_module(function_name!(), source);
   Ok(())
 }
 

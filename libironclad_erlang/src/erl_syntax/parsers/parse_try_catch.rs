@@ -14,7 +14,7 @@ use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::source_loc::SourceLoc;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
-use nom::multi::{many1, separated_list1};
+use nom::multi::separated_list1;
 use nom::sequence::{preceded, terminated, tuple};
 
 /// Parse `Class:Error:Stack` triple into `ExceptionPattern`

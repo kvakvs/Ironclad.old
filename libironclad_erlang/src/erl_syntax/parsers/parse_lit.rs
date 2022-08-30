@@ -16,14 +16,21 @@ use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{consumed, map};
 use nom::error::context;
+use nom::multi::many1;
 use nom::sequence::pair;
 use nom::Slice;
+use std::sync::Arc;
 
 fn parse_string_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(tok_string, |s| {
+  map(many1(tok_string), |tokens| {
+    let s = tokens
+      .iter()
+      .map(|t| t.as_str())
+      .collect::<Vec<_>>()
+      .join("");
     AstNodeImpl::construct_with_location(
       SourceLoc::new(&input),
-      Lit { value: Literal::String(s).into() },
+      Lit { value: Literal::String(Arc::new(s)).into() },
     )
   })(input.clone())
 }
