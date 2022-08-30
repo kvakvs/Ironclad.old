@@ -907,8 +907,14 @@ fn parse_map_builder_no_base() {
 fn test_test1() {
   test_util::start(function_name!(), "Narrow a failing test");
   let input2 = "
-  -type literal_value() :: atom() | integer() | float() | list() |
-                         nil() | tuple() | map() | binary() | fun().
+  -spec f() -> fun((b_blk()|terminator(), any()) -> any()).
 ";
+  //   let input2 = "
+  //   -spec fold_instrs(Fun, Labels, Acc0, Blocks) -> any() when
+  //       Fun :: fun((b_blk()|terminator(), any()) -> any()),
+  //       Labels :: [label()],
+  //       Acc0 :: any(),
+  //       Blocks :: block_map().
+  // ";
   let _ = test_util::parse_module(function_name!(), input2);
 }

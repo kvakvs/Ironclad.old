@@ -28,6 +28,8 @@ pub enum LangConstruct {
   //------------------
   // Type constructs
   //------------------
+  FunctionType,
+  AnyFunctionType,
   UserType,
   IntegerRangeType,
   ListType,
@@ -74,6 +76,8 @@ impl Display for LangConstruct {
       LangConstruct::BinaryType => {
         write!(f, "binary type spec (head element, repeat element or both)")
       }
+      LangConstruct::FunctionType => write!(f, "function type with arguments and return type"),
+      LangConstruct::AnyFunctionType => write!(f, "any function type"),
     }
   }
 }

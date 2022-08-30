@@ -47,7 +47,7 @@ impl ErlFnDef {
       .collect();
     let clauses = clauses_r?;
 
-    let fn_type = FnType::new(self.funarity.arity, &clauses);
+    let fn_type = FnType::new(self.funarity.arity, clauses);
     let synthesized_t = ErlTypeImpl::Fn(fn_type.into()).into();
     Ok(synthesized_t)
   }

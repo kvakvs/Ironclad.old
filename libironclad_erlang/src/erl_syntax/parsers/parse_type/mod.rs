@@ -10,24 +10,75 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::lang_construct::LangConstruct;
 use crate::erl_syntax::parsers::misc;
-use crate::erl_syntax::parsers::misc::{tok_any_keyword_or_atom, tok_atom, tok_integer};
+use crate::erl_syntax::parsers::misc::{
+  tok_any_keyword_or_atom, tok_atom, tok_atom_of, tok_integer, ws_before,
+};
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
 use crate::erl_syntax::parsers::parse_type::parse_container_t::{
   type_of_list, type_of_map, type_of_nonempty_list, type_of_tuple,
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
+use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::record_field_type::RecordFieldType;
+use crate::typing::typevar::Typevar;
 use nom::branch::alt;
 use nom::combinator::{map, opt};
 use nom::error::context;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 use nom::Parser;
+
+/// A pair of `( typearg, typearg, ... )` and `ret_type`, with `->` in between them.
+fn parse_fntype_clause(input: ParserInput) -> ParserResult<FnClauseType> {
+  map(
+    separated_pair(
+      delimited(
+        tok_par_open,
+        context(
+          "argument types for a function type",
+          parse_t_util::list0_types_or_ascribed_typevars,
+        ),
+        tok_par_close,
+      ),
+      tok_right_arrow,
+      parse_type,
+    ),
+    |(args, ret)| FnClauseType::new(args, Typevar::from_erltype(&ret)),
+  )(input)
+}
+
+/// Matches atom `fun`, atom `function` or `fun` keyword
+#[inline]
+fn function_or_fun_token(input: ParserInput) -> ParserResult<()> {
+  map(
+    alt((tok_keyword(Keyword::Fun), tok_atom_of("fun"), tok_atom_of("function"))),
+    |_| (),
+  )(input)
+}
+
+/// Parse a function type: `fun((args, ...) -> rettype)` as it appears in other typespecs.
+fn parse_fntype_type(input: ParserInput) -> ParserResult<ErlType> {
+  map(
+    preceded(
+      function_or_fun_token,
+      delimited(tok_par_open, separated_list1(tok_semicolon, parse_fntype_clause), tok_par_close),
+    ),
+    |clauses| ErlTypeImpl::new_fn_type(clauses).into(),
+  )(input)
+}
+
+/// Parse a generic function type: `fun()` without return type, parameters specs or arity.
+fn parse_generic_fun_type(input: ParserInput) -> ParserResult<ErlType> {
+  map(preceded(function_or_fun_token, pair(tok_par_open, tok_par_close)), |_parens| {
+    ErlTypeImpl::new_any_fn_type()
+  })(input)
+}
 
 /// Parse a user defined type with `name()` and 0 or more typevar args.
 /// Optional with module name `module:name()`.
@@ -104,6 +155,8 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
       i,
       "a non-union type",
       &[
+        LangConstruct::AnyFunctionType,
+        LangConstruct::FunctionType,
         LangConstruct::UserType,
         LangConstruct::IntegerRangeType,
         LangConstruct::ListType,
@@ -115,9 +168,11 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
       ],
     )
   };
-  context(
+  ws_before(context(
     "non-union type parser",
     alt((
+      context("generic function type", parse_generic_fun_type),
+      context("function type", parse_fntype_type),
       context("user defined type", parse_user_type),
       binary_type,
       context("integer range", int_range_type),
@@ -130,7 +185,7 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
       context("atom literal type", atom_literal_type),
     ))
     .or(alt_failed),
-  )(input.clone())
+  ))(input.clone())
 }
 
 /// Parse any Erlang type, simple types like `atom()` with some `(args)` possibly, but could also be

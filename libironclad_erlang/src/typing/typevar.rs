@@ -1,6 +1,7 @@
 //! A type variable: name and a type pair.
 
 use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use ::function_name::named;
 use libironclad_util::pretty::Pretty;
 use std::fmt::{Display, Formatter};
 
@@ -60,14 +61,15 @@ impl Typevar {
   }
 
   /// Merges lists a and b, by finding typevar names from a in b
+  #[named]
   pub(crate) fn merge_lists(a: &[Typevar], b: &[Typevar]) -> Vec<Typevar> {
-    println!("Merge {} and {}", Typevars(a), Typevars(b));
+    println!("{}: Merging {} <> {}", function_name!(), Typevars(a), Typevars(b));
     let result: Vec<Typevar> = a
       .iter()
       .map(|each_a| Self::substitute_var_from_when_clause(each_a, b))
       .cloned()
       .collect();
-    println!("Merge result {}", Typevars(&result));
+    println!("{}: Merge result {}", function_name!(), Typevars(&result));
     result
   }
 

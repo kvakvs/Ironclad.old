@@ -43,7 +43,7 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
         "All function clauses must have same arity in a typespec"
       );
       let funarity = MFArity::new_local(&name, arity);
-      let fntypespec = ErlTypeImpl::new_fn_type(&clauses);
+      let fntypespec = ErlTypeImpl::new_fn_type(clauses);
       PreprocessorNodeImpl::new_fn_spec(SourceLoc::new(&input), funarity, fntypespec.into())
     },
   )(input.clone())

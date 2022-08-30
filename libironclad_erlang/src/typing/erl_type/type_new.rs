@@ -51,7 +51,7 @@ impl ErlTypeImpl {
   }
 
   /// Creates new function type with clauses
-  pub(crate) fn new_fn_type(clauses: &[FnClauseType]) -> ErlTypeImpl {
+  pub(crate) fn new_fn_type(clauses: Vec<FnClauseType>) -> ErlTypeImpl {
     assert!(!clauses.is_empty(), "Attempt to build a fn type with zero clauses");
 
     let arity = clauses[0].arity();
@@ -72,8 +72,14 @@ impl ErlTypeImpl {
       .map(|_| Typevar::new(None, None))
       .collect();
     let clause = FnClauseType::new(any_args, Typevar::from_erltype(ret_ty));
-    let fn_type = FnType::new(arity, &[clause]);
+    let fn_type = FnType::new(arity, vec![clause]);
     ErlTypeImpl::Fn(fn_type.into())
+  }
+
+  /// Creates a new any-function type
+  #[inline]
+  pub fn new_any_fn_type() -> ErlType {
+    ErlTypeImpl::AnyFn.into()
   }
 
   /// Wrapper to access type union construction

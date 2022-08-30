@@ -103,7 +103,7 @@ pub fn tok_eol(input: ParserInput) -> ParserResult<()> {
 
 /// Recognizes one keyword of given keyword enum value
 /// Use `tok_keyword_<name>` to match with possible whitespace
-fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
+pub fn tok_keyword(k: Keyword) -> impl FnMut(ParserInput) -> ParserResult<()> {
   move |input: ParserInput| -> ParserResult<()> {
     match input.tokens.iter().next() {
       Some(tok) if tok.is_keyword(k) => Ok((input.slice(1..), ())),

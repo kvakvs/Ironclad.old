@@ -14,7 +14,7 @@ pub struct FnType {
 
 impl FnType {
   /// Create a new function type with clauses
-  pub(crate) fn new(arity: usize, clauses: &[FnClauseType]) -> Self {
+  pub(crate) fn new(arity: usize, clauses: Vec<FnClauseType>) -> Self {
     if cfg!(debug_assertions) {
       let in_arities: Vec<String> = clauses.iter().map(|fc| format!("{}", fc.arity())).collect();
       let arities_str = in_arities.join(", ");
@@ -27,7 +27,7 @@ impl FnType {
       );
     }
 
-    Self { arity, clauses: clauses.into() }
+    Self { arity, clauses }
   }
 
   /// Retrieve arity
