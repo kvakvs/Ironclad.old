@@ -14,11 +14,11 @@ use crate::erl_syntax::node::erl_map::MapBuilderMember;
 use crate::erl_syntax::node::erl_record::RecordBuilderMember;
 use crate::erl_syntax::node::erl_unop::ErlUnaryOperatorExpr;
 use crate::erl_syntax::node::erl_var::ErlVar;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
-use crate::typing::type_error::TypeError;
+use crate::typing::type_error::{TypeError, TypeErrorKind};
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -242,7 +242,7 @@ impl AstNodeImpl {
 
   /// Scan forms and find a module definition AST node. For finding a function by funarity, check
   /// function registry `ErlModule::env`
-  pub fn find_function_def(this: &AstNode, funarity: &MFArity) -> IcResult<AstNode> {
+  pub fn find_function_def(this: &AstNode, funarity: &MFArity) -> IroncladResult<AstNode> {
     match &this.content {
       FnDef(erl_fndef) if *funarity == erl_fndef.funarity => {
         return Ok(this.clone());
@@ -259,10 +259,7 @@ impl AstNodeImpl {
       }
       _ => {}
     }
-    ErlError::type_error(
-      this.location.clone(),
-      TypeError::FunctionNotFound { mfa: funarity.clone() },
-    )
+    Err(TypeError::new_fn_not_found(Some(this.location.clone()), funarity.clone()))
   }
 
   /// Take an `AstNode` of `RecordField`, `RecordBuilder` and `MapBuilder`, and set its base.

@@ -13,7 +13,7 @@ use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_report
 use libironclad_erlang::erl_syntax::parsers::parse_expr::parse_expr_list::parse_list_comprehension;
 use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::erl_syntax::preprocessor::parsers::parse_record::parse_record_def;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::literal::Literal;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_util::mfarity::MFArity;
@@ -24,7 +24,7 @@ mod test_util;
 /// Try parse empty module
 #[named]
 #[test]
-fn parse_empty_module() -> IcResult<()> {
+fn parse_empty_module() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse an empty module with start attribute only");
   let nodes = test_util::parse_module_unwrap(function_name!(), "");
   assert_eq!(nodes.len(), 0);
@@ -34,7 +34,7 @@ fn parse_empty_module() -> IcResult<()> {
 /// Try parse `-export([])` attr
 #[named]
 #[test]
-fn parse_export_attr1() -> IcResult<()> {
+fn parse_export_attr1() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse an export attr");
 
   let input = "-export([name/123]).";
@@ -49,7 +49,7 @@ fn parse_export_attr1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_export_attr2() -> IcResult<()> {
+fn parse_export_attr2() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse an export attr");
   let input = "-export([module/2, format_error/1]).";
   let module = test_util::parse_module(function_name!(), input);
@@ -68,7 +68,7 @@ fn parse_export_attr2() -> IcResult<()> {
 /// Try parse `-import(atom, [mfa,...]).` attr
 #[named]
 #[test]
-fn parse_import_attr() -> IcResult<()> {
+fn parse_import_attr() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse an import attr");
   let input = "-import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).\n\n";
   let module = test_util::parse_module(function_name!(), input);
@@ -95,7 +95,7 @@ fn parse_import_attr() -> IcResult<()> {
 /// Try parse module forms collection with 2 functions in it
 #[named]
 #[test]
-fn parse_2_module_forms_collection() -> IcResult<()> {
+fn parse_2_module_forms_collection() -> IroncladResult<()> {
   test_util::start(
     function_name!(),
     "Parse a string with 2 function defs in it as module forms collection",
@@ -108,7 +108,7 @@ fn parse_2_module_forms_collection() -> IcResult<()> {
 /// Try parse string
 #[named]
 #[test]
-fn parse_string_test() -> IcResult<()> {
+fn parse_string_test() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a string literal");
   let expr = test_util::parse_expr(function_name!(), "\"abc\"");
   if let Lit { value: lit, .. } = &expr.content {
@@ -139,7 +139,7 @@ fn parse_atom_test() {
 /// Try parse a 2+2 expression
 #[named]
 #[test]
-fn parse_expr_2_plus_2() -> IcResult<()> {
+fn parse_expr_2_plus_2() -> IroncladResult<()> {
   let expr_2 = test_util::parse_expr(function_name!(), " 2");
   println!("Parse \"2\": {}", expr_2);
   assert!(matches!(&expr_2.content, Lit { .. }));
@@ -154,7 +154,7 @@ fn parse_expr_2_plus_2() -> IcResult<()> {
 /// Try parse a flat + expression
 #[named]
 #[test]
-fn parse_expr_flat() -> IcResult<()> {
+fn parse_expr_flat() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a long expr with +");
   let expr = test_util::parse_expr(function_name!(), "A + 123 + 333 + 6 + atom + Test");
   println!("Parse \"A+123+333+6+atom+Test\": {}", expr);
@@ -165,7 +165,7 @@ fn parse_expr_flat() -> IcResult<()> {
 /// Try parse a list builder expression
 #[named]
 #[test]
-fn parse_expr_list_builder() -> IcResult<()> {
+fn parse_expr_list_builder() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a list builder");
   let input = "[1, 2, {3, 4} | 5]";
   let expr = test_util::parse_expr(function_name!(), input);
@@ -176,7 +176,7 @@ fn parse_expr_list_builder() -> IcResult<()> {
 /// Try parse a more complex expression
 #[named]
 #[test]
-fn parse_expr_longer() -> IcResult<()> {
+fn parse_expr_longer() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a math expr");
   let expr = test_util::parse_expr(function_name!(), "123 + 1 / (2 * hello)");
   println!("Parse \"123+1/(2*hello)\": {}", expr);
@@ -187,7 +187,7 @@ fn parse_expr_longer() -> IcResult<()> {
 /// Try parse an expression with parentheses and division
 #[named]
 #[test]
-fn parse_expr_based_numbers() -> IcResult<()> {
+fn parse_expr_based_numbers() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse 2-10-16-36 based decimals");
   let input = "{2#10, 10#10, 16#fF, 36#Zz}";
   let expr = test_util::parse_expr(function_name!(), input);
@@ -240,7 +240,7 @@ fn parse_expr_record_builder_case() {
 /// Try parse an expression with parentheses and division
 #[named]
 #[test]
-fn parse_expr_2() -> IcResult<()> {
+fn parse_expr_2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a math expr with some spaces");
   let expr = test_util::parse_expr(function_name!(), "(A +1)/ 2");
   assert!(matches!(&expr.content, BinaryOp { .. }));
@@ -250,7 +250,7 @@ fn parse_expr_2() -> IcResult<()> {
 /// Try parse an expression with list comprehension
 #[named]
 #[test]
-fn parse_expr_lc1() -> IcResult<()> {
+fn parse_expr_lc1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an expr with list comprehension");
   let input = "[F || F <- Fs0 ] \n";
   let tokens = test_util::tokenize(input);
@@ -269,7 +269,7 @@ fn parse_expr_lc1() -> IcResult<()> {
 /// Try parse an expression with list comprehension
 #[named]
 #[test]
-fn parse_expr_lc2() -> IcResult<()> {
+fn parse_expr_lc2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an expr with list comprehension");
   let expr = test_util::parse_expr(function_name!(), " [function(F) || F <- Fs0]");
   assert!(matches!(&expr.content, ListComprehension { .. }));
@@ -280,7 +280,7 @@ fn parse_expr_lc2() -> IcResult<()> {
 #[named]
 #[test]
 #[ignore]
-fn parse_expr_comma() -> IcResult<()> {
+fn parse_expr_comma() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a comma separated list of expressions");
   let expr = test_util::parse_expr(function_name!(), "A, B, 123 * C");
   println!("Parse \"A,B,123*C\": {}", expr);
@@ -292,7 +292,7 @@ fn parse_expr_comma() -> IcResult<()> {
 /// Try parse a list and a tuple
 #[named]
 #[test]
-fn parse_expr_containers() -> IcResult<()> {
+fn parse_expr_containers() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a list and a tuple");
   let src = "[1,2  ,3  ] + {a, b ,C}";
   let expr = test_util::parse_expr(function_name!(), src);
@@ -305,7 +305,7 @@ fn parse_expr_containers() -> IcResult<()> {
 /// Try parse a hard-equals expression
 #[named]
 #[test]
-fn parse_expr_hard_eq() -> IcResult<()> {
+fn parse_expr_hard_eq() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a hard-equals expr");
   let src = "A =:= B2";
   let expr = test_util::parse_expr(function_name!(), src);
@@ -317,7 +317,7 @@ fn parse_expr_hard_eq() -> IcResult<()> {
 /// Try parse some function defs
 #[named]
 #[test]
-fn parse_fn1() -> IcResult<()> {
+fn parse_fn1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function returning some simple value");
   let module = test_util::parse_module(function_name!(), "f(A) -> atom123.");
   let ast = module.ast.borrow().clone();
@@ -338,7 +338,7 @@ fn parse_fn1() -> IcResult<()> {
 /// Try parse some function defs
 #[named]
 #[test]
-fn parse_fn_with_list_comprehension() -> IcResult<()> {
+fn parse_fn_with_list_comprehension() -> IroncladResult<()> {
   test_util::start(function_name!(), "From OTP's lib/compiler: parse list comprehension");
   let source = "module({Mod,Exp,Attr,Fs0,Lc}, _Opt) ->
     Fs = [function(F) || F <- Fs0],
@@ -353,7 +353,7 @@ fn parse_fn_with_list_comprehension() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_try_catch_exceptionpattern() -> IcResult<()> {
+fn parse_try_catch_exceptionpattern() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an exception pattern for try/catch");
 
   {
@@ -384,7 +384,7 @@ fn parse_try_catch_exceptionpattern() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_try_catch_clause() -> IcResult<()> {
+fn parse_try_catch_clause() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a try-catch catch-clause");
 
   let input = "myfun() -> try ok catch Class:Error:Stack when true -> ok end.";
@@ -400,7 +400,7 @@ fn parse_try_catch_clause() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_fn_try_catch() -> IcResult<()> {
+fn parse_fn_try_catch() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with try/catch");
 
   let source = "function({function,Name,Arity,CLabel,Is0}) ->
@@ -414,7 +414,7 @@ fn parse_fn_try_catch() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_fn_try_of_catch() -> IcResult<()> {
+fn parse_fn_try_of_catch() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with try-of/catch");
 
   let source = r#"opt_function(Id, StMap) ->
@@ -439,7 +439,7 @@ fn parse_fn_try_of_catch() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_multiple_str_literals() -> IcResult<()> {
+fn parse_multiple_str_literals() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a multiple string literal without ++");
 
   let source = r#"f() -> 
@@ -457,7 +457,7 @@ fn parse_multiple_str_literals() -> IcResult<()> {
 /// a parenthesized comma expression.
 #[named]
 #[test]
-fn parse_apply_1() -> IcResult<()> {
+fn parse_apply_1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a simple apply() expr");
   let expr = test_util::parse_expr(function_name!(), "a_function()");
   println!("{}: parsed {}", function_name!(), expr);
@@ -473,7 +473,7 @@ fn parse_apply_1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_big_fun() -> IcResult<()> {
+fn parse_big_fun() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a multi-clause big function");
   let src = "rename_instr({bs_put_binary=I,F,Sz,U,Fl,Src}) ->
     {bs_put,F,{I,U,Fl},[Sz,Src]};
@@ -531,7 +531,7 @@ rename_instr(I) -> I.";
 
 #[named]
 #[test]
-fn parse_fun_with_if() -> IcResult<()> {
+fn parse_fun_with_if() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with if statement");
   let src = "rename_instrs([{get_list,S,D1,D2}|Is]) ->
     if D1 =:= S -> [{get_tl,S,D2},{get_hd,S,D1}|rename_instrs(Is)];
@@ -543,7 +543,7 @@ fn parse_fun_with_if() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_fun_with_case() -> IcResult<()> {
+fn parse_fun_with_case() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with case statement");
   let src = " f(x)  ->   case proplists:get_bool(no_shared_fun_wrappers, Opts) of
         false -> Swap = beam_opcodes:opcode(swap, 2), beam_dict:opcode(Swap, Dict);
@@ -554,7 +554,7 @@ fn parse_fun_with_case() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_fun_with_lambda() -> IcResult<()> {
+fn parse_fun_with_lambda() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with a lambda");
   let src = "coalesce_consecutive_labels([{label,L}=Lbl,{label,Alias}|Is], Replace, Acc) ->
     coalesce_consecutive_labels([Lbl|Is], [{Alias,L}|Replace], Acc);
@@ -569,7 +569,7 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 
 #[named]
 #[test]
-fn parse_fun_with_binary_match() -> IcResult<()> {
+fn parse_fun_with_binary_match() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with a binary match in args");
   let input = "finalize_fun_table_1(<<\"FunT\",Keep:8/binary,Table0/binary>>, MD5) ->
     <<Uniq:27,_:101/bits>> = MD5,
@@ -582,7 +582,7 @@ finalize_fun_table_1(Chunk, _) -> Chunk.";
 
 #[named]
 #[test]
-fn parse_fun_guard() -> IcResult<()> {
+fn parse_fun_guard() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with a guard");
   let input = "
   %% Build an IFF form.
@@ -600,7 +600,7 @@ fn parse_fun_guard() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_rem_expr() -> IcResult<()> {
+fn parse_rem_expr() -> IroncladResult<()> {
   test_util::start(
     function_name!(),
     "Parse an expression with a remainder; \
@@ -613,7 +613,7 @@ fn parse_rem_expr() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_fun_guard2() -> IcResult<()> {
+fn parse_fun_guard2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with a guard and record fields");
   let input = "-spec opcode(non_neg_integer(), bdict()) -> bdict().
       opcode(Op, Dict) when Dict#asm.highest_opcode >= Op -> Dict;
@@ -624,7 +624,7 @@ fn parse_fun_guard2() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_apply_with_module_and_without1() -> IcResult<()> {
+fn parse_apply_with_module_and_without1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let src = "function_name()";
   let expr = test_util::parse_expr(function_name!(), src);
@@ -635,7 +635,7 @@ fn parse_apply_with_module_and_without1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_apply_with_module_and_without2() -> IcResult<()> {
+fn parse_apply_with_module_and_without2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let src = "mod_name:function_name()";
   let expr = test_util::parse_expr(function_name!(), src);
@@ -646,7 +646,7 @@ fn parse_apply_with_module_and_without2() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_apply_with_module_and_without3() -> IcResult<()> {
+fn parse_apply_with_module_and_without3() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an function call with or without module name");
   let src = "proplists:get_bool(no_shared_fun_wrappers, Opts)";
   let expr = test_util::parse_expr(function_name!(), src);
@@ -670,7 +670,7 @@ fn parse_apply_panic() {
 
 #[named]
 #[test]
-fn parse_apply_2() -> IcResult<()> {
+fn parse_apply_2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse an apply() expression with a fancy left side");
 
   let expr = test_util::parse_expr(function_name!(), "(123 + atom)()");
@@ -682,7 +682,7 @@ fn parse_apply_2() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_apply_3() -> IcResult<()> {
+fn parse_apply_3() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a fancy nested apply() expression");
 
   let expr = test_util::parse_expr(function_name!(), "(F() + g())(test(), 123())");
@@ -694,7 +694,7 @@ fn parse_apply_3() -> IcResult<()> {
 /// Try parse a small `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
-fn parse_small_record_test() -> IcResult<()> {
+fn parse_small_record_test() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record definition");
   let input = "-record(test_small,\t\n{a\t=value,\nb =\"test\"\n}).";
   let _parsed = test_util::parse_module_unwrap(function_name!(), input);
@@ -704,7 +704,7 @@ fn parse_small_record_test() -> IcResult<()> {
 /// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
-fn parse_record_raw_parser_invocation() -> IcResult<()> {
+fn parse_record_raw_parser_invocation() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record definition (raw parser invocation)");
   let input = "-record(options,
 	 {includes=[] :: [file:filename()],	% Include paths (list of
@@ -724,7 +724,7 @@ fn parse_record_raw_parser_invocation() -> IcResult<()> {
 /// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl`
 #[named]
 #[test]
-fn parse_record_test() -> IcResult<()> {
+fn parse_record_test() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record definition");
   let input = "%%\n
     %% Generic compiler options, passed from the erl_compile module.\n
@@ -755,7 +755,7 @@ fn parse_record_test() -> IcResult<()> {
 /// Try parse `-record(name, {fields})` attr from OTP's `lib/erl_compile.hrl` as a part of a module
 #[named]
 #[test]
-fn parse_record_with_module() -> IcResult<()> {
+fn parse_record_with_module() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record definition as a part of a module");
   let input = "-record(options, {includes }).\n";
   let module = test_util::parse_module(function_name!(), input);
@@ -769,7 +769,7 @@ fn parse_record_with_module() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_record_construction() -> IcResult<()> {
+fn parse_record_construction() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record construction");
   let input = "\
   fn() ->\n\
@@ -782,7 +782,7 @@ fn parse_record_construction() -> IcResult<()> {
 /// Try parse `-record(name, {fields})` with a map in it
 #[named]
 #[test]
-fn parse_record_with_map() -> IcResult<()> {
+fn parse_record_with_map() -> IroncladResult<()> {
   test_util::start(function_name!(), "parse a record definition");
   let input = "-record(t_tuple, {size=0 :: integer(),
     exact=false :: boolean(),

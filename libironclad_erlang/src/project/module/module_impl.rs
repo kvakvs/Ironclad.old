@@ -8,7 +8,7 @@ use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, Tokens
 use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::parsers::token_stream::tokenizer::tokenize_source;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
@@ -92,7 +92,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     module: &ErlModule,
     src_file: &SourceFile,
-  ) -> IcResult<Vec<Token>> {
+  ) -> IroncladResult<Vec<Token>> {
     //----------------------
     // Stage 1 tokenize the input
     //----------------------
@@ -120,7 +120,7 @@ impl ErlModuleImpl {
     _project: &ErlProject,
     src_file: SourceFile,
     parse_fn: T,
-  ) -> IcResult<Vec<Token>>
+  ) -> IroncladResult<Vec<Token>>
   where
     T: Fn(TokenizerInput) -> TokensResult<Vec<Token>>,
   {

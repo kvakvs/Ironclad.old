@@ -1,5 +1,5 @@
 //! Handling of include files
-use crate::error::ic_error::{IcResult, IroncladError};
+use crate::error::ic_error::{IroncladError, IroncladResult};
 use crate::project::project_impl::ErlProjectImpl;
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
@@ -39,7 +39,7 @@ impl ErlProjectImpl {
     location: SourceLoc,
     find_file: &Path,
     from_file: Option<PathBuf>,
-  ) -> IcResult<PathBuf> {
+  ) -> IroncladResult<PathBuf> {
     if find_file.is_absolute() {
       return Ok(find_file.to_path_buf());
     }

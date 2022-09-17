@@ -1,6 +1,7 @@
 //! Larger categories for errors
 
-use crate::error::ic_error_trait::IcError;
+use crate::error::ic_error_trait::GenericIroncladError;
+use crate::typing::type_error::TypeError;
 use libironclad_util::io::file_error::IcFileError;
 use std::path::PathBuf;
 
@@ -8,7 +9,7 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub enum IcErrorCategory {
   /// Returned when multiple errors were found, report each error
-  Multiple(Vec<IcError>),
+  Multiple(Vec<GenericIroncladError>),
 
   /// Returned when file or directory read/write failed
   StdIoError(std::io::Error),
@@ -43,7 +44,7 @@ pub enum IcErrorCategory {
   Erlang,
 
   /// Some type discrepancy has been detected
-  TypeError,
+  TypeErr,
 
   /// A variable was referenced that's not in the scope
   VariableNotFound(String),
@@ -73,7 +74,7 @@ impl IcErrorCategory {
       IcErrorCategory::Internal => "Internal error",
       IcErrorCategory::ErlangParse => "Erlang parse error",
       IcErrorCategory::VariableNotFound(_) => "Variable not found",
-      IcErrorCategory::TypeError => "Type error",
+      IcErrorCategory::TypeErr { .. } => "Type error",
       IcErrorCategory::Erlang => "Program structure error",
       IcErrorCategory::FileNotFound { .. } => "File was not found",
     }

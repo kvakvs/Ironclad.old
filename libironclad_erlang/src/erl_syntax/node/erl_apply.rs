@@ -3,7 +3,7 @@ use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
@@ -53,16 +53,16 @@ impl ErlApply {
     location: SourceLoc,
     module: &ErlModule,
     scope: &Scope,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     // Synthesize target and check that it is a function type
     let target_ty = self.target.synthesize(module, scope)?;
     if !target_ty.is_function() {
       let msg = format!("Attempt to call a value which is not a function: {}", self.target);
-      return ErlError::type_error(location, TypeError::NotAFunction { msg });
+      return Err(TypeError::new_not_a_fn(Some(location), None, msg));
     }
 
     // Build argument type list and check every argument vs the target (the callee)
-    let arg_types_r: IcResult<Vec<ErlType>> = self
+    let arg_types_r: IroncladResult<Vec<ErlType>> = self
       .args
       .iter()
       .map(|arg| arg.synthesize(module, scope))
@@ -80,9 +80,9 @@ impl ErlApply {
       TypeKind::FnRef { .. } => unimplemented!("Callable is a fun reference"),
       TypeKind::Lambda => unimplemented!("Callable is a lambda"),
 
-      other => {
+      _other => {
         let msg = format!("Attempt to call a non-function: {}", &target_ty);
-        ErlError::type_error(location, TypeError::NotAFunction { msg })
+        Err(TypeError::new_not_a_fn(Some(location), None, msg))
       }
     }
     // let clause_type = FnClauseType::new(arg_types?, ret_ty).into();
@@ -95,14 +95,14 @@ impl ErlApply {
     location: SourceLoc,
     fn_type: &FnType,
     arg_types: &[ErlType],
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     if self.args.len() != fn_type.arity() {
       let msg = format!(
         "Attempt to call a function with wrong number of arguments: expected {}, got {}",
         fn_type.arity(),
         self.args.len()
       );
-      return ErlError::type_error(location, TypeError::BadArity { msg });
+      return Err(TypeError::new_bad_arity(Some(location), msg));
     }
     let compatible_clauses = fn_type.get_compatible_clauses(arg_types);
     if compatible_clauses.is_empty() {
@@ -116,7 +116,7 @@ impl ErlApply {
         "No compatible function clauses while calling {} with args ({})",
         self.target, args_str
       );
-      return ErlError::type_error(location, TypeError::BadArguments { msg });
+      return Err(TypeError::new_bad_arguments(Some(location), msg));
     }
     // Return type only from compatible clauses
     let ret_types: Vec<ErlType> = compatible_clauses

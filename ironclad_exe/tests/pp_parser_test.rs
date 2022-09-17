@@ -2,7 +2,7 @@ mod test_util;
 
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::typing::erl_integer::ErlInteger;
 use libironclad_util::mfarity::MFArity;
 
@@ -66,7 +66,7 @@ fn parse_if_branches() {
 #[test]
 #[named]
 /// Try how splitting module into directives and text works; With comments
-fn parse_if_block_with_comments() -> IcResult<()> {
+fn parse_if_block_with_comments() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a module example into fragments with comments");
   let input = "  -if(%true)
 false).

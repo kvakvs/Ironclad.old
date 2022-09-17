@@ -37,6 +37,14 @@ pub type ErlType = Arc<TypeImpl>;
 //
 
 impl TypeImpl {
+  /// Check whether the type has a type variable name, and it matches `name`
+  pub(crate) fn has_typevar_name(&self, name: &str) -> bool {
+    match &self.typevar {
+      Some(typevar) => typevar == name,
+      None => false,
+    }
+  }
+
   /// Return a number placing the type somewhere in the type ordering hierarchy
   /// number < atom < reference < fun < port < pid < tuple < map < nil < list < bit string
   /// This ordering is used for BTree construction, not for comparisons

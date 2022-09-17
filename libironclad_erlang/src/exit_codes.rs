@@ -1,7 +1,7 @@
 //! Exit codes for `std::process::exit`
 
 use crate::erl_syntax::erl_error::ErlError;
-use crate::error::ic_error_trait::IcError;
+use crate::error::ic_error_trait::GenericIroncladError;
 
 /// Returned on success
 pub const EXIT_SUCCESS: i32 = 0;
@@ -17,7 +17,7 @@ pub fn erl_fatal_error(err: ErlError) {
 }
 
 /// End program with the error message
-pub fn erl_fatal_icerror(err: IcError) {
+pub fn erl_fatal_icerror(err: GenericIroncladError) {
   println!("Fatal error ({:?}): {}", err.get_category(), err.get_message());
   std::process::exit(EXIT_FATAL);
 }

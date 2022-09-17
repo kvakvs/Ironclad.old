@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::collections::HashMap;
 
@@ -16,7 +16,7 @@ impl AstNodeImpl {
   pub(crate) fn extract_variables(
     node: &AstNode,
     variables: &mut HashMap<String, ErlType>,
-  ) -> IcResult<()> {
+  ) -> IroncladResult<()> {
     match &node.content {
       AstNodeType::Var(v) => {
         variables.insert(v.name.clone(), TypeImpl::any());

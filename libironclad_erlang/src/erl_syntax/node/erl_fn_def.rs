@@ -2,7 +2,7 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_fn_clause::ErlFnClause;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
@@ -40,8 +40,8 @@ impl ErlFnDef {
     &self,
     module: &ErlModule,
     _scope: &Scope,
-  ) -> IcResult<ErlType> {
-    let clauses_r: IcResult<Vec<FnClauseType>> = self
+  ) -> IroncladResult<ErlType> {
+    let clauses_r: IroncladResult<Vec<FnClauseType>> = self
       .clauses
       .iter()
       .map(|fnc| fnc.synthesize_clause_type(module, &fnc.scope))
@@ -59,9 +59,9 @@ impl ErlFnDef {
     &self,
     module: &ErlModule,
     _scope: &Scope,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     // TODO: Filter out incompatible clauses
-    let clauses_ret: IcResult<Vec<ErlType>> = self
+    let clauses_ret: IroncladResult<Vec<ErlType>> = self
       .clauses
       .iter()
       .map(|fnc| fnc.synthesize_clause_return_type(module, &fnc.scope))

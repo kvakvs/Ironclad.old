@@ -10,7 +10,7 @@ use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::error::ic_error::{IcResult, IroncladError};
+use crate::error::ic_error::{IroncladError, IroncladResult};
 use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use crate::project::module::preprocess::pp_macro_substitution::substitute_macro_invocations;
 use crate::project::ErlProject;
@@ -232,7 +232,7 @@ fn generic_include(
   state: &mut PreprocessState,
   _ppnode: PreprocessorNode,
   found_path: &Path,
-) -> IcResult<Vec<Token>> {
+) -> IroncladResult<Vec<Token>> {
   // let found_path_oss = found_path.as_os_str().to_os_string();
 
   // if state.module.included_files.contains(&found_path_oss) {
@@ -262,7 +262,7 @@ fn on_include(
   state: &mut PreprocessState,
   path: &str,
   ppnode: PreprocessorNode,
-) -> IcResult<Vec<Token>> {
+) -> IroncladResult<Vec<Token>> {
   let literal_path = PathBuf::from(path);
   let found_path = state
     .project
@@ -274,7 +274,7 @@ fn on_include_lib(
   state: &mut PreprocessState,
   path: &str,
   ppnode: PreprocessorNode,
-) -> IcResult<Vec<Token>> {
+) -> IroncladResult<Vec<Token>> {
   let literal_path = PathBuf::from(path);
   let found_path = state
     .project
@@ -287,7 +287,7 @@ fn preprocess_handle_ppnode(
   input_tokens: &mut Vec<Token>,
   ppnode: PreprocessorNode,
   state: &mut PreprocessState,
-) -> IcResult<()> {
+) -> IroncladResult<()> {
   let active = state.is_section_condition_true();
 
   match &ppnode.content {
@@ -422,7 +422,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     module: &ErlModule,
     mut tokens: Vec<Token>,
-  ) -> IcResult<Vec<Token>> {
+  ) -> IroncladResult<Vec<Token>> {
     let original_input = source_file.text.as_str();
     let mut state = PreprocessState::new(project, module, (tokens.as_ptr(), tokens.len()));
 

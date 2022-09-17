@@ -2,7 +2,7 @@
 
 use crate::error::ic_error::IroncladError;
 use crate::error::ic_error_category::IcErrorCategory;
-use crate::error::ic_error_trait::IcErrorT;
+use crate::error::ic_error_trait::IcErrorTrait;
 
 impl std::fmt::Debug for IroncladError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -33,7 +33,7 @@ impl std::fmt::Display for IroncladError {
       | IcErrorCategory::PreprocessorParse
       | IcErrorCategory::ParserInternal
       | IcErrorCategory::Internal
-      | IcErrorCategory::TypeError
+      | IcErrorCategory::TypeErr { .. }
       | IcErrorCategory::ErlangParse => {
         write!(f, "{} (at {})", self.get_message(), self.get_location())
       }

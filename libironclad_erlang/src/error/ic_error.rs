@@ -1,6 +1,6 @@
 //! Contains all possible Erlang libironclad errors
 use crate::error::ic_error_category::IcErrorCategory;
-use crate::error::ic_error_trait::{IcError, IcErrorT};
+use crate::error::ic_error_trait::{GenericIroncladError, IcErrorTrait};
 use crate::source_loc::SourceLoc;
 use std::path::{Path, PathBuf};
 
@@ -14,7 +14,7 @@ pub struct IroncladError {
   msg: String,
 }
 
-impl IcErrorT for IroncladError {
+impl IcErrorTrait for IroncladError {
   fn get_category(&self) -> &IcErrorCategory {
     &self.category
   }
@@ -49,14 +49,14 @@ impl IroncladError {
 
   /// Create an internal error
   #[allow(dead_code)]
-  pub(crate) fn internal<T>(message: String) -> IcResult<T> {
+  pub(crate) fn internal<T>(message: String) -> IroncladResult<T> {
     let new_err = IroncladError::new(IcErrorCategory::Internal, SourceLoc::None, message);
     Err(Box::new(new_err))
   }
 
   /// Wraps a `VariableNotFound`
   #[allow(dead_code)]
-  pub(crate) fn variable_not_found<T>(var_name: &str, loc: SourceLoc) -> IcResult<T> {
+  pub(crate) fn variable_not_found<T>(var_name: &str, loc: SourceLoc) -> IroncladResult<T> {
     let cat = IcErrorCategory::VariableNotFound(String::from(var_name));
     let new_err = IroncladError::new(cat, loc, "Variable not found".to_string());
     Err(Box::new(new_err))
@@ -68,7 +68,7 @@ impl IroncladError {
     location: SourceLoc,
     path: &Path,
     while_verb: &str,
-  ) -> IcResult<T> {
+  ) -> IroncladResult<T> {
     let cat = IcErrorCategory::FileNotFound {
       file: PathBuf::from(path),
       while_verb: while_verb.to_string(),
@@ -80,7 +80,7 @@ impl IroncladError {
   // TODO: move to preprocessor crate
   /// Creates a preprocessor parse error from a filename and a message
   #[allow(dead_code)]
-  pub(crate) fn pp_parse<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
+  pub(crate) fn pp_parse<T>(loc: SourceLoc, message: &str) -> IroncladResult<T> {
     let new_err =
       IroncladError::new(IcErrorCategory::PreprocessorParse, loc, String::from(message));
     Err(Box::new(new_err))
@@ -89,7 +89,7 @@ impl IroncladError {
   // TODO: move to preprocessor crate
   /// Creates a preprocessor error from a filename and a message
   #[allow(dead_code)]
-  pub(crate) fn pp_error<T>(loc: SourceLoc, message: &str) -> IcResult<T> {
+  pub(crate) fn pp_error<T>(loc: SourceLoc, message: &str) -> IroncladResult<T> {
     let new_err = IroncladError::new(IcErrorCategory::Preprocessor, loc, String::from(message));
     Err(Box::new(new_err))
   }
@@ -103,7 +103,7 @@ impl IroncladError {
 
   /// Given a vector of ErlErrors, return one, multiple error, or panic if no errors were given
   #[allow(dead_code)]
-  pub(crate) fn multiple(mut errors: Vec<IcError>) -> IcError {
+  pub(crate) fn multiple(mut errors: Vec<GenericIroncladError>) -> GenericIroncladError {
     match errors.len() {
       0 => panic!("IcError::multiple() called with an empty error vector"),
       1 => errors.pop().unwrap(),
@@ -116,7 +116,7 @@ impl IroncladError {
 }
 
 /// Used as generic `Result<T>` which can hold any error
-pub type IcResult<T> = Result<T, IcError>;
+pub type IroncladResult<T> = Result<T, GenericIroncladError>;
 
-/// Used as Result<T> for non-compiler related operations (loading config, e.g.)
-pub type IroncladResult<T> = Result<T, IroncladError>;
+// /// Used as Result<T> for non-compiler related operations (loading config, e.g.)
+// pub type IroncladResult<T> = Result<T, IroncladError>;

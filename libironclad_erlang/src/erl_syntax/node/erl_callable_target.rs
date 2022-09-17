@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::ErlType;
@@ -75,7 +75,7 @@ impl CallableTarget {
 
   /// Create a type for this callable target
   #[allow(dead_code)]
-  pub(crate) fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<ErlType> {
+  pub(crate) fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IroncladResult<ErlType> {
     match self {
       CallableTarget::Expr(e) => e.synthesize(module, scope),
       CallableTarget::MFArity(_) => todo!("synthesize for mfarity callable target"),

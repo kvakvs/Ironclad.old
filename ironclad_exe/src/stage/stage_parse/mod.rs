@@ -1,6 +1,6 @@
 //! Parses Erlang source into AST
 
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::ErlProject;
 use libironclad_util::stats::time_stats::TimeStatsImpl;
@@ -20,7 +20,7 @@ impl ErlParseStage {
   /// Parse stage
   /// * Parse loaded ERL files as Erlang.
   /// Returns: Collection of AST trees for all affected ERL modules
-  pub fn run_parse_stage(project: &ErlProject) -> IcResult<()> {
+  pub fn run_parse_stage(project: &ErlProject) -> IroncladResult<()> {
     let mut stage_time = TimeStatsImpl::default();
     let inputs = project.project_inputs.input_paths.clone_contents();
 

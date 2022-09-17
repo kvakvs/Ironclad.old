@@ -3,7 +3,7 @@ use std::fmt::Formatter;
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use crate::typing::erl_type::ErlType;
@@ -65,7 +65,7 @@ impl ErlFnClause {
     &self,
     module: &ErlModule,
     scope: &Scope,
-  ) -> IcResult<FnClauseType> {
+  ) -> IroncladResult<FnClauseType> {
     let mut args_types = Vec::new();
     for arg in self.args.iter() {
       // Keep this as a for loop, to allow `?` operator to work
@@ -83,7 +83,7 @@ impl ErlFnClause {
     &self,
     module: &ErlModule,
     env: &Scope,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     self.body.synthesize(module, env)
   }
 }

@@ -4,14 +4,14 @@ extern crate libironclad_erlang;
 mod test_util;
 
 use ::function_name::named;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::typing::erl_type::TypeImpl;
 use std::ops::Deref;
 
 #[named]
 #[test]
 /// Check that unions are capable of shrinking matching multiple types into single compound types
-fn union_auto_shrink_numbers() -> IcResult<()> {
+fn union_auto_shrink_numbers() -> IroncladResult<()> {
   test_util::start(function_name!(), "TypeUnion.ShrinkNum");
   let union_t = TypeImpl::new_union(&[
     TypeImpl::integer(),
@@ -45,7 +45,7 @@ fn union_auto_shrink_numbers() -> IcResult<()> {
 #[named]
 #[test]
 /// Check that union of 0 is None-type
-fn union_auto_shrink_0() -> IcResult<()> {
+fn union_auto_shrink_0() -> IroncladResult<()> {
   test_util::start(function_name!(), "TypeUnion.Shrink0");
   let union_t = TypeImpl::new_union(&Vec::default());
   assert!(
@@ -58,7 +58,7 @@ fn union_auto_shrink_0() -> IcResult<()> {
 #[named]
 #[test]
 /// Check that union of 1 type is that type
-fn union_auto_shrink_1() -> IcResult<()> {
+fn union_auto_shrink_1() -> IroncladResult<()> {
   test_util::start(function_name!(), "TypeUnion.Shrink1");
   let union_t = TypeImpl::new_union(&vec![TypeImpl::nil()]);
   assert!(
@@ -72,7 +72,7 @@ fn union_auto_shrink_1() -> IcResult<()> {
 #[named]
 #[test]
 /// Check that union of int|int is int
-fn union_int_int() -> IcResult<()> {
+fn union_int_int() -> IroncladResult<()> {
   test_util::start(function_name!(), "TypeUnion.IntInt");
   let union_t = TypeImpl::new_union(&vec![TypeImpl::integer(), TypeImpl::integer()]);
   assert!(
@@ -86,7 +86,7 @@ fn union_int_int() -> IcResult<()> {
 #[named]
 #[test]
 /// Check that union of nothing is none()
-fn union_none() -> IcResult<()> {
+fn union_none() -> IroncladResult<()> {
   test_util::start(function_name!(), "TypeUnion.None");
   let union_t = TypeImpl::new_union(&vec![]);
   assert!(

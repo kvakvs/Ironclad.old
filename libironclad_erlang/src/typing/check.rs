@@ -2,7 +2,7 @@
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::TypeImpl;
@@ -20,7 +20,7 @@ impl TypeCheck {
     scope: &Scope,
     ast: &AstNode,
     expected_ty: &TypeImpl,
-  ) -> IcResult<bool> {
+  ) -> IroncladResult<bool> {
     let synthesized_ty = ast.synthesize(module, scope)?;
 
     println!(
@@ -29,11 +29,16 @@ impl TypeCheck {
     );
 
     if !synthesized_ty.is_subtype_of(expected_ty) {
-      let type_err = TypeError::ExpectedType {
-        expected_type: format!("{}", expected_ty),
-        actual_type: format!("{}", synthesized_ty),
-      };
-      ErlError::type_error(ast.location.clone(), type_err)
+      // let type_err = TypeError::ExpectedType {
+      //   expected_type: format!("{}", expected_ty),
+      //   actual_type: format!("{}", synthesized_ty),
+      // };
+      Err(TypeError::new_type_error(
+        Some(ast.location.clone()),
+        format!("{}", expected_ty),
+        format!("{}", synthesized_ty),
+        "A different type was expected".to_string(),
+      ))
     } else {
       Ok(true)
     }

@@ -1,7 +1,7 @@
 //! Erlang errors
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::error::ic_error_category::IcErrorCategory;
-use crate::error::ic_error_trait::IcErrorT;
+use crate::error::ic_error_trait::IcErrorTrait;
 use crate::source_loc::SourceLoc;
 use crate::typing::type_error::TypeError;
 use libironclad_util::mfarity::MFArity;
@@ -43,7 +43,7 @@ pub struct ErlError {
   pub msg: String,
 }
 
-impl IcErrorT for ErlError {
+impl IcErrorTrait for ErlError {
   fn get_category(&self) -> &IcErrorCategory {
     &self.ic_category
   }
@@ -85,29 +85,29 @@ impl ErlError {
   // }
 
   /// Creates an "Unacceptable" error
-  pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IcResult<T> {
+  pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IroncladResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
     Err(Box::new(new_err))
   }
 
-  /// Creates an "TypeError" error
-  pub(crate) fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
-    let new_err = ErlError::new(
-      IcErrorCategory::TypeError,
-      ErlErrorCategory::TypeError,
-      loc,
-      format!("{}", type_err),
-    );
-    Err(Box::new(new_err))
-  }
+  // /// Creates an "TypeError" error
+  // pub(crate) fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
+  //   let new_err = ErlError::new(
+  //     IcErrorCategory::TypeErr,
+  //     ErlErrorCategory::TypeError,
+  //     loc,
+  //     format!("{}", type_err),
+  //   );
+  //   Err(Box::new(new_err))
+  // }
 
   /// Creates an "Local Function Not Found" error
   pub(crate) fn local_function_not_found<T>(
     loc: SourceLoc,
     mfa: MFArity,
     msg: String,
-  ) -> IcResult<T> {
+  ) -> IroncladResult<T> {
     let new_err =
       ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
     Err(Box::new(new_err))
@@ -122,12 +122,12 @@ impl ErlError {
 
   #[allow(dead_code)]
   #[inline]
-  pub(crate) fn return_preprocessor_error<T>(loc: SourceLoc, msg: String) -> IcResult<T> {
+  pub(crate) fn return_preprocessor_error<T>(loc: SourceLoc, msg: String) -> IroncladResult<T> {
     Err(Box::new(Self::preprocessor_error(loc, msg)))
   }
 
   /// Creates a "Variable Not Found" error
-  pub(crate) fn variable_not_found<T>(loc: SourceLoc, var: String) -> IcResult<T> {
+  pub(crate) fn variable_not_found<T>(loc: SourceLoc, var: String) -> IroncladResult<T> {
     let new_err = ErlError::new(
       IcErrorCategory::Erlang,
       ErlErrorCategory::VariableNotFound { var },

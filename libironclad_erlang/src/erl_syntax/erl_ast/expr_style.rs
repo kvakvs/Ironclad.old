@@ -3,7 +3,7 @@
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use std::fmt::{Display, Formatter};
 
 /// Controls the parser behaviour and allowed operators.
@@ -33,24 +33,24 @@ impl Display for ExprStyle {
 impl AstNodeImpl {
   /// Ensure the expression can be used as a guard expression.
   #[inline]
-  pub fn verify_expr_is_guard(node: &AstNode) -> IcResult<()> {
+  pub fn verify_expr_is_guard(node: &AstNode) -> IroncladResult<()> {
     Self::verify_expr_style(node, ExprStyle::Guard)
   }
 
   /// Ensure the expression can be used as match expression.
   #[inline]
-  pub fn verify_expr_is_matchexpr(node: &AstNode) -> IcResult<()> {
+  pub fn verify_expr_is_matchexpr(node: &AstNode) -> IroncladResult<()> {
     Self::verify_expr_style(node, ExprStyle::MatchExpr)
   }
 
   /// Ensure the expression contains const expressions only.
   #[inline]
-  pub fn verify_expr_is_const(node: &AstNode) -> IcResult<()> {
+  pub fn verify_expr_is_const(node: &AstNode) -> IroncladResult<()> {
     Self::verify_expr_style(node, ExprStyle::Const)
   }
 
   /// Returns `()` if the expression style matches, or returns a detailed error.
-  fn verify_expr_style(node: &AstNode, style: ExprStyle) -> IcResult<()> {
+  fn verify_expr_style(node: &AstNode, style: ExprStyle) -> IroncladResult<()> {
     match &node.content {
       // AstNodeType::FnRef { .. } => {}
       AstNodeType::MFA { .. } => {

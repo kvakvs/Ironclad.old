@@ -9,6 +9,7 @@ use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
+use crate::error::ic_error::IroncladResult;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
@@ -18,7 +19,7 @@ use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::separated_list1;
-use nom::sequence::{delimited, tuple};
+use nom::sequence::{delimited, preceded, tuple};
 
 /// Given function spec module attribute `-spec name(args...) -> ...` parse into an AST node
 /// Dash `-` is matched outside by the caller.
@@ -54,6 +55,25 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
   )(input.clone())
 }
 
+fn parse_fnclause_map_fn(
+  args: Vec<ErlType>,
+  ret_ty: ErlType,
+  when_expr: Option<Vec<ErlType>>,
+) -> IroncladResult<FnClauseType> {
+  // TODO: Check name equals function name, for module level functions
+  if let Some(when_expr_val) = when_expr {
+    let mut substituted_args = Vec::default();
+    for arg in args.into_iter() {
+      // use for loop to allow the `?` operator to work
+      substituted_args.push(TypeImpl::substitute_var(arg, &when_expr_val)?);
+    }
+    let substituted_ret_type = TypeImpl::substitute_var(ret_ty, &when_expr_val)?;
+    Ok(FnClauseType::new(substituted_args, substituted_ret_type))
+  } else {
+    Ok(FnClauseType::new(args, ret_ty))
+  }
+}
+
 /// Parses a function clause args specs, return spec and optional `when`
 fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
   map(
@@ -65,26 +85,17 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
         "arguments list in a function clause spec",
         cut(parse_t_util::parse_parenthesized_arg_spec_list),
       ),
-      tok_right_arrow,
-      // Return type for fn clause
-      context(
-        "return type in function clause spec",
-        alt((parse_typevar_or_type, context("return type", cut(parse_type::parse_type)))),
+      preceded(
+        tok_right_arrow,
+        // Return type for fn clause
+        context(
+          "return type in function clause spec",
+          alt((parse_typevar_or_type, context("return type", cut(parse_type::parse_type)))),
+        ),
       ),
       // Optional: when <comma separated list of typevariables given types>
       context("when expression for typespec", opt(parse_t_util::parse_when_expr_for_type)),
     )),
-    |(args, _arrow, ret_ty, when_expr)| {
-      // TODO: Check name equals function name, for module level functions
-      if let Some(when_expr_val) = when_expr {
-        let substituted_args = args
-          .into_iter()
-          .map(|arg| TypeImpl::substitute_var_move(arg, &when_expr_val))
-          .collect();
-        FnClauseType::new(substituted_args, TypeImpl::substitute_var_move(ret_ty, &when_expr_val))
-      } else {
-        FnClauseType::new(args, ret_ty)
-      }
-    },
+    |(args, ret_ty, when_expr)| parse_fnclause_map_fn(args, ret_ty, when_expr).unwrap(),
   )(input)
 }

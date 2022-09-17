@@ -4,7 +4,7 @@ extern crate libironclad_erlang;
 mod test_util;
 
 use ::function_name::named;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::check::TypeCheck;
@@ -13,7 +13,7 @@ use std::ops::Deref;
 
 #[named]
 #[test]
-fn typing_synth1() -> IcResult<()> {
+fn typing_synth1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Synth1");
 
   let module = ErlModuleImpl::new_default();
@@ -38,7 +38,7 @@ fn typing_synth1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn typing_synth2() -> IcResult<()> {
+fn typing_synth2() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Synth2");
 
   let module = ErlModuleImpl::new_default();
@@ -65,7 +65,7 @@ fn typing_synth2() -> IcResult<()> {
 
 #[named]
 #[test]
-fn typing_expr_check_1() -> IcResult<()> {
+fn typing_expr_check_1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.Atom");
   let module = ErlModuleImpl::new_default();
   let scope = ScopeImpl::new_root_scope(function_name!().to_string());
@@ -80,7 +80,7 @@ fn typing_expr_check_1() -> IcResult<()> {
 #[named]
 #[test]
 /// Create a fun with 0 args, which returns an integer(). See if its compatible with an integer().
-fn typing_expr_check_noarg() -> IcResult<()> {
+fn typing_expr_check_noarg() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFun");
 
   let module = test_util::parse_module(function_name!(), "my_int_fun1() -> 10 + 20.");
@@ -98,7 +98,7 @@ fn typing_expr_check_noarg() -> IcResult<()> {
 #[named]
 #[test]
 /// Create a fun with argument, which returns an integer(). See if its compatible with an integer().
-fn typing_check_int_arg_fn() -> IcResult<()> {
+fn typing_check_int_arg_fn() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.IntegerFunWithArg");
   let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let module = test_util::parse_module(function_name!(), "my_int_fun2(A) -> 10 + A.");
@@ -116,7 +116,7 @@ fn typing_check_int_arg_fn() -> IcResult<()> {
 #[named]
 #[test]
 /// Create a fun which returns a tuple of `{any(), integer()}` and see if it checks against a tuple
-fn typing_expr_check_tuple1() -> IcResult<()> {
+fn typing_expr_check_tuple1() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.ExprCheck.TupleFun");
   let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let module = test_util::parse_module(function_name!(), "mytuple_fun(A) -> {A, 123}.");
@@ -134,7 +134,7 @@ fn typing_expr_check_tuple1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_bool() -> IcResult<()> {
+fn typing_subtyping_bool() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Bool");
 
   let test1_bool = TypeImpl::Boolean;
@@ -151,7 +151,7 @@ fn typing_subtyping_bool() -> IcResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_number() -> IcResult<()> {
+fn typing_subtyping_number() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Number");
   let test2_int = TypeImpl::Integer;
   let test2_flt = TypeImpl::Float;
@@ -166,7 +166,7 @@ fn typing_subtyping_number() -> IcResult<()> {
 
 #[named]
 #[test]
-fn typing_subtyping_list() -> IcResult<()> {
+fn typing_subtyping_list() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.List");
 
   let test3_any = TypeImpl::AnyList;

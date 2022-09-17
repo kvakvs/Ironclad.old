@@ -3,7 +3,7 @@ extern crate function_name;
 extern crate libironclad_erlang;
 
 use ::function_name::named;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 
 mod test_util;
 
@@ -52,7 +52,7 @@ fn parse_bin_empty() {
 
 #[named]
 #[test]
-fn parse_nested_bin() -> IcResult<()> {
+fn parse_nested_bin() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse nested binaries");
 
   let input1 = "<<<<A, 4>> || A <- <<5, 6>>>>";
@@ -64,7 +64,7 @@ fn parse_nested_bin() -> IcResult<()> {
 
 #[named]
 #[test]
-fn parse_if_with_binaries() -> IcResult<()> {
+fn parse_if_with_binaries() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse some binary and empty binary inside if");
 
   let input1 = "

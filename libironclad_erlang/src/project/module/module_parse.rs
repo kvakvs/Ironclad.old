@@ -9,7 +9,7 @@ use crate::erl_syntax::parsers::parse_fn::parse_fndef;
 use crate::erl_syntax::parsers::parse_module;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::format_tok_stream;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::compiler_opts::CompilerOpts;
 use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use crate::project::ErlProject;
@@ -24,7 +24,7 @@ impl ErlModuleImpl {
     src_file: SourceFile,
     parse_fn: T,
     compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule>
+  ) -> IroncladResult<ErlModule>
   where
     T: Fn(ParserInput) -> ParserResult<AstNode>,
   {
@@ -81,7 +81,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     source_file: &SourceFile,
     compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule> {
+  ) -> IroncladResult<ErlModule> {
     Self::parse_helper(project, source_file.clone(), parse_module, compiler_options)
   }
 
@@ -90,7 +90,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     source_file: &SourceFile,
     compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule> {
+  ) -> IroncladResult<ErlModule> {
     Self::parse_helper(project, source_file.clone(), parse_expr, compiler_options)
   }
 
@@ -99,7 +99,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     source_file: &SourceFile,
     compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule> {
+  ) -> IroncladResult<ErlModule> {
     Self::parse_helper(project, source_file.clone(), parse_fndef, compiler_options)
   }
 
@@ -117,7 +117,7 @@ impl ErlModuleImpl {
     project: &ErlProject,
     source_file: &SourceFile,
     compiler_options: Option<CompilerOpts>,
-  ) -> IcResult<ErlModule> {
+  ) -> IroncladResult<ErlModule> {
     use crate::erl_syntax::parsers::parse_type::parse_type_as_ast_node;
     Self::parse_helper(project, source_file.clone(), parse_type_as_ast_node, compiler_options)
   }

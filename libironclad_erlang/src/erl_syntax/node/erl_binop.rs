@@ -4,7 +4,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
@@ -79,7 +79,7 @@ impl ErlBinaryOperatorExpr {
     location: SourceLoc,
     module: &ErlModule,
     scope: &Scope,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     let left = self.left.synthesize(module, scope)?;
     let right = self.right.synthesize(module, scope)?;
 
@@ -135,7 +135,7 @@ impl ErlBinaryOperatorExpr {
     scope: &Scope,
     left: &ErlType,
     right: &ErlType,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     // Type of ++ will be union of left and right
     // Left operand must always be a proper list, right can be any list
     // TODO: AnyList, StronglyTypedList, Nil
@@ -167,7 +167,7 @@ impl ErlBinaryOperatorExpr {
         // left is not a list
         let msg =
           format!("List append operation ++ expected a list in its left argument, got {}", &left);
-        ErlError::type_error(location, TypeError::ListExpected { msg })
+        Err(TypeError::new_list_expected(Some(location), msg))
       }
     }
   }
@@ -181,7 +181,7 @@ impl ErlBinaryOperatorExpr {
     left_elements: &[ErlType],
     _left_tail: &Option<ErlType>,
     right: &ErlType,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     match &right.kind {
       TypeKind::AnyList => {
         panic!("Internal: Synthesize stronglist++anylist loses type precision")
@@ -213,7 +213,7 @@ impl ErlBinaryOperatorExpr {
         // right is not a list
         let msg =
           format!("List append operation ++ expected a list in its right argument, got {}", &right);
-        ErlError::type_error(location, TypeError::ListExpected { msg })
+        Err(TypeError::new_list_expected(Some(location), msg))
       }
     }
   }
@@ -228,7 +228,7 @@ impl ErlBinaryOperatorExpr {
     left_elements: &ErlType,
     left_tail: &Option<ErlType>,
     left_non_empty: bool,
-  ) -> IcResult<ErlType> {
+  ) -> IroncladResult<ErlType> {
     assert!(left_tail.is_none(), "Left operand for ++ must always be a proper list");
 
     match &right.kind {
@@ -258,7 +258,7 @@ impl ErlBinaryOperatorExpr {
         // right is not a list
         let msg =
           format!("List append operation ++ expected a list in its right argument, got {}", &right);
-        ErlError::type_error(location, TypeError::ListExpected { msg })
+        Err(TypeError::new_list_expected(Some(location), msg))
       }
     }
   }

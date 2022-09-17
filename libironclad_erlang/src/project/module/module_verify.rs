@@ -3,18 +3,18 @@
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModuleImpl;
 
 impl ErlModuleImpl {
   /// Check that specs and exports match the fn defs
   /// TODO: Check that func specs match func defs
   ///  TODO: Check that exports all exist as funs
-  pub fn verify_preprocessed_integrity(&self) -> IcResult<()> {
+  pub fn verify_preprocessed_integrity(&self) -> IroncladResult<()> {
     Ok(())
   }
 
-  fn verify_parsed(&self, ast: &AstNode) -> IcResult<()> {
+  fn verify_parsed(&self, ast: &AstNode) -> IroncladResult<()> {
     match &ast.content {
       AstNodeType::ModuleForms { forms } => {
         for f in forms.iter() {
@@ -176,7 +176,7 @@ impl ErlModuleImpl {
   }
 
   /// Check that expression nodes do not contain forbidden node types
-  pub fn verify_parsed_integrity(&self) -> IcResult<()> {
+  pub fn verify_parsed_integrity(&self) -> IroncladResult<()> {
     self.verify_parsed(&*self.ast.borrow())
   }
 }

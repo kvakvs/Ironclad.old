@@ -8,7 +8,7 @@ use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::AstNodeType::FnDef;
 use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::erl_type::TypeImpl;
@@ -17,7 +17,7 @@ use std::ops::Deref;
 
 #[named]
 #[test]
-fn synth_list_append() -> IcResult<()> {
+fn synth_list_append() -> IroncladResult<()> {
   test_util::start(function_name!(), "synthesize type for strongly typed list ++ another such");
 
   let module = ErlModuleImpl::new_default();
@@ -41,7 +41,7 @@ fn synth_list_append() -> IcResult<()> {
 
 #[named]
 #[test]
-fn synth_simplefun_division() -> IcResult<()> {
+fn synth_simplefun_division() -> IroncladResult<()> {
   test_util::start(function_name!(), "synthesize type for simple expression");
 
   let nodes = test_util::parse_module_unwrap(function_name!(), "myfun(A) -> (A + 1) / 2.");
@@ -66,7 +66,7 @@ fn synth_simplefun_division() -> IcResult<()> {
 
 #[named]
 #[test]
-fn synth_simplefun_addition() -> IcResult<()> {
+fn synth_simplefun_addition() -> IroncladResult<()> {
   test_util::start(function_name!(), "synthesize type for a function(A) doing A+1");
 
   let module = ErlModuleImpl::new_default();
@@ -132,7 +132,7 @@ fn synth_simplefun_addition() -> IcResult<()> {
 
 #[named]
 #[test]
-fn synth_fun_call1() -> IcResult<()> {
+fn synth_fun_call1() -> IroncladResult<()> {
   test_util::start(
     function_name!(),
     "synthesize type for a fun which calls another fun with a sum",
@@ -154,7 +154,7 @@ fn synth_fun_call1() -> IcResult<()> {
 
 #[named]
 #[test]
-fn synth_fun_call3() -> IcResult<()> {
+fn synth_fun_call3() -> IroncladResult<()> {
   test_util::start(
     function_name!(),
     "synthesize type for a fun which calls another fun with a sum",
@@ -190,7 +190,7 @@ fn synth_fun_call3() -> IcResult<()> {
 #[test]
 /// Synthesize type for a 2-clause function.
 /// Expected: -spec main(one) -> 'atom1'; (two) -> 222.
-fn synth_multiple_clause_test() -> IcResult<()> {
+fn synth_multiple_clause_test() -> IroncladResult<()> {
   test_util::start(function_name!(), "synthesize type for a multi-clause function");
   let source = format!(
     "-module({}).

@@ -6,7 +6,7 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
-use crate::error::ic_error::IcResult;
+use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::typing::erl_type::typekind::TypeKind;
@@ -15,7 +15,7 @@ use crate::typing::erl_type::{ErlType, TypeImpl};
 impl AstNodeImpl {
   /// From AST subtree, create a type which we believe it will have, narrowest possible.
   /// It will be further narrowed later, if we don't happen to know at this moment.
-  pub fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IcResult<ErlType> {
+  pub fn synthesize(&self, module: &ErlModule, scope: &Scope) -> IroncladResult<ErlType> {
     match &self.content {
       AstNodeType::Empty { comment } => {
         unreachable!("Should not be synthesizing type from AST node: Empty({})", comment)
@@ -54,8 +54,8 @@ impl AstNodeImpl {
     scope: &Scope,
     elements: &[AstNode],
     tail: &Option<AstNode>,
-  ) -> IcResult<ErlType> {
-    let elements: IcResult<Vec<ErlType>> = elements
+  ) -> IroncladResult<ErlType> {
+    let elements: IroncladResult<Vec<ErlType>> = elements
       .iter()
       .map(|el| el.synthesize(module, scope))
       .collect();
@@ -77,8 +77,8 @@ impl AstNodeImpl {
     module: &ErlModule,
     scope: &Scope,
     elements: &[AstNode],
-  ) -> IcResult<ErlType> {
-    let elements: IcResult<Vec<ErlType>> = elements
+  ) -> IroncladResult<ErlType> {
+    let elements: IroncladResult<Vec<ErlType>> = elements
       .iter()
       .map(|el| el.synthesize(module, scope))
       .collect();

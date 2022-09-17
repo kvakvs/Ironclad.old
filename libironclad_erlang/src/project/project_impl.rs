@@ -1,6 +1,6 @@
 //! Erlang project (with inputs defined in the config file)
 
-use crate::error::ic_error::{IcResult, IroncladError, IroncladResult};
+use crate::error::ic_error::{IroncladError, IroncladResult};
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::conf::ProjectConf;
 use crate::project::input_opts::InputOpts;
@@ -59,10 +59,10 @@ impl ErlProjectImpl {
       for dir in &self.project_inputs.input_opts.directories {
         let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
 
-        for entry in glob::glob(&file_glob)? {
+        for entry in glob::glob(&file_glob).map_err(|e| IroncladError::from(e))? {
           match entry {
             Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
-            Err(err) => return Err(IroncladError::from(err)),
+            Err(err) => return Err(IroncladError::from(err).into()),
           }
         } // for glob search results
       } // for input dirs
@@ -82,7 +82,7 @@ impl ErlProjectImpl {
     path: PathBuf,
   ) -> IroncladResult<()> {
     // Check duplicate
-    let abs_path = std::fs::canonicalize(path)?;
+    let abs_path = std::fs::canonicalize(path).map_err(|e| IroncladError::from(e))?;
     if file_set.contains(&abs_path) {
       return Ok(());
     }
@@ -101,7 +101,7 @@ impl ErlProjectImpl {
   }
 
   /// Retrieve a source file from the file cache, load if necessary
-  pub fn get_source_file(&self, path: &Path) -> IcResult<SourceFile> {
+  pub fn get_source_file(&self, path: &Path) -> IroncladResult<SourceFile> {
     self
       .file_cache
       .get_or_load(path)

@@ -18,7 +18,7 @@ use std::sync::Arc;
 impl TypeImpl {
   /// Wrap an inner type together with a typevariable name
   #[inline]
-  pub(crate) fn new_wrap_named(typevar: String, kind: TypeKind) -> ErlType {
+  pub(crate) fn new_named(typevar: String, kind: TypeKind) -> ErlType {
     TypeImpl { typevar: Some(typevar), kind }.into()
   }
 

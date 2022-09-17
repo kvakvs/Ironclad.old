@@ -7,7 +7,7 @@ extern crate libironclad_erlang;
 
 use std::process::exit;
 
-use libironclad_erlang::error::ic_error::IcResult;
+use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::exit_codes::erl_fatal_icerror;
 use libironclad_erlang::project::conf::ProjectConf;
 use libironclad_erlang::project::project_impl::ErlProjectImpl;
@@ -16,10 +16,10 @@ use stage::stage_parse::ErlParseStage;
 
 pub mod stage;
 
-fn main_do() -> IcResult<()> {
+fn main_do() -> IroncladResult<()> {
   let project: ErlProject = match ProjectConf::from_project_file("test_project/ironclad.toml") {
     Ok(erlp) => ErlProjectImpl::from(erlp).into(),
-    Err(e) => return Err(Box::new(e)),
+    Err(e) => return Err(e),
   };
   println!("{}", project);
 
