@@ -12,4 +12,3 @@ pub mod type_error;
 pub mod type_narrow;
 pub mod type_synth;
 pub mod type_union;
-pub mod typevar;

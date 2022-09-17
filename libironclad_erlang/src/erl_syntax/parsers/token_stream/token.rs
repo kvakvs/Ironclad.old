@@ -97,6 +97,15 @@ impl Token {
     }
   }
 
+  /// Check whether the token is an escaped character
+  #[inline]
+  pub fn is_escaped_char_of(&self, ch: char) -> bool {
+    match &self.content {
+      TokenType::EscapedCharacter { in_source, .. } => *in_source == ch,
+      _ => false,
+    }
+  }
+
   /// Check whether the token is a macro invocation
   #[inline]
   pub fn is_macro_invocation(&self) -> bool {

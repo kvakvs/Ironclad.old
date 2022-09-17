@@ -18,15 +18,16 @@ use crate::erl_syntax::parsers::parse_type::parse_binary_t::binary_type;
 use crate::erl_syntax::parsers::parse_type::parse_container_t::{
   type_of_list, type_of_map, type_of_nonempty_list, type_of_tuple,
 };
+use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_with_opt_ascription;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use crate::typing::record_field_type::RecordFieldType;
-use crate::typing::typevar::Typevar;
 use nom::branch::alt;
 use nom::combinator::{map, opt};
 use nom::error::context;
@@ -49,7 +50,7 @@ fn parse_fntype_clause(input: ParserInput) -> ParserResult<FnClauseType> {
       tok_right_arrow,
       parse_type,
     ),
-    |(args, ret)| FnClauseType::new(args, Typevar::from_erltype(&ret)),
+    |(args, ret)| FnClauseType::new(args, ret),
   )(input)
 }
 
@@ -69,14 +70,14 @@ fn parse_fntype_type(input: ParserInput) -> ParserResult<ErlType> {
       function_or_fun_token,
       delimited(tok_par_open, separated_list1(tok_semicolon, parse_fntype_clause), tok_par_close),
     ),
-    |clauses| ErlTypeImpl::new_fn_type(clauses).into(),
+    |clauses| TypeImpl::new_unnamed(TypeKind::new_fn_type(clauses)),
   )(input)
 }
 
 /// Parse a generic function type: `fun()` without return type, parameters specs or arity.
 fn parse_generic_fun_type(input: ParserInput) -> ParserResult<ErlType> {
   map(preceded(function_or_fun_token, pair(tok_par_open, tok_par_close)), |_parens| {
-    ErlTypeImpl::new_any_fn_type()
+    TypeImpl::new_unnamed(TypeKind::AnyFn)
   })(input)
 }
 
@@ -96,9 +97,7 @@ fn parse_user_type(input: ParserInput) -> ParserResult<ErlType> {
         tok_par_close,
       ),
     )),
-    |(maybe_module, type_name, elements)| {
-      ErlTypeImpl::from_name(maybe_module, type_name, &elements)
-    },
+    |(maybe_module, type_name, elements)| TypeImpl::from_name(maybe_module, type_name, &elements),
   )(input)
 }
 
@@ -113,7 +112,7 @@ fn record_field_pin(input: ParserInput) -> ParserResult<RecordFieldType> {
 /// Record reference is allowed to pin certain fields to subtypes of parent record.
 fn record_ref(input: ParserInput) -> ParserResult<ErlType> {
   let mk_record_ref = |(tag, fields): (String, Vec<RecordFieldType>)| -> ErlType {
-    ErlTypeImpl::new_record_ref(tag, fields)
+    TypeImpl::new_unnamed(TypeKind::new_record_ref(tag, fields))
   };
   map(
     preceded(
@@ -131,7 +130,7 @@ fn record_ref(input: ParserInput) -> ParserResult<ErlType> {
 fn int_literal_type(input: ParserInput) -> ParserResult<ErlType> {
   map(tok_integer, |i: ErlInteger| {
     // TODO: Can a parsed integer parse with an error?
-    ErlTypeImpl::new_singleton(&Literal::Integer(i).into())
+    TypeImpl::new_unnamed(TypeKind::new_singleton(Literal::Integer(i).into()))
   })(input)
 }
 
@@ -139,13 +138,15 @@ fn int_literal_type(input: ParserInput) -> ParserResult<ErlType> {
 fn int_range_type(input: ParserInput) -> ParserResult<ErlType> {
   map(separated_pair(tok_integer, tok_double_period, tok_integer), |(a, b)| {
     // TODO: Can a parsed integer parse with an error?
-    ErlTypeImpl::new_range(a, b)
+    TypeImpl::new_unnamed(TypeKind::new_range(a, b))
   })(input)
 }
 
 /// Parse an atom, and produce a literal atom type
 fn atom_literal_type(input: ParserInput) -> ParserResult<ErlType> {
-  map(tok_atom, |a_str| ErlTypeImpl::new_singleton(&Literal::Atom(a_str).into()))(input)
+  map(tok_atom, |a_str| {
+    TypeImpl::new_unnamed(TypeKind::new_singleton(Literal::Atom(a_str).into()))
+  })(input)
 }
 
 /// Parse any simple Erlang type without union. To parse unions use `parse_type`.
@@ -165,6 +166,7 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
         LangConstruct::RecordRefType,
         LangConstruct::IntegerLiteralType,
         LangConstruct::AtomLiteralType,
+        LangConstruct::TypeVariable,
       ],
     )
   };
@@ -183,6 +185,7 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
       context("record reference type", record_ref),
       context("integer literal type", int_literal_type),
       context("atom literal type", atom_literal_type),
+      context("a type variable", parse_typevar_with_opt_ascription),
     ))
     .or(alt_failed),
   ))(input.clone())
@@ -192,7 +195,7 @@ fn parse_nonunion_type<'a>(input: ParserInput<'a>) -> ParserResult<ErlType> {
 /// a structured type like union of multiple types `atom()|number()`, a list or a tuple of types, etc
 pub(crate) fn parse_type(input: ParserInput) -> ParserResult<ErlType> {
   map(separated_list1(tok_vertical_bar, parse_nonunion_type), |types| {
-    ErlTypeImpl::new_union(&types)
+    TypeImpl::new_unnamed(TypeKind::new_union(&types))
   })(input)
 }
 

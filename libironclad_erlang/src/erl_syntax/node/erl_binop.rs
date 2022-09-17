@@ -8,7 +8,8 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::type_error::TypeError;
 use std::ops::Deref;
 
@@ -87,19 +88,19 @@ impl ErlBinaryOperatorExpr {
         // A binary math operation can only produce a numeric type, integer if both args are integer
         if !left.is_supertype_of_number() || !right.is_supertype_of_number() {
           // Either left or right are not compatible with number
-          Ok(ErlTypeImpl::none())
+          Ok(TypeImpl::none())
         // } else if left.is_supertype_of_number() && right.is_supertype_of_number() {
         //   Ok(ErlType::number())
         } else if left.is_supertype_of_integer() && right.is_supertype_of_integer() {
-          Ok(ErlTypeImpl::integer())
+          Ok(TypeImpl::integer())
         } else {
-          Ok(ErlTypeImpl::float())
+          Ok(TypeImpl::float())
         }
       }
 
-      ErlBinaryOp::Div => Ok(ErlTypeImpl::float()),
+      ErlBinaryOp::Div => Ok(TypeImpl::float()),
 
-      ErlBinaryOp::IntegerDiv | ErlBinaryOp::Remainder => Ok(ErlTypeImpl::integer()),
+      ErlBinaryOp::IntegerDiv | ErlBinaryOp::Remainder => Ok(TypeImpl::integer()),
 
       ErlBinaryOp::Less
       | ErlBinaryOp::Greater
@@ -108,7 +109,7 @@ impl ErlBinaryOperatorExpr {
       | ErlBinaryOp::Eq
       | ErlBinaryOp::NotEq
       | ErlBinaryOp::HardEq
-      | ErlBinaryOp::HardNotEq => Ok(ErlTypeImpl::boolean()),
+      | ErlBinaryOp::HardNotEq => Ok(TypeImpl::boolean()),
 
       ErlBinaryOp::ListAppend => Self::synthesize_list_append_op(location, scope, &left, &right),
       ErlBinaryOp::ListSubtract => {
@@ -138,17 +139,17 @@ impl ErlBinaryOperatorExpr {
     // Type of ++ will be union of left and right
     // Left operand must always be a proper list, right can be any list
     // TODO: AnyList, StronglyTypedList, Nil
-    match left.deref() {
-      ErlTypeImpl::AnyList => {
+    match &left.kind {
+      TypeKind::AnyList => {
         // Ok(left.clone()), // anylist makes ++ result anylist too
         panic!("Internal: Synthesize anylist++any list loses type precision")
       }
 
-      ErlTypeImpl::StronglyTypedList { elements: left_elements, tail: left_tail } => {
+      TypeKind::StronglyTypedList { elements: left_elements, tail: left_tail } => {
         Self::synthesize_stronglist_append(location, scope, left, left_elements, left_tail, right)
       }
 
-      ErlTypeImpl::List {
+      TypeKind::List {
         elements: left_elements,
         tail: left_tail,
         is_non_empty: left_non_empty,
@@ -164,10 +165,8 @@ impl ErlBinaryOperatorExpr {
 
       other_left => {
         // left is not a list
-        let msg = format!(
-          "List append operation ++ expected a list in its left argument, got {}",
-          other_left
-        );
+        let msg =
+          format!("List append operation ++ expected a list in its left argument, got {}", &left);
         ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }
@@ -183,35 +182,37 @@ impl ErlBinaryOperatorExpr {
     _left_tail: &Option<ErlType>,
     right: &ErlType,
   ) -> IcResult<ErlType> {
-    match right.deref() {
-      ErlTypeImpl::AnyList => {
+    match &right.kind {
+      TypeKind::AnyList => {
         panic!("Internal: Synthesize stronglist++anylist loses type precision")
       }
-      ErlTypeImpl::List { elements: right_elements, tail: right_tail, .. } => {
+      TypeKind::List { elements: right_elements, tail: right_tail, .. } => {
         let elements: Vec<ErlType> = left_elements
           .iter()
-          .map(|l_elem| ErlTypeImpl::new_union(&[l_elem.clone(), right_elements.clone()]))
+          .map(|l_elem| {
+            TypeImpl::new_unnamed(TypeKind::new_union(&[l_elem.clone(), right_elements.clone()]))
+          })
           .collect();
-        let result_list = ErlTypeImpl::StronglyTypedList { elements, tail: right_tail.clone() };
+        let result_list = TypeKind::StronglyTypedList { elements, tail: right_tail.clone() };
         todo!("support non-empty attribute");
-        Ok(result_list.into())
+        Ok(TypeImpl::new_unnamed(result_list))
       }
-      ErlTypeImpl::StronglyTypedList { elements: right_elements, tail: right_tail } => {
+      TypeKind::StronglyTypedList { elements: right_elements, tail: right_tail } => {
         let elements: Vec<ErlType> = left_elements
           .iter()
           .zip(right_elements.iter())
-          .map(|(l_elem, r_elem)| ErlTypeImpl::new_union(&[l_elem.clone(), r_elem.clone()]))
+          .map(|(l_elem, r_elem)| {
+            TypeImpl::new_unnamed(TypeKind::new_union(&[l_elem.clone(), r_elem.clone()]))
+          })
           .collect();
-        let result_list = ErlTypeImpl::StronglyTypedList { elements, tail: right_tail.clone() };
-        Ok(result_list.into())
+        let result_list = TypeKind::StronglyTypedList { elements, tail: right_tail.clone() };
+        Ok(TypeImpl::new_unnamed(result_list))
       }
-      ErlTypeImpl::Nil => Ok(left.clone()),
+      TypeKind::Nil => Ok(left.clone()),
       other_right => {
         // right is not a list
-        let msg = format!(
-          "List append operation ++ expected a list in its right argument, got {}",
-          other_right
-        );
+        let msg =
+          format!("List append operation ++ expected a list in its right argument, got {}", &right);
         ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }
@@ -230,32 +231,33 @@ impl ErlBinaryOperatorExpr {
   ) -> IcResult<ErlType> {
     assert!(left_tail.is_none(), "Left operand for ++ must always be a proper list");
 
-    match right.deref() {
-      ErlTypeImpl::AnyList => {
+    match &right.kind {
+      TypeKind::AnyList => {
         panic!("Internal: Synthesize list(T)++anylist loses type precision")
       }
-      ErlTypeImpl::List {
+      TypeKind::List {
         elements: right_elements,
         tail: right_tail,
         is_non_empty: right_non_empty,
       } => {
-        let union_t = ErlTypeImpl::new_union(&[left_elements.clone(), right_elements.clone()]);
+        let union_t = TypeImpl::new_unnamed(TypeKind::new_union(&[
+          left_elements.clone(),
+          right_elements.clone(),
+        ]));
 
         // Result type for ++ is union of left and right types, and right tail is applied as the
         // tail type for result
-        let result_type = ErlTypeImpl::List {
+        let result_type = TypeKind::List {
           elements: union_t,
           tail: right_tail.clone(),
           is_non_empty: *right_non_empty || left_non_empty,
         };
-        Ok(result_type.into())
+        Ok(TypeImpl::new_unnamed(result_type))
       }
       other_right => {
         // right is not a list
-        let msg = format!(
-          "List append operation ++ expected a list in its right argument, got {}",
-          other_right
-        );
+        let msg =
+          format!("List append operation ++ expected a list in its right argument, got {}", &right);
         ErlError::type_error(location, TypeError::ListExpected { msg })
       }
     }

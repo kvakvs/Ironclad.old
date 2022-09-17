@@ -71,8 +71,8 @@ fn tok_dollar_char_test() {
     let input1 = "$\\n";
     let tok1 = test_util::tokenize(input1);
     assert!(
-      tok1[0].is_char_of('\n'),
-      "Expected $\\n to tokenize to Char(\\n) but received {:?}",
+      tok1[0].is_escaped_char_of('n'),
+      "Expected $\\n to tokenize to EscapedChar('n') but received {:?}",
       tok1[0]
     );
   }

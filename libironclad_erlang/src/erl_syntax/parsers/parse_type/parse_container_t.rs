@@ -7,8 +7,8 @@ use crate::erl_syntax::parsers::parse_type::parse_t_util::{
 };
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::typing::erl_type::map_type::MapMemberType;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
-use crate::typing::typevar::Typevar;
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use nom::branch::alt;
 use nom::combinator::map;
 use nom::error::context;
@@ -23,10 +23,7 @@ pub fn type_of_list(input: ParserInput) -> ParserResult<ErlType> {
       context("type arguments for a list() type", list0_types_or_ascribed_typevars),
       tok_square_close,
     ),
-    |elements| {
-      let typevar_types = Typevar::vec_of_typevars_into_types(elements);
-      ErlTypeImpl::list_of_types(typevar_types)
-    },
+    |vec_of_t| TypeImpl::new_unnamed(TypeKind::list_of_types(vec_of_t)),
   )(input)
 }
 
@@ -41,7 +38,7 @@ pub fn type_of_nonempty_list(input: ParserInput) -> ParserResult<ErlType> {
       ),
       tok_square_close,
     ),
-    |typevar| ErlTypeImpl::list_of(ErlTypeImpl::new_typevar(typevar), true),
+    |list_el_type| TypeImpl::new_unnamed(TypeKind::list_of(list_el_type, true)),
   )(input)
 }
 
@@ -53,20 +50,14 @@ pub fn type_of_tuple(input: ParserInput) -> ParserResult<ErlType> {
       context("a tuple() type", list0_types_or_ascribed_typevars),
       tok_curly_close,
     ),
-    |elements| {
-      let typevar_types = Typevar::vec_of_typevars_into_types(elements);
-      ErlTypeImpl::new_tuple_move(typevar_types)
-    },
+    |vec_of_t| TypeImpl::new_unnamed(TypeKind::new_tuple_move(vec_of_t)),
   )(input)
 }
 
 fn map_member_type(input: ParserInput) -> ParserResult<MapMemberType> {
   map(
     separated_pair(parse_typevar_or_type, alt((tok_assign, tok_right_darr)), parse_typevar_or_type),
-    |(key, value)| MapMemberType {
-      key: ErlTypeImpl::new_typevar(key),
-      value: ErlTypeImpl::new_typevar(value),
-    },
+    |(key, value)| MapMemberType { key, value },
   )(input)
 }
 
@@ -83,6 +74,6 @@ pub fn type_of_map(input: ParserInput) -> ParserResult<ErlType> {
       context("a map() type", comma_sep_map_members0),
       tok_curly_close,
     ),
-    ErlTypeImpl::new_map,
+    |vec_of_members| TypeImpl::new_unnamed(TypeKind::new_map(vec_of_members)),
   )(input)
 }

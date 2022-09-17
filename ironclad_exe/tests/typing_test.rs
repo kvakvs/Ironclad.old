@@ -8,7 +8,7 @@ use libironclad_erlang::error::ic_error::IcResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::check::TypeCheck;
-use libironclad_erlang::typing::erl_type::ErlTypeImpl;
+use libironclad_erlang::typing::erl_type::TypeImpl;
 use std::ops::Deref;
 
 #[named]
@@ -22,12 +22,12 @@ fn typing_synth1() -> IcResult<()> {
   let synth_t1 = expr1.synthesize(&module, &scope1)?;
   println!("Synth list1: {}", &synth_t1);
 
-  if let ErlTypeImpl::StronglyTypedList { elements, tail } = synth_t1.deref() {
+  if let TypeImpl::StronglyTypedList { elements, tail } = synth_t1.deref() {
     assert!(elements[0].is_float());
     assert!(elements[1].is_integer());
     assert!(elements[2].is_atom());
 
-    let tail2 = tail.clone().unwrap_or_else(|| ErlTypeImpl::nil());
+    let tail2 = tail.clone().unwrap_or_else(|| TypeImpl::nil());
     assert!(tail2.is_nil());
     assert!(tail2.is_list());
   } else {
@@ -47,7 +47,7 @@ fn typing_synth2() -> IcResult<()> {
   let synth_t2 = expr2.synthesize(&module, &scope2)?;
   println!("Synth tup1: {}", &synth_t2);
 
-  if let ErlTypeImpl::Tuple { elements } = synth_t2.deref() {
+  if let TypeImpl::Tuple { elements } = synth_t2.deref() {
     assert!(
       elements[0].is_lit_atom("tuple_tag"),
       "t[0] - expected 'tuple_tag', got {}",
@@ -71,7 +71,7 @@ fn typing_expr_check_1() -> IcResult<()> {
   let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let expr = test_util::parse_expr(function_name!(), "hello");
   assert!(
-    TypeCheck::check(&module, &scope, &expr, &ErlTypeImpl::Atom)?,
+    TypeCheck::check(&module, &scope, &expr, &TypeImpl::Atom)?,
     "Parsed atom 'hello' must be subtype of atom()"
   );
   Ok(())
@@ -86,7 +86,7 @@ fn typing_expr_check_noarg() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), "my_int_fun1() -> 10 + 20.");
   // let root_scope = module.root_scope;
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
-  let match_ty = &ErlTypeImpl::new_fn_type_of_any_args(0, &ErlTypeImpl::integer());
+  let match_ty = &TypeImpl::new_fn_type_of_any_args(0, TypeImpl::integer());
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope1, &ast, match_ty)?,
@@ -104,7 +104,7 @@ fn typing_check_int_arg_fn() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), "my_int_fun2(A) -> 10 + A.");
   // assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
-  let match_ty = &ErlTypeImpl::new_fn_type_of_any_args(1, &ErlTypeImpl::integer());
+  let match_ty = &TypeImpl::new_fn_type_of_any_args(1, TypeImpl::integer());
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
@@ -122,8 +122,8 @@ fn typing_expr_check_tuple1() -> IcResult<()> {
   let module = test_util::parse_module(function_name!(), "mytuple_fun(A) -> {A, 123}.");
   // assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes[0]);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
-  let expected_type = ErlTypeImpl::new_tuple(&vec![ErlTypeImpl::any(), ErlTypeImpl::integer()]);
-  let match_ty = &ErlTypeImpl::new_fn_type_of_any_args(1, &expected_type);
+  let expected_type = TypeImpl::new_tuple(&vec![TypeImpl::any(), TypeImpl::integer()]);
+  let match_ty = &TypeImpl::new_fn_type_of_any_args(1, expected_type);
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
@@ -137,9 +137,9 @@ fn typing_expr_check_tuple1() -> IcResult<()> {
 fn typing_subtyping_bool() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Bool");
 
-  let test1_bool = ErlTypeImpl::Boolean;
-  let test1_atom = ErlTypeImpl::Atom;
-  let test1_true = ErlTypeImpl::new_atom("true");
+  let test1_bool = TypeImpl::Boolean;
+  let test1_atom = TypeImpl::Atom;
+  let test1_true = TypeImpl::new_atom("true");
 
   assert!(test1_bool.is_subtype_of(&test1_atom));
   assert!(!test1_atom.is_subtype_of(&test1_bool));
@@ -153,9 +153,9 @@ fn typing_subtyping_bool() -> IcResult<()> {
 #[test]
 fn typing_subtyping_number() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Number");
-  let test2_int = ErlTypeImpl::Integer;
-  let test2_flt = ErlTypeImpl::Float;
-  let test2_num = ErlTypeImpl::Number;
+  let test2_int = TypeImpl::Integer;
+  let test2_flt = TypeImpl::Float;
+  let test2_num = TypeImpl::Number;
 
   assert!(test2_int.is_subtype_of(&test2_num)); // int() is subtype of number()
   assert!(!test2_num.is_subtype_of(&test2_int)); // number() is not subtype of int
@@ -169,10 +169,10 @@ fn typing_subtyping_number() -> IcResult<()> {
 fn typing_subtyping_list() -> IcResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.List");
 
-  let test3_any = ErlTypeImpl::AnyList;
-  let test3_l_num = ErlTypeImpl::list_of(ErlTypeImpl::number(), false);
-  let test3_l_flt = ErlTypeImpl::list_of(ErlTypeImpl::float(), false);
-  let test3_l_int = ErlTypeImpl::list_of(ErlTypeImpl::integer(), false);
+  let test3_any = TypeImpl::AnyList;
+  let test3_l_num = TypeImpl::list_of(TypeImpl::number(), false);
+  let test3_l_flt = TypeImpl::list_of(TypeImpl::float(), false);
+  let test3_l_int = TypeImpl::list_of(TypeImpl::integer(), false);
 
   assert!(test3_l_num.is_subtype_of(&test3_any)); // list(number()) is subtype of list()
   assert!(!test3_any.is_subtype_of(&test3_l_num)); // list() not subtype of list(number())

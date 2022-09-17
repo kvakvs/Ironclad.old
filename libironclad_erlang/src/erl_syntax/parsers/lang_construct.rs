@@ -39,6 +39,7 @@ pub enum LangConstruct {
   IntegerLiteralType,
   AtomLiteralType,
   BinaryType,
+  TypeVariable,
 }
 
 impl Display for LangConstruct {
@@ -78,6 +79,7 @@ impl Display for LangConstruct {
       }
       LangConstruct::FunctionType => write!(f, "function type with arguments and return type"),
       LangConstruct::AnyFunctionType => write!(f, "any function type"),
+      LangConstruct::TypeVariable => write!(f, "type variable"),
     }
   }
 }

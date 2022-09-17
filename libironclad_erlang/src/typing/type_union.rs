@@ -1,6 +1,6 @@
 //! Union type (a flat list of multiple types) support
 
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::ops::Deref;
 
 /// Contains multiple types
@@ -51,15 +51,14 @@ impl TypeUnion {
   /// in the same union
   pub(crate) fn normalize(&mut self) {
     // Merge int()|float() into number()
-    if self.contains_strict(&ErlTypeImpl::integer()) && self.contains_strict(&ErlTypeImpl::float())
-    {
+    if self.contains_strict(&TypeImpl::integer()) && self.contains_strict(&TypeImpl::float()) {
       self.types = self
         .types
         .iter()
         .filter(|t| !t.is_integer() && !t.is_float()) // throw away int and floats
         .cloned()
         .collect();
-      self.types.push(ErlTypeImpl::number()); // replace int and float with number()
+      self.types.push(TypeImpl::number()); // replace int and float with number()
     }
 
     // Remove the subtypes for other types in the union
@@ -74,12 +73,12 @@ impl TypeUnion {
   }
 
   /// Whether type t is found in any of the union contents (is_subtype_of equality)
-  pub fn contains(&self, t: &ErlTypeImpl) -> bool {
+  pub fn contains(&self, t: &TypeImpl) -> bool {
     self.types.iter().any(|member| t.is_subtype_of(member))
   }
 
   /// Whether type t is found in any of the union contents (strict equality)
-  pub(crate) fn contains_strict(&self, t: &ErlTypeImpl) -> bool {
+  pub(crate) fn contains_strict(&self, t: &TypeImpl) -> bool {
     self.types.iter().any(|member| t == member.deref())
   }
 }

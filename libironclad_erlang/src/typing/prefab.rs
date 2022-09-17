@@ -1,26 +1,27 @@
 //! Premade simple erltypes as lazy statics, to save on memory allocations
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use lazy_static::lazy_static;
 
 lazy_static! {
-  static ref PF_TYPE_ANY: ErlType = ErlTypeImpl::Any.into();
-  static ref PF_TYPE_NONE: ErlType = ErlTypeImpl::None.into();
-  static ref PF_TYPE_NUMBER: ErlType = ErlTypeImpl::Number.into();
-  static ref PF_TYPE_INTEGER: ErlType = ErlTypeImpl::Integer.into();
-  static ref PF_TYPE_FLOAT: ErlType = ErlTypeImpl::Float.into();
-  static ref PF_TYPE_ATOM: ErlType = ErlTypeImpl::Atom.into();
-  static ref PF_TYPE_BOOLEAN: ErlType = ErlTypeImpl::Boolean.into();
-  static ref PF_TYPE_ANY_FUN: ErlType = ErlTypeImpl::AnyFn.into();
-  static ref PF_TYPE_ANY_TUPLE: ErlType = ErlTypeImpl::AnyTuple.into();
-  static ref PF_TYPE_ANY_BINARY: ErlType = ErlTypeImpl::AnyBinary.into();
-  static ref PF_TYPE_ANYLIST: ErlType = ErlTypeImpl::AnyList.into();
-  static ref PF_TYPE_NIL: ErlType = ErlTypeImpl::Nil.into();
-  static ref PF_TYPE_PID: ErlType = ErlTypeImpl::Pid.into();
-  static ref PF_TYPE_PORT: ErlType = ErlTypeImpl::Port.into();
-  static ref PF_TYPE_REFERENCE: ErlType = ErlTypeImpl::Reference.into();
+  static ref PF_TYPE_ANY: ErlType = TypeImpl::new_unnamed(TypeKind::Any.into());
+  static ref PF_TYPE_NONE: ErlType = TypeImpl::new_unnamed(TypeKind::None.into());
+  static ref PF_TYPE_NUMBER: ErlType = TypeImpl::new_unnamed(TypeKind::Number.into());
+  static ref PF_TYPE_INTEGER: ErlType = TypeImpl::new_unnamed(TypeKind::Integer.into());
+  static ref PF_TYPE_FLOAT: ErlType = TypeImpl::new_unnamed(TypeKind::Float.into());
+  static ref PF_TYPE_ATOM: ErlType = TypeImpl::new_unnamed(TypeKind::Atom.into());
+  static ref PF_TYPE_BOOLEAN: ErlType = TypeImpl::new_unnamed(TypeKind::Boolean.into());
+  static ref PF_TYPE_ANY_FUN: ErlType = TypeImpl::new_unnamed(TypeKind::AnyFn.into());
+  static ref PF_TYPE_ANY_TUPLE: ErlType = TypeImpl::new_unnamed(TypeKind::AnyTuple.into());
+  static ref PF_TYPE_ANY_BINARY: ErlType = TypeImpl::new_unnamed(TypeKind::AnyBinary.into());
+  static ref PF_TYPE_ANYLIST: ErlType = TypeImpl::new_unnamed(TypeKind::AnyList.into());
+  static ref PF_TYPE_NIL: ErlType = TypeImpl::new_unnamed(TypeKind::Nil.into());
+  static ref PF_TYPE_PID: ErlType = TypeImpl::new_unnamed(TypeKind::Pid.into());
+  static ref PF_TYPE_PORT: ErlType = TypeImpl::new_unnamed(TypeKind::Port.into());
+  static ref PF_TYPE_REFERENCE: ErlType = TypeImpl::new_unnamed(TypeKind::Reference.into());
 }
 
-impl ErlTypeImpl {
+impl TypeImpl {
   /// Return a cloned instance of None-type
   pub(crate) fn none() -> ErlType {
     PF_TYPE_NONE.clone()

@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IcResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
-use crate::typing::erl_type::ErlTypeImpl;
+use crate::typing::erl_type::TypeImpl;
 use crate::typing::type_error::TypeError;
 
 /// Contains type checking code
@@ -19,7 +19,7 @@ impl TypeCheck {
     module: &ErlModule,
     scope: &Scope,
     ast: &AstNode,
-    expected_ty: &ErlTypeImpl,
+    expected_ty: &TypeImpl,
   ) -> IcResult<bool> {
     let synthesized_ty = ast.synthesize(module, scope)?;
 

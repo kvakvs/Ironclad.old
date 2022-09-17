@@ -1,6 +1,5 @@
 //! Function clause type, component of function type
 use crate::typing::erl_type::ErlType;
-use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
 
@@ -10,9 +9,9 @@ use std::fmt::Formatter;
 pub struct FnClauseType {
   /// Argument types for this function clause: positional arguments corresponding to function
   /// arguments, but not necessarily having same names as argument names.
-  pub args: Vec<Typevar>,
+  pub args: Vec<ErlType>,
   /// Return type of this function clause, with possibly a typevariable name
-  pub ret_type: Typevar,
+  pub ret_type: ErlType,
 }
 
 impl std::fmt::Display for FnClauseType {
@@ -25,11 +24,11 @@ impl std::fmt::Display for FnClauseType {
 impl FnClauseType {
   /// Retrieve return type
   pub fn ret_ty(&self) -> &ErlType {
-    &self.ret_type.ty
+    &self.ret_type
   }
 
   /// Create a new function clause from just args
-  pub(crate) fn new(args: Vec<Typevar>, ret_ty: Typevar) -> Self {
+  pub(crate) fn new(args: Vec<ErlType>, ret_ty: ErlType) -> Self {
     Self { args, ret_type: ret_ty }
   }
 
@@ -51,8 +50,8 @@ impl FnClauseType {
       .args
       .iter()
       .zip(super_clause.args.iter())
-      .all(|(sub_arg, super_arg)| sub_arg.ty.is_subtype_of(&super_arg.ty))
-      && self.ret_type.ty.is_subtype_of(&super_clause.ret_type.ty)
+      .all(|(sub_arg, super_arg)| sub_arg.is_subtype_of(&super_arg))
+      && self.ret_type.is_subtype_of(&super_clause.ret_type)
   }
 
   /// Check whether argument list can be passed to this clause
@@ -62,6 +61,6 @@ impl FnClauseType {
       .args
       .iter()
       .zip(args.iter())
-      .all(|(in_arg, my_arg)| my_arg.is_subtype_of(&in_arg.ty))
+      .all(|(in_arg, my_arg)| my_arg.is_subtype_of(&in_arg))
   }
 }

@@ -1,8 +1,8 @@
 //! Contains logic to narrow a wider type to a more limited type.
 
-use crate::typing::erl_type::ErlTypeImpl;
+use crate::typing::erl_type::TypeImpl;
 
-impl ErlTypeImpl {
+impl TypeImpl {
   // /// Handle situation when `self` type is used somewhere.
   // /// `Self` type containing the `used_as` type is a successful check and can return updated `self`
   // /// type, for example to update the variable scope.

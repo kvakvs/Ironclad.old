@@ -8,7 +8,6 @@ use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::{Scope, ScopeImpl};
 use crate::typing::erl_type::ErlType;
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::typevar::Typevar;
 use libironclad_util::pretty::Pretty;
 use std::sync::Weak;
 
@@ -67,22 +66,14 @@ impl ErlFnClause {
     module: &ErlModule,
     scope: &Scope,
   ) -> IcResult<FnClauseType> {
-    // Synthesizing return type using the inner function scope, with added args
-    // let args_types: Vec<Typevar> = self.args.iter()
-    //     .map(|arg| arg.synthesize(scope))
-    //     .map(Result::unwrap)
-    //     .map(|t| Typevar::from_erltype(&t))
-    //     .collect();
     let mut args_types = Vec::new();
-    for arg in &self.args {
-      let synth = arg.synthesize(module, scope)?;
-      args_types.push(Typevar::from_erltype(&synth));
+    for arg in self.args.iter() {
+      // Keep this as a for loop, to allow `?` operator to work
+      args_types.push(arg.synthesize(module, scope)?);
     }
 
-    let synthesized_t = FnClauseType::new(
-      args_types,
-      Typevar::from_erltype(&self.synthesize_clause_return_type(module, scope)?),
-    );
+    let synthesized_t =
+      FnClauseType::new(args_types, self.synthesize_clause_return_type(module, scope)?);
     Ok(synthesized_t)
   }
 

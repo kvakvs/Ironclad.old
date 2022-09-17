@@ -7,7 +7,8 @@ use crate::erl_syntax::parsers::misc::tok_integer;
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
@@ -41,7 +42,7 @@ pub fn binary_type_tail_element(input: ParserInput) -> ParserResult<BinaryTypeTa
 fn binary_type_tail(input: ParserInput) -> ParserResult<ErlType> {
   map(
     context("binary type with tail element only", binary_type_tail_element),
-    |tail| ErlTypeImpl::new_binary(None, Some(tail)),
+    |tail| TypeImpl::new_unnamed(TypeKind::new_binary(None, Some(tail))),
   )(input)
 }
 
@@ -52,7 +53,7 @@ fn binary_type_head_tail(input: ParserInput) -> ParserResult<ErlType> {
       "binary type with head and tail elements",
       pair(binary_type_head_element, opt(preceded(tok_comma, binary_type_tail_element))),
     ),
-    |(head, tail)| ErlTypeImpl::new_binary(Some(head), tail),
+    |(head, tail)| TypeImpl::new_unnamed(TypeKind::new_binary(Some(head), tail)),
   )(input)
 }
 

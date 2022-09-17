@@ -7,7 +7,8 @@ use crate::error::ic_error::IcResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::fn_type::FnType;
 use crate::typing::type_error::TypeError;
 use libironclad_util::pretty::Pretty;
@@ -68,19 +69,19 @@ impl ErlApply {
       .collect();
     let arg_types = arg_types_r?;
 
-    match target_ty.deref() {
-      ErlTypeImpl::Atom => unimplemented!("Callable is a local module function"),
-      ErlTypeImpl::Tuple { .. } => unimplemented!("Callable is a tuple"),
+    match &target_ty.kind {
+      TypeKind::Atom => unimplemented!("Callable is a local module function"),
+      TypeKind::Tuple { .. } => unimplemented!("Callable is a tuple"),
 
       // AnyFn is always callable and always returns any, for we do not know better
-      ErlTypeImpl::AnyFn => Ok(ErlTypeImpl::any()),
+      TypeKind::AnyFn => Ok(TypeImpl::any()),
 
-      ErlTypeImpl::Fn(fn_type) => self.synthesize_call_to_fn(location, fn_type, &arg_types),
-      ErlTypeImpl::FnRef { .. } => unimplemented!("Callable is a fun reference"),
-      ErlTypeImpl::Lambda => unimplemented!("Callable is a lambda"),
+      TypeKind::Fn(fn_type) => self.synthesize_call_to_fn(location, fn_type, &arg_types),
+      TypeKind::FnRef { .. } => unimplemented!("Callable is a fun reference"),
+      TypeKind::Lambda => unimplemented!("Callable is a lambda"),
 
       other => {
-        let msg = format!("Attempt to call a non-function: {}", other);
+        let msg = format!("Attempt to call a non-function: {}", &target_ty);
         ErlError::type_error(location, TypeError::NotAFunction { msg })
       }
     }
@@ -123,7 +124,7 @@ impl ErlApply {
       .map(|fc| fc.ret_ty())
       .cloned()
       .collect();
-    Ok(ErlTypeImpl::new_union(&ret_types))
+    Ok(TypeImpl::new_unnamed(TypeKind::new_union(&ret_types)))
   }
 }
 

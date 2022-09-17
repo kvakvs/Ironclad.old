@@ -6,7 +6,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use crate::error::ic_error::IcResult;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::collections::HashMap;
 
 impl AstNodeImpl {
@@ -19,7 +19,7 @@ impl AstNodeImpl {
   ) -> IcResult<()> {
     match &node.content {
       AstNodeType::Var(v) => {
-        variables.insert(v.name.clone(), ErlTypeImpl::any());
+        variables.insert(v.name.clone(), TypeImpl::any());
         Ok(())
       }
       AstNodeType::BinaryExpr { elements, .. } => {

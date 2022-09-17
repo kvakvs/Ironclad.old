@@ -3,7 +3,8 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::sync::Arc;
 
 /// An Erlang literal, a value fully known at compile time
@@ -114,25 +115,25 @@ impl Literal {
   /// Synthesizes a type of this literal
   pub(crate) fn synthesize_type(&self) -> ErlType {
     match self {
-      Literal::Integer(_) => ErlTypeImpl::integer(),
-      Literal::Float(_) => ErlTypeImpl::float(),
-      Literal::Atom(_) => ErlTypeImpl::atom(),
-      Literal::Bool(_) => ErlTypeImpl::boolean(),
-      Literal::EmptyBinary => ErlTypeImpl::new_binary(None, None),
+      Literal::Integer(_) => TypeImpl::integer(),
+      Literal::Float(_) => TypeImpl::float(),
+      Literal::Atom(_) => TypeImpl::atom(),
+      Literal::Bool(_) => TypeImpl::boolean(),
+      Literal::EmptyBinary => TypeImpl::new_unnamed(TypeKind::new_binary(None, None)),
       // Cannot have runtime values as literals
       // ErlLit::Pid => ErlType::Pid,
       // ErlLit::Reference => ErlType::Reference,
       Literal::String(_) | Literal::Nil | Literal::List { .. } => {
         // List type is union of all element types
         // ErlType::List(ErlType::union_of_literal_types(elements)).into()
-        ErlTypeImpl::any_list()
+        TypeImpl::any_list()
       }
       Literal::Tuple(items) => {
         let element_types = items.iter().map(|it| it.synthesize_type()).collect();
-        ErlTypeImpl::Tuple { elements: element_types }.into()
+        TypeImpl::new_unnamed(TypeKind::Tuple { elements: element_types })
       } // other => unimplemented!("Don't know how to synthesize type for {}", other),
-      Literal::Character(_) => ErlTypeImpl::integer(),
-      Literal::EscapedCharacter { .. } => ErlTypeImpl::integer(),
+      Literal::Character(_) => TypeImpl::integer(),
+      Literal::EscapedCharacter { .. } => TypeImpl::integer(),
     }
   }
 

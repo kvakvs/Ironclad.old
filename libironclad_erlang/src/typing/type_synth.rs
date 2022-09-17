@@ -9,7 +9,8 @@ use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IcResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;
-use crate::typing::erl_type::{ErlType, ErlTypeImpl};
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 
 impl AstNodeImpl {
   /// From AST subtree, create a type which we believe it will have, narrowest possible.
@@ -36,7 +37,7 @@ impl AstNodeImpl {
         }
         Some(val) => Ok(val),
       },
-      Lit { value, .. } => Ok(ErlTypeImpl::new_singleton(value)),
+      Lit { value, .. } => Ok(TypeImpl::new_unnamed(TypeKind::new_singleton(value.clone()))),
       BinaryOp { binop_expr: expr, .. } => {
         expr.synthesize_binop_type(self.location.clone(), module, scope)
       }
@@ -59,14 +60,13 @@ impl AstNodeImpl {
       .map(|el| el.synthesize(module, scope))
       .collect();
 
-    let synthesized_t = ErlTypeImpl::StronglyTypedList {
+    let synthesized_t = TypeImpl::new_unnamed(TypeKind::StronglyTypedList {
       elements: elements?,
       tail: match tail {
         None => None,
         Some(t) => Some(t.synthesize(module, scope)?),
       },
-    }
-    .into();
+    });
 
     Ok(synthesized_t)
   }
@@ -82,6 +82,6 @@ impl AstNodeImpl {
       .iter()
       .map(|el| el.synthesize(module, scope))
       .collect();
-    Ok(ErlTypeImpl::Tuple { elements: elements? }.into())
+    Ok(TypeImpl::new_unnamed(TypeKind::Tuple { elements: elements? }))
   }
 }

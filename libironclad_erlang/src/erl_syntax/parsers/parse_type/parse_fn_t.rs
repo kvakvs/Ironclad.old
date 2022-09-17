@@ -3,15 +3,16 @@
 use crate::erl_syntax::parsers::defs::ParserResult;
 use crate::erl_syntax::parsers::misc::{dash_atom, period_eol_eof, tok_atom};
 use crate::erl_syntax::parsers::misc_tok::*;
+use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parse_type::parse_t_util;
 use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_type::ErlTypeImpl;
+use crate::typing::erl_type::typekind::TypeKind;
+use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::typevar::Typevar;
 use libironclad_util::mfarity::MFArity;
 use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
@@ -43,8 +44,12 @@ pub fn parse_fn_spec(input: ParserInput) -> ParserResult<PreprocessorNode> {
         "All function clauses must have same arity in a typespec"
       );
       let funarity = MFArity::new_local(&name, arity);
-      let fntypespec = ErlTypeImpl::new_fn_type(clauses);
-      PreprocessorNodeImpl::new_fn_spec(SourceLoc::new(&input), funarity, fntypespec.into())
+      let fntypespec_kind = TypeKind::new_fn_type(clauses);
+      PreprocessorNodeImpl::new_fn_spec(
+        SourceLoc::new(&input),
+        funarity,
+        TypeImpl::new_unnamed(fntypespec_kind),
+      )
     },
   )(input.clone())
 }
@@ -64,10 +69,7 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
       // Return type for fn clause
       context(
         "return type in function clause spec",
-        alt((
-          parse_typevar_or_type,
-          context("return type", cut(parse_t_util::parse_type_into_typevar)),
-        )),
+        alt((parse_typevar_or_type, context("return type", cut(parse_type::parse_type)))),
       ),
       // Optional: when <comma separated list of typevariables given types>
       context("when expression for typespec", opt(parse_t_util::parse_when_expr_for_type)),
@@ -75,10 +77,11 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
     |(args, _arrow, ret_ty, when_expr)| {
       // TODO: Check name equals function name, for module level functions
       if let Some(when_expr_val) = when_expr {
-        FnClauseType::new(
-          Typevar::merge_lists(&args, &when_expr_val),
-          Typevar::substitute_var_from_when_clause(&ret_ty, &when_expr_val).clone(),
-        )
+        let substituted_args = args
+          .into_iter()
+          .map(|arg| TypeImpl::substitute_var_move(arg, &when_expr_val))
+          .collect();
+        FnClauseType::new(substituted_args, TypeImpl::substitute_var_move(ret_ty, &when_expr_val))
       } else {
         FnClauseType::new(args, ret_ty)
       }
