@@ -1,6 +1,7 @@
 //! Type errors returned by the typing engine
 
-use crate::error::ic_error_category::IcErrorCategory;
+use crate::error::ic_error::IcSeverity;
+use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::{GenericIroncladError, IcErrorTrait};
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
@@ -38,6 +39,7 @@ pub enum TypeErrorKind {
 /// Wraps a message with error kind together
 #[derive(Debug)]
 pub struct TypeError {
+  pub severity: IcSeverity,
   /// The error category with extra details
   kind: TypeErrorKind,
   /// Source location where the error has occurred
@@ -47,8 +49,8 @@ pub struct TypeError {
 }
 
 impl IcErrorTrait for TypeError {
-  fn get_category(&self) -> &IcErrorCategory {
-    &IcErrorCategory::TypeErr
+  fn get_severity(&self) -> IcSeverity {
+    self.severity
   }
 
   fn get_location(&self) -> SourceLoc {
@@ -68,6 +70,7 @@ impl TypeError {
   /// Create a typespec error with a message
   pub fn new_spec_error(location: Option<SourceLoc>, msg: String) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::TypeSpecError,
       location,
       message: msg,
@@ -77,6 +80,7 @@ impl TypeError {
   /// Create a new `function not found` error.
   pub fn new_fn_not_found(location: Option<SourceLoc>, mfa: MFArity) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::FunctionNotFound { mfa: mfa.clone() },
       location,
       message: format!("Function not found: {}", mfa),
@@ -90,6 +94,7 @@ impl TypeError {
     message: String,
   ) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::NotAFunction { mfa },
       location,
       message,
@@ -98,12 +103,18 @@ impl TypeError {
 
   /// Create a new `bad arity` error.
   pub fn new_bad_arity(location: Option<SourceLoc>, message: String) -> GenericIroncladError {
-    Box::new(Self { kind: TypeErrorKind::BadArity, location, message })
+    Box::new(Self {
+      severity: IcSeverity::Error,
+      kind: TypeErrorKind::BadArity,
+      location,
+      message,
+    })
   }
 
   /// Create a new `list expected` error.
   pub fn new_list_expected(location: Option<SourceLoc>, message: String) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::ListExpected,
       location,
       message,
@@ -113,6 +124,7 @@ impl TypeError {
   /// Create a new `bad arguments` error.
   pub fn new_bad_arguments(location: Option<SourceLoc>, message: String) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::BadArguments,
       location,
       message,
@@ -127,6 +139,7 @@ impl TypeError {
     message: String,
   ) -> GenericIroncladError {
     Box::new(Self {
+      severity: IcSeverity::Error,
       kind: TypeErrorKind::ExpectedType { expected_type: expected, actual_type: received },
       location,
       message,

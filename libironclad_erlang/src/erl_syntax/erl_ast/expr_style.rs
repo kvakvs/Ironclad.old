@@ -3,7 +3,8 @@
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
-use crate::error::ic_error::IroncladResult;
+use crate::erl_syntax::ic_parser_error::IcParserError;
+use crate::error::ic_error::{IcSeverity, IroncladResult};
 use std::fmt::{Display, Formatter};
 
 /// Controls the parser behaviour and allowed operators.
@@ -55,34 +56,38 @@ impl AstNodeImpl {
       // AstNodeType::FnRef { .. } => {}
       AstNodeType::MFA { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("References to functions are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::Var(_) => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Variables are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::Apply(_) => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Function applications are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::CaseExpr { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Case expressions are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::BinaryOp { binop_expr: expr } => {
@@ -121,43 +126,48 @@ impl AstNodeImpl {
       }
       AstNodeType::RecordField { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Record fields are not allowed in {}", style),
-          );
+          ));
         }
       }
       // AstNodeType::CommaExpr { .. } => {}
       AstNodeType::ListComprehension { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("List comprehensions are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::BinaryComprehension { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Binary comprehensions are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::TryCatch { .. } => {
         if style == ExprStyle::Const {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("Try expressions are not allowed in {}", style),
-          );
+          ));
         }
       }
       AstNodeType::IfStatement { clauses } => {
         if style == ExprStyle::MatchExpr {
-          return ErlError::unacceptable(
+          return Err(IcParserError::new(
+            IcSeverity::Error,
             node.location.clone(),
             format!("If expressions are not allowed in {}", style),
-          );
+          ));
         }
         // If is allowed even in constant and guard expressions, if evaluates to const
         for c in clauses.iter() {

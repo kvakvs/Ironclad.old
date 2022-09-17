@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 /// General error type covering all system errors, parser errors, compiler errors, etc.
 #[derive(Debug)]
-pub enum IcErrorCategory {
+pub enum IcErrorKind {
   /// Returned when multiple errors were found, report each error
   Multiple(Vec<GenericIroncladError>),
 
@@ -25,20 +25,8 @@ pub enum IcErrorCategory {
   /// Project loading error produced when loading TOML
   Config(toml::de::Error),
 
-  /// Returned when preprocessor parser failed
-  PreprocessorParse,
-
-  /// Returned when preprocessor syntax is not correct
-  Preprocessor,
-
-  /// Returned when Erlang parser failed: internal error must not occur with the user
-  ParserInternal,
-
   /// Something unexpected like a TO-DO or assertion
   Internal,
-
-  /// Returned when Erlang parser failed
-  ErlangParse,
 
   /// Returned when processing the Erlang program and finding problems like missing symbols
   Erlang,
@@ -58,25 +46,21 @@ pub enum IcErrorCategory {
   },
 }
 
-impl IcErrorCategory {
+impl IcErrorKind {
   /// Converts category to printable
   pub(crate) fn to_string(&self) -> &str {
     match self {
-      IcErrorCategory::Multiple(_) => "Multiple errors",
-      IcErrorCategory::StdIoError(_) => "IO (general) error",
-      IcErrorCategory::IcFileError(_) => "IO (file) error",
-      IcErrorCategory::Glob(_) => "Directory scan error",
-      IcErrorCategory::GlobPattern(_) => "Glob pattern error",
-      IcErrorCategory::Config(_) => "Configuration file error",
-      IcErrorCategory::Preprocessor => "Preprocessor error",
-      IcErrorCategory::PreprocessorParse => "Preprocessor parse error",
-      IcErrorCategory::ParserInternal => "Parser internal error",
-      IcErrorCategory::Internal => "Internal error",
-      IcErrorCategory::ErlangParse => "Erlang parse error",
-      IcErrorCategory::VariableNotFound(_) => "Variable not found",
-      IcErrorCategory::TypeErr { .. } => "Type error",
-      IcErrorCategory::Erlang => "Program structure error",
-      IcErrorCategory::FileNotFound { .. } => "File was not found",
+      IcErrorKind::Multiple(_) => "Multiple errors",
+      IcErrorKind::StdIoError(_) => "IO (general) error",
+      IcErrorKind::IcFileError(_) => "IO (file) error",
+      IcErrorKind::Glob(_) => "Directory scan error",
+      IcErrorKind::GlobPattern(_) => "Glob pattern error",
+      IcErrorKind::Config(_) => "Configuration file error",
+      IcErrorKind::Internal => "Internal error",
+      IcErrorKind::VariableNotFound(_) => "Variable not found",
+      IcErrorKind::TypeErr { .. } => "Type error",
+      IcErrorKind::Erlang => "Program structure error",
+      IcErrorKind::FileNotFound { .. } => "File was not found",
     }
   }
 }

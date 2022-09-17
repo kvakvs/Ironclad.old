@@ -1,7 +1,7 @@
 //! Printing for `IroncladError`s
 
 use crate::error::ic_error::IroncladError;
-use crate::error::ic_error_category::IcErrorCategory;
+use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::IcErrorTrait;
 
 impl std::fmt::Debug for IroncladError {
@@ -12,32 +12,27 @@ impl std::fmt::Debug for IroncladError {
 
 impl std::fmt::Display for IroncladError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    writeln!(f, "{}:", self.get_category().to_string())?;
+    writeln!(f, "{}:", self.get_severity())?;
 
-    match self.get_category() {
+    match &self.kind {
       // IcErrorType::Interrupted(s) => write!(f, "Processing interrupted: {}", s),
-      IcErrorCategory::Multiple(errs) => {
+      IcErrorKind::Multiple(errs) => {
         for err in errs.iter() {
           writeln!(f, "{}", err)?;
         }
         Ok(())
       }
-      IcErrorCategory::FileNotFound { file, while_verb } => {
+      IcErrorKind::FileNotFound { file, while_verb } => {
         writeln!(f, "file: {} while {}", file.to_string_lossy(), while_verb)
       }
-      IcErrorCategory::StdIoError(ioerr) => writeln!(f, "{}", ioerr),
-      IcErrorCategory::Glob(gerr) => gerr.fmt(f),
-      IcErrorCategory::GlobPattern(gperr) => gperr.fmt(f),
-      IcErrorCategory::Config(cfgerr) => cfgerr.fmt(f),
-      IcErrorCategory::Preprocessor
-      | IcErrorCategory::PreprocessorParse
-      | IcErrorCategory::ParserInternal
-      | IcErrorCategory::Internal
-      | IcErrorCategory::TypeErr { .. }
-      | IcErrorCategory::ErlangParse => {
+      IcErrorKind::StdIoError(ioerr) => writeln!(f, "{}", ioerr),
+      IcErrorKind::Glob(gerr) => gerr.fmt(f),
+      IcErrorKind::GlobPattern(gperr) => gperr.fmt(f),
+      IcErrorKind::Config(cfgerr) => cfgerr.fmt(f),
+      IcErrorKind::Internal | IcErrorKind::TypeErr { .. } => {
         write!(f, "{} (at {})", self.get_message(), self.get_location())
       }
-      _ => unimplemented!("Format is not impl for {:?}", self.get_category()),
+      _ => unimplemented!("Format is not impl for {:?}", self.kind),
     }
   }
 }

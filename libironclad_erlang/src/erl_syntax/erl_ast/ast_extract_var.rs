@@ -4,8 +4,9 @@ use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
+use crate::erl_syntax::ic_parser_error::IcParserError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
-use crate::error::ic_error::IroncladResult;
+use crate::error::ic_error::{IcSeverity, IroncladResult};
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::collections::HashMap;
 
@@ -144,10 +145,11 @@ impl AstNodeImpl {
       | AstNodeType::CClause(_, _)
       | AstNodeType::CaseExpr { .. }
       | AstNodeType::Apply(_)
-      | AstNodeType::UnaryOp { .. } => ErlError::unacceptable(
+      | AstNodeType::UnaryOp { .. } => Err(IcParserError::new(
+        IcSeverity::Error,
         node.location.clone(),
         format!("{}: is unacceptable as a function argument", node),
-      ),
+      )),
     }
   }
 }

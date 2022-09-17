@@ -10,14 +10,6 @@ impl TypeImpl {
       .iter()
       .find(|each| each.has_typevar_name(tv))
       .cloned()
-    // for each_in_when in when_clause {
-    //   if let Some(each_name) = &each_in_when.typevar {
-    //     if each_name == tv {
-    //       return Some(each_in_when.clone());
-    //     }
-    //   }
-    // }
-    // None
   }
 
   /// For `ErlType` which is a `TypeVar`, substitute it with a type from `when` clause.

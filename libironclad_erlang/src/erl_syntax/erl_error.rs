@@ -1,6 +1,8 @@
 //! Erlang errors
-use crate::error::ic_error::IroncladResult;
-use crate::error::ic_error_category::IcErrorCategory;
+use crate::erl_syntax::ic_parser_error::IcParserError;
+use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
+use crate::error::ic_error::{IcSeverity, IroncladResult};
+use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::IcErrorTrait;
 use crate::source_loc::SourceLoc;
 use crate::typing::type_error::TypeError;
@@ -9,11 +11,7 @@ use std::fmt::Debug;
 
 /// Category of Erlang Errors
 #[derive(Debug)]
-pub enum ErlErrorCategory {
-  /// Error while parsing Erlang syntax
-  Parser,
-  /// Error raised when unsupported AST node occured where it shouldn't
-  Unacceptable,
+pub enum ErlErrorKind {
   /// Error is related to preprocessor directives or created by their interpretation
   PreprocessorError,
   /// Type discrepancy found
@@ -33,10 +31,11 @@ pub enum ErlErrorCategory {
 /// Erlang libironclad errors all gathered together
 #[derive(Debug)]
 pub struct ErlError {
-  /// Library module/activity which produced an error
-  pub ic_category: IcErrorCategory,
-  /// Error kind, an enum which might contain extra values
-  pub category: ErlErrorCategory,
+  // /// Library module/activity which produced an error
+  // pub kind: IcErrorKind,
+  pub severity: IcSeverity,
+  /// Error kind, also contains details about error, useful for later analysis or printing
+  pub kind: ErlErrorKind,
   /// Location where error was found
   pub loc: SourceLoc,
   /// Message from the libironclad
@@ -44,8 +43,8 @@ pub struct ErlError {
 }
 
 impl IcErrorTrait for ErlError {
-  fn get_category(&self) -> &IcErrorCategory {
-    &self.ic_category
+  fn get_severity(&self) -> IcSeverity {
+    self.severity
   }
 
   fn get_location(&self) -> SourceLoc {
@@ -63,13 +62,8 @@ impl IcErrorTrait for ErlError {
 
 impl ErlError {
   /// Create ErlError from 3 components
-  pub(crate) fn new(
-    ic_cat: IcErrorCategory,
-    cat: ErlErrorCategory,
-    loc: SourceLoc,
-    msg: String,
-  ) -> Self {
-    Self { ic_category: ic_cat, category: cat, loc, msg }
+  pub(crate) fn new(severity: IcSeverity, kind: ErlErrorKind, loc: SourceLoc, msg: String) -> Self {
+    Self { severity, kind, loc, msg }
   }
 
   // /// Builds ErlError with nice error details from input string and Nom's verbose error
@@ -84,12 +78,10 @@ impl ErlError {
   //   Err(Box::new(new_err))
   // }
 
-  /// Creates an "Unacceptable" error
-  pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IroncladResult<T> {
-    let new_err =
-      ErlError::new(IcErrorCategory::ErlangParse, ErlErrorCategory::Unacceptable, loc, message);
-    Err(Box::new(new_err))
-  }
+  // /// Creates an "Unacceptable" error
+  // pub(crate) fn unacceptable<T>(loc: SourceLoc, message: String) -> IroncladResult<T> {
+  //   Err(IcParserError::new(loc, message))
+  // }
 
   // /// Creates an "TypeError" error
   // pub(crate) fn type_error<T>(loc: SourceLoc, type_err: TypeError) -> IcResult<T> {
@@ -108,29 +100,28 @@ impl ErlError {
     mfa: MFArity,
     msg: String,
   ) -> IroncladResult<T> {
-    let new_err =
-      ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::LocalFnNotFound { mfa }, loc, msg);
+    let new_err = ErlError::new(IcSeverity::Error, ErlErrorKind::LocalFnNotFound { mfa }, loc, msg);
     Err(Box::new(new_err))
   }
 
-  /// Creates an "preprocessor" error, even though there isn't preprocessor and we do preprocessor
-  /// directives inline with the other bits of Erlang source.
-  #[inline]
-  pub(crate) fn preprocessor_error(loc: SourceLoc, msg: String) -> Self {
-    ErlError::new(IcErrorCategory::Erlang, ErlErrorCategory::PreprocessorError, loc, msg)
-  }
+  // /// Creates an "preprocessor" error, even though there isn't preprocessor and we do preprocessor
+  // /// directives inline with the other bits of Erlang source.
+  // #[inline]
+  // pub(crate) fn preprocessor_error(loc: SourceLoc, msg: String) -> Self {
+  //   ErlError::new(IcErrorKind::Erlang, ErlErrorKind::PreprocessorError, loc, msg)
+  // }
 
-  #[allow(dead_code)]
-  #[inline]
-  pub(crate) fn return_preprocessor_error<T>(loc: SourceLoc, msg: String) -> IroncladResult<T> {
-    Err(Box::new(Self::preprocessor_error(loc, msg)))
-  }
+  // #[allow(dead_code)]
+  // #[inline]
+  // pub(crate) fn return_preprocessor_error<T>(loc: SourceLoc, msg: String) -> IroncladResult<T> {
+  //   Err(IcPreprocessorError::new(loc, msg))
+  // }
 
   /// Creates a "Variable Not Found" error
   pub(crate) fn variable_not_found<T>(loc: SourceLoc, var: String) -> IroncladResult<T> {
     let new_err = ErlError::new(
-      IcErrorCategory::Erlang,
-      ErlErrorCategory::VariableNotFound { var },
+      IcSeverity::Error,
+      ErlErrorKind::VariableNotFound { var },
       loc,
       String::default(),
     );

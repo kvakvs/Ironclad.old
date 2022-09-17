@@ -9,6 +9,7 @@ use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::parsers::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IroncladResult;
+use crate::error::ic_error_trait::GenericIroncladError;
 use crate::project::compiler_opts::{CompilerOpts, CompilerOptsImpl};
 use crate::project::module::scope::root_scope::RootScope;
 use crate::project::ErlProject;
@@ -39,9 +40,9 @@ pub struct ErlModuleImpl {
   pub root_scope: RootScope,
   /// Accumulates found errors in this module. Tries to hard break the operations when error limit
   /// is reached.
-  pub errors: RwVec<ErlError>,
+  pub errors: RwVec<GenericIroncladError>,
   /// Warnings which can accumulate but do not block the processing
-  pub warnings: RwVec<ErlError>,
+  pub warnings: RwVec<GenericIroncladError>,
   // /// Collection of included files to prevent circular imports
   // pub included_files: RwHashSet<OsString>,
 }
@@ -132,13 +133,13 @@ impl ErlModuleImpl {
 
   /// Adds an error to vector of errors. Returns false when error list is full and the calling code
   /// should attempt to stop.
-  pub fn add_error(&self, err: ErlError) -> bool {
+  pub fn add_error(&self, err: GenericIroncladError) -> bool {
     self.errors.push(err);
     self.errors.len() < self.compiler_options.max_errors_per_module
   }
 
   /// Adds an warning to vector of warnings.
-  pub fn add_warning(&self, err: ErlError) {
+  pub fn add_warning(&self, err: GenericIroncladError) {
     self.warnings.push(err);
   }
 

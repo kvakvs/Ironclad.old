@@ -2,6 +2,7 @@
 
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::erl_error::ErlError;
+use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
@@ -10,7 +11,7 @@ use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
-use crate::error::ic_error::{IroncladError, IroncladResult};
+use crate::error::ic_error::{IcSeverity, IroncladError, IroncladResult};
 use crate::project::module::module_impl::{ErlModule, ErlModuleImpl};
 use crate::project::module::preprocess::pp_macro_substitution::substitute_macro_invocations;
 use crate::project::ErlProject;
@@ -157,7 +158,8 @@ fn on_if(state: &mut PreprocessState, ppnode: &PreprocessorNode, cond: &AstNode)
     LiteralBool::NotABoolean => {
       let msg =
         "-if() or elif() condition does not evaluate to a compile-time boolean.".to_string();
-      state.module.add_error(ErlError::preprocessor_error(
+      state.module.add_error(IcPreprocessorError::new(
+        IcSeverity::Error,
         SourceLoc::unimplemented(file!(), function_name!()),
         msg,
       ));
@@ -181,7 +183,8 @@ fn on_else(state: &mut PreprocessState) {
     if section.else_encountered {
       // Can only encounter -else once, otherwise an error is raised
       let msg = "-else() encountered after another -else().".to_string();
-      state.module.add_error(ErlError::preprocessor_error(
+      state.module.add_error(IcPreprocessorError::new(
+        IcSeverity::Error,
         SourceLoc::unimplemented(file!(), function_name!()),
         msg,
       ));
@@ -192,7 +195,8 @@ fn on_else(state: &mut PreprocessState) {
   } else {
     let msg =
       "-else() encountered without a matching -if(), ifdef(), -ifndef() or -elif().".to_string();
-    state.module.add_error(ErlError::preprocessor_error(
+    state.module.add_error(IcPreprocessorError::new(
+      IcSeverity::Error,
       SourceLoc::unimplemented(file!(), function_name!()),
       msg,
     ));
@@ -206,7 +210,8 @@ fn on_endif(state: &mut PreprocessState) {
   } else {
     let msg =
       "-endif() encountered without a matching -if, ifdef, -ifndef, -elif or -else.".to_string();
-    state.module.add_error(ErlError::preprocessor_error(
+    state.module.add_error(IcPreprocessorError::new(
+      IcSeverity::Error,
       SourceLoc::unimplemented(file!(), function_name!()),
       msg,
     ));
@@ -221,7 +226,8 @@ fn on_else_if(state: &mut PreprocessState, cond: &AstNode) {
     on_if(state, &section.ppnode, cond);
   } else {
     let msg = "-elif() encountered without a matching -if, ifdef, -ifndef or -elif.".to_string();
-    state.module.add_error(ErlError::preprocessor_error(
+    state.module.add_error(IcPreprocessorError::new(
+      IcSeverity::Error,
       SourceLoc::unimplemented(file!(), function_name!()),
       msg,
     ));
@@ -317,14 +323,19 @@ fn preprocess_handle_ppnode(
     // Failure on demand
     //------------------
     PreprocessorNodeType::Error(e) if active => {
-      state.module.add_error(ErlError::preprocessor_error(
+      state.module.add_error(IcPreprocessorError::new(
+        IcSeverity::Error,
         SourceLoc::unimplemented(file!(), function_name!()),
         e.clone(),
       ));
     }
-    PreprocessorNodeType::Warning(w) if active => state.module.add_warning(
-      ErlError::preprocessor_error(SourceLoc::unimplemented(file!(), function_name!()), w.clone()),
-    ),
+    PreprocessorNodeType::Warning(w) if active => {
+      state.module.add_warning(IcPreprocessorError::new(
+        IcSeverity::Error,
+        SourceLoc::unimplemented(file!(), function_name!()),
+        w.clone(),
+      ))
+    }
 
     //------------------
     // Populate module scope with stuff
@@ -388,7 +399,8 @@ fn final_state_check(state: &mut PreprocessState) {
   if let Some(last_sec) = state.section.last() {
     let msg =
       format!("A preprocessor section does not have a matching -endif: {}", last_sec.ppnode);
-    state.module.add_error(ErlError::preprocessor_error(
+    state.module.add_error(IcPreprocessorError::new(
+      IcSeverity::Error,
       SourceLoc::unimplemented(file!(), function_name!()),
       msg,
     ));
@@ -449,7 +461,8 @@ impl ErlModuleImpl {
           let msg = format!(
             "Not all input consumed while parsing a preprocessor directive or a module attribute:\n{}",
             format_tok_stream(tail.tokens, 100));
-          module.add_error(ErlError::preprocessor_error(
+          module.add_error(IcPreprocessorError::new(
+            IcSeverity::Error,
             SourceLoc::unimplemented(file!(), function_name!()),
             msg,
           ));

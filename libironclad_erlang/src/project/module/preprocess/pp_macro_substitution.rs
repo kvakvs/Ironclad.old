@@ -1,12 +1,14 @@
 //! Code for processing a line of tokens and pasting macro values instead of macro invocations.
 
 use crate::erl_syntax::erl_error::ErlError;
+use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::Token;
 use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::{PreprocessorDefine, PreprocessorDefineImpl};
+use crate::error::ic_error::IcSeverity;
 use crate::exit_codes::erl_fatal_error;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::preprocess::pp_state::PreprocessState;
@@ -63,7 +65,8 @@ fn lookup_and_paste_macro<'a>(
     // Insert macro body and replace any macro variables with content
     paste_tokens(output, &pdef, &args);
   } else {
-    erl_fatal_error(ErlError::preprocessor_error(
+    erl_fatal_error(IcPreprocessorError::new(
+      IcSeverity::Fatal,
       SourceLoc::unimplemented(file!(), function_name!()),
       format!("Invocation of an undefined macro: {}", macro_name),
     ));

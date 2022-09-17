@@ -1,13 +1,13 @@
 //! Trait for Ironclad errors
 
-use crate::error::ic_error::IroncladError;
-use crate::error::ic_error_category::IcErrorCategory;
+use crate::error::ic_error::{IcSeverity, IroncladError};
+use crate::error::ic_error_kind::IcErrorKind;
 use crate::source_loc::SourceLoc;
 
 /// Trait for Ironclad errors, allows grouping errors into a big `IcError` struct
 pub trait IcErrorTrait: std::fmt::Display + std::fmt::Debug {
   /// Generalized category for the error, not aware of how sub-libraries are handling their errors
-  fn get_category(&self) -> &IcErrorCategory;
+  fn get_severity(&self) -> IcSeverity;
 
   /// Where the error occured
   fn get_location(&self) -> SourceLoc;
