@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::{FnDef, ModuleForms};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_apply::ErlApply;
 use crate::erl_syntax::node::erl_binary_element::BinaryElement;
 use crate::erl_syntax::node::erl_binop::ErlBinaryOperatorExpr;
@@ -18,7 +17,7 @@ use crate::error::ic_error::IroncladResult;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::ErlType;
-use crate::typing::type_error::{TypeError, TypeErrorKind};
+use crate::typing::type_error::TypeError;
 use libironclad_util::mfarity::MFArity;
 use std::ops::Deref;
 use std::sync::Arc;

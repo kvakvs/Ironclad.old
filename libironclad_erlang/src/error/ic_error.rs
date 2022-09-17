@@ -2,11 +2,11 @@
 use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::{GenericIroncladError, IcErrorTrait};
 use crate::source_loc::SourceLoc;
-use std::fmt::{write, Formatter};
 use std::path::{Path, PathBuf};
 
 /// Ironclad errors all gathered together, and categorised
 pub struct IroncladError {
+  /// The error severity
   pub severity: IcSeverity,
   /// Error kind, an enum which might contain extra values
   pub kind: IcErrorKind,

@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::parsers::misc::panicking_tokenizer_error_reporter;
 use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::parsers::token_stream::token::Token;
@@ -166,7 +165,7 @@ impl ErlModuleImpl {
 
   /// Check whether any errors were reported for this module
   pub fn has_errors(&self) -> bool {
-    self.errors.len() > 0
+    !self.errors.is_empty()
   }
 
   /// Print errors accumulated for this module

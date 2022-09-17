@@ -5,7 +5,6 @@ use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use std::ops::Deref;
-use std::sync::Arc;
 
 /// Hosts code to check the is-subtype-of relation
 pub struct SubtypeChecker {}
@@ -16,8 +15,8 @@ impl SubtypeChecker {
     sub_ty: &Option<ErlType>,
     sup_ty: &Option<ErlType>,
   ) -> bool {
-    let subt = sub_ty.clone().unwrap_or_else(|| TypeImpl::nil());
-    let supt = sup_ty.clone().unwrap_or(TypeImpl::nil());
+    let subt = sub_ty.clone().unwrap_or_else(TypeImpl::nil);
+    let supt = sup_ty.clone().unwrap_or_else(TypeImpl::nil);
     Self::is_subtype(&subt, &supt)
   }
 
@@ -44,8 +43,8 @@ impl SubtypeChecker {
       TypeKind::List {
         elements: supertype_elements, tail: supertype_tail, ..
       } => {
-        todo!("support non-empty attribute");
-        Self::is_subtype_of_list(supertype_elements, supertype_tail, sub_ty)
+        let _result = Self::is_subtype_of_list(supertype_elements, supertype_tail, sub_ty);
+        todo!("support non-empty attribute")
       }
       TypeKind::StronglyTypedList { elements: supertype_elements, tail: supertype_tail } => {
         Self::is_subtype_of_strongly_typed_list(supertype_elements, supertype_tail, sub_ty)
@@ -168,9 +167,9 @@ impl SubtypeChecker {
     match &sub_ty.kind {
       // For superlist to include a sublist
       TypeKind::List { elements: subtype_elements, tail: subtype_tail, .. } => {
-        todo!("support non-empty attribute");
-        Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
-          && subtype_elements.is_subtype_of(supertype_elements)
+        let _result = Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
+          && subtype_elements.is_subtype_of(supertype_elements);
+        todo!("support non-empty attribute")
       }
       // For superlist to include typed sublist
       TypeKind::StronglyTypedList { elements: subtype_elements, tail: subtype_tail } => {
@@ -194,7 +193,7 @@ impl SubtypeChecker {
       // For typed list to include a list
       TypeKind::List { elements: subtype_elements, tail: subtype_tail, .. } => {
         // Sublist type must be subtype of each superlist element
-        Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
+        let _result = Self::is_subtype_for_list_tail(subtype_tail, supertype_tail)
           && supertype_elements
             .iter()
             .all(|supt| subtype_elements.is_subtype_of(supt));

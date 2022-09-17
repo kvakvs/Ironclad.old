@@ -26,11 +26,8 @@ fn main_do() -> IroncladResult<()> {
   project.build_file_list()?;
 
   // Parse all ERL files and their included includes
-  match ErlParseStage::run_parse_stage(&project) {
-    Err(e) => {
-      erl_fatal_icerror(e);
-    }
-    _ => (),
+  if let Err(e) = ErlParseStage::run_parse_stage(&project) {
+    erl_fatal_icerror(e);
   }
   Ok(())
 }

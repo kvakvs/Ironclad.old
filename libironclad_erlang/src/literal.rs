@@ -21,7 +21,12 @@ pub enum Literal {
   /// Character literal
   Character(char),
   /// Character literal, escaped with `\`
-  EscapedCharacter { value: char, in_source: char },
+  EscapedCharacter {
+    /// Interpreted value how it should be used
+    value: char,
+    /// How the character was in the source
+    in_source: char,
+  },
 
   // TODO: String/list lit, tuple lit, map lit, binary lit, etc
   /// A boolean value true or false atom, is-a(Atom)

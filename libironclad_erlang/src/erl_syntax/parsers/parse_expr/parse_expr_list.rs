@@ -16,17 +16,19 @@ use nom::error::context;
 use nom::multi::many0;
 use nom::sequence::{delimited, pair, preceded, separated_pair};
 
-/// Parse a list of expressions with optional tail
-pub fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
-  let build_fn = |(consumed_input, (head, (mut elements, maybe_tail))): (
+#[allow(clippy::type_complexity)]
+fn list_builder_build_fn(
+  (consumed_input, (head, (mut elements, maybe_tail))): (
     ParserInput,
     (AstNode, (Vec<AstNode>, Option<AstNode>)),
-  )|
-   -> AstNode {
-    elements.insert(0, head);
-    AstNodeImpl::new_list(SourceLoc::new(&consumed_input), elements, maybe_tail)
-  };
+  ),
+) -> AstNode {
+  elements.insert(0, head);
+  AstNodeImpl::new_list(SourceLoc::new(&consumed_input), elements, maybe_tail)
+}
 
+/// Parse a list of expressions with optional tail
+pub fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
   // A square bracket delimited sequence, where
   // First element is expr
   // Followed by comma+expr, or bar+expr
@@ -43,7 +45,7 @@ pub fn parse_list_builder(input: ParserInput) -> ParserResult<AstNode> {
       ),
       tok_square_close,
     )),
-    build_fn,
+    list_builder_build_fn,
   )(input.clone())
 }
 

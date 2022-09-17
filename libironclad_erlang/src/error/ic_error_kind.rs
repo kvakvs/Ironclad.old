@@ -1,7 +1,6 @@
 //! Larger categories for errors
 
 use crate::error::ic_error_trait::GenericIroncladError;
-use crate::typing::type_error::TypeError;
 use libironclad_util::io::file_error::IcFileError;
 use std::path::PathBuf;
 
@@ -46,21 +45,21 @@ pub enum IcErrorKind {
   },
 }
 
-impl IcErrorKind {
-  /// Converts category to printable
-  pub(crate) fn to_string(&self) -> &str {
-    match self {
-      IcErrorKind::Multiple(_) => "Multiple errors",
-      IcErrorKind::StdIoError(_) => "IO (general) error",
-      IcErrorKind::IcFileError(_) => "IO (file) error",
-      IcErrorKind::Glob(_) => "Directory scan error",
-      IcErrorKind::GlobPattern(_) => "Glob pattern error",
-      IcErrorKind::Config(_) => "Configuration file error",
-      IcErrorKind::Internal => "Internal error",
-      IcErrorKind::VariableNotFound(_) => "Variable not found",
-      IcErrorKind::TypeErr { .. } => "Type error",
-      IcErrorKind::Erlang => "Program structure error",
-      IcErrorKind::FileNotFound { .. } => "File was not found",
-    }
-  }
-}
+// impl IcErrorKind {
+//   /// Converts category to printable
+//   pub(crate) fn to_string(&self) -> &str {
+//     match self {
+//       IcErrorKind::Multiple(_) => "Multiple errors",
+//       IcErrorKind::StdIoError(_) => "IO (general) error",
+//       IcErrorKind::IcFileError(_) => "IO (file) error",
+//       IcErrorKind::Glob(_) => "Directory scan error",
+//       IcErrorKind::GlobPattern(_) => "Glob pattern error",
+//       IcErrorKind::Config(_) => "Configuration file error",
+//       IcErrorKind::Internal => "Internal error",
+//       IcErrorKind::VariableNotFound(_) => "Variable not found",
+//       IcErrorKind::TypeErr { .. } => "Type error",
+//       IcErrorKind::Erlang => "Program structure error",
+//       IcErrorKind::FileNotFound { .. } => "File was not found",
+//     }
+//   }
+// }

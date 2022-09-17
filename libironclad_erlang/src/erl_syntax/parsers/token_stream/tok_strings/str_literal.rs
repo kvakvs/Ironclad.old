@@ -30,7 +30,7 @@ fn parse_doublequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<&'a s
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_str_fragment<'a>(input: TokenizerInput<'a>) -> TokensResult<StringFragment<'a>> {
+fn parse_str_fragment(input: TokenizerInput<'_>) -> TokensResult<StringFragment<'_>> {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output of that parser.
     map(parse_doublequot_literal, StringFragment::Literal),
@@ -97,7 +97,7 @@ fn parse_based_int(input: TokenizerInput) -> TokensResult<ErlInteger> {
     separated_pair(parse_int_unsigned_body, char('#'), parse_based_int_unsigned_body),
     |(base_str, value_str): (&str, &str)| -> ErlInteger {
       let base = base_str.parse::<u32>().unwrap();
-      assert!(base >= 2 && base <= 36);
+      assert!((2..=36).contains(&base));
       ErlInteger::new_from_string_radix(value_str, base).unwrap()
     },
   )(input)

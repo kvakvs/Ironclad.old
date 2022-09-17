@@ -210,7 +210,7 @@ impl Display for ErlParserErrorKind {
           f,
           "While parsing {}, could not recognize any of the expected constructs: {}",
           context,
-          LangConstructs(&constructs)
+          LangConstructs(constructs)
         )
       }
       _ => unimplemented!("Don't know how to format {:?}", self),

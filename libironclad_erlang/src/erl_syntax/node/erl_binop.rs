@@ -1,7 +1,6 @@
 //! Defines structs for AST nodes representing binary operators (A + B) and unary (+A)
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::erl_op::ErlBinaryOp;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::error::ic_error::IroncladResult;
@@ -11,7 +10,6 @@ use crate::source_loc::SourceLoc;
 use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::type_error::TypeError;
-use std::ops::Deref;
 
 /// Binary operator is a code structure `Expr <operator> Expr`
 #[derive(Debug)]
@@ -163,7 +161,7 @@ impl ErlBinaryOperatorExpr {
         *left_non_empty,
       ),
 
-      other_left => {
+      _other_left => {
         // left is not a list
         let msg =
           format!("List append operation ++ expected a list in its left argument, got {}", &left);
@@ -194,8 +192,8 @@ impl ErlBinaryOperatorExpr {
           })
           .collect();
         let result_list = TypeKind::StronglyTypedList { elements, tail: right_tail.clone() };
-        todo!("support non-empty attribute");
-        Ok(TypeImpl::new_unnamed(result_list))
+        let _result: IroncladResult<ErlType> = Ok(TypeImpl::new_unnamed(result_list));
+        todo!("support non-empty attribute")
       }
       TypeKind::StronglyTypedList { elements: right_elements, tail: right_tail } => {
         let elements: Vec<ErlType> = left_elements
@@ -209,7 +207,7 @@ impl ErlBinaryOperatorExpr {
         Ok(TypeImpl::new_unnamed(result_list))
       }
       TypeKind::Nil => Ok(left.clone()),
-      other_right => {
+      _other_right => {
         // right is not a list
         let msg =
           format!("List append operation ++ expected a list in its right argument, got {}", &right);
@@ -254,7 +252,7 @@ impl ErlBinaryOperatorExpr {
         };
         Ok(TypeImpl::new_unnamed(result_type))
       }
-      other_right => {
+      _other_right => {
         // right is not a list
         let msg =
           format!("List append operation ++ expected a list in its right argument, got {}", &right);

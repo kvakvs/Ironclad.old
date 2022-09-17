@@ -62,7 +62,7 @@ fn parse_singlequot_literal<'a>(input: TokenizerInput<'a>) -> TokensResult<Token
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_fragment<'a>(input: TokenizerInput<'a>) -> TokensResult<StringFragment<'a>> {
+fn parse_fragment(input: TokenizerInput<'_>) -> TokensResult<StringFragment<'_>> {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.

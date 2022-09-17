@@ -1,7 +1,6 @@
 //! Checks whether a type matches synthesized type for AST
 
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
 use crate::project::module::scope::scope_impl::Scope;

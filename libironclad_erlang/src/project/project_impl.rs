@@ -59,7 +59,7 @@ impl ErlProjectImpl {
       for dir in &self.project_inputs.input_opts.directories {
         let file_glob = String::from(dir) + "/**/" + file_mask.as_str();
 
-        for entry in glob::glob(&file_glob).map_err(|e| IroncladError::from(e))? {
+        for entry in glob::glob(&file_glob).map_err(IroncladError::from)? {
           match entry {
             Ok(path) => Self::maybe_add_path(&mut file_set, &mut file_list, path)?,
             Err(err) => return Err(IroncladError::from(err).into()),
@@ -82,7 +82,7 @@ impl ErlProjectImpl {
     path: PathBuf,
   ) -> IroncladResult<()> {
     // Check duplicate
-    let abs_path = std::fs::canonicalize(path).map_err(|e| IroncladError::from(e))?;
+    let abs_path = std::fs::canonicalize(path).map_err(IroncladError::from)?;
     if file_set.contains(&abs_path) {
       return Ok(());
     }

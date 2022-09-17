@@ -1,16 +1,8 @@
 //! Constructors for complex ErlTypes
 
-use crate::literal::Literal;
-use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
 use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
-use crate::typing::fn_clause_type::FnClauseType;
-use crate::typing::fn_type::FnType;
-use crate::typing::record_field_type::RecordFieldType;
 use libironclad_util::mfarity::MFArity;
-use std::iter;
-use std::sync::Arc;
 
 //
 // Constructors and Generators

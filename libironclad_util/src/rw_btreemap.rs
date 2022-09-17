@@ -37,6 +37,15 @@ impl<KeyType: std::fmt::Debug + Clone + Eq + std::cmp::Ord, ValType: Clone>
     Self { collection: RwLock::new(collection) }
   }
 
+  /// Check for zero length
+  pub fn is_empty(&self) -> bool {
+    if let Ok(r_collection) = self.collection.read() {
+      r_collection.is_empty()
+    } else {
+      panic!("Can't lock RwBtreeMap for length check")
+    }
+  }
+
   /// Contained data length
   pub fn len(&self) -> usize {
     if let Ok(r_collection) = self.collection.read() {

@@ -73,7 +73,7 @@ impl FileCacheImpl {
         } else {
           panic!("Can't lock self.file_cache_stats for update")
         }
-        Ok(contents.clone())
+        Ok(contents)
       }
     }
   }

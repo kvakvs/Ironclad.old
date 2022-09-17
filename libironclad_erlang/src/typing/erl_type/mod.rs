@@ -1,12 +1,4 @@
 //! Defines an Erlang-type
-use crate::literal::Literal;
-use crate::typing::erl_integer::ErlInteger;
-use crate::typing::erl_type::binary_type::{BinaryTypeHeadElement, BinaryTypeTailElement};
-use crate::typing::erl_type::map_type::MapMemberType;
-use crate::typing::fn_type::FnType;
-use crate::typing::record_field_type::RecordFieldType;
-use crate::typing::type_union::TypeUnion;
-use libironclad_util::mfarity::MFArity;
 use std::sync::Arc;
 use typekind::TypeKind;
 
@@ -90,7 +82,7 @@ impl TypeImpl {
 
       TypeKind::Singleton { val } => val.synthesize_type().get_order(),
 
-      other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", &self),
+      _other => unimplemented!("Don't know how to get numeric order for Erlang-type {}", &self),
     }
   }
 }

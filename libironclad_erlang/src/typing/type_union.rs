@@ -52,12 +52,7 @@ impl TypeUnion {
   pub(crate) fn normalize(&mut self) {
     // Merge int()|float() into number()
     if self.contains_strict(&TypeImpl::integer()) && self.contains_strict(&TypeImpl::float()) {
-      self.types = self
-        .types
-        .iter()
-        .filter(|t| !t.is_integer() && !t.is_float()) // throw away int and floats
-        .cloned()
-        .collect();
+      self.types.retain(|t| !t.is_integer() && !t.is_float()); // throw away int and floats
       self.types.push(TypeImpl::number()); // replace int and float with number()
     }
 

@@ -1,11 +1,7 @@
 //! Erlang errors
-use crate::erl_syntax::ic_parser_error::IcParserError;
-use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::error::ic_error::{IcSeverity, IroncladResult};
-use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::IcErrorTrait;
 use crate::source_loc::SourceLoc;
-use crate::typing::type_error::TypeError;
 use libironclad_util::mfarity::MFArity;
 use std::fmt::Debug;
 
@@ -31,8 +27,7 @@ pub enum ErlErrorKind {
 /// Erlang libironclad errors all gathered together
 #[derive(Debug)]
 pub struct ErlError {
-  // /// Library module/activity which produced an error
-  // pub kind: IcErrorKind,
+  /// The error severity
   pub severity: IcSeverity,
   /// Error kind, also contains details about error, useful for later analysis or printing
   pub kind: ErlErrorKind,

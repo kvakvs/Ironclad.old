@@ -23,9 +23,9 @@ pub enum StringFragment<'a> {
 
 /// Parse a backslash, followed by any amount of whitespace. This is used later
 /// to discard any escaped whitespace.
-pub(crate) fn parse_escaped_whitespace<'a>(
-  input: TokenizerInput<'a>,
-) -> TokensResult<TokenizerInput<'a>> {
+pub(crate) fn parse_escaped_whitespace(
+  input: TokenizerInput<'_>,
+) -> TokensResult<TokenizerInput<'_>> {
   preceded(char('\\'), multispace1)(input)
 }
 

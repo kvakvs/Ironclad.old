@@ -84,6 +84,7 @@ impl Display for LangConstruct {
   }
 }
 
+/// Collection of language constructs, useful for printing
 pub struct LangConstructs<'a>(pub &'a [LangConstruct]);
 
 impl<'a> Display for LangConstructs<'a> {

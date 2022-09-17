@@ -40,7 +40,7 @@ impl TypeKind {
     let clause = FnClauseType::new(any_args, ret_ty);
     let fn_type = FnType::new(arity, vec![clause]);
 
-    TypeKind::Fn(fn_type.into()).into()
+    TypeKind::Fn(fn_type.into())
   }
 
   /// Wrapper to access type union construction
@@ -59,7 +59,7 @@ impl TypeKind {
         match u.types.len() {
           0 => panic!("Can't create type union of 0 types after normalization"),
           1 => u.types[0].kind.clone(),
-          _ => TypeKind::Union(u).into(),
+          _ => TypeKind::Union(u),
         }
       }
     }
@@ -78,13 +78,13 @@ impl TypeKind {
   /// Construct a new tuple-type
   #[inline]
   pub fn new_tuple(elements: &[ErlType]) -> TypeKind {
-    TypeKind::Tuple { elements: elements.into() }.into()
+    TypeKind::Tuple { elements: elements.into() }
   }
 
   /// Construct a new map-type
   #[inline]
   pub(crate) fn new_map(members: Vec<MapMemberType>) -> TypeKind {
-    TypeKind::Map { members }.into()
+    TypeKind::Map { members }
   }
 
   /// Clones literal's refcounted pointer and returns a singleton type

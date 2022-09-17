@@ -1,6 +1,5 @@
 //! Exit codes for `std::process::exit`
 
-use crate::erl_syntax::erl_error::ErlError;
 use crate::error::ic_error_trait::GenericIroncladError;
 
 /// Returned on success

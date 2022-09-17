@@ -17,7 +17,7 @@ use nom::sequence::{delimited, pair, preceded};
 
 /// Recognizes newline or end of input
 #[inline]
-pub(crate) fn newline_or_eof<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+pub(crate) fn newline_or_eof(input: TokenizerInput<'_>) -> TokensResult<TokenizerInput<'_>> {
   recognize(preceded(
     many0(alt((char(' '), char('\t')))),
     alt((tag("\r\n"), tag("\r"), tag("\n"), eof)),
@@ -26,18 +26,18 @@ pub(crate) fn newline_or_eof<'a>(input: TokenizerInput<'a>) -> TokensResult<Toke
 
 /// Recognizes `% text <newline>` consuming text
 #[inline]
-pub(crate) fn line_comment<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+pub(crate) fn line_comment(input: TokenizerInput<'_>) -> TokensResult<TokenizerInput<'_>> {
   recognize(preceded(many1(char('%')), many_till(anychar, newline_or_eof)))(input)
 }
 
 #[inline]
-fn space_only<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+fn space_only(input: TokenizerInput<'_>) -> TokensResult<TokenizerInput<'_>> {
   recognize(many1(alt((char(' '), char('\t')))))(input)
 }
 
 /// Recognizes 0 or more whitespaces and line comments
 #[inline]
-fn many0_spaces<'a>(input: TokenizerInput<'a>) -> TokensResult<TokenizerInput<'a>> {
+fn many0_spaces(input: TokenizerInput<'_>) -> TokensResult<TokenizerInput<'_>> {
   recognize(many0(space_only))(input)
 }
 

@@ -1,9 +1,7 @@
 //! Creating ErlErrors from other types
 use crate::error::ic_error::{IcSeverity, IroncladError};
 use crate::error::ic_error_kind::IcErrorKind;
-use crate::source_loc::SourceLoc;
 use libironclad_util::io::file_error::IcFileError;
-use std::num::ParseIntError;
 
 impl From<std::io::Error> for IroncladError {
   fn from(value: std::io::Error) -> Self {

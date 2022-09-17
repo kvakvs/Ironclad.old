@@ -134,7 +134,7 @@ fn tok_float_1(input: ParserInput) -> ParserResult<f64> {
 
 /// Tokens in the token stream, which are considered as whitespace.
 #[inline]
-fn erl_whitespace<'a>(input: ParserInput<'a>) -> ParserResult<ParserInput<'a>> {
+fn erl_whitespace(input: ParserInput<'_>) -> ParserResult<ParserInput<'_>> {
   recognize(tok_eol)(input)
 }
 

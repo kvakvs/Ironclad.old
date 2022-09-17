@@ -1,6 +1,5 @@
 //! Code for processing a line of tokens and pasting macro values instead of macro invocations.
 
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
@@ -59,7 +58,7 @@ fn lookup_and_paste_macro<'a>(
     parse_as_invocation_params(original_input, state.module.clone(), &tokens[index + 1..]);
 
   // Look up the macro definition
-  let key = MFArity::new_local(&macro_name, args.len());
+  let key = MFArity::new_local(macro_name, args.len());
 
   if let Some(pdef) = state.module.root_scope.defines.get(&key) {
     // Insert macro body and replace any macro variables with content

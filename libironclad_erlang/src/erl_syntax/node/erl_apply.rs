@@ -1,7 +1,6 @@
 //! Defines Application AST node for a function call
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::node::erl_callable_target::CallableTarget;
 use crate::error::ic_error::IroncladResult;
 use crate::project::module::module_impl::ErlModule;
@@ -13,7 +12,6 @@ use crate::typing::fn_type::FnType;
 use crate::typing::type_error::TypeError;
 use libironclad_util::pretty::Pretty;
 use std::fmt::Formatter;
-use std::ops::Deref;
 
 /// AST node which contains a function call
 pub struct ErlApply {

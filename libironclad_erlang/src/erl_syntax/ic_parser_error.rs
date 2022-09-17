@@ -6,8 +6,10 @@ use crate::source_loc::SourceLoc;
 use std::fmt::{Display, Formatter};
 use std::num::ParseIntError;
 
+/// Errors produced by the parser
 #[derive(Debug)]
 pub struct IcParserError {
+  /// The error severity
   pub severity: IcSeverity,
   /// Location where error was found
   pub location: SourceLoc,
@@ -16,6 +18,7 @@ pub struct IcParserError {
 }
 
 impl IcParserError {
+  /// Create a new parser error and box it
   pub fn new(severity: IcSeverity, location: SourceLoc, message: String) -> Box<Self> {
     Box::new(IcParserError { severity, location, message })
   }

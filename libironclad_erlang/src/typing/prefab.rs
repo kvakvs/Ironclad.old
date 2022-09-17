@@ -4,21 +4,21 @@ use crate::typing::erl_type::{ErlType, TypeImpl};
 use lazy_static::lazy_static;
 
 lazy_static! {
-  static ref PF_TYPE_ANY: ErlType = TypeImpl::new_unnamed(TypeKind::Any.into());
-  static ref PF_TYPE_NONE: ErlType = TypeImpl::new_unnamed(TypeKind::None.into());
-  static ref PF_TYPE_NUMBER: ErlType = TypeImpl::new_unnamed(TypeKind::Number.into());
-  static ref PF_TYPE_INTEGER: ErlType = TypeImpl::new_unnamed(TypeKind::Integer.into());
-  static ref PF_TYPE_FLOAT: ErlType = TypeImpl::new_unnamed(TypeKind::Float.into());
-  static ref PF_TYPE_ATOM: ErlType = TypeImpl::new_unnamed(TypeKind::Atom.into());
-  static ref PF_TYPE_BOOLEAN: ErlType = TypeImpl::new_unnamed(TypeKind::Boolean.into());
-  static ref PF_TYPE_ANY_FUN: ErlType = TypeImpl::new_unnamed(TypeKind::AnyFn.into());
-  static ref PF_TYPE_ANY_TUPLE: ErlType = TypeImpl::new_unnamed(TypeKind::AnyTuple.into());
-  static ref PF_TYPE_ANY_BINARY: ErlType = TypeImpl::new_unnamed(TypeKind::AnyBinary.into());
-  static ref PF_TYPE_ANYLIST: ErlType = TypeImpl::new_unnamed(TypeKind::AnyList.into());
-  static ref PF_TYPE_NIL: ErlType = TypeImpl::new_unnamed(TypeKind::Nil.into());
-  static ref PF_TYPE_PID: ErlType = TypeImpl::new_unnamed(TypeKind::Pid.into());
-  static ref PF_TYPE_PORT: ErlType = TypeImpl::new_unnamed(TypeKind::Port.into());
-  static ref PF_TYPE_REFERENCE: ErlType = TypeImpl::new_unnamed(TypeKind::Reference.into());
+  static ref PF_TYPE_ANY: ErlType = TypeImpl::new_unnamed(TypeKind::Any);
+  static ref PF_TYPE_NONE: ErlType = TypeImpl::new_unnamed(TypeKind::None);
+  static ref PF_TYPE_NUMBER: ErlType = TypeImpl::new_unnamed(TypeKind::Number);
+  static ref PF_TYPE_INTEGER: ErlType = TypeImpl::new_unnamed(TypeKind::Integer);
+  static ref PF_TYPE_FLOAT: ErlType = TypeImpl::new_unnamed(TypeKind::Float);
+  static ref PF_TYPE_ATOM: ErlType = TypeImpl::new_unnamed(TypeKind::Atom);
+  static ref PF_TYPE_BOOLEAN: ErlType = TypeImpl::new_unnamed(TypeKind::Boolean);
+  static ref PF_TYPE_ANY_FUN: ErlType = TypeImpl::new_unnamed(TypeKind::AnyFn);
+  static ref PF_TYPE_ANY_TUPLE: ErlType = TypeImpl::new_unnamed(TypeKind::AnyTuple);
+  static ref PF_TYPE_ANY_BINARY: ErlType = TypeImpl::new_unnamed(TypeKind::AnyBinary);
+  static ref PF_TYPE_ANYLIST: ErlType = TypeImpl::new_unnamed(TypeKind::AnyList);
+  static ref PF_TYPE_NIL: ErlType = TypeImpl::new_unnamed(TypeKind::Nil);
+  static ref PF_TYPE_PID: ErlType = TypeImpl::new_unnamed(TypeKind::Pid);
+  static ref PF_TYPE_PORT: ErlType = TypeImpl::new_unnamed(TypeKind::Port);
+  static ref PF_TYPE_REFERENCE: ErlType = TypeImpl::new_unnamed(TypeKind::Reference);
 }
 
 impl TypeImpl {

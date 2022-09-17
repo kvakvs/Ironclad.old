@@ -50,7 +50,7 @@ impl FnClauseType {
       .args
       .iter()
       .zip(super_clause.args.iter())
-      .all(|(sub_arg, super_arg)| sub_arg.is_subtype_of(&super_arg))
+      .all(|(sub_arg, super_arg)| sub_arg.is_subtype_of(super_arg))
       && self.ret_type.is_subtype_of(&super_clause.ret_type)
   }
 
@@ -61,6 +61,6 @@ impl FnClauseType {
       .args
       .iter()
       .zip(args.iter())
-      .all(|(in_arg, my_arg)| my_arg.is_subtype_of(&in_arg))
+      .all(|(in_arg, my_arg)| my_arg.is_subtype_of(in_arg))
   }
 }

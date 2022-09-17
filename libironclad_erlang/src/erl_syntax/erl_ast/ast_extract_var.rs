@@ -3,7 +3,6 @@
 use crate::erl_syntax::erl_ast::ast_iter::IterableAstNodeT;
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::ic_parser_error::IcParserError;
 use crate::erl_syntax::node::erl_binary_element::ValueWidth;
 use crate::error::ic_error::{IcSeverity, IroncladResult};
@@ -68,7 +67,7 @@ impl AstNodeImpl {
       }
       AstNodeType::BeginEnd { exprs } => {
         for expr in exprs {
-          Self::extract_variables(&expr, variables)?;
+          Self::extract_variables(expr, variables)?;
         }
         Ok(())
       }

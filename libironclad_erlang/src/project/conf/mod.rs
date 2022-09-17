@@ -27,7 +27,7 @@ impl ProjectConf {
   /// Creates project struct from a TOML filename
   pub fn from_project_file(filename: &str) -> IroncladResult<Self> {
     println!("Reading: {}", filename);
-    let config_str = fs::read_to_string(filename).map_err(|e| IroncladError::from(e))?;
+    let config_str = fs::read_to_string(filename).map_err(IroncladError::from)?;
 
     // Parse, and convert toml error into ErlError
     toml::from_str(&config_str).map_err(|e| IroncladError::from(e).into())

@@ -14,6 +14,7 @@ impl ErlModuleImpl {
     Ok(())
   }
 
+  #[allow(clippy::only_used_in_recursion)]
   fn verify_parsed(&self, ast: &AstNode) -> IroncladResult<()> {
     match &ast.content {
       AstNodeType::ModuleForms { forms } => {
@@ -153,7 +154,7 @@ impl ErlModuleImpl {
         for c in clauses.iter() {
           self.verify_parsed(&c.pattern)?;
           if let Some(guard) = &c.guard {
-            AstNodeImpl::verify_expr_is_guard(&guard)?;
+            AstNodeImpl::verify_expr_is_guard(guard)?;
           }
           self.verify_parsed(&c.body)?;
         }
@@ -177,6 +178,6 @@ impl ErlModuleImpl {
 
   /// Check that expression nodes do not contain forbidden node types
   pub fn verify_parsed_integrity(&self) -> IroncladResult<()> {
-    self.verify_parsed(&*self.ast.borrow())
+    self.verify_parsed(&self.ast.borrow())
   }
 }

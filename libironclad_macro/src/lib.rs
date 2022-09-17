@@ -43,5 +43,4 @@ pub fn make_tok_match_fn(input_stream: TokenStream) -> TokenStream {
       map(ws_before(tok(TokenType::$token_type)), void_fn)(input)
     }
   )
-  .into()
 }

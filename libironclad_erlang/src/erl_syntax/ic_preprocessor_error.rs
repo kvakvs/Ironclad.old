@@ -5,8 +5,10 @@ use crate::error::ic_error_trait::IcErrorTrait;
 use crate::source_loc::SourceLoc;
 use std::fmt::{Display, Formatter};
 
+/// An error generated from the preprocessor code
 #[derive(Debug)]
 pub struct IcPreprocessorError {
+  /// The error severity
   pub severity: IcSeverity,
   /// Location where error was found
   pub location: SourceLoc,
@@ -15,6 +17,7 @@ pub struct IcPreprocessorError {
 }
 
 impl IcPreprocessorError {
+  /// Create a new preprocessor error and box it
   pub fn new(severity: IcSeverity, location: SourceLoc, message: String) -> Box<Self> {
     Box::new(IcPreprocessorError { severity, location, message })
   }

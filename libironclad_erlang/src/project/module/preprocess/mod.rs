@@ -1,7 +1,6 @@
 //! Preprocessing support for `ErlModule`
 
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
@@ -254,8 +253,8 @@ fn generic_include(
   let src_file = state
     .project
     .file_cache
-    .get_or_load(&found_path)
-    .map_err(|e| IroncladError::from(e))?;
+    .get_or_load(found_path)
+    .map_err(IroncladError::from)?;
 
   // // update included modules collection as to prevent circular includes
   // state.module.included_files.add(found_path_oss);
@@ -310,12 +309,12 @@ fn preprocess_handle_ppnode(
     PreprocessorNodeType::Include(path) if active => {
       let included_tokens = on_include(state, path, ppnode.clone())?;
       state.paste_tokens(input_tokens, included_tokens);
-      state.itr.set_base(&input_tokens);
+      state.itr.set_base(input_tokens);
     }
     PreprocessorNodeType::IncludeLib(path) if active => {
       let included_tokens = on_include_lib(state, path, ppnode.clone())?;
       state.paste_tokens(input_tokens, included_tokens);
-      state.itr.set_base(&input_tokens);
+      state.itr.set_base(input_tokens);
     }
     // PreprocessorNodeType::IncludedFile { .. } if active => unimplemented!(),
 
@@ -448,7 +447,7 @@ impl ErlModuleImpl {
         source_file.file_name.to_string_lossy()
       );
 
-      if line_begins_with_preprocessor_or_attr(&line) {
+      if line_begins_with_preprocessor_or_attr(line) {
         let line2 = expand_till_directive_end(line, &mut state);
         let line3 = substitute_macro_invocations(original_input, line2, &mut state);
         println!("LINE {}", format_tok_stream(line3.as_slice(), line3.as_slice().len()));
@@ -468,18 +467,16 @@ impl ErlModuleImpl {
           ));
         }
         preprocess_handle_ppnode(&mut tokens, ppnode, &mut state)?;
-      } else {
-        if state.is_section_condition_true() {
-          // Grow the selection till we hit a start of a preprocessor directive or an attribute
-          let line2 = expand_till_directive_start(line, &mut state);
+      } else if state.is_section_condition_true() {
+        // Grow the selection till we hit a start of a preprocessor directive or an attribute
+        let line2 = expand_till_directive_start(line, &mut state);
 
-          // Substitute macro invocations in the line with their content
-          let line3 = substitute_macro_invocations(original_input, line2, &mut state);
-          // println!("{}", format_tok_stream(line3.as_slice(), line3.as_slice().len()));
+        // Substitute macro invocations in the line with their content
+        let line3 = substitute_macro_invocations(original_input, line2, &mut state);
+        // println!("{}", format_tok_stream(line3.as_slice(), line3.as_slice().len()));
 
-          // Copy the line contents to result.
-          state.result.extend(line3.as_slice().iter().cloned())
-        }
+        // Copy the line contents to result.
+        state.result.extend(line3.as_slice().iter().cloned())
       }
     }
 

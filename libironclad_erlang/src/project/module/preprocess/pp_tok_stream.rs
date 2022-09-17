@@ -23,7 +23,7 @@ impl<'a> TokenStream<'a> {
   /// Access to contents
   pub fn as_slice(&self) -> &[Token] {
     match &self.tokens {
-      TokenStreamData::Owned(o) => &o,
+      TokenStreamData::Owned(o) => o,
       TokenStreamData::Borrowed(b) => b,
     }
   }

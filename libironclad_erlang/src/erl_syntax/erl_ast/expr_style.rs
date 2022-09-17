@@ -2,7 +2,6 @@
 
 use crate::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use crate::erl_syntax::erl_ast::AstNode;
-use crate::erl_syntax::erl_error::ErlError;
 use crate::erl_syntax::ic_parser_error::IcParserError;
 use crate::error::ic_error::{IcSeverity, IroncladResult};
 use std::fmt::{Display, Formatter};

@@ -1,7 +1,6 @@
 //! Type errors returned by the typing engine
 
 use crate::error::ic_error::IcSeverity;
-use crate::error::ic_error_kind::IcErrorKind;
 use crate::error::ic_error_trait::{GenericIroncladError, IcErrorTrait};
 use crate::source_loc::SourceLoc;
 use libironclad_util::mfarity::MFArity;
@@ -33,12 +32,14 @@ pub enum TypeErrorKind {
   BadArity,
   /// A function call was attempted with incompatible arguments
   BadArguments,
+  /// Something wrong with type specs
   TypeSpecError,
 }
 
 /// Wraps a message with error kind together
 #[derive(Debug)]
 pub struct TypeError {
+  /// The error severity
   pub severity: IcSeverity,
   /// The error category with extra details
   kind: TypeErrorKind,
