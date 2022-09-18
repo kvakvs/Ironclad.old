@@ -52,7 +52,8 @@ impl SubtypeChecker {
       TypeKind::Nil => false, // can only include other nil
 
       TypeKind::AnyMap => matches!(&sub_ty.kind, TypeKind::Map { .. }),
-      // ErlType::Map { .. } => {}
+      TypeKind::Map { .. } => matches!(sub_ty.kind, TypeKind::Map { .. } | TypeKind::AnyMap),
+
       TypeKind::AnyBinary => matches!(&sub_ty.kind, TypeKind::Binary { .. }),
       // An equal binary type can be a subtype of binary, no other matches it (checked at the top)
       TypeKind::Binary { .. } => false,

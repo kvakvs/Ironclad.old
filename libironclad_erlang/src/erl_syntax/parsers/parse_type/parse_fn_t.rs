@@ -5,7 +5,6 @@ use crate::erl_syntax::parsers::misc::{dash_atom, period_eol_eof, tok_atom};
 use crate::erl_syntax::parsers::misc_tok::*;
 use crate::erl_syntax::parsers::parse_type;
 use crate::erl_syntax::parsers::parse_type::parse_t_util;
-use crate::erl_syntax::parsers::parse_type::parse_t_util::parse_typevar_or_type;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::preprocessor::pp_node::pp_impl::PreprocessorNodeImpl;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
@@ -15,7 +14,6 @@ use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use crate::typing::fn_clause_type::FnClauseType;
 use libironclad_util::mfarity::MFArity;
-use nom::branch::alt;
 use nom::combinator::{cut, map, opt};
 use nom::error::context;
 use nom::multi::separated_list1;
@@ -90,7 +88,8 @@ fn parse_fn_spec_fnclause(input: ParserInput) -> ParserResult<FnClauseType> {
         // Return type for fn clause
         context(
           "return type in function clause spec",
-          alt((parse_typevar_or_type, context("return type", cut(parse_type::parse_type)))),
+          // alt((parse_typevar_or_type, context("return type", cut(parse_type::parse_type)))),
+          context("return type", cut(parse_type::parse_type)),
         ),
       ),
       // Optional: when <comma separated list of typevariables given types>

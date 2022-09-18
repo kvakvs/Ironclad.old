@@ -433,7 +433,7 @@ fn parse_fn_try_of_catch() -> IroncladResult<()> {
             erlang:raise(Class, Error, Stack)
     end.
 "#;
-  let module = test_util::parse_module(function_name!(), source);
+  let _module = test_util::parse_module(function_name!(), source);
   Ok(())
 }
 
@@ -449,7 +449,7 @@ fn parse_multiple_str_literals() -> IroncladResult<()> {
   //   let source = r#"
   // format_opt_info_1({binary_created, #b_set{op=call,args=[Call|_]}, false}) ->
   // "#;
-  let module = test_util::parse_module(function_name!(), source);
+  let _module = test_util::parse_module(function_name!(), source);
   Ok(())
 }
 
@@ -950,5 +950,16 @@ fn parse_fntype_type() {
   let input2 = "
   -spec f() -> fun((b_blk()|terminator(), any()) -> any()).
 ";
+  let _ = test_util::parse_module(function_name!(), input2);
+}
+
+#[named]
+#[test]
+fn parse_a_spec_with_typevar() {
+  test_util::start(function_name!(), "Parse a fn spec with a type variable");
+  let input2 = r#"-spec normalize_test(Op, Args) -> NormalizedTest | 'none' when
+      Op :: beam_ssa:op(),
+      Args :: [beam_ssa:value()],
+      NormalizedTest :: basic_test()."#;
   let _ = test_util::parse_module(function_name!(), input2);
 }
