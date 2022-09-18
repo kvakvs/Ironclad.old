@@ -10,11 +10,13 @@ lazy_static! {
   static ref PF_TYPE_INTEGER: ErlType = TypeImpl::new_unnamed(TypeKind::Integer);
   static ref PF_TYPE_FLOAT: ErlType = TypeImpl::new_unnamed(TypeKind::Float);
   static ref PF_TYPE_ATOM: ErlType = TypeImpl::new_unnamed(TypeKind::Atom);
+  static ref PF_TYPE_ATOM_TRUE: ErlType = TypeImpl::new_unnamed(TypeKind::new_atom("true"));
+  static ref PF_TYPE_ATOM_FALSE: ErlType = TypeImpl::new_unnamed(TypeKind::new_atom("false"));
   static ref PF_TYPE_BOOLEAN: ErlType = TypeImpl::new_unnamed(TypeKind::Boolean);
   static ref PF_TYPE_ANY_FUN: ErlType = TypeImpl::new_unnamed(TypeKind::AnyFn);
   static ref PF_TYPE_ANY_TUPLE: ErlType = TypeImpl::new_unnamed(TypeKind::AnyTuple);
   static ref PF_TYPE_ANY_BINARY: ErlType = TypeImpl::new_unnamed(TypeKind::AnyBinary);
-  static ref PF_TYPE_ANYLIST: ErlType = TypeImpl::new_unnamed(TypeKind::AnyList);
+  static ref PF_TYPE_ANY_LIST: ErlType = TypeImpl::new_unnamed(TypeKind::AnyList);
   static ref PF_TYPE_NIL: ErlType = TypeImpl::new_unnamed(TypeKind::Nil);
   static ref PF_TYPE_PID: ErlType = TypeImpl::new_unnamed(TypeKind::Pid);
   static ref PF_TYPE_PORT: ErlType = TypeImpl::new_unnamed(TypeKind::Port);
@@ -23,7 +25,7 @@ lazy_static! {
 
 impl TypeImpl {
   /// Return a cloned instance of None-type
-  pub(crate) fn none() -> ErlType {
+  pub fn none() -> ErlType {
     PF_TYPE_NONE.clone()
   }
 
@@ -46,11 +48,22 @@ impl TypeImpl {
   }
 
   /// Return a cloned instance of Atom-type
-  pub(crate) fn atom() -> ErlType {
+  pub fn atom() -> ErlType {
     PF_TYPE_ATOM.clone()
   }
+
+  /// Return a cloned instance of Atom 'true'
+  pub fn atom_true() -> ErlType {
+    PF_TYPE_ATOM_TRUE.clone()
+  }
+
+  /// Return a cloned instance of Atom 'false'
+  pub fn atom_false() -> ErlType {
+    PF_TYPE_ATOM_FALSE.clone()
+  }
+
   /// Return a cloned instance of Boolean-type
-  pub(crate) fn boolean() -> ErlType {
+  pub fn boolean() -> ErlType {
     PF_TYPE_BOOLEAN.clone()
   }
 
@@ -70,9 +83,10 @@ impl TypeImpl {
   }
 
   /// Return a cloned instance of AnyList-type
-  pub(crate) fn any_list() -> ErlType {
-    PF_TYPE_ANYLIST.clone()
+  pub fn any_list() -> ErlType {
+    PF_TYPE_ANY_LIST.clone()
   }
+
   /// Return a cloned instance of NIL-type
   pub fn nil() -> ErlType {
     PF_TYPE_NIL.clone()

@@ -1,9 +1,6 @@
-extern crate function_name;
-extern crate libironclad_erlang;
-
 mod test_util;
 
-use ::function_name::named;
+use function_name::named;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::parse_type::parse_binary_t::{
   binary_type_head_element, binary_type_tail_element,
@@ -12,6 +9,27 @@ use libironclad_erlang::erl_syntax::parsers::parser_input::ParserInput;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_util::mfarity::MFArity;
 use nom::Finish;
+
+#[named]
+#[test]
+fn parse_fntype_type() {
+  test_util::start(function_name!(), "Parse a fun() type with args and return type");
+  let input2 = "
+  -spec f() -> fun((b_blk()|terminator(), any()) -> any()).
+";
+  let _ = test_util::parse_module(function_name!(), input2);
+}
+
+#[named]
+#[test]
+fn parse_a_spec_with_typevar() {
+  test_util::start(function_name!(), "Parse a fn spec with a type variable");
+  let input2 = r#"-spec normalize_test(Op, Args) -> NormalizedTest | 'none' when
+      Op :: beam_ssa:op(),
+      Args :: [beam_ssa:value()],
+      NormalizedTest :: basic_test()."#;
+  let _ = test_util::parse_module(function_name!(), input2);
+}
 
 #[named]
 #[test]

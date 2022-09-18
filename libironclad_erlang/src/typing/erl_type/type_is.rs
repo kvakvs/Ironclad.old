@@ -102,6 +102,12 @@ impl TypeImpl {
     matches!(&self.kind, TypeKind::Union { .. })
   }
 
+  /// Checks whether type is a kind
+  pub fn is_kind(&self, kind: &TypeKind) -> bool {
+    matches!(&self.kind, self_kind if kind == self_kind)
+    // self_kind if std::mem::discriminant(kind) == std::mem::discriminant(&self_kind))
+  }
+
   /// Checks whether type is a list
   pub fn is_list(&self) -> bool {
     match &self.kind {

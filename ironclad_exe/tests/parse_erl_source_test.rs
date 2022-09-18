@@ -569,19 +569,6 @@ coalesce_consecutive_labels([], Replace, Acc) ->
 
 #[named]
 #[test]
-fn parse_fun_with_binary_match() -> IroncladResult<()> {
-  test_util::start(function_name!(), "Parse a function with a binary match in args");
-  let input = "finalize_fun_table_1(<<\"FunT\",Keep:8/binary,Table0/binary>>, MD5) ->
-    <<Uniq:27,_:101/bits>> = MD5,
-    Table = finalize_fun_table_2(Table0, Uniq, <<>>),
-    <<\"FunT\",Keep/binary,Table/binary>>;
-finalize_fun_table_1(Chunk, _) -> Chunk.";
-  let _module = test_util::parse_module(function_name!(), input);
-  Ok(())
-}
-
-#[named]
-#[test]
 fn parse_fun_guard() -> IroncladResult<()> {
   test_util::start(function_name!(), "Parse a function with a guard");
   let input = "
@@ -941,25 +928,4 @@ fn parse_map_builder_no_base() {
   test_util::start(function_name!(), "parse a map builder without base expr");
   let input = "f() -> #{lmap => 123}.";
   let _m = test_util::parse_module(function_name!(), input);
-}
-
-#[named]
-#[test]
-fn parse_fntype_type() {
-  test_util::start(function_name!(), "Parse a fun() type with args and return type");
-  let input2 = "
-  -spec f() -> fun((b_blk()|terminator(), any()) -> any()).
-";
-  let _ = test_util::parse_module(function_name!(), input2);
-}
-
-#[named]
-#[test]
-fn parse_a_spec_with_typevar() {
-  test_util::start(function_name!(), "Parse a fn spec with a type variable");
-  let input2 = r#"-spec normalize_test(Op, Args) -> NormalizedTest | 'none' when
-      Op :: beam_ssa:op(),
-      Args :: [beam_ssa:value()],
-      NormalizedTest :: basic_test()."#;
-  let _ = test_util::parse_module(function_name!(), input2);
 }

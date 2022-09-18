@@ -1,5 +1,6 @@
 //! Union type (a flat list of multiple types) support
 
+use crate::typing::erl_type::typekind::TypeKind;
 use crate::typing::erl_type::{ErlType, TypeImpl};
 use std::ops::Deref;
 
@@ -70,6 +71,11 @@ impl TypeUnion {
   /// Whether type t is found in any of the union contents (is_subtype_of equality)
   pub fn contains(&self, t: &TypeImpl) -> bool {
     self.types.iter().any(|member| t.is_subtype_of(member))
+  }
+
+  /// Whether type `kind` is found in any of the union contents (is_subtype_of equality)
+  pub fn contains_kind(&self, kind: &TypeKind) -> bool {
+    self.types.iter().any(|member| member.is_kind(kind))
   }
 
   /// Whether type t is found in any of the union contents (strict equality)

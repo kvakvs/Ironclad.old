@@ -22,7 +22,7 @@ impl TypeImpl {
 
   /// Create a type variable without a name
   #[inline]
-  pub(crate) fn new_unnamed(kind: TypeKind) -> ErlType {
+  pub fn new_unnamed(kind: TypeKind) -> ErlType {
     TypeImpl { typevar: None, kind }.into()
   }
 

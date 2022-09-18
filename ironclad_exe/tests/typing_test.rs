@@ -8,8 +8,8 @@ use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
 use libironclad_erlang::typing::check::TypeCheck;
+use libironclad_erlang::typing::erl_type::typekind::TypeKind;
 use libironclad_erlang::typing::erl_type::TypeImpl;
-use std::ops::Deref;
 
 #[named]
 #[test]
@@ -22,7 +22,7 @@ fn typing_synth1() -> IroncladResult<()> {
   let synth_t1 = expr1.synthesize(&module, &scope1)?;
   println!("Synth list1: {}", &synth_t1);
 
-  if let TypeImpl::StronglyTypedList { elements, tail } = synth_t1.deref() {
+  if let TypeKind::StronglyTypedList { elements, tail } = &synth_t1.kind {
     assert!(elements[0].is_float());
     assert!(elements[1].is_integer());
     assert!(elements[2].is_atom());
@@ -47,7 +47,7 @@ fn typing_synth2() -> IroncladResult<()> {
   let synth_t2 = expr2.synthesize(&module, &scope2)?;
   println!("Synth tup1: {}", &synth_t2);
 
-  if let TypeImpl::Tuple { elements } = synth_t2.deref() {
+  if let TypeKind::Tuple { elements } = &synth_t2.kind {
     assert!(
       elements[0].is_lit_atom("tuple_tag"),
       "t[0] - expected 'tuple_tag', got {}",
@@ -71,7 +71,7 @@ fn typing_expr_check_1() -> IroncladResult<()> {
   let scope = ScopeImpl::new_root_scope(function_name!().to_string());
   let expr = test_util::parse_expr(function_name!(), "hello");
   assert!(
-    TypeCheck::check(&module, &scope, &expr, &TypeImpl::Atom)?,
+    TypeCheck::check(&module, &scope, &expr, &TypeImpl::new_unnamed(TypeKind::Atom))?,
     "Parsed atom 'hello' must be subtype of atom()"
   );
   Ok(())
@@ -86,7 +86,7 @@ fn typing_expr_check_noarg() -> IroncladResult<()> {
   let module = test_util::parse_module(function_name!(), "my_int_fun1() -> 10 + 20.");
   // let root_scope = module.root_scope;
   let scope1 = ScopeImpl::new_root_scope(function_name!().to_string());
-  let match_ty = &TypeImpl::new_fn_type_of_any_args(0, TypeImpl::integer());
+  let match_ty = &TypeImpl::new_unnamed(TypeKind::new_fn_type_of_any_args(0, TypeImpl::integer()));
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope1, &ast, match_ty)?,
@@ -104,7 +104,7 @@ fn typing_check_int_arg_fn() -> IroncladResult<()> {
   let module = test_util::parse_module(function_name!(), "my_int_fun2(A) -> 10 + A.");
   // assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes);
   // println!("Synth my_int_fun2: {}", int_fn2.core_ast.synthesize(&env)?);
-  let match_ty = &TypeImpl::new_fn_type_of_any_args(1, TypeImpl::integer());
+  let match_ty = &TypeImpl::new_unnamed(TypeKind::new_fn_type_of_any_args(1, TypeImpl::integer()));
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
@@ -122,8 +122,9 @@ fn typing_expr_check_tuple1() -> IroncladResult<()> {
   let module = test_util::parse_module(function_name!(), "mytuple_fun(A) -> {A, 123}.");
   // assert!(nodes[0].is_fn_def(), "Expected FnDef() received {:?}", nodes[0]);
   // println!("Synth mytuple_fun: {}", tuple_fn.core_ast.synthesize(&env)?);
-  let expected_type = TypeImpl::new_tuple(&vec![TypeImpl::any(), TypeImpl::integer()]);
-  let match_ty = &TypeImpl::new_fn_type_of_any_args(1, expected_type);
+  let expected_type =
+    TypeImpl::new_unnamed(TypeKind::new_tuple(&vec![TypeImpl::any(), TypeImpl::integer()]));
+  let match_ty = &TypeImpl::new_unnamed(TypeKind::new_fn_type_of_any_args(1, expected_type));
   let ast = module.ast.borrow().clone();
   assert!(
     TypeCheck::check(&module, &scope, &ast, match_ty)?,
@@ -137,9 +138,9 @@ fn typing_expr_check_tuple1() -> IroncladResult<()> {
 fn typing_subtyping_bool() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Bool");
 
-  let test1_bool = TypeImpl::Boolean;
-  let test1_atom = TypeImpl::Atom;
-  let test1_true = TypeImpl::new_atom("true");
+  let test1_bool = TypeImpl::boolean();
+  let test1_atom = TypeImpl::atom();
+  let test1_true = TypeImpl::atom_true();
 
   assert!(test1_bool.is_subtype_of(&test1_atom));
   assert!(!test1_atom.is_subtype_of(&test1_bool));
@@ -153,9 +154,9 @@ fn typing_subtyping_bool() -> IroncladResult<()> {
 #[test]
 fn typing_subtyping_number() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.Number");
-  let test2_int = TypeImpl::Integer;
-  let test2_flt = TypeImpl::Float;
-  let test2_num = TypeImpl::Number;
+  let test2_int = TypeImpl::integer();
+  let test2_flt = TypeImpl::float();
+  let test2_num = TypeImpl::number();
 
   assert!(test2_int.is_subtype_of(&test2_num)); // int() is subtype of number()
   assert!(!test2_num.is_subtype_of(&test2_int)); // number() is not subtype of int
@@ -169,10 +170,10 @@ fn typing_subtyping_number() -> IroncladResult<()> {
 fn typing_subtyping_list() -> IroncladResult<()> {
   test_util::start(function_name!(), "Typing.Subtyping.List");
 
-  let test3_any = TypeImpl::AnyList;
-  let test3_l_num = TypeImpl::list_of(TypeImpl::number(), false);
-  let test3_l_flt = TypeImpl::list_of(TypeImpl::float(), false);
-  let test3_l_int = TypeImpl::list_of(TypeImpl::integer(), false);
+  let test3_any = TypeImpl::any_list();
+  let test3_l_num = TypeImpl::new_unnamed(TypeKind::list_of(TypeImpl::number(), false));
+  let test3_l_flt = TypeImpl::new_unnamed(TypeKind::list_of(TypeImpl::float(), false));
+  let test3_l_int = TypeImpl::new_unnamed(TypeKind::list_of(TypeImpl::integer(), false));
 
   assert!(test3_l_num.is_subtype_of(&test3_any)); // list(number()) is subtype of list()
   assert!(!test3_any.is_subtype_of(&test3_l_num)); // list() not subtype of list(number())

@@ -11,9 +11,9 @@ use libironclad_erlang::erl_syntax::erl_op::ErlBinaryOp;
 use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::project::module::module_impl::ErlModuleImpl;
 use libironclad_erlang::project::module::scope::scope_impl::ScopeImpl;
+use libironclad_erlang::typing::erl_type::typekind::TypeKind;
 use libironclad_erlang::typing::erl_type::TypeImpl;
 use libironclad_util::mfarity::MFArity;
-use std::ops::Deref;
 
 #[named]
 #[test]
@@ -31,8 +31,8 @@ fn synth_list_append() -> IroncladResult<()> {
 
   // let op = parsed.ast.as_binop();
   assert!(
-    matches!(expr_type.deref(),
-      TypeImpl::StronglyTypedList { elements, tail } if tail.is_none() && elements.len() == 2),
+    matches!(&expr_type.kind,
+      TypeKind::StronglyTypedList { elements, tail } if tail.is_none() && elements.len() == 2),
     "Synth type must be a strongly typed list without a tail"
   );
 
@@ -178,7 +178,7 @@ fn synth_fun_call3() -> IroncladResult<()> {
   );
   // Expected: Main -> integer()
   assert!(
-    TypeImpl::Number.is_subtype_of(&main_fn_type),
+    TypeImpl::number().is_subtype_of(&main_fn_type),
     "For main/0 we expect synthesized type: fun(number()) -> number(); actual: {}",
     main_fn_type
   );
@@ -209,7 +209,7 @@ fn synth_multiple_clause_test() -> IroncladResult<()> {
   println!("{}: Synthesized {} 🡆 {}", function_name!(), main_fn_ast, main_ty);
 
   // Assert that type is a two-clause function type
-  if let TypeImpl::Fn(fntype) = main_ty.deref() {
+  if let TypeKind::Fn(fntype) = &main_ty.kind {
     assert_eq!(
       fntype.clauses().len(),
       2,
@@ -219,12 +219,14 @@ fn synth_multiple_clause_test() -> IroncladResult<()> {
     let clause1 = fntype.clause(0);
     assert_eq!(clause1.arity(), 1);
     assert!(
-      clause1.args[0].ty.eq(&TypeImpl::new_atom("one")),
+      clause1.args[0].eq(&TypeImpl::new_unnamed(TypeKind::new_atom("one"))),
       "Clause1 arg0 must be atom 'one', got {}",
       clause1.args[0]
     );
     assert!(
-      clause1.ret_ty().eq(&TypeImpl::new_atom("atom1")),
+      clause1
+        .ret_ty()
+        .eq(&TypeImpl::new_unnamed(TypeKind::new_atom("atom1"))),
       "Clause1 must return literal 'atom1', got {}",
       clause1.ret_ty()
     );
@@ -232,7 +234,7 @@ fn synth_multiple_clause_test() -> IroncladResult<()> {
     let clause2 = fntype.clause(1);
     assert_eq!(clause2.arity(), 1);
     assert!(
-      clause2.args[0].ty.eq(&TypeImpl::new_atom("two")),
+      clause2.args[0].eq(&TypeImpl::new_unnamed(TypeKind::new_atom("two"))),
       "Clause2 arg0 must be atom 'two', got {}",
       clause2.args[0]
     );
