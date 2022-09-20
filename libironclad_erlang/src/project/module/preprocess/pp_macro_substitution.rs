@@ -4,7 +4,7 @@ use crate::erl_syntax::ic_preprocessor_error::IcPreprocessorError;
 use crate::erl_syntax::parsers::misc::panicking_parser_error_reporter;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::Token;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::erl_syntax::preprocessor::parsers::parse_pp::parse_macro_invocation_args;
 use crate::erl_syntax::preprocessor::pp_define::{PreprocessorDefine, PreprocessorDefineImpl};
 use crate::error::ic_error::IcSeverity;
@@ -27,8 +27,8 @@ fn has_any_macro_invocations(line: &[Token]) -> bool {
 /// found, paste the value from `args[]` into the output.
 fn paste_tokens(output: &mut Vec<Token>, pdef: &PreprocessorDefine, args: &[Vec<Token>]) {
   for t in pdef.tokens.iter() {
-    match &t.content {
-      TokenType::Variable(var) => {
+    match &t.kind {
+      TokenKind::Variable(var) => {
         if let Some(arg_index) = pdef.args.iter().position(|arg_name| arg_name == var) {
           let arg = &args[arg_index];
           // TODO: Macro invocation inside a macro body
@@ -95,7 +95,7 @@ pub(crate) fn substitute_macro_invocations<'a>(
   while index < max_index {
     let t = &tokens[index];
 
-    if let TokenType::MacroInvocation(macro_name) = &t.content {
+    if let TokenKind::MacroInvocation(macro_name) = &t.kind {
       if macro_name == "LINE" {
         let pdef = PreprocessorDefineImpl::new("LINE".to_string(), &[], &[Token::new_small(0)]);
         paste_tokens(&mut output, &pdef, &[]);

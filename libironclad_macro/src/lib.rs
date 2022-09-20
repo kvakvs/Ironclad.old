@@ -40,7 +40,7 @@ pub fn make_tok_match_fn(input_stream: TokenStream) -> TokenStream {
 
   quote!(
     pub fn $name(input: ParserInput) -> ParserResult<()> {
-      map(ws_before(tok(TokenType::$token_type)), void_fn)(input)
+      map(ws_before(tok(TokenKind::$token_type)), void_fn)(input)
     }
   )
 }

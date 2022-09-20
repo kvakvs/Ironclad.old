@@ -3,7 +3,7 @@ mod test_util;
 use ::function_name::named;
 use libironclad_erlang::erl_syntax::parsers::misc::panicking_tokenizer_error_reporter;
 use libironclad_erlang::erl_syntax::parsers::token_stream::token::format_tok_stream;
-use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use libironclad_erlang::erl_syntax::parsers::token_stream::tokenizer::tokenize_source;
 use nom::Finish;
 
@@ -43,15 +43,15 @@ fn test_tok_integer() {
   assert_eq!(tokens.len(), 4);
   println!("TOKENS: {}", format_tok_stream(&tokens, tokens.len()));
 
-  if let TokenType::Integer(i) = &tokens[0].content {
+  if let TokenKind::Integer(i) = &tokens[0].kind {
     assert_eq!(i.as_usize(), Some(0x8000));
   } else {
     panic!("Bad token 0, expected integer")
   }
 
-  assert!(tokens[2].content.is_same_type(&TokenType::Minus), "Bad token 2 expected Minus");
+  assert!(tokens[2].kind.is_same_type(&TokenKind::Minus), "Bad token 2 expected Minus");
 
-  if let TokenType::Integer(j) = &tokens[3].content {
+  if let TokenKind::Integer(j) = &tokens[3].kind {
     assert_eq!(
       j.as_isize(),
       Some(0x8000),

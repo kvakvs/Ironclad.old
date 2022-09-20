@@ -90,3 +90,13 @@ finalize_fun_table_1(Chunk, _) -> Chunk.";
   let _module = test_util::parse_module(function_name!(), input);
   Ok(())
 }
+
+#[named]
+#[test]
+fn parse_fun_with_binary_constructor() -> IroncladResult<()> {
+  test_util::start(function_name!(), "Parse a function with a binary constructor");
+  let input = r#"
+    encode_ext(Input) -> <<TypeBits:16/big,0:64,-1:64>>."#;
+  let _module = test_util::parse_module(function_name!(), input);
+  Ok(())
+}

@@ -4,15 +4,15 @@ use crate::erl_syntax::erl_ast::node_impl::AstNodeImpl;
 use crate::erl_syntax::erl_ast::node_impl::AstNodeType::Lit;
 use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::defs::ParserResult;
-use crate::erl_syntax::parsers::misc::{tok_atom, tok_float, tok_integer, tok_string, ws_before};
+use crate::erl_syntax::parsers::misc::{tok_atom, tok_string, ws_before};
 use crate::erl_syntax::parsers::misc_tok::*;
+use crate::erl_syntax::parsers::parse_lit_numbers;
 use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::Token;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::literal::Literal;
 use crate::source_loc::SourceLoc;
-use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::combinator::{consumed, map};
 use nom::error::context;
@@ -44,23 +44,6 @@ fn parse_atom_to_ast(input: ParserInput) -> ParserResult<AstNode> {
   })(input.clone())
 }
 
-fn parse_float_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(tok_float, |f: f64| {
-    let lit_node = Lit { value: Literal::Float(f).into() };
-    AstNodeImpl::construct_with_location(SourceLoc::new(&input), lit_node)
-  })(input.clone())
-}
-
-fn parse_int_to_ast(input: ParserInput) -> ParserResult<AstNode> {
-  map(tok_integer, |i: ErlInteger| {
-    let lit_node = Lit {
-      // TODO: Can parsed integer create a parse error?
-      value: Literal::Integer(i).into(),
-    };
-    AstNodeImpl::construct_with_location(SourceLoc::new(&input), lit_node)
-  })(input.clone())
-}
-
 fn parse_nil(input: ParserInput) -> ParserResult<AstNode> {
   let make_nil = |(consumed_input, ((), ())): (ParserInput, ((), ()))| -> AstNode {
     AstNodeImpl::new_nil(SourceLoc::new(&consumed_input))
@@ -77,12 +60,12 @@ fn parse_empty_binary(input: ParserInput) -> ParserResult<AstNode> {
 
 fn tok_character_1(input: ParserInput) -> ParserResult<AstNode> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Character(c), .. }) => {
+    Some(Token { kind: TokenKind::Character(c), .. }) => {
       let node = AstNodeImpl::new_lit_character(SourceLoc::new(&input), *c);
       Ok((input.slice(1..), node))
     }
     Some(Token {
-      content: TokenType::EscapedCharacter { value, in_source },
+      kind: TokenKind::EscapedCharacter { value, in_source },
       ..
     }) => {
       let node = AstNodeImpl::new_lit_escaped_character(SourceLoc::new(&input), *value, *in_source);
@@ -98,18 +81,37 @@ fn parse_character(input: ParserInput) -> ParserResult<AstNode> {
   ws_before(tok_character_1)(input)
 }
 
-/// Read a literal value from input string
+/// Read a literal value from input string.
+/// This does not parse `-` as a part of literal, and instead `-` becomes an unary expression.
+/// See `parse_erl_literal_with_sign` for consuming `-`.
 pub(crate) fn parse_erl_literal(input: ParserInput) -> ParserResult<AstNode> {
   context(
     "literal",
     ws_before(alt((
       parse_nil,
       parse_empty_binary,
-      parse_float_to_ast,
-      parse_int_to_ast,
+      parse_lit_numbers::parse_float_to_ast,
+      parse_lit_numbers::parse_int_to_ast,
       parse_atom_to_ast,
       parse_string_to_ast,
       parse_character,
     ))),
   )(input)
 }
+
+// /// Read a literal value from input string. This parses `-` as a part of literal.
+// /// See `parse_erl_literal` for not consuming the `-`.
+// pub(crate) fn parse_erl_literal_with_sign(input: ParserInput) -> ParserResult<AstNode> {
+//   context(
+//     "literal",
+//     ws_before(alt((
+//       parse_nil,
+//       parse_empty_binary,
+//       parse_lit_numbers::parse_float_to_ast_with_sign,
+//       parse_lit_numbers::parse_int_to_ast_with_sign,
+//       parse_atom_to_ast,
+//       parse_string_to_ast,
+//       parse_character,
+//     ))),
+//   )(input)
+// }

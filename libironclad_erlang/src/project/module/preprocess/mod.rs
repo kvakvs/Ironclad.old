@@ -6,7 +6,7 @@ use crate::erl_syntax::literal_bool::LiteralBool;
 use crate::erl_syntax::node::erl_record::RecordField;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
 use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::erl_syntax::preprocessor::pp_define::PreprocessorDefineImpl;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::erl_syntax::preprocessor::pp_node::PreprocessorNode;
@@ -80,7 +80,7 @@ fn expand_till_directive_start<'a>(
 
 #[inline]
 fn ends_with_dot_eol(line: &[Token]) -> bool {
-  Token::ends_with(line, &[TokenType::Period, TokenType::EOL])
+  Token::ends_with(line, &[TokenKind::Period, TokenKind::EOL])
 }
 
 fn on_undef(state: &mut PreprocessState, name: &str) {
@@ -386,7 +386,7 @@ fn line_begins_with_preprocessor_or_attr(line: &[Token]) -> bool {
   // Begins with a -
   // Followed by an atom, or an "else" keyword, because -else() tokenizes as a keyword
   line.len() > 2
-    && line[0].is_tok(TokenType::Minus)
+    && line[0].is_tok(TokenKind::Minus)
     && (line[1].is_atom() || line[1].is_keyword(Keyword::Else) || line[1].is_keyword(Keyword::If))
 }
 

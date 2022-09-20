@@ -195,7 +195,7 @@ pub(crate) fn parse_binary(input: ParserInput) -> ParserResult<AstNode> {
       "binary expression",
       cut(terminated(
         map(
-          separated_list0(tok_comma, context("binary expression element", bin_element)),
+          separated_list0(tok_comma, context("binary expression element", cut(bin_element))),
           |bin_exprs| AstNodeImpl::new_binary_expr(SourceLoc::new(&input), bin_exprs),
         ),
         tok_double_angle_close,

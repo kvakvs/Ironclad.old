@@ -21,6 +21,7 @@ pub mod parse_expr_op;
 pub mod parse_fn;
 pub mod parse_if;
 pub mod parse_lit;
+pub mod parse_lit_numbers;
 pub mod parse_try_catch;
 pub mod parse_type;
 pub mod parser_error;

@@ -2,7 +2,7 @@
 
 use crate::colored::Colorize;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::typing::erl_integer::ErlInteger;
 use std::ptr::null;
 
@@ -12,30 +12,42 @@ pub struct Token {
   /// Pointer to source
   pub offset: *const u8,
   /// The token itself
-  pub content: TokenType,
+  pub kind: TokenKind,
 }
 
 impl Token {
+  /// For float and integer token returns its negative value
+  pub fn negate(&self) -> Self {
+    match &self.kind {
+      TokenKind::Float(f) => Self { offset: self.offset, kind: TokenKind::Float(-*f) },
+      TokenKind::Integer(ei) => Self {
+        offset: self.offset,
+        kind: TokenKind::Integer(ei.negate()),
+      },
+      _other => panic!("Tokenizer: Attempt to flip sign of a non-numeric token {:?}", self),
+    }
+  }
+
   /// Create a new keyword token
   #[inline]
   pub fn new_keyword(offset: *const u8, k: Keyword) -> Self {
     Self {
       offset,
-      content: TokenType::Keyword(k),
+      kind: TokenKind::Keyword(k),
       // last_in_line: false,
     }
   }
 
   /// Create a new symbol token
   #[inline]
-  pub fn new(offset: *const u8, tt: TokenType) -> Self {
-    Self { offset, content: tt }
+  pub fn new(offset: *const u8, tt: TokenKind) -> Self {
+    Self { offset, kind: tt }
   }
 
   /// Create a new End of Line
   #[inline]
   pub fn new_eol() -> Self {
-    Self { offset: null(), content: TokenType::EOL }
+    Self { offset: null(), kind: TokenKind::EOL }
   }
 
   /// Create a new token for small integer
@@ -43,47 +55,47 @@ impl Token {
   pub fn new_small(i: i64) -> Self {
     Self {
       offset: null(),
-      content: TokenType::Integer(ErlInteger::Small(i)),
+      kind: TokenKind::Integer(ErlInteger::Small(i)),
     }
   }
 
   /// Create a new token for string
   #[inline]
   pub fn new_string(s: String) -> Self {
-    Self { offset: null(), content: TokenType::Str(s.into()) }
+    Self { offset: null(), kind: TokenKind::Str(s.into()) }
   }
 
   /// Create a new token for atom
   #[inline]
   pub fn new_atom(s: String) -> Self {
-    Self { offset: null(), content: TokenType::Atom(s) }
+    Self { offset: null(), kind: TokenKind::Atom(s) }
   }
 
   /// Check whether the token is a newline token
   #[inline]
   pub fn is_eol(&self) -> bool {
-    matches!(self.content, TokenType::EOL)
+    matches!(self.kind, TokenKind::EOL)
   }
 
   /// Check whether the token is an atom of given value
   #[inline]
   pub fn is_atom_of(&self, sample: &str) -> bool {
-    match &self.content {
-      TokenType::Atom(s) => s == sample,
+    match &self.kind {
+      TokenKind::Atom(s) => s == sample,
       _ => false,
     }
   }
   /// Check whether the token is an atom
   #[inline]
   pub fn is_atom(&self) -> bool {
-    matches!(&self.content, TokenType::Atom(_))
+    matches!(&self.kind, TokenKind::Atom(_))
   }
 
   /// Check whether the token is a keyword of given value
   #[inline]
   pub fn is_keyword(&self, sample: Keyword) -> bool {
-    match &self.content {
-      TokenType::Keyword(kw) => kw == &sample,
+    match &self.kind {
+      TokenKind::Keyword(kw) => kw == &sample,
       _ => false,
     }
   }
@@ -91,8 +103,8 @@ impl Token {
   /// Check whether the token is a character
   #[inline]
   pub fn is_char_of(&self, ch: char) -> bool {
-    match &self.content {
-      TokenType::Character(c) => *c == ch,
+    match &self.kind {
+      TokenKind::Character(c) => *c == ch,
       _ => false,
     }
   }
@@ -100,8 +112,8 @@ impl Token {
   /// Check whether the token is an escaped character
   #[inline]
   pub fn is_escaped_char_of(&self, ch: char) -> bool {
-    match &self.content {
-      TokenType::EscapedCharacter { in_source, .. } => *in_source == ch,
+    match &self.kind {
+      TokenKind::EscapedCharacter { in_source, .. } => *in_source == ch,
       _ => false,
     }
   }
@@ -109,17 +121,17 @@ impl Token {
   /// Check whether the token is a macro invocation
   #[inline]
   pub fn is_macro_invocation(&self) -> bool {
-    matches!(self.content, TokenType::MacroInvocation(_))
+    matches!(self.kind, TokenKind::MacroInvocation(_))
   }
 
   /// Check whether the token is a given type token
   #[inline]
-  pub fn is_tok(&self, tt: TokenType) -> bool {
-    self.content.is_same_type(&tt)
+  pub fn is_tok(&self, tt: TokenKind) -> bool {
+    self.kind.is_same_type(&tt)
   }
 
   /// Check whether the token array ends with given token types
-  pub fn ends_with(tokens: &[Token], ttypes: &[TokenType]) -> bool {
+  pub fn ends_with(tokens: &[Token], ttypes: &[TokenKind]) -> bool {
     if ttypes.len() > tokens.len() {
       return false;
     }
@@ -129,7 +141,7 @@ impl Token {
       match (it_tokens.next(), it_ttypes.next()) {
         (Some(to), Some(ty)) => {
           // If enum type doesn't match, return false
-          if std::mem::discriminant(&to.content) != std::mem::discriminant(ty) {
+          if std::mem::discriminant(&to.kind) != std::mem::discriminant(ty) {
             return false;
           }
         }
@@ -144,13 +156,13 @@ impl Token {
 
 impl std::fmt::Debug for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "Token[{:?}]", self.content)
+    write!(f, "Token[{:?}]", self.kind)
   }
 }
 
 impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    self.content.fmt(f)
+    self.kind.fmt(f)
   }
 }
 

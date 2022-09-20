@@ -7,7 +7,7 @@ use ::function_name::named;
 use libironclad_erlang::erl_syntax::erl_ast::node_impl::{AstNodeImpl, AstNodeType};
 use libironclad_erlang::erl_syntax::erl_ast::AstNode;
 use libironclad_erlang::erl_syntax::parsers::token_stream::token::Token;
-use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 
 #[named]
 #[test]
@@ -16,7 +16,7 @@ fn ast_size_test() {
   const TOKEN: usize = std::mem::size_of::<Token>();
   println!("sizeof Token={}", TOKEN);
 
-  const T_TYPE: usize = std::mem::size_of::<TokenType>();
+  const T_TYPE: usize = std::mem::size_of::<TokenKind>();
   println!("sizeof TokenType={}", T_TYPE);
 
   const AST_NODE: usize = std::mem::size_of::<AstNode>();

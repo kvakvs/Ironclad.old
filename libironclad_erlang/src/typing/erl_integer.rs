@@ -60,6 +60,14 @@ impl ErlInteger {
       Big(big) => big.to_isize(),
     }
   }
+
+  /// Flip sign on self contents
+  pub fn negate(&self) -> Self {
+    match self {
+      Small(i) => Small(-*i),
+      Big(big) => Big(-big.clone()),
+    }
+  }
 }
 
 impl std::fmt::Display for ErlInteger {

@@ -5,7 +5,7 @@ use crate::erl_syntax::erl_ast::AstNode;
 use crate::erl_syntax::parsers::misc::panicking_tokenizer_error_reporter;
 use crate::erl_syntax::parsers::token_stream::tok_input::{TokenizerInput, TokensResult};
 use crate::erl_syntax::parsers::token_stream::token::Token;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::erl_syntax::parsers::token_stream::tokenizer::tokenize_source;
 use crate::error::ic_error::IroncladResult;
 use crate::error::ic_error_trait::GenericIroncladError;
@@ -99,8 +99,8 @@ impl ErlModuleImpl {
     let mut tokens = ErlModuleImpl::tokenize_helper(project, src_file.clone(), tokenize_source)?;
 
     // Inject a mandatory EOL if the stream doesn't end with one
-    if !Token::ends_with(&tokens, &[TokenType::EOL]) {
-      tokens.push(Token::new(null::<u8>(), TokenType::EOL));
+    if !Token::ends_with(&tokens, &[TokenKind::EOL]) {
+      tokens.push(Token::new(null::<u8>(), TokenKind::EOL));
     }
 
     //----------------------

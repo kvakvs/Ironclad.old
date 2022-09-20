@@ -1,7 +1,7 @@
 mod test_util;
 
 use ::function_name::named;
-use libironclad_erlang::erl_syntax::parsers::token_stream::token_type::TokenType;
+use libironclad_erlang::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use libironclad_erlang::error::ic_error::IroncladResult;
 use libironclad_erlang::typing::erl_integer::ErlInteger;
 use libironclad_util::mfarity::MFArity;
@@ -180,9 +180,9 @@ fn parse_define_with_body_no_args() {
     .get(&MFArity::new_local("BBB", 0))
     .unwrap();
   assert_eq!(pdef.name, "BBB");
-  assert!(pdef.tokens[0].is_tok(TokenType::SquareOpen));
-  assert!(pdef.tokens[1].is_tok(TokenType::Atom("true".to_string())));
-  assert!(pdef.tokens[2].is_tok(TokenType::ParClose));
+  assert!(pdef.tokens[0].is_tok(TokenKind::SquareOpen));
+  assert!(pdef.tokens[1].is_tok(TokenKind::Atom("true".to_string())));
+  assert!(pdef.tokens[2].is_tok(TokenKind::ParClose));
 }
 
 #[test]
@@ -263,7 +263,7 @@ fn test_define_with_dquotes() {
     .defines
     .get(&MFArity::new_local("AAA", 2))
     .unwrap();
-  assert!(pdef.tokens[0].is_tok(TokenType::new_str("aaa")));
+  assert!(pdef.tokens[0].is_tok(TokenKind::new_str("aaa")));
   assert_eq!(pdef.args, vec!["X", "Y"]);
 }
 
@@ -290,7 +290,7 @@ fn test_macro_expansion_in_define() {
     .get(&MFArity::new_local("BBB", 0))
     .unwrap();
   assert_eq!(pdef.name, "BBB");
-  if let TokenType::Atom(a) = &pdef.tokens[0].content {
+  if let TokenKind::Atom(a) = &pdef.tokens[0].kind {
     assert_eq!(
       a, "test_success",
       "Macro BBB must expand to 'test_success' and not macro invocation of ?AAA"
@@ -378,8 +378,8 @@ fn test_ast_macro_args_substitution() {
     .defines
     .get(&MFArity::new_local("result", 0))
     .unwrap();
-  assert!(pdef.tokens[0].is_tok(TokenType::Integer(ErlInteger::Small(1))));
-  assert!(pdef.tokens[1].is_tok(TokenType::Plus));
-  assert!(pdef.tokens[2].is_tok(TokenType::Integer(ErlInteger::Small(2))));
+  assert!(pdef.tokens[0].is_tok(TokenKind::Integer(ErlInteger::Small(1))));
+  assert!(pdef.tokens[1].is_tok(TokenKind::Plus));
+  assert!(pdef.tokens[2].is_tok(TokenKind::Integer(ErlInteger::Small(2))));
   println!("{:?}", pdef);
 }

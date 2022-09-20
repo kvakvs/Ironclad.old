@@ -12,33 +12,33 @@ use crate::erl_syntax::parsers::token_stream::tok_strings::str_literal::{
 };
 use crate::erl_syntax::parsers::token_stream::tok_strings::Char;
 use crate::erl_syntax::parsers::token_stream::token::Token;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::typing::erl_integer::ErlInteger;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{anychar, char};
-use nom::combinator::{complete, cut, map, not, peek, recognize};
+use nom::combinator::{complete, cut, map, not, opt, peek, recognize};
 use nom::error::context;
-use nom::sequence::{preceded, separated_pair, terminated};
+use nom::sequence::{pair, preceded, separated_pair, terminated};
 use nom::Parser;
 
 #[inline]
 fn tokenize_line_comment(input: TokenizerInput) -> TokensResult<Token> {
-  map(line_comment, |_| Token::new(input.as_ptr(), TokenType::EOL))(input)
+  map(line_comment, |_| Token::new(input.as_ptr(), TokenKind::EOL))(input)
 }
 
 #[inline]
 fn tokenize_atom(input: TokenizerInput) -> TokensResult<Token> {
-  map(parse_tok_atom, |s| Token::new(input.as_ptr(), TokenType::Atom(s)))(input)
+  map(parse_tok_atom, |s| Token::new(input.as_ptr(), TokenKind::Atom(s)))(input)
 }
 
 /// Produces a variable name token, or for lone underscores produces an `Underscore` token.
 fn tokenize_variable_name(input: TokenizerInput) -> TokensResult<Token> {
   let mk_var = |v| {
     if v == "_" {
-      Token::new(input.as_ptr(), TokenType::Underscore)
+      Token::new(input.as_ptr(), TokenKind::Underscore)
     } else {
-      Token::new(input.as_ptr(), TokenType::Variable(v))
+      Token::new(input.as_ptr(), TokenKind::Variable(v))
     }
   };
   map(parse_varname, mk_var)(input)
@@ -46,7 +46,7 @@ fn tokenize_variable_name(input: TokenizerInput) -> TokensResult<Token> {
 
 fn tokenize_single_integer(input: TokenizerInput) -> TokensResult<Token> {
   map(parse_int_any_base, |i: ErlInteger| {
-    Token::new(input.as_ptr(), TokenType::Integer(i))
+    Token::new(input.as_ptr(), TokenKind::Integer(i))
   })(input)
 }
 
@@ -55,235 +55,250 @@ fn tokenize_two_integers_with_dot(input: TokenizerInput) -> TokensResult<Token> 
     recognize(separated_pair(parse_int_decimal, char('.'), parse_int_decimal)),
     |fstr| {
       let f = fstr.parse::<f64>().unwrap();
-      Token::new(input.as_ptr(), TokenType::Float(f))
+      Token::new(input.as_ptr(), TokenKind::Float(f))
     },
   )(input)
 }
 
 #[inline]
 fn tokenize_integer(input: TokenizerInput) -> TokensResult<Token> {
-  alt((tokenize_two_integers_with_dot, tokenize_single_integer))(input)
+  map(
+    pair(
+      opt(alt((char('-'), char('+')))),
+      alt((tokenize_two_integers_with_dot, tokenize_single_integer)),
+    ),
+    |(maybe_sign, tok)| {
+      if let Some(sign) = maybe_sign {
+        println!("Maybe sign: {:?}", maybe_sign);
+        if sign == '-' {
+          return tok.negate();
+        }
+        return tok;
+      }
+      tok
+    },
+  )(input)
 }
 
 #[inline]
 fn tokenize_float(input: TokenizerInput) -> TokensResult<Token> {
-  map(parse_float, |f: f64| Token::new(input.as_ptr(), TokenType::Float(f)))(input)
+  map(parse_float, |f: f64| Token::new(input.as_ptr(), TokenKind::Float(f)))(input)
 }
 
 #[inline]
 fn symbol_comma(input: TokenizerInput) -> TokensResult<Token> {
-  map(char(','), |_| Token::new(input.as_ptr(), TokenType::Comma))(input)
+  map(char(','), |_| Token::new(input.as_ptr(), TokenKind::Comma))(input)
 }
 
 #[inline]
 fn symbol_curlyclose(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('}'), |_| Token::new(input.as_ptr(), TokenType::CurlyClose))(input)
+  map(char('}'), |_| Token::new(input.as_ptr(), TokenKind::CurlyClose))(input)
 }
 
 #[inline]
 fn symbol_curlyopen(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('{'), |_| Token::new(input.as_ptr(), TokenType::CurlyOpen))(input)
+  map(char('{'), |_| Token::new(input.as_ptr(), TokenKind::CurlyOpen))(input)
 }
 
 #[inline]
 fn symbol_div(input: TokenizerInput) -> TokensResult<Token> {
   map(char('/').and(not(char('='))), |_| {
-    Token::new(input.as_ptr(), TokenType::ForwardSlash)
+    Token::new(input.as_ptr(), TokenKind::ForwardSlash)
   })(input)
 }
 
 #[inline]
 fn symbol_doubleangleclose(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag(">>"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleClose))(input)
+  map(tag(">>"), |_| Token::new(input.as_ptr(), TokenKind::DoubleAngleClose))(input)
 }
 
 #[inline]
 fn symbol_doubleangleopen(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("<<"), |_| Token::new(input.as_ptr(), TokenType::DoubleAngleOpen))(input)
+  map(tag("<<"), |_| Token::new(input.as_ptr(), TokenKind::DoubleAngleOpen))(input)
 }
 
 #[inline]
 fn symbol_barbar(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("||"), |_| Token::new(input.as_ptr(), TokenType::DoubleVerticalBar))(input)
+  map(tag("||"), |_| Token::new(input.as_ptr(), TokenKind::DoubleVerticalBar))(input)
 }
 
 #[inline]
 fn symbol_ellipsis(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("..."), |_| Token::new(input.as_ptr(), TokenType::Ellipsis))(input)
+  map(tag("..."), |_| Token::new(input.as_ptr(), TokenKind::Ellipsis))(input)
 }
 
 #[inline]
 fn symbol_bar(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('|'), |_| Token::new(input.as_ptr(), TokenType::VerticalBar))(input)
+  map(char('|'), |_| Token::new(input.as_ptr(), TokenKind::VerticalBar))(input)
 }
 
 #[inline]
 fn symbol_equalsymbol(input: TokenizerInput) -> TokensResult<Token> {
   map(char('=').and(not(char('>'))), |_| {
-    Token::new(input.as_ptr(), TokenType::EqualSymbol)
+    Token::new(input.as_ptr(), TokenKind::EqualSymbol)
   })(input)
 }
 
 #[inline]
 fn symbol_greatereq(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag(">="), |_| Token::new(input.as_ptr(), TokenType::GreaterEq))(input)
+  map(tag(">="), |_| Token::new(input.as_ptr(), TokenKind::GreaterEq))(input)
 }
 
 #[inline]
 fn symbol_greaterthan(input: TokenizerInput) -> TokensResult<Token> {
   map(char('>').and(not(char('='))), |_| {
-    Token::new(input.as_ptr(), TokenType::AngleClose)
+    Token::new(input.as_ptr(), TokenKind::AngleClose)
   })(input)
 }
 
 #[inline]
 fn symbol_hardeq(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("=:="), |_| Token::new(input.as_ptr(), TokenType::HardEq))(input)
+  map(tag("=:="), |_| Token::new(input.as_ptr(), TokenKind::HardEq))(input)
 }
 
 #[inline]
 fn symbol_equalequal(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("=="), |_| Token::new(input.as_ptr(), TokenType::HardEq))(input)
+  map(tag("=="), |_| Token::new(input.as_ptr(), TokenKind::HardEq))(input)
 }
 
 #[inline]
 fn symbol_hardnoteq(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("=/="), |_| Token::new(input.as_ptr(), TokenType::HardNotEq))(input)
+  map(tag("=/="), |_| Token::new(input.as_ptr(), TokenKind::HardNotEq))(input)
 }
 
 #[inline]
 fn symbol_leftarr(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("<-"), |_| Token::new(input.as_ptr(), TokenType::LeftArr))(input)
+  map(tag("<-"), |_| Token::new(input.as_ptr(), TokenKind::LeftArr))(input)
 }
 
 #[inline]
 fn symbol_leftdoublearr(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("<="), |_| Token::new(input.as_ptr(), TokenType::LeftDoubleArr))(input)
+  map(tag("<="), |_| Token::new(input.as_ptr(), TokenKind::LeftDoubleArr))(input)
 }
 
 #[inline]
 fn symbol_lessthan(input: TokenizerInput) -> TokensResult<Token> {
   // TODO? and not =, -, etc
-  map(char('<'), |_| Token::new(input.as_ptr(), TokenType::AngleOpen))(input)
+  map(char('<'), |_| Token::new(input.as_ptr(), TokenKind::AngleOpen))(input)
 }
 
 #[inline]
 fn symbol_lessthaneq(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("=<"), |_| Token::new(input.as_ptr(), TokenType::LessThanEq))(input)
+  map(tag("=<"), |_| Token::new(input.as_ptr(), TokenKind::LessThanEq))(input)
 }
 
 #[inline]
 fn symbol_listappend(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("++"), |_| Token::new(input.as_ptr(), TokenType::ListAppend))(input)
+  map(tag("++"), |_| Token::new(input.as_ptr(), TokenKind::ListAppend))(input)
 }
 
 #[inline]
 fn symbol_listsubtract(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("--"), |_| Token::new(input.as_ptr(), TokenType::ListSubtract))(input)
+  map(tag("--"), |_| Token::new(input.as_ptr(), TokenKind::ListSubtract))(input)
 }
 
 #[inline]
 fn symbol_minus(input: TokenizerInput) -> TokensResult<Token> {
   // Minus NOT followed by another minus, or > symbol
   map(char('-').and(not(alt((char('-'), char('>'))))), |_| {
-    Token::new(input.as_ptr(), TokenType::Minus)
+    Token::new(input.as_ptr(), TokenKind::Minus)
   })(input)
 }
 
 #[inline]
 fn symbol_mul(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('*'), |_| Token::new(input.as_ptr(), TokenType::Asterisk))(input)
+  map(char('*'), |_| Token::new(input.as_ptr(), TokenKind::Asterisk))(input)
 }
 
 #[inline]
 fn symbol_noteq(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("/="), |_| Token::new(input.as_ptr(), TokenType::NotEq))(input)
+  map(tag("/="), |_| Token::new(input.as_ptr(), TokenKind::NotEq))(input)
 }
 
 #[inline]
 fn symbol_parclose(input: TokenizerInput) -> TokensResult<Token> {
-  map(char(')'), |_| Token::new(input.as_ptr(), TokenType::ParClose))(input)
+  map(char(')'), |_| Token::new(input.as_ptr(), TokenKind::ParClose))(input)
 }
 
 #[inline]
 fn symbol_paropen(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('('), |_| Token::new(input.as_ptr(), TokenType::ParOpen))(input)
+  map(char('('), |_| Token::new(input.as_ptr(), TokenKind::ParOpen))(input)
 }
 
 #[inline]
 fn symbol_underscore(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('_'), |_| Token::new(input.as_ptr(), TokenType::Underscore))(input)
+  map(char('_'), |_| Token::new(input.as_ptr(), TokenKind::Underscore))(input)
 }
 
 #[inline]
 fn symbol_periodperiod(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag(".."), |_| Token::new(input.as_ptr(), TokenType::PeriodPeriod))(input)
+  map(tag(".."), |_| Token::new(input.as_ptr(), TokenKind::PeriodPeriod))(input)
 }
 
 #[inline]
 fn symbol_period(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('.'), |_| Token::new(input.as_ptr(), TokenType::Period))(input)
+  map(char('.'), |_| Token::new(input.as_ptr(), TokenKind::Period))(input)
 }
 
 #[inline]
 fn symbol_hash(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('#'), |_| Token::new(input.as_ptr(), TokenType::Hash))(input)
+  map(char('#'), |_| Token::new(input.as_ptr(), TokenKind::Hash))(input)
 }
 
 #[inline]
 fn symbol_plus(input: TokenizerInput) -> TokensResult<Token> {
   // Plus NOT followed by another plus
-  map(char('+').and(not(char('+'))), |_| Token::new(input.as_ptr(), TokenType::Plus))(input)
+  map(char('+').and(not(char('+'))), |_| Token::new(input.as_ptr(), TokenKind::Plus))(input)
 }
 
 #[inline]
 fn symbol_rightarr(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("->"), |_| Token::new(input.as_ptr(), TokenType::RightArr))(input)
+  map(tag("->"), |_| Token::new(input.as_ptr(), TokenKind::RightArr))(input)
 }
 
 #[inline]
 fn symbol_rightdoublearr(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("=>"), |_| Token::new(input.as_ptr(), TokenType::RightDoubleArr))(input)
+  map(tag("=>"), |_| Token::new(input.as_ptr(), TokenKind::RightDoubleArr))(input)
 }
 
 #[inline]
 fn symbol_semicolon(input: TokenizerInput) -> TokensResult<Token> {
-  map(char(';'), |_| Token::new(input.as_ptr(), TokenType::Semicolon))(input)
+  map(char(';'), |_| Token::new(input.as_ptr(), TokenKind::Semicolon))(input)
 }
 
 #[inline]
 fn symbol_coloncolon(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag("::"), |_| Token::new(input.as_ptr(), TokenType::ColonColon))(input)
+  map(tag("::"), |_| Token::new(input.as_ptr(), TokenKind::ColonColon))(input)
 }
 
 #[inline]
 fn symbol_assign(input: TokenizerInput) -> TokensResult<Token> {
-  map(tag(":="), |_| Token::new(input.as_ptr(), TokenType::Assign))(input)
+  map(tag(":="), |_| Token::new(input.as_ptr(), TokenKind::Assign))(input)
 }
 
 #[inline]
 fn symbol_colon(input: TokenizerInput) -> TokensResult<Token> {
-  map(char(':'), |_| Token::new(input.as_ptr(), TokenType::Colon))(input)
+  map(char(':'), |_| Token::new(input.as_ptr(), TokenKind::Colon))(input)
 }
 
 #[inline]
 fn symbol_send(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('!'), |_| Token::new(input.as_ptr(), TokenType::Send))(input)
+  map(char('!'), |_| Token::new(input.as_ptr(), TokenKind::Send))(input)
 }
 
 #[inline]
 fn symbol_squareclose(input: TokenizerInput) -> TokensResult<Token> {
-  map(char(']'), |_| Token::new(input.as_ptr(), TokenType::SquareClose))(input)
+  map(char(']'), |_| Token::new(input.as_ptr(), TokenKind::SquareClose))(input)
 }
 
 #[inline]
 fn symbol_squareopen(input: TokenizerInput) -> TokensResult<Token> {
-  map(char('['), |_| Token::new(input.as_ptr(), TokenType::SquareOpen))(input)
+  map(char('['), |_| Token::new(input.as_ptr(), TokenKind::SquareOpen))(input)
 }
 
 #[inline]
 fn tokenize_string(input: TokenizerInput) -> TokensResult<Token> {
-  let map_fn = |s: String| Token::new(input.as_ptr(), TokenType::Str(s.into()));
+  let map_fn = |s: String| Token::new(input.as_ptr(), TokenKind::Str(s.into()));
   map(parse_doublequot_string, map_fn)(input)
 }
 
@@ -304,7 +319,7 @@ fn dollar_escaped_character(input: TokenizerInput) -> TokensResult<Token> {
         "Unexpected backquoted character, only allowed: \\n \\r \\t \\b \\f \\a \\e and \\\\"
       ),
     };
-    Token::new(input.as_ptr(), TokenType::EscapedCharacter { value, in_source: c })
+    Token::new(input.as_ptr(), TokenKind::EscapedCharacter { value, in_source: c })
   };
 
   // Recognize a $ \\ <character> to produce a \n \r \t \b \f \a \e and \
@@ -315,7 +330,7 @@ fn dollar_escaped_character(input: TokenizerInput) -> TokensResult<Token> {
 /// Parse a `$`-prefixed character, or `$\`-prefixed character, and produce `Character()` token
 #[inline]
 fn tokenize_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
-  let any_character_fn = |c: Char| Token::new(input.as_ptr(), TokenType::Character(c));
+  let any_character_fn = |c: Char| Token::new(input.as_ptr(), TokenKind::Character(c));
   preceded(
     char('$'),
     alt((preceded(char('\\'), dollar_escaped_character), map(anychar, any_character_fn))),
@@ -325,7 +340,7 @@ fn tokenize_dollar_character(input: TokenizerInput) -> TokensResult<Token> {
 /// Parse a stringify token `??<ARGNAME>` to paste macro parameter as a string when pasting the macro.
 #[inline]
 fn tokenize_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
-  let map_fn = |var_n| Token::new(input.as_ptr(), TokenType::MacroStringifyArg(var_n));
+  let map_fn = |var_n| Token::new(input.as_ptr(), TokenKind::MacroStringifyArg(var_n));
   map(
     preceded(tag("??"), context("stringify macro argument", cut(parse_varname))),
     map_fn,
@@ -334,7 +349,7 @@ fn tokenize_macro_stringify_arg(input: TokenizerInput) -> TokensResult<Token> {
 
 #[inline]
 fn tokenize_macro_invocation(input: TokenizerInput) -> TokensResult<Token> {
-  let map_fn = |m| Token::new(input.as_ptr(), TokenType::MacroInvocation(m));
+  let map_fn = |m| Token::new(input.as_ptr(), TokenKind::MacroInvocation(m));
   map(preceded(char('?'), context("macro invocation", cut(parse_macro_ident))), map_fn)(input)
 }
 
@@ -547,7 +562,7 @@ fn keyword_xor(input: TokenizerInput) -> TokensResult<Token> {
 #[inline]
 fn tokenize_newline(input: TokenizerInput) -> TokensResult<Token> {
   map(alt((tag("\r\n"), tag("\n"), tag("\r"))), |_| {
-    Token::new(input.as_ptr(), TokenType::EOL)
+    Token::new(input.as_ptr(), TokenKind::EOL)
   })(input)
 }
 
@@ -614,9 +629,9 @@ pub fn tokenize_source(input: TokenizerInput) -> TokensResult<Vec<Token>> {
     tokenize_keyword,
     tokenize_atom,
     tokenize_variable_name,
-    tokenize_plus_minus,
     tokenize_integer,
     tokenize_float,
+    tokenize_plus_minus,
     tokenize_other_symbols,
   ))))))(input)
 }

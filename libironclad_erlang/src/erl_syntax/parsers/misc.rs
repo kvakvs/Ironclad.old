@@ -18,7 +18,7 @@ use crate::erl_syntax::parsers::parser_error::ErlParserError;
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::tok_input::TokenizerInput;
 use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::erl_syntax::preprocessor::pp_node::pp_type::PreprocessorNodeType;
 use crate::typing::erl_integer::ErlInteger;
 
@@ -50,7 +50,7 @@ pub fn tok_integer(input: ParserInput) -> ParserResult<ErlInteger> {
 
 fn tok_integer_1(input: ParserInput) -> ParserResult<ErlInteger> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Integer(i), .. }) => Ok((input.slice(1..), i.clone())),
+    Some(Token { kind: TokenKind::Integer(i), .. }) => Ok((input.slice(1..), i.clone())),
     _other => Err(nom::Err::Error(ErlParserError::integer_literal_expected(input))),
   }
 }
@@ -65,9 +65,9 @@ pub fn tok_atom(input: ParserInput) -> ParserResult<String> {
 #[inline]
 pub fn tok_any_keyword_or_atom(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
-    Some(tok) => match &tok.content {
-      TokenType::Keyword(k) => Ok((input.slice(1..), k.to_string())),
-      TokenType::Atom(a) => Ok((input.slice(1..), a.clone())),
+    Some(tok) => match &tok.kind {
+      TokenKind::Keyword(k) => Ok((input.slice(1..), k.to_string())),
+      TokenKind::Atom(a) => Ok((input.slice(1..), a.clone())),
       _ => Err(nom::Err::Error(ErlParserError::any_keyword_or_atom_expected(input))),
     },
     _ => Err(nom::Err::Error(ErlParserError::any_keyword_or_atom_expected(input))),
@@ -76,7 +76,7 @@ pub fn tok_any_keyword_or_atom(input: ParserInput) -> ParserResult<String> {
 
 fn tok_atom_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),
+    Some(Token { kind: TokenKind::Atom(s), .. }) => Ok((input.slice(1..), s.clone())),
     _other => Err(nom::Err::Error(ErlParserError::any_atom_expected(input))),
   }
 }
@@ -89,7 +89,7 @@ pub fn tok_string(input: ParserInput) -> ParserResult<Arc<String>> {
 
 fn tok_string_1(input: ParserInput) -> ParserResult<Arc<String>> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Str(s), .. }) => Ok((input.slice(1..), s.clone())),
+    Some(Token { kind: TokenKind::Str(s), .. }) => Ok((input.slice(1..), s.clone())),
     _other => Err(nom::Err::Error(ErlParserError::string_literal_expected(input))),
   }
 }
@@ -103,15 +103,14 @@ pub fn tok_var(input: ParserInput) -> ParserResult<String> {
 #[inline]
 fn tok_var_1(input: ParserInput) -> ParserResult<String> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
+    Some(Token { kind: TokenKind::Variable(v), .. }) => Ok((input.slice(1..), v.clone())),
     _other => Err(nom::Err::Error(ErlParserError::variable_expected(input))),
   }
 }
 
 /// Recognizes one `-module(NAME).` attribute`
 pub fn tok_module_name_attr(input: ParserInput) -> ParserResult<String> {
-  if let Some(Token { content: TokenType::Preprocessor(pp_node), .. }) = input.tokens.iter().next()
-  {
+  if let Some(Token { kind: TokenKind::Preprocessor(pp_node), .. }) = input.tokens.iter().next() {
     if let PreprocessorNodeType::ModuleName { name } = &pp_node.content {
       return Ok((input.slice(1..), name.clone()));
     }
@@ -127,7 +126,7 @@ pub fn tok_float(input: ParserInput) -> ParserResult<f64> {
 
 fn tok_float_1(input: ParserInput) -> ParserResult<f64> {
   match input.tokens.iter().next() {
-    Some(Token { content: TokenType::Float(f), .. }) => Ok((input.slice(1..), *f)),
+    Some(Token { kind: TokenKind::Float(f), .. }) => Ok((input.slice(1..), *f)),
     _other => Err(nom::Err::Error(ErlParserError::float_literal_expected(input))),
   }
 }

@@ -3,7 +3,7 @@
 use crate::erl_syntax::parsers::lang_construct::{LangConstruct, LangConstructs};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::keyword::Keyword;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use nom::error::ErrorKind;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -32,7 +32,12 @@ pub enum ErlParserErrorKind {
   /// Used for preprocessor directives and module attributes, after `-` a keyword or atom is expected
   AnyKeywordOrAtomExpected,
   /// Need a specific token
-  TokenExpected(TokenType),
+  TokenExpected {
+    /// What we wanted
+    expected: TokenKind,
+    /// What was read
+    actual: TokenKind,
+  },
   /// Any integer
   IntegerLiteralExpected,
   /// Any float
@@ -91,9 +96,9 @@ impl<'a> ErlParserError<'a> {
 
   /// Create a "token expected" error
   #[inline]
-  pub fn token_expected(input: ParserInput<'a>, tt: TokenType) -> Self {
+  pub fn token_expected(input: ParserInput<'a>, expected: TokenKind, actual: TokenKind) -> Self {
     ErlParserError {
-      errors: vec![(input, ErlParserErrorKind::TokenExpected(tt))],
+      errors: vec![(input, ErlParserErrorKind::TokenExpected { expected, actual })],
     }
   }
 
@@ -195,8 +200,15 @@ impl Display for ErlParserErrorKind {
       ErlParserErrorKind::AtomExpected(a) => write!(f, "Atom expected: {}", a),
       ErlParserErrorKind::AnyAtomExpected => write!(f, "Atom expected"),
       ErlParserErrorKind::KeywordExpected(k) => write!(f, "Keyword expected: {}", k),
-      ErlParserErrorKind::TokenExpected(tt) => {
-        write!(f, "Token expected: {} ({})", tt, tt.as_explanation_str())
+      ErlParserErrorKind::TokenExpected { expected, actual } => {
+        write!(
+          f,
+          "Token expected: {} ({}), but found {} ({})",
+          expected,
+          expected.explain(),
+          actual,
+          actual.explain()
+        )
       }
       ErlParserErrorKind::IntegerLiteralExpected => write!(f, "An integer literal expected"),
       ErlParserErrorKind::FloatLiteralExpected => write!(f, "A float literal expected"),

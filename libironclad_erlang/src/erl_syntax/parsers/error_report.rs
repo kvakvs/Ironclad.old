@@ -3,8 +3,8 @@
 use crate::erl_syntax::parsers::parser_error::{ErlParserError, ErlParserErrorKind};
 use crate::erl_syntax::parsers::parser_input::ParserInput;
 use crate::erl_syntax::parsers::token_stream::token::{format_tok_stream, Token};
+use crate::erl_syntax::parsers::token_stream::token_kind::TokenKind;
 use crate::erl_syntax::parsers::token_stream::token_line_iter::TokenLinesIter;
-use crate::erl_syntax::parsers::token_stream::token_type::TokenType;
 use nom::Offset;
 use std::fmt::Write;
 
@@ -66,7 +66,7 @@ pub fn convert_token_stream_parser_error(
       // Count the number of newlines in the first `offset` bytes of input
       let line_number = prefix
         .iter()
-        .filter(|&b| matches!(b.content, TokenType::EOL))
+        .filter(|&b| matches!(b.kind, TokenKind::EOL))
         .count()
         + 1;
 
@@ -75,7 +75,7 @@ pub fn convert_token_stream_parser_error(
       let line_begin = prefix
         .iter()
         .rev()
-        .position(|b| matches!(b.content, TokenType::EOL))
+        .position(|b| matches!(b.kind, TokenKind::EOL))
         .map(|pos| inp_offset - pos)
         .unwrap_or(0);
 
