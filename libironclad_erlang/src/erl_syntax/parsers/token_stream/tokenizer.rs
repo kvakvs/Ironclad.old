@@ -69,7 +69,6 @@ fn tokenize_integer(input: TokenizerInput) -> TokensResult<Token> {
     ),
     |(maybe_sign, tok)| {
       if let Some(sign) = maybe_sign {
-        println!("Maybe sign: {:?}", maybe_sign);
         if sign == '-' {
           return tok.negate();
         }

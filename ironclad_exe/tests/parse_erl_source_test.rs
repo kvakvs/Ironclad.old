@@ -929,3 +929,16 @@ fn parse_map_builder_no_base() {
   let input = "f() -> #{lmap => 123}.";
   let _m = test_util::parse_module(function_name!(), input);
 }
+
+#[named]
+#[test]
+fn parse_record_construction_with_base_value() {
+  test_util::start(function_name!(), "parse record construction based on previous value");
+  // let input = r#"
+  //   renumber_labels([{label,Old}|Is], Acc, St0) ->
+  //       St0#st{lmap=D,lc=New+1}.
+  //   "#;
+  // let _m = test_util::parse_module(function_name!(), input);
+  let input_expr = r#"St0#st{lmap=D,lc=New+1}"#;
+  let _e = test_util::parse_expr(function_name!(), input_expr);
+}
